@@ -5,11 +5,10 @@
 % $cgi->param('agentnum', $agent->agentnum); #for download links
 <DIV WIDTH="100%" STYLE="page-break-after: always">
 <FONT SIZE=6><% $agent->agent %></FONT><BR><BR>
-  <& sqlradius_usage.html, 
-      export            => $export,
+  <& cust_pkg_sqlradius_usage.html, 
+      exports           => @exports,
       agentnum          => $agent->agentnum,
       nohtmlheader      => 1,
-      usage_by_username => \%usage_by_username,
       download_label    => 'Download this section',
       &>
 </DIV>
@@ -19,14 +18,14 @@
 % } else {
 <& elements/search.html,
   'title'       => $title,
-  'name'        => 'services',
+  'name'        => $combine_svcs ? 'packages' : 'services',
   'query'       => $sql_query,
-  'count_query' => $sql_query->{'count_query'},
+  'count_query' => $count_query,
   'header'      => [ #FS::UI::Web::cust_header(),
                      '#',
                      'Customer',
                      'Package',
-                     @svc_header,
+                     'User',
                      'Upload (GB)',
                      'Download (GB)',
                      'Total (GB)',
@@ -36,22 +35,20 @@
                      'display_custnum',
                      'name',
                      'pkg',
-                     @svc_fields,
-                     @svc_usage,
+                     @pkg_usage, # username, upload, download, total
                    ],
   'order_by_sql' => $order_by_sql,
   'links'       => [ #( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                      #  FS::UI::Web::cust_header() ),
                      $link_cust,
                      $link_cust,
-                     '', #package
-                     ( map { $link_svc } @svc_header ),
-                     '',
+                     $link_pkg,
+                     $link_svc,
                      '',
                      '',
                    ],
   'align'       => #FS::UI::Web::cust_aligns() .
-                   'rlc' . ('l' x scalar(@svc_header)) . 'rrr' ,
+                   'rlcrrr',
   'nohtmlheader'    => ($opt{'nohtmlheader'} || 0),
   'download_label'  => $opt{'download_label'},
 &>
@@ -61,11 +58,13 @@
 my %opt = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-die "access denied" unless $curuser->access_right('List services');
+die "access denied" unless $curuser->access_right('List packages');
 
 my $title = 'Data Usage Report - '; 
 my $agentnum = '';
 my @include_agents = ();
+
+my $combine_svcs = $cgi->param('combine_svcs') ? 1 : 0;
 
 if ( $opt{'agentnum'} =~ /^(\d+)$/ ) {
   $agentnum = $opt{'agentnum'};
@@ -112,7 +111,7 @@ if ( $ending == 4294967295 ) {
 # can also show a specific customer / service. the main query will handle
 # agent restrictions, but we need a list of the services to ask the export
 # for usage data.
-my ($cust_main, @svc_x);
+my $cust_main;
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $cust_main = qsearchs( {
     'table'     => 'cust_main',
@@ -125,149 +124,128 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   @include_agents = ();
   # and announce that we're doing it
   $title .= ' - ' . $cust_main->name_short;
-
-  # yes, we'll query the database once for each service the customer has,
-  # even non-radacct'd services. probably less bad than a single query that
-  # pulls records for every service for every customer.
-  foreach my $cust_pkg ($cust_main->all_pkgs) {
-    foreach my $cust_svc ($cust_pkg->cust_svc) {
-      push @svc_x, $cust_svc->svc_x;
-    }
-  }
-}
-foreach ($cgi->param('svcnum')) {
-  if (/^(\d+)$/) {
-    my $cust_svc = FS::cust_svc->by_key($1)
-      or die "service #$1 not found."; # or continue?
-    push @svc_x, $cust_svc->svc_x;
-  }
 }
 
-my $export;
-my %usage_by_username;
-if ( exists($opt{usage_by_username}) ) {
-  # There's no agent separation in the radacct data.  So in the jumbo report
-  # do this procedure once, and pass the hash into all the per-agent sections.
-  %usage_by_username = %{ $opt{usage_by_username} };
-  $export  = $opt{export};
+my @exports;
+if ( $opt{exports} ) {
+  @exports = @{ $opt{exports} };
+} elsif ( $cgi->param('exportnum') ) {
+  foreach my $exportnum ($cgi->param('exportnum')) {
+    $exportnum =~ /^(\d+)$/
+      or die "illegal export: '".$cgi->param('exportnum')."'";
+    my $export = FS::part_export->by_key($1)
+      or die "exportnum $1 not found";
+    $export->exporttype =~ /sqlradius/
+      or die "exportnum ".$export->exportnum." is type ".$export->exporttype.
+             ", not sqlradius";
+    push @exports, $export;
+  }
+  die "exportnum required" unless @exports;
 } else {
-
-  $cgi->param('exportnum') =~ /^(\d+)$/
-    or die "illegal export: '".$cgi->param('exportnum')."'";
-  $export = FS::part_export->by_key($1)
-    or die "exportnum $1 not found";
-  $export->exporttype =~ /sqlradius/
-    or die "exportnum ".$export->exportnum." is type ".$export->exporttype.
-           ", not sqlradius";
-
-  my %usage_param = (
-      stoptime_start  => $beginning,
-      stoptime_end    => $ending,
-      summarize       => 1
-  );
-  # usage_sessions() returns an arrayref of hashrefs of
-  # (username, acctsessiontime, acctinputoctets, acctoutputoctets)
-  # (XXX needs to include 'realm' for sqlradius_withdomain)
-  my $usage;
-  if ( @svc_x ) {
-    # then query once per service
-    $usage = [];
-    foreach my $svc ( @svc_x ) {
-      $usage_param{'svc'} = $svc;
-      push @$usage, @{ $export->usage_sessions(\%usage_param) };
-    }
-  } else {
-    # one query, get everyone's data
-    $usage = $export->usage_sessions(\%usage_param);
-  }
-
-  # rearrange to be indexed by username.
-  foreach (@$usage) {
-    my $username = $_->{'username'};
-    my @row = (
-      $_->{'acctinputoctets'},
-      $_->{'acctoutputoctets'},
-      $_->{'acctinputoctets'} + $_->{'acctoutputoctets'}
-    );
-    $usage_by_username{$username} = \@row;
-  }
+  # do something sensible if no exports were selected
+  @exports = FS::part_export::sqlradius->all_sqlradius;
 }
 
-#warn Dumper(\%usage_by_username);
-my @total_usage = (0, 0, 0, 0); # session time, input, output, input + output
-my @svc_usage = map {
-  my $i = $_;
-  sub {
-    my $username = $export->export_username(shift);
-    return '' if !exists($usage_by_username{$username});
-    my $value = $usage_by_username{ $username }->[$i];
-    $total_usage[$i] += $value;
-    # for now, always show in GB, rounded to 3 digits
-    bytes_to_gb($value);
-  }
-} (0,1,2);
+my %usage_param = (
+  stoptime_start  => $beginning,
+  stoptime_end    => $ending,
+  summarize       => 1
+);
 
-# set up svcdb-specific stuff
-my $export_username = sub {
-  $export->export_username(shift); # countrycode + phone, formatted MAC, etc.
+my @total_usage = ('', 0, 0, 0); # username, input, output, input + output
+
+# a single sub to collect data for each package, aggregated across both
+# services and exports.  when we add per-service breakdown, this should also
+# keep the per-service data, but not needed yet
+my $cust_pkg_stats_sub = sub {
+  my $cust_pkg = shift;
+  if (! $cust_pkg->get('_stats') ) {
+    my ($upbytes, $downbytes, $totalbytes) = (0, 0, 0);
+    my $display_username;
+    foreach my $svcnum ( split(',', $cust_pkg->get('svcnums_concat')) ) {
+      foreach my $export (@exports) {
+        my $svc = FS::cust_svc->by_key($svcnum)->svc_x;
+        my $username = $export->export_username($svc);
+        my $usage = $export->usage_sessions({ %usage_param, 'svc' => $svc });
+        # returns arrayref with one row
+        $upbytes += $usage->[0]->{'acctinputoctets'};
+        $downbytes += $usage->[0]->{'acctoutputoctets'};
+        # in combined services mode with multiple users/MAC addresses per
+        # package, this will just show one of them arbitrarily.
+        $display_username ||= $username;
+      }
+    }
+    $total_usage[1] += $upbytes;
+    $total_usage[2] += $downbytes;
+    $total_usage[3] += $upbytes + $downbytes;
+    $cust_pkg->set('_stats', [ $display_username,
+                               $upbytes,
+                               $downbytes,
+                               $upbytes + $downbytes ]);
+  }
+  return $cust_pkg->get('_stats');
 };
 
-my %svc_header = (
-  svc_acct      => [ 'Username' ],
-  svc_broadband => [ 'MAC address', 'IP address' ],
-#  svc_phone     => [ 'Phone' ], #not yet supported, no search method
-                                 # (not sure input/output octets is relevant)
-);
-my %svc_fields = (
-  svc_acct      => [ $export_username ],
-  svc_broadband => [ $export_username, 'ip_addr' ],
-#  svc_phone     => [ $export_username ],
-);
-
-# what kind of service we're operating on
-my $svcdb = FS::part_export::export_info()->{$export->exporttype}->{'svc'};
-my $class = "FS::$svcdb";
-my @svc_header = @{ $svc_header{$svcdb} };
-my @svc_fields = @{ $svc_fields{$svcdb} };
-
-# svc_x search params
-my %search_hash = ( 'agentnum' => $agentnum,
-                    'exportnum' => $export->exportnum );
-
-if ($cust_main) {
-  $search_hash{'custnum'} = $cust_main->custnum;
+my @pkg_usage;
+$pkg_usage[0] = sub { # username
+ return &{ $cust_pkg_stats_sub }(shift)->[0];
+};
+foreach my $i (1, 2, 3) { # numeric fields
+  $pkg_usage[$i] = sub { # cust_pkg arg
+    my $value = &{ $cust_pkg_stats_sub }(shift)->[$i];
+    # for now, always show in GB, rounded to 3 digits
+    $value ? bytes_to_gb($value) : '';
+  };
 }
-if (@svc_x) {
-  $search_hash{'svcnum'} = [ map { $_->get('svcnum') } @svc_x ];
-}
-
-my $sql_query = $class->search(\%search_hash);
-$sql_query->{'select'}    .= ', part_pkg.pkg';
-$sql_query->{'addl_from'} .= ' LEFT JOIN part_pkg USING (pkgpart)';
-
-if ( @svc_x ) {
-  my $svcnums = join(',', map { $_->get('svcnum') } @svc_x);
-  $sql_query->{'extra_sql'} .= ' AND svcnum IN('.$svcnums.')';
-}
-
-my $link_svc = [ $p.'view/cust_svc.cgi?', 'svcnum' ];
 
 my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
 
-# columns between the customer name and the usage fields
-my $skip_cols = 1 + scalar(@svc_header);
+# cust_pkg search params
+my %search_hash = ( 'agentnum' => $agentnum );
+if ($cust_main) {
+  $search_hash{'custnum'} = $cust_main->custnum;
+}
 
-my $num_rows = FS::Record->scalar_sql($sql_query->{count_query});
+# construct a subquery for services/packages with relevant exports
+
+my $group_by = ' GROUP BY pkgnum';
+if ( !$combine_svcs ) {
+  $group_by .= ', svcnum';
+}
+
+my $exportnums = join(',', map { $_->get('exportnum') } @exports);
+my $svcnums_table = 'SELECT pkgnum, ' .  FS::Record::group_concat_sql('DISTINCT svcnum', ',') . ' AS svcnums_concat
+FROM cust_svc
+  JOIN part_svc USING (svcpart)
+  JOIN export_svc USING (svcpart)
+WHERE exportnum IN(' . $exportnums . ')' . $group_by;
+
+my $sql_query = FS::cust_pkg->search( \%search_hash );
+# also get the svcnum-list column
+$sql_query->{'select'}    .= ', svcnums_concat' .
+# and a workaround for the implicit DISTINCTing that happens in qsearch
+                             ', NULL AS pkgnum, pkgnum AS real_pkgnum';
+$sql_query->{'addl_from'} .= " JOIN ($svcnums_table) AS svcnums
+USING (pkgnum)";
+$sql_query->{'order_by'}  = ' ORDER BY cust_pkg.pkgnum, svcnums_concat'; # for stability
+
+my $count_query = "SELECT COUNT(*) FROM cust_pkg ".
+  $sql_query->{addl_from} .
+  $sql_query->{extra_sql};
+
+my $num_rows = FS::Record->scalar_sql($count_query);
+my $itemname = $combine_svcs ? 'package' : 'service';
 my @footer = (
   '',
-  emt('[quant,_1,service]', $num_rows), 
-  ('') x $skip_cols,
+  emt("[quant,_1,$itemname]", $num_rows), 
+  '', #pkg label
+  '', #username
   map {
     my $i = $_;
     sub { # defer this until the rows have been processed
       bytes_to_gb($total_usage[$i])
     }
-  } (0,1,2)
+  } (1,2,3)
 );
 
 sub bytes_to_gb {
@@ -291,6 +269,21 @@ my $order_by_sql = {
                        : "custnum",
 };
 
-#warn Dumper \%usage_by_username;
+my $link_pkg = sub {
+  my $self = shift;
+  my $frag = 'cust_pkg'. $self->pkgnum; #hack for IE ignoring real #fragment
+  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
+                           "show=packages;fragment=$frag#cust_pkg",
+    'pkgnum'
+  ];
+};
 
+my $link_svc = sub {
+  my $self = shift;
+  if ($self->svcnums_concat =~ /^(\d+)$/) {
+    return [ $p.'view/cust_svc.cgi?' . $1 ];
+  } else {
+    return '';
+  }
+};
 </%init>
