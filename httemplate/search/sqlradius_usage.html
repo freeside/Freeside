@@ -272,11 +272,7 @@ my $order_by_sql = {
 
 my $link_pkg = sub {
   my $self = shift;
-  my $frag = 'cust_pkg'. $self->pkgnum; #hack for IE ignoring real #fragment
-  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
-                           "show=packages;fragment=$frag#cust_pkg",
-    'pkgnum'
-  ];
+  [ "${p}view/cust_pkg.cgi?", 'real_pkgnum' ];
 };
 
 my $link_svc = sub {
