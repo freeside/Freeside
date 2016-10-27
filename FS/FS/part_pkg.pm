@@ -1917,13 +1917,27 @@ sub calc_remain { 0; }
 =item calc_units CUST_PKG
 
 This returns the number of provisioned svc_phone records, or, of the package
-count_available_phones option is set, the number available to be provisoined
+count_available_phones option is set, the number available to be provisioned
 in the package.
 
 =cut
 
-#fallback that returns 0 for old legacy packages with no plan
-sub calc_units  { 0; }
+sub calc_units {
+  my($self, $cust_pkg ) = @_;
+  my $count = 0;
+  if ( $self->option('count_available_phones', 1)) {
+    foreach my $pkg_svc ($cust_pkg->part_pkg->pkg_svc) {
+      if ($pkg_svc->part_svc->svcdb eq 'svc_phone') { # svc_pbx?
+        $count += $pkg_svc->quantity || 0;
+      }
+    }
+    $count *= $cust_pkg->quantity;
+  } else {
+    $count =
+      scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
+  }
+  $count;
+}
 
 #fallback for everything not based on flat.pm
 sub recur_temporality { 'upcoming'; }

@@ -399,15 +399,5 @@ sub is_free {
   0;
 }
 
-#  This equates svc_phone records; perhaps svc_phone should have a field
-#  to indicate it represents a line
-#  #XXX no count_available_phones?
-sub calc_units {    
-  my($self, $cust_pkg ) = @_;
-  my $count = 
-      scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
-  $count;
-}
-
 1;
 
