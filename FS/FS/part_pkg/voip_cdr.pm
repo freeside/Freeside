@@ -289,10 +289,6 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                                'type' => 'checkbox',
                              },
 
-    'count_available_phones' => { 'name' => 'Consider for tax purposes the number of lines to be svc_phones that may be provisioned rather than those that actually are.',
-                           'type' => 'checkbox',
-                         },
-
     #XXX also have option for an external db?  these days we suck them into ours
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -353,7 +349,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        usage_mandate usage_section summarize_usage 
                        usage_showzero bill_every_call bill_inactive_svcs
                        bill_only_pkg_dates
-                       count_available_phones suspend_bill 
+                       suspend_bill 
                      )
                   ],
   'weight' => 41,
@@ -654,25 +650,6 @@ sub check_chargable {
 
 sub is_free {
   0;
-}
-
-#  This equates svc_phone records; perhaps svc_phone should have a field
-#  to indicate it represents a line
-sub calc_units {    
-  my($self, $cust_pkg ) = @_;
-  my $count = 0;
-  if ( $self->option('count_available_phones', 1)) {
-    foreach my $pkg_svc ($cust_pkg->part_pkg->pkg_svc) {
-      if ($pkg_svc->part_svc->svcdb eq 'svc_phone') { # svc_pbx?
-        $count += $pkg_svc->quantity || 0;
-      }
-    }
-    $count *= $cust_pkg->quantity;
-  } else {
-    $count = 
-      scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
-  }
-  $count;
 }
 
 sub reset_usage {
