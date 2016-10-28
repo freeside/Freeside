@@ -5,8 +5,8 @@
 % $cgi->param('agentnum', $agent->agentnum); #for download links
 <DIV WIDTH="100%" STYLE="page-break-after: always">
 <FONT SIZE=6><% $agent->agent %></FONT><BR><BR>
-  <& cust_pkg_sqlradius_usage.html, 
-      exports           => @exports,
+  <& sqlradius_usage.html, 
+      exports           => \@exports,
       agentnum          => $agent->agentnum,
       nohtmlheader      => 1,
       download_label    => 'Download this section',
@@ -154,6 +154,17 @@ my %usage_param = (
 
 my @total_usage = ('', 0, 0, 0); # username, input, output, input + output
 
+# remember which exports apply to which services, so we don't inappropriately
+# ask the wrong ones for usage stats
+my %export_svcparts;
+foreach my $export (@exports) {
+  my %seen;
+  foreach ($export->export_svc) {
+    $seen{ $_->svcpart } = 1;
+  }
+  $export_svcparts{ $export->exportnum } = \%seen;
+}
+
 # a single sub to collect data for each package, aggregated across both
 # services and exports.  when we add per-service breakdown, this should also
 # keep the per-service data, but not needed yet
@@ -163,16 +174,20 @@ my $cust_pkg_stats_sub = sub {
     my ($upbytes, $downbytes, $totalbytes) = (0, 0, 0);
     my $display_username;
     foreach my $svcnum ( split(',', $cust_pkg->get('svcnums_concat')) ) {
+      my $cust_svc = FS::cust_svc->by_key($svcnum);
+      my $svc = $cust_svc->svc_x;
       foreach my $export (@exports) {
-        my $svc = FS::cust_svc->by_key($svcnum)->svc_x;
-        my $username = $export->export_username($svc);
-        my $usage = $export->usage_sessions({ %usage_param, 'svc' => $svc });
-        # returns arrayref with one row
-        $upbytes += $usage->[0]->{'acctinputoctets'};
-        $downbytes += $usage->[0]->{'acctoutputoctets'};
-        # in combined services mode with multiple users/MAC addresses per
-        # package, this will just show one of them arbitrarily.
-        $display_username ||= $username;
+        if ( $export_svcparts{ $export->exportnum }{ $cust_svc->svcpart } ) {
+          my $username = $export->export_username($svc);
+          my $usage = $export->usage_sessions({ %usage_param, 'svc' => $svc });
+          # returns arrayref with one row
+          $upbytes += $usage->[0]->{'acctinputoctets'};
+          $downbytes += $usage->[0]->{'acctoutputoctets'};
+          # in combined services mode with multiple users/MAC addresses per
+          # package, this will just show one of them arbitrarily.
+          $display_username ||= $username;
+        }
+        # else this export doesn't apply so skip it
       }
     }
     $total_usage[1] += $upbytes;
