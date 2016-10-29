@@ -276,7 +276,7 @@ sub replace {
 
   if ( $self->payby =~ /^(CARD|CHEK)$/
        && ( ( $self->get('payinfo') ne $old->get('payinfo')
-              && $self->get('payinfo') !~ /^99\d{14}$/ 
+              && !$self->tokenized 
             )
             || grep { $self->get($_) ne $old->get($_) } qw(paydate payname)
           )
@@ -357,7 +357,7 @@ sub check {
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
     my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $self->payinfo =~ /^99\d{14}$/; #token
+    $cardtype = 'Tokenized' if $self->tokenized; #token
     
     return gettext('unknown_card_type') if $cardtype eq "Unknown";
     
@@ -546,7 +546,7 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
-  if ( $payinfo =~ /^99\d{14}$/ ) {
+  if ( $self->tokenized($payinfo) ) {
     $self->set('paycardtype', 'Tokenized');
     return '';
   }

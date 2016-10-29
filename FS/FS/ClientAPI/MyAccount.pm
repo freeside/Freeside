@@ -1022,7 +1022,7 @@ sub validate_payment {
     validate($payinfo)
       or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
     return { 'error' => gettext('unknown_card_type') }
-      if $payinfo !~ /^99\d{14}$/ && cardtype($payinfo) eq "Unknown";
+      if !$cust_main->tokenized($payinfo) && cardtype($payinfo) eq "Unknown";
 
     if ( length($p->{'paycvv'}) && $p->{'paycvv'} !~ /^\s*$/ ) {
       if ( cardtype($payinfo) eq 'American Express card' ) {

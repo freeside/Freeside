@@ -376,14 +376,18 @@ sub _bop_content {
 }
 
 sub _tokenize_card {
-  my ($self,$transaction,$cust_payby,$log,%opt) = @_;
+  my ($self,$transaction,$options,$log,%opt) = @_;
+  # options is for entire process, so we can update payinfo
+  # opt is just for this call, only key is replace
 
+  my $cust_payby = $options->{'cust_payby'};
   if ( $cust_payby
        and $transaction->can('card_token') 
        and $transaction->card_token 
-       and $cust_payby->payinfo !~ /^99\d{14}$/ #not already tokenized
+       and !$cust_payby->tokenized #not already tokenized
   ) {
 
+    $options->{'payinfo'} = $transaction->card_token;
     $cust_payby->payinfo($transaction->card_token);
 
     my $error;
@@ -398,6 +402,18 @@ sub _tokenize_card {
 
   }
 
+}
+
+# only store payinfo in cust_pay/cust_pay_pending
+# if it's a tokenized card or if processor requires card for void
+sub _cust_pay_opts {
+  my ($self,$payby,$payinfo,$transaction) = @_;
+  ( (($payby eq 'CARD') && $self->tokenized($payinfo))
+    || (($payby eq 'CARD') && $transaction->info('CC_void_requires_card'))
+    || (($payby eq 'CHEK') && $transaction->info('ECHECK_void_requires_account'))
+  )
+    ? ('payinfo' => $payinfo)
+    : ();
 }
 
 my %bop_method2payby = (
@@ -665,12 +681,15 @@ sub realtime_bop {
 
   #okay, good to go, if we're a duplicate, cust_pay_pending will kick us out
 
+  my $transaction = new $namespace( $payment_gateway->gateway_module,
+                                    $self->_bop_options(\%options),
+                                  );
+
   my $cust_pay_pending = new FS::cust_pay_pending {
     'custnum'           => $self->custnum,
     'paid'              => $options{amount},
     '_date'             => '',
     'payby'             => $bop_method2payby{$options{method}},
-    'payinfo'           => $options{payinfo},
     'paymask'           => $options{paymask},
     'paydate'           => $paydate,
     'recurring_billing' => $content{recurring_billing},
@@ -679,6 +698,7 @@ sub realtime_bop {
     'gatewaynum'        => $payment_gateway->gatewaynum || '',
     'session_id'        => $options{session_id} || '',
     'jobnum'            => $options{depend_jobnum} || '',
+    $self->_cust_pay_opts($options{payinfo},$transaction),
   };
   $cust_pay_pending->payunique( $options{payunique} )
     if defined($options{payunique}) && length($options{payunique});
@@ -694,10 +714,6 @@ sub realtime_bop {
 
   my( $action1, $action2 ) =
     split( /\s*\,\s*/, $payment_gateway->gateway_action );
-
-  my $transaction = new $namespace( $payment_gateway->gateway_module,
-                                    $self->_bop_options(\%options),
-                                  );
 
   $transaction->content(
     'type'           => $options{method},
@@ -811,7 +827,7 @@ sub realtime_bop {
   # Tokenize
   ###
 
-  my $error = $self->_tokenize_card($transaction,$options{'cust_payby'},$log,'replace' => 1);
+  my $error = $self->_tokenize_card($transaction,\%options,$log,'replace' => 1);
   return $error if $error;
 
   ###
@@ -849,9 +865,7 @@ sub fake_bop {
      'paid'     => $options{amount},
      '_date'    => '',
      'payby'    => $bop_method2payby{$options{method}},
-     #'payinfo'  => $payinfo,
      'payinfo'  => '4111111111111111',
-     #'paydate'  => $paydate,
      'paydate'  => '2012-05-01',
      'processor'      => 'FakeProcessor',
      'auth'           => '54',
@@ -925,7 +939,6 @@ sub _realtime_bop_result {
        'paid'     => $cust_pay_pending->paid,
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
-       'payinfo'  => $options{'payinfo'},
        'paymask'  => $options{'paymask'} || $cust_pay_pending->paymask,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
@@ -935,6 +948,7 @@ sub _realtime_bop_result {
        'auth'           => $transaction->authorization,
        'order_number'   => $order_number || '',
        'no_auto_apply'  => $options{'no_auto_apply'} ? 'Y' : '',
+       $self->_cust_pay_opts($options{payinfo},$transaction),
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )
@@ -1840,7 +1854,9 @@ sub realtime_verify_bop {
   ###
 
   my $error;
-  my $transaction; #need this back so we can do _tokenize_card
+  my $transaction = new $namespace( $payment_gateway->gateway_module,
+                                    $self->_bop_options(\%options),
+                                  ); #need this back so we can do _tokenize_card
 
   # don't mutex the customer here, because they might be uncommitted. and
   # this is only verification. it doesn't matter if they have other
@@ -1851,13 +1867,13 @@ sub realtime_verify_bop {
     'paid'              => '1.00',
     '_date'             => '',
     'payby'             => $bop_method2payby{'CC'},
-    'payinfo'           => $options{payinfo},
     'paymask'           => $options{paymask},
     'paydate'           => $paydate,
     'pkgnum'            => $options{'pkgnum'},
     'status'            => 'new',
     'gatewaynum'        => $payment_gateway->gatewaynum || '',
     'session_id'        => $options{session_id} || '',
+    $self->_cust_pay_opts($options{payinfo},$transaction),
   };
   $cust_pay_pending->payunique( $options{payunique} )
     if defined($options{payunique}) && length($options{payunique});
@@ -1887,10 +1903,6 @@ sub realtime_verify_bop {
     warn "inserted cust_pay_pending record for customer ". $self->custnum. "\n"
       if $DEBUG > 1;
     warn Dumper($cust_pay_pending) if $DEBUG > 2;
-
-    $transaction = new $namespace( $payment_gateway->gateway_module,
-                                   $self->_bop_options(\%options),
-                                    );
 
     $transaction->content(
       'type'           => 'CC',
@@ -2115,7 +2127,7 @@ sub realtime_verify_bop {
 
   #important that we not pass replace option here,
   #because cust_payby->replace uses realtime_verify_bop!
-  $self->_tokenize_card($transaction,$options{'cust_payby'},$log);
+  $self->_tokenize_card($transaction,\%options,$log);
 
   ###
   # result handling
@@ -2162,7 +2174,7 @@ sub realtime_tokenize {
   return "No cust_payby" unless $options{'cust_payby'};
   $self->_bop_cust_payby_options(\%options);
   return '' unless $options{method} eq 'CC';
-  return '' if $options{payinfo} =~ /^99\d{14}$/; #already tokenized
+  return '' if $self->tokenized($options{payinfo}); #already tokenized
 
   ###
   # select a gateway
@@ -2253,7 +2265,7 @@ sub realtime_tokenize {
 
     #important that we not pass replace option here, 
     #because cust_payby->replace uses realtime_tokenize!
-    $self->_tokenize_card($transaction,$options{'cust_payby'},$log);
+    $self->_tokenize_card($transaction,\%options,$log);
 
   } else {
 
@@ -2263,6 +2275,12 @@ sub realtime_tokenize {
 
   return $error;
 
+}
+
+sub tokenized {
+  my $this = shift;
+  my $payinfo = shift;
+  $payinfo =~ /^99\d{14}$/;
 }
 
 =back

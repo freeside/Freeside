@@ -67,9 +67,9 @@ sub payinfo {
   my($self,$payinfo) = @_;
 
   if ( defined($payinfo) ) {
-    $self->paymask($self->mask_payinfo) unless $self->payinfo =~ /^99\d{14}$/; #make sure old mask is set
+    $self->paymask($self->mask_payinfo) unless $self->tokenized; #make sure old mask is set
     $self->setfield('payinfo', $payinfo);
-    $self->paymask($self->mask_payinfo) unless $payinfo =~ /^99\d{14}$/; #remask unless tokenizing
+    $self->paymask($self->mask_payinfo) unless $self->tokenized($payinfo); #remask unless tokenizing
   } else {
     $self->getfield('payinfo');
   }
@@ -130,7 +130,7 @@ sub mask_payinfo {
   # Check to see if it's encrypted...
   if ( ref($self) && $self->is_encrypted($payinfo) ) {
     return 'N/A';
-  } elsif ( $payinfo =~ /^99\d{14}$/ || $payinfo eq 'N/A' ) { #token
+  } elsif ( $self->tokenized($payinfo) || $payinfo eq 'N/A' ) { #token
     return 'N/A (tokenized)'; #?
   } else { # if not, mask it...
 
@@ -198,7 +198,7 @@ sub payinfo_check {
 
     my $payinfo = $self->payinfo;
     my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $payinfo =~ /^99\d{14}$/;
+    $cardtype = 'Tokenized' if $self->tokenized;
     $self->set('paycardtype', $cardtype);
 
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
@@ -233,6 +233,7 @@ sub payinfo_check {
     }
   }
 
+  return '';
 }
 
 =item payby_payinfo_pretty [ LOCALE ]
@@ -451,6 +452,15 @@ sub process_set_cardtype {
     my $error = $record->replace;
     die $error if $error;
   }
+}
+
+sub tokenized {
+  my $self = shift;
+  my $payinfo = scalar(@_) ? shift : $self->payinfo;
+  ## or just $self->cust_main->tokenized($payinfo) ??
+  ##   everything that currently uses this mixin is linked to cust_main,
+  ##   but just in case, false laziness w/ FS::cust_main::Billing_Realtime
+  $payinfo =~ /^99\d{14}$/;
 }
 
 =back
