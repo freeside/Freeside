@@ -2128,7 +2128,7 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
-  return '' if $payinfo =~ /^99\d{14}$/; #token
+  return '' if $self->tokenized($payinfo); #token
 
   my %bop_card_types = map { $_=>1 } values %{ card_types() };
   my $cardtype = cardtype($payinfo);
