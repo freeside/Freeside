@@ -641,6 +641,37 @@ END
 
 }
 
+sub _merge_into {
+  # for internal use: takes another cust_main_county object, transfers
+  # all existing references to this record to that one, and deletes this
+  # one.
+  my $record = shift;
+  my $other = shift or die "record to merge into must be provided";
+  my $new_taxnum = $other->taxnum;
+  my $old_taxnum = $record->taxnum;
+  if ($other->tax != $record->tax or
+      $other->exempt_amount != $record->exempt_amount) {
+    # don't assume these are the same.
+    warn "Found duplicate taxes (#$new_taxnum and #$old_taxnum) but they have different rates and can't be merged.\n";
+  } else {
+    warn "Merging tax #$old_taxnum into #$new_taxnum\n";
+    foreach my $table (qw(
+      cust_bill_pkg_tax_location
+      cust_bill_pkg_tax_location_void
+      cust_tax_exempt_pkg
+      cust_tax_exempt_pkg_void
+    )) {
+      foreach my $row (qsearch($table, { 'taxnum' => $old_taxnum })) {
+        $row->set('taxnum' => $new_taxnum);
+        my $error = $row->replace;
+        die $error if $error;
+      }
+    }
+    my $error = $record->delete;
+    die $error if $error;
+  }
+}
+
 sub _upgrade_data {
   my $class = shift;
   # assume taxes in Washington with district numbers, and null name, or 
@@ -663,6 +694,28 @@ sub _upgrade_data {
     }
     FS::upgrade_journal->set_done($journal);
   }
+  my @key_fields = (qw(city county state country district taxname taxclass));
+
+  # remove duplicates (except disabled records)
+  my @duplicate_sets = qsearch({
+    table => 'cust_main_county',
+    select => FS::Record::group_concat_sql('taxnum', ',') . ' AS taxnums, ' .
+              join(',', @key_fields),
+    extra_sql => ' WHERE tax > 0
+      GROUP BY city, county, state, country, district, taxname, taxclass
+      HAVING COUNT(*) > 1'
+  });
+  warn "Found ".scalar(@duplicate_sets)." set(s) of duplicate tax definitions\n"
+    if @duplicate_sets;
+  foreach my $set (@duplicate_sets) {
+    my @taxnums = split(',', $set->get('taxnums'));
+    my $first = FS::cust_main_county->by_key(shift @taxnums);
+    foreach my $taxnum (@taxnums) {
+      my $record = FS::cust_main_county->by_key($taxnum);
+      $record->_merge_into($first);
+    }
+  }
+
   # trim whitespace and convert to uppercase in the 'city' field.
   foreach my $record (qsearch({
     table => 'cust_main_county',
@@ -673,33 +726,10 @@ sub _upgrade_data {
     # create an exact duplicate.
     # so find the record this one would duplicate, and merge them.
     $record->check; # trims whitespace
-    my %match = map { $_ => $record->get($_) }
-      qw(city county state country district taxname taxclass);
+    my %match = map { $_ => $record->get($_) } @key_fields;
     my $other = qsearchs('cust_main_county', \%match);
     if ($other) {
-      my $new_taxnum = $other->taxnum;
-      my $old_taxnum = $record->taxnum;
-      if ($other->tax != $record->tax or
-          $other->exempt_amount != $record->exempt_amount) {
-        # don't assume these are the same.
-        warn "Found duplicate taxes (#$new_taxnum and #$old_taxnum) but they have different rates and can't be merged.\n";
-      } else {
-        warn "Merging tax #$old_taxnum into #$new_taxnum\n";
-        foreach my $table (qw(
-          cust_bill_pkg_tax_location
-          cust_bill_pkg_tax_location_void
-          cust_tax_exempt_pkg
-          cust_tax_exempt_pkg_void
-        )) {
-          foreach my $row (qsearch($table, { 'taxnum' => $old_taxnum })) {
-            $row->set('taxnum' => $new_taxnum);
-            my $error = $row->replace;
-            die $error if $error;
-          }
-        }
-        my $error = $record->delete;
-        die $error if $error;
-      }
+      $record->_merge_into($other);
     } else {
       # else there is no record this one duplicates, so just fix it
       my $error = $record->replace;
