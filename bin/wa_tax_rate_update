@@ -78,6 +78,7 @@ my $total_skipped = 0;
 while ( !$csv->eof ) {
   my $line = $csv->getline_hr($fh);
   my $district = $line->{Code} or next;
+  $district = sprintf('%04d', $district);
   my $tax = sprintf('%.1f', $line->{Rate} * 100);
   my $changed = 0;
   my $skipped = 0;
