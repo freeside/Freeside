@@ -2187,7 +2187,8 @@ sub realtime_tokenize {
                                   );
 
   my %supported_actions = $transaction->info('supported_actions');
-  return '' unless $supported_actions{'CC'} and grep(/^Tokenize$/,@{$supported_actions{'CC'}});
+  return '' unless $supported_actions{'CC'}
+                && grep /^Tokenize$/, @{$supported_actions{'CC'}};
 
   ###
   # check for banned credit card/ACH
