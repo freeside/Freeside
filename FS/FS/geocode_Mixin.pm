@@ -273,7 +273,7 @@ sub process_district_update {
     my $error = $self->replace;
     die $error if $error;
 
-    my %hash = map { $_ => $tax_info->{$_} } 
+    my %hash = map { $_ => uc( $tax_info->{$_} ) } 
       qw( district city county state country );
     $hash{'source'} = $method; # apply the update only to taxes we maintain
 
