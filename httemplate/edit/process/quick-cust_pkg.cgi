@@ -143,7 +143,18 @@ if ( $quotationnum ) {
   $quotation_pkg->quotationnum($quotationnum);
   $quotation_pkg->prospectnum($prospect_main->prospectnum) if $prospect_main;
 
-  #XXX handle new location
+  if ( $locationnum == -1 ) {
+    my $cust_location = FS::cust_location->new({
+      'custnum'     => $custnum,
+      'prospectnum' => $prospectnum,
+      map { $_ => scalar($cgi->param($_)) }
+        FS::cust_main->location_fields
+    });
+    $opt{'cust_location'} = $cust_location;
+  } else {
+    $opt{'locationnum'} = $locationnum;
+  }
+
   $error = $quotation_pkg->insert || $quotation_pkg->estimate;
 
 } else {

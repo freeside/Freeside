@@ -114,6 +114,22 @@ sub insert {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
 
+  #false laziness w/cust_main::Packages::order_pkg
+  if ( $options{'locationnum'} and $options{'locationnum'} != -1 ) {
+
+    $self->locationnum($options{'locationnum'});
+
+  } elsif ( $options{'cust_location'} ) {
+
+    my $error = $options{'cust_location'}->find_or_insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
+    }
+    $self->locationnum($options{'cust_location'}->locationnum);
+
+  }
+
   my $error = $self->SUPER::insert;
 
   if ( !$error and $self->discountnum ) {
