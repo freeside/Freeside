@@ -467,13 +467,13 @@ my @fields = (
                              ? '&nbsp;'. add_link(
                                  desc => 'Add more counties',
                                  col  => 'state',
-                                 label=> 'add&nbsp;more&nbsp;counties',
+                                 label=> 'add more counties',
                                  row  => $_[0],
                                  cgi  => $cgi,
                                ).
                                ' '. collapse_link(
                                  col  => 'state',
-                                 label=> 'remove&nbsp;all&nbsp;counties',
+                                 label=> 'remove all counties',
                                  row  => $_[0],
                                  cgi  => $cgi,
                                )
@@ -484,7 +484,7 @@ my @fields = (
               ? ''
               : '&nbsp;'. expand_link( desc  => 'Add States',
                                        row   => $_[0],
-                                       label => 'add&nbsp;states',
+                                       label => 'add states',
                                        cgi  => $cgi,
                                      )
           );
@@ -503,18 +503,18 @@ my @fields = (
                        ? '&nbsp;'. add_link(
                            desc => 'Add more cities',
                            col  => 'county',
-                           label=> 'add&nbsp;more&nbsp;cities',
+                           label=> 'add more cities',
                            row  => $_[0],
                            cgi  => $cgi,
                          ).
                          ' '. collapse_link(
                            col  => 'county',
-                           label=> 'remove&nbsp;all&nbsp;cities',
+                           label=> 'remove all cities',
                            row  => $_[0],
                            cgi  => $cgi,
                          )
                        : '&nbsp;'. remove_link( col  => 'county',
-                                                label=> 'remove&nbsp;county',
+                                                label=> 'remove county',
                                                 row  => $_[0],
                                                 cgi  => $cgi,
                                               );
@@ -525,7 +525,7 @@ my @fields = (
           : '(all)&nbsp;'.
               expand_link(   desc  => 'Add Counties',
                              row   => $_[0],
-                             label => 'add&nbsp;counties',
+                             label => 'add counties',
                              cgi  => $cgi,
                          );
       },
@@ -541,7 +541,7 @@ my @fields = (
           } else {
             $r->city. '&nbsp;'.
               remove_link( col  => 'city',
-                           label=> 'remove&nbsp;city',
+                           label=> 'remove city',
                            row  => $r,
                            cgi  => $cgi,
                          );
@@ -550,7 +550,7 @@ my @fields = (
           '(all)&nbsp;'.
             expand_link(   desc  => 'Add Cities',
                            row   => $r,
-                           label => 'add&nbsp;cities',
+                           label => 'add cities',
                            cgi  => $cgi,
                        );
         }
@@ -562,7 +562,7 @@ my @fields = (
         if ( $r->district ) {
           $r->district . '&nbsp;'.
             remove_link( col  => 'district',
-                         label=> 'remove&nbsp;district',
+                         label=> 'remove district',
                          row  => $r,
                          cgi  => $cgi,
                        );
