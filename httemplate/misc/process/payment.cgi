@@ -135,7 +135,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     validate($payinfo)
       or errorpage(gettext('invalid_card'));
 
-    unless ( $payinfo =~ /^99\d{14}$/ ) { #token
+    unless ( $cust_main->tokenized($payinfo) ) { #token
 
       my $cardtype = cardtype($payinfo);
 

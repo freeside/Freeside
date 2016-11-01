@@ -30,6 +30,10 @@ sub validate_moneyn {
   return '';
 }
 
+tie my %count_available_phones, 'Tie::IxHash', (
+  0 => 'Provisioned phone services',
+  1 => 'All available phone services',
+);
 
 %info = (
   'disabled' => 1,
@@ -62,6 +66,11 @@ sub validate_moneyn {
     'delay_cancel' => {
       'name' => 'Automatic suspension period before cancelling (configuration setting part_pkg-delay_cancel-days)',
       'type' => 'checkbox',
+    },
+    'count_available_phones' => { 'name' => 'Count taxable phone lines',
+      'type' => 'radio',
+      'options' => \%count_available_phones,
+      'default' => 0,
     },
 
     # miscellany--maybe put this in a separate module?
@@ -133,6 +142,8 @@ sub validate_moneyn {
     unused_credit_suspend
     unused_credit_change
     delay_cancel
+
+    count_available_phones
 
     a2billing_tariff
     a2billing_type
