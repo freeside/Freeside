@@ -145,8 +145,8 @@ if ( $quotationnum ) {
 
   if ( $locationnum == -1 ) {
     my $cust_location = FS::cust_location->new({
-      'custnum'     => $custnum,
-      'prospectnum' => $prospectnum,
+      'custnum'     => $cust_main ? $cust_main->custnum : '',
+      'prospectnum' => $prospect_main ? $prospect_main->prospectnum : '',
       map { $_ => scalar($cgi->param($_)) }
         FS::cust_main->location_fields
     });
