@@ -211,7 +211,7 @@ and then pass the form object to L</post> to submit it.
 sub form {
   my $self = shift;
   my $name = shift;
-  my ($form) = grep { $_->attr('name') eq $name } $self->forms;
+  my ($form) = grep { ($_->attr('name') || '') eq $name } $self->forms;
   $form;
 }
 
