@@ -26,7 +26,7 @@ $FS->post($form);
 
 # on success, gives a redirect to the payment receipt
 my $paynum;
-if ($FS->redirect =~ m[^/view/cust_pay.html\?(\d+)]) {
+if ($FS->redirect =~ m[^/view/cust_pay.html\?paynum=(\d+)]) {
   pass('payment processed');
   $paynum = $1;
 } elsif ( $FS->error ) {
