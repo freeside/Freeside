@@ -67,7 +67,7 @@ sub payinfo {
   my($self,$payinfo) = @_;
 
   if ( defined($payinfo) ) {
-    $self->paymask($self->mask_payinfo) unless $self->tokenized; #make sure old mask is set
+    $self->paymask($self->mask_payinfo) unless $self->paymask || $self->tokenized; #make sure old mask is set
     $self->setfield('payinfo', $payinfo);
     $self->paymask($self->mask_payinfo) unless $self->tokenized($payinfo); #remask unless tokenizing
   } else {
@@ -454,12 +454,17 @@ sub process_set_cardtype {
   }
 }
 
+=item tokenized [ PAYINFO ]
+
+Returns true if object payinfo is tokenized
+
+Optionally, an arbitrary payby and payinfo can be passed.
+
+=cut
+
 sub tokenized {
   my $self = shift;
   my $payinfo = scalar(@_) ? shift : $self->payinfo;
-  ## or just $self->cust_main->tokenized($payinfo) ??
-  ##   everything that currently uses this mixin is linked to cust_main,
-  ##   but just in case, false laziness w/ FS::cust_main::Billing_Realtime
   $payinfo =~ /^99\d{14}$/;
 }
 

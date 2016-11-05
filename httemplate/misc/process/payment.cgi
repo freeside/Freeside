@@ -193,6 +193,11 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
     errorpage("error saving info, payment not processed: $error")
       if $error;	
+
+  } elsif ( $payby eq 'CARD' ) { # not saving
+
+    $paymask = FS::payinfo_Mixin->mask_payinfo('CARD',$payinfo); # for untokenized but tokenizable payinfo
+
   }
 
 }
