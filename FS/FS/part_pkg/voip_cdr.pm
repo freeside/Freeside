@@ -189,7 +189,10 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'disposition_in' => { 'name' => 'Only charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
                          },
 
-    'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values: ',
+    'disposition_prefix' => { 'name' => 'Only charge for CDRs where the Disposition starts with: ',
+                         },
+
+    'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these (comma-separated) values: ',
     },
 
     'skip_dcontext' => { 'name' => 'Do not charge for CDRs where dcontext is set to any of these (comma-separated) values: ',
@@ -343,7 +346,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        use_carrierid 
                        use_cdrtypenum ignore_cdrtypenum
                        use_calltypenum ignore_calltypenum
-                       ignore_disposition disposition_in
+                       ignore_disposition disposition_in disposition_prefix
                        skip_dcontext skip_dcontext_suffix skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
@@ -574,7 +577,13 @@ sub check_chargable {
   return "disposition NOT IN ( ". $self->option_cacheable('disposition_in')." )"
     if $self->option_cacheable('disposition_in') =~ /\S/
     && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('disposition_in'));
-  
+
+  my $disposition_prefix = $self->option_cacheable('disposition_prefix');
+  my $len_dis_prefix = length($disposition_prefix);
+  return "disposition does not start with $disposition_prefix"
+    if $len_dis_prefix
+    && substr($cdr->disposition, 0, $len_dis_prefix) ne $disposition_prefix;
+
   return "disposition IN ( ". $self->option_cacheable('ignore_disposition')." )"
     if $self->option_cacheable('ignore_disposition') =~ /\S/
     && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('ignore_disposition'));
