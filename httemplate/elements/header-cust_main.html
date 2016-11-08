@@ -12,7 +12,6 @@ Examples:
 <& /elements/header.html, {
              'title' => $title,
              'title_noescape' => $title_noescape,
-             'head'  => $head,
              'nobr'  => 1,
           }
 &>
@@ -86,11 +85,5 @@ my $status = $cust_main->status_label;
 $status .= ' (Cancelled)' if $cust_main->is_status_delay_cancel;
 $title_noescape .= ' (<B><FONT COLOR="#'. $cust_main->statuscolor. '">'. $status.  '</FONT></B>)';
 $title .= " ($status)";
-
-my $ie_compat = $conf->config('ie-compatibility_mode');
-my $head = '';
-if ( $ie_compat ) {
-  $head = qq(<meta http-equiv="X-UA-Compatible" content="IE=$ie_compat" />);
-}
 
 </%init>
