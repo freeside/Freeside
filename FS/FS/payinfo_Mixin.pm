@@ -67,7 +67,7 @@ sub payinfo {
   my($self,$payinfo) = @_;
 
   if ( defined($payinfo) ) {
-    $self->paymask($self->mask_payinfo) unless $self->paymask || $self->tokenized; #make sure old mask is set
+    $self->paymask($self->mask_payinfo) unless $self->getfield('paymask') || $self->tokenized; #make sure old mask is set
     $self->setfield('payinfo', $payinfo);
     $self->paymask($self->mask_payinfo) unless $self->tokenized($payinfo); #remask unless tokenizing
   } else {
