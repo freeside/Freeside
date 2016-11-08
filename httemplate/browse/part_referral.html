@@ -1,4 +1,4 @@
-<% include("/elements/header.html","Advertising source Listing" ) %>
+<& /elements/header.html, "Advertising source Listing" &>
 
 Where a customer heard about your service. Tracked for informational purposes.
 <BR><BR>
@@ -13,7 +13,11 @@ Where a customer heard about your service. Tracked for informational purposes.
            '( <a href="'. $cgi->self_url. '">show disabled advertising sources</a> )'; }
 %>
 
-<% include('/elements/table-grid.html') %>
+% ###
+% # Header
+% ###
+
+<& /elements/table-grid.html &>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
@@ -29,7 +33,7 @@ Where a customer heard about your service. Tracked for informational purposes.
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Agent</TH>
 % } 
 
-  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% scalar(keys %after) %>>Customers and Packages</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% scalar(keys %after) %>>Prospects, Customers and Packages</TH>
 </TR>
 % for my $period ( keys %after ) { 
 
@@ -37,6 +41,10 @@ Where a customer heard about your service. Tracked for informational purposes.
 % } 
 
 </TR>
+
+% ###
+% # Rows
+% ###
 
 %foreach my $part_referral ( FS::part_referral->all_part_referral(1,!scalar($cgi->param('showdisabled'))) ) {
 %
@@ -85,6 +93,8 @@ Where a customer heard about your service. Tracked for informational purposes.
 %                        $today-$after{$period},
 %                        $today+$before{$period},
 %                      );
+%          $prospect_sth->execute(@param) or die $prospect_sth->errstr;
+%          my $num_prospect = $prospect_sth->fetchrow_arrayref->[0];
 %          $cust_sth->execute(@param) or die $cust_sth->errstr;
 %          my $num_cust = $cust_sth->fetchrow_arrayref->[0];
 %          $pkg_sth->execute(@param) or die $pkg_sth->errstr;
@@ -92,6 +102,10 @@ Where a customer heard about your service. Tracked for informational purposes.
 
           <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" ALIGN="right">
             <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+              <TR>
+                <TD ALIGN="right"><B><% $num_prospect %></B></TD>
+                <TD ALIGN="left">&nbsp;prospects&nbsp;</TD>
+              </TR>
               <TR>
                 <TD ALIGN="right"><B><% $num_cust %></B></TD>
                 <TD ALIGN="left">&nbsp;customers&nbsp;</TD>
@@ -106,10 +120,20 @@ Where a customer heard about your service. Tracked for informational purposes.
 
       </TR>
 % } 
+
+
+% ###
+% # Bottom Totals
+% ###
+
+%  $prospect_statement =~ s/AND refnum = \?//;
+%  $prospect_sth = dbh->prepare($prospect_statement)
+%    or die dbh->errstr;
 %
 %  $cust_statement =~ s/AND refnum = \?//;
 %  $cust_sth = dbh->prepare($cust_statement)
 %    or die dbh->errstr;
+%
 %  $pkg_statement =~ s/AND h_pkg_referral\.refnum = \?//;
 %  $pkg_sth = dbh->prepare($pkg_statement)
 %    or die dbh->errstr;
@@ -120,6 +144,8 @@ Where a customer heard about your service. Tracked for informational purposes.
 %          my @param = ( $today-$after{$period},
 %                        $today+$before{$period},
 %                      );
+%          $prospect_sth->execute(@param) or die $prospect_sth->errstr;
+%          my $num_prospect = $prospect_sth->fetchrow_arrayref->[0];
 %          $cust_sth->execute( @param ) or die $cust_sth->errstr;
 %          my $num_cust = $cust_sth->fetchrow_arrayref->[0];
 %          $pkg_sth->execute(@param) or die $pkg_sth->errstr;
@@ -127,6 +153,10 @@ Where a customer heard about your service. Tracked for informational purposes.
 
           <TD CLASS="inv" BGCOLOR="#dddddd" ALIGN="right">
             <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+              <TR>
+                <TD ALIGN="right"><B><% $num_prospect %></B></TD>
+                <TD ALIGN="left">&nbsp;prospects&nbsp;</TD>
+              </TR>
               <TR>
                 <TD ALIGN="right"><B><% $num_cust %></B></TD>
                 <TD ALIGN="left">&nbsp;customers&nbsp;</TD>
@@ -142,8 +172,8 @@ Where a customer heard about your service. Tracked for informational purposes.
 
       </TR>
     </TABLE>
-  </BODY>
-</HTML>
+
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"
@@ -178,6 +208,15 @@ my %before = (
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $show_agentnums = ( scalar($curuser->agentnums) > 1 );
+
+my $prospect_statement = "SELECT COUNT(*) FROM h_prospect_main
+                           WHERE history_action = 'insert'
+                             AND refnum = ?
+                             AND history_date >= ?
+                             AND history_date < ?
+                             AND ". $curuser->agentnums_sql;
+my $prospect_sth = dbh->prepare($prospect_statement)
+  or die dbh->errstr;
 
 my $cust_statement = "SELECT COUNT(*) FROM h_cust_main
                        WHERE history_action = 'insert'
