@@ -691,7 +691,9 @@ sub entry2link {
 
       #$target = $cgi->self_url;
       #XXX support installs outside /freeside in 4.x
-      $target = "/freeside/view/cust_main.cgi?show=$show;custnum=". $cust_main->custnum;
+      $target = '/freeside/view/cust_main.cgi?'.
+                  'show='. $entry->{show}.
+                  ';custnum='. $cust_main->custnum;
 
       $cgi->param('show', $show);
 
