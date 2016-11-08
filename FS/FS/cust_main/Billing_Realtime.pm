@@ -375,13 +375,14 @@ sub _bop_content {
   \%content;
 }
 
+# updates payinfo and cust_payby options with token from transaction
 sub _tokenize_card {
   my ($self,$transaction,$options) = @_;
   if ( $transaction->can('card_token') 
        and $transaction->card_token 
        and !$self->tokenized($options->{'payinfo'})
   ) {
-    $options->{'payinfo'} = $transaction->card_token; #for creating cust_pay
+    $options->{'payinfo'} = $transaction->card_token;
     $options->{'cust_payby'}->payinfo($transaction->card_token) if $options->{'cust_payby'};
     return $transaction->card_token;
   }
@@ -417,6 +418,19 @@ sub realtime_bop {
 
   # set fields from passed cust_payby
   $self->_bop_cust_payby_options(\%options);
+
+  # possibly run a separate transaction to tokenize card number,
+  #   so that we never store tokenized card info in cust_pay_pending
+  if (!$self->tokenized($options{'payinfo'})) {
+    my $token_error = $self->realtime_tokenize(\%options);
+    return $token_error if $token_error;
+    # in theory, all cust_payby will be tokenized during original save,
+    # so we shouldn't get here with opt cust_payby...but just in case...
+    if ($options{'cust_payby'}) {
+      $token_error = $options{'cust_payby'}->replace;
+      return $token_error if $token_error;
+    }
+  }
 
   ### 
   # optional credit card surcharge
@@ -801,6 +815,8 @@ sub realtime_bop {
   # Tokenize
   ###
 
+  # This block will only run if the B::OP module supports card_token but not the Tokenize transaction;
+  #   if that never happens, we should get rid of it (as it has the potential to store real card numbers on error)
   if (my $card_token = $self->_tokenize_card($transaction,\%options)) {
     # cpp will be replaced in _realtime_bop_result
     $cust_pay_pending->payinfo($card_token);
@@ -906,7 +922,7 @@ sub _realtime_bop_result {
     or return "no payment gateway in arguments to _realtime_bop_result";
 
   $cust_pay_pending->status($transaction->is_success() ? 'captured' : 'declined');
-  my $cpp_captured_err = $cust_pay_pending->replace; #also saves tokenization
+  my $cpp_captured_err = $cust_pay_pending->replace; #also saves post-transaction tokenization, if that happens
   return $cpp_captured_err if $cpp_captured_err;
 
   if ( $transaction->is_success() ) {
@@ -1755,6 +1771,15 @@ sub realtime_verify_bop {
   return "No cust_payby" unless $options{'cust_payby'};
   $self->_bop_cust_payby_options(\%options);
 
+  # possibly run a separate transaction to tokenize card number,
+  #   so that we never store tokenized card info in cust_pay_pending
+  if (!$self->tokenized($options{'payinfo'})) {
+    my $token_error = $self->realtime_tokenize(\%options);
+    return $token_error if $token_error;
+    #important that we not replace cust_payby here,
+    #because cust_payby->replace uses realtime_verify_bop!
+  }
+
   ###
   # select a gateway
   ###
@@ -2113,13 +2138,15 @@ sub realtime_verify_bop {
   # Tokenize
   ###
 
-  #important that we not replace cust_payby here,
-  #because cust_payby->replace uses realtime_verify_bop!
+  # This block will only run if the B::OP module supports card_token but not the Tokenize transaction;
+  #   if that never happens, we should get rid of it (as it has the potential to store real card numbers on error)
   if (my $card_token = $self->_tokenize_card($transaction,\%options)) {
     $cust_pay_pending->payinfo($card_token);
     my $cpp_token_err = $cust_pay_pending->replace;
-    #this leaves real card number in cust_payby, but can't do much else if cust_payby won't replace
+    #this leaves real card number in cust_pay_pending, but can't do much else if cpp won't replace
     return $cpp_token_err if $cpp_token_err;
+    #important that we not replace cust_payby here,
+    #because cust_payby->replace uses realtime_verify_bop!
   }
 
   ###
@@ -2134,19 +2161,24 @@ sub realtime_verify_bop {
 
 =item realtime_tokenize [ OPTION => VALUE ... ]
 
-If possible, runs a tokenize transaction.
+If possible and necessary, runs a tokenize transaction.
 In order to be possible, a credit card cust_payby record
 must be passed and a Business::OnlinePayment gateway capable
 of Tokenize transactions must be configured for this user.
+Is only necessary if payinfo is not yet tokenized.
 
 Returns the empty string if the authorization was sucessful
-or was not possible (thus allowing this to be safely called with
+or was not possible/necessary (thus allowing this to be safely called with
 non-tokenizable records/gateways, without having to perform separate tests),
 or an error message otherwise.
 
-Option I<cust_payby> should be passed, even if it's not yet been inserted.
+Option I<cust_payby> may be passed, even if it's not yet been inserted.
 Object will be tokenized if possible, but that change will not be
 updated in database (must be inserted/replaced afterwards.)
+
+Otherwise, options I<method>, I<payinfo> and other cust_payby fields
+may be passed.  If options are passed as a hashref, I<payinfo>
+will be updated as appropriate in the passed hashref.
 
 =cut
 
@@ -2157,14 +2189,16 @@ sub realtime_tokenize {
   my $log = FS::Log->new('FS::cust_main::Billing_Realtime::realtime_tokenize');
 
   my %options = ();
+  my $outoptions; #for returning cust_payby/payinfo
   if (ref($_[0]) eq 'HASH') {
     %options = %{$_[0]};
+    $outoptions = $_[0];
   } else {
     %options = @_;
+    $outoptions = \%options;
   }
 
   # set fields from passed cust_payby
-  return "No cust_payby" unless $options{'cust_payby'};
   $self->_bop_cust_payby_options(\%options);
   return '' unless $options{method} eq 'CC';
   return '' if $self->tokenized($options{payinfo}); #already tokenized
@@ -2186,7 +2220,6 @@ sub realtime_tokenize {
   # check for tokenize ability
   ###
 
-  # just create transaction now, so it loads gateway_module
   my $transaction = new $namespace( $payment_gateway->gateway_module,
                                     $self->_bop_options(\%options),
                                   );
@@ -2265,11 +2298,11 @@ sub realtime_tokenize {
 
     #important that we not replace cust_payby here, 
     #because cust_payby->replace uses realtime_tokenize!
-    $self->_tokenize_card($transaction,\%options);
+    $self->_tokenize_card($transaction,$outoptions);
 
   } else {
 
-    $error = $transaction->error_message || 'Unknown error';
+    $error = $transaction->error_message || 'Unknown error when tokenizing card';
 
   }
 
