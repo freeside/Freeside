@@ -15,7 +15,6 @@
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
 
-<% mt('Payment') |h %> 
 <% ntable("#cccccc", 2) %>
 
 % my %date_args = (
