@@ -11,6 +11,7 @@ use FS::cust_location;
 use FS::cust_main;
 use FS::contact;
 use FS::qual;
+use FS::part_referral;
 
 $DEBUG = 0;
 
@@ -323,6 +324,17 @@ sub agent {
   qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 }
 
+=item part_referral
+
+Returns the advertising source (see L<FS::part_referral>) for this customer.
+
+=cut
+
+sub part_referral {
+  my $self = shift;
+  qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
+}
+
 =item convert_cust_main
 
 Converts this prospect to a customer.
@@ -394,13 +406,16 @@ sub search {
   my @where = ();
   my $orderby;
 
-  ##
-  # parse agent
-  ##
-
+  #agent
   if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
     push @where,
       "prospect_main.agentnum = $1";
+  }
+
+  #refnum
+  if ( $params->{'refnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where,
+      "prospect_main.refnum = $1";
   }
 
   ##
