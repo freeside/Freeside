@@ -3,7 +3,7 @@
 Examples:
 
   <& /elements/header-cust_main.html,
-       view      => 'Basics', #required
+       view      => 'basics', #required
        cust_main => $cust_main, # cust_main or custnum is required
        custnum   => $custnum,   #
   &>
@@ -33,7 +33,6 @@ Examples:
 %   }
 </TABLE>
 % }
-
 <& /view/cust_main/menu.html, cust_main => $cust_main, show => $opt{'view'} &>
 <BR>
 
@@ -56,7 +55,6 @@ function areyousure_popup(message, action, actionlabel) {
 }
 </SCRIPT>
 
-<br>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
