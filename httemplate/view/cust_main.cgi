@@ -1,51 +1,4 @@
-<& /elements/header.html, {
-             'title' => $title,
-             'title_noescape' => $title_noescape,
-             'head'  => $head,
-             'nobr'  => 1,
-          }
-&>
-
-% my @part_tag = $cust_main->part_tag;
-% if ( $conf->config('cust_tag-location') eq 'top' && @part_tag ) {
-<TABLE STYLE="margin-bottom:8px" CELLSPACING=2>
-%   foreach my $part_tag ( @part_tag ) {
-<TR>
-  <TD>
-      <FONT SIZE="+1"
-            <% length($part_tag->tagcolor)
-                 ? 'STYLE="background-color:#'.$part_tag->tagcolor.'"'
-                 : ''
-      %>><% $part_tag->tagname.': '. $part_tag->tagdesc |h %></FONT>
-  </TD>
-</TR>
-%   }
-</TABLE>
-% }
-
-<& cust_main/menu.html, cust_main => $cust_main, show => $view &>
-<BR>
-
-<DIV CLASS="fstabcontainer">
-
-<& /elements/init_overlib.html &>
-
-<SCRIPT TYPE="text/javascript">
-function areyousure(href, message) {
-  if (confirm(message) == true)
-    window.location.href = href;
-}
-function areyousure_popup(message, action, actionlabel) {
-  if (confirm(message) == true) {
-<% include('/elements/popup_link_onclick.html',
-     'js_action' => 'action',
-     'js_actionlabel' => 'actionlabel',
-   ) %>
-  }
-}
-</SCRIPT>
-
-<br>
+<& /elements/header-cust_main.html, view=>$view, cust_main=>$cust_main &>
 
 % ###
 % # Basics
@@ -225,21 +178,6 @@ my $cust_main = qsearchs( {
 });
 die "Customer not found!" unless $cust_main;
 
-my $title = mt("Customer").' #'. $cust_main->display_custnum. ': ';
-my $title_noescape = $title. encode_entities($cust_main->name);
-$title .= $cust_main->name;
-
-if ( $curuser->num_agents ) {
-  $title_noescape =
-    encode_entities($cust_main->agent->agent). " $title_noescape";
-  $title = $cust_main->agent->agent. " $title";
-}
-
-my $status = $cust_main->status_label;
-$status .= ' (Cancelled)' if $cust_main->is_status_delay_cancel;
-$title_noescape .= ' (<B><FONT COLOR="#'. $cust_main->statuscolor. '">'. $status.  '</FONT></B>)';
-$title .= " ($status)";
-
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',
        emt('Basics')           => 'basics',
@@ -272,11 +210,5 @@ if ($view eq 'last') {
 }
 
 $view = 'basics' if $view eq 'jumbo';
-
-my $ie_compat = $conf->config('ie-compatibility_mode');
-my $head = '';
-if ( $ie_compat ) {
-  $head = qq(<meta http-equiv="X-UA-Compatible" content="IE=$ie_compat" />);
-}
 
 </%init>
