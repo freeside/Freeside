@@ -1,5 +1,8 @@
+% if ( $quotation->custnum ) {
+<& /elements/header-cust_main.html, view=>'quotations', custnum=>$quotation->custnum &>
+<h2>Quotation #<% $quotationnum %></h2>
+% } else { #eventually, header-prospect_main.html
 <& /elements/header.html, mt('Quotation View'), $menubar &>
-
 <& /elements/init_overlib.html &>
 
 <SCRIPT TYPE="text/javascript">
@@ -8,6 +11,8 @@ function areyousure(href, message) {
     window.location.href = href;
 }
 </SCRIPT>
+
+% }
 
 % unless ( $quotation->disabled eq 'Y' ) {
 
@@ -116,7 +121,11 @@ function areyousure(href, message) {
 % }
 % #plaintext quotations? <PRE><% join('', $quotation->print_text() ) %></PRE>
 
-<& /elements/footer.html &>
+% if ( $quotation->custnum ) {
+  <& /elements/footer-cust_main.html &>
+% } else {
+  <& /elements/footer.html &>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
