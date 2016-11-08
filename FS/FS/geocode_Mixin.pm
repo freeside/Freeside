@@ -11,6 +11,7 @@ use FS::cust_pkg;
 use FS::cust_location;
 use FS::cust_tax_location;
 use FS::part_pkg;
+use FS::part_pkg_taxclass;
 
 $DEBUG = 0;
 $me = '[FS::geocode_Mixin]';
@@ -253,8 +254,7 @@ Queueable function to update the tax district code using the selected method
 sub process_district_update {
   my $class = shift;
   my $id = shift;
-
-  local $DEBUG = 1;
+  my $log = FS::Log->new('FS::cust_location::process_district_update');
 
   eval "use FS::Misc::Geo qw(get_district); use FS::Conf; use $class;";
   die $@ if $@;
@@ -267,68 +267,78 @@ sub process_district_update {
 
   # dies on error, fine
   my $tax_info = get_district({ $self->location_hash }, $method);
-  
-  if ( $tax_info ) {
-    $self->set('district', $tax_info->{'district'} );
-    my $error = $self->replace;
-    die $error if $error;
+  return unless $tax_info;
 
-    my %hash = map { $_ => uc( $tax_info->{$_} ) } 
-      qw( district city county state country );
-    $hash{'source'} = $method; # apply the update only to taxes we maintain
+  $self->set('district', $tax_info->{'district'} );
+  my $error = $self->replace;
+  die $error if $error;
 
-    my @old = qsearch('cust_main_county', \%hash);
-    if ( @old ) {
-      # prune any duplicates rather than updating them
-      my %keep; # key => cust_main_county record
-      foreach my $cust_main_county (@old) {
-        my $key = join('.', $cust_main_county->city ,
-                            $cust_main_county->district ,
-                            $cust_main_county->taxclass
-                      );
-        if ( exists $keep{$key} ) {
-          my $disable_this = $cust_main_county;
-          # prefer records that have a tax name
-          if ( $cust_main_county->taxname and not $keep{$key}->taxname ) {
-            $disable_this = $keep{$key};
-            $keep{$key} = $cust_main_county;
-          }
-          # disable by setting the rate to zero, and setting source to null
-          # so it doesn't get auto-updated in the future. don't actually 
-          # delete it, that produces orphan records
-          warn "disabling tax rate #" .
-            $disable_this->taxnum .
-            " because it's a duplicate for $key\n"
-            if $DEBUG;
-          # by setting its rate to zero, and never updating
-          # it again
-          $disable_this->set('tax' => 0);
-          $disable_this->set('source' => '');
-          $error = $disable_this->replace;
-          die $error if $error;
-        }
+  my %hash = map { $_ => uc( $tax_info->{$_} ) } 
+    qw( district city county state country );
+  $hash{'source'} = $method; # apply the update only to taxes we maintain
 
-        $keep{$key} ||= $cust_main_county;
+  my @classes = FS::part_pkg_taxclass->taxclass_names;
+  my $taxname = $conf->config('tax_district_taxname');
+  # there must be exactly one cust_main_county for each district+taxclass.
+  # do NOT exclude taxes that are zero.
+  foreach my $taxclass (@classes) {
+    my @existing = qsearch('cust_main_county', {
+      %hash,
+      'taxclass' => $taxclass
+    });
 
-      }
-      foreach my $key (keys %keep) {
-        my $cust_main_county = $keep{$key};
-        warn "updating tax rate #".$cust_main_county->taxnum.
-          " for $key" if $DEBUG;
-        # update the tax rate only
-        $cust_main_county->set('tax', $tax_info->{'tax'});
-        $error ||= $cust_main_county->replace;
-      }
-    } else {
-      # make a new tax record, and mark it so we can find it later
-      $tax_info->{'source'} = $method;
-      my $new = new FS::cust_main_county $tax_info;
-      warn "creating tax rate for district ".$tax_info->{'district'} if $DEBUG;
+    if ( scalar(@existing) == 0 ) {
+
+      # then create one with the assigned tax name, and the tax rate from
+      # the lookup.
+      my $new = new FS::cust_main_county({
+        %hash,
+        'taxclass'      => $taxclass,
+        'taxname'       => $taxname,
+        'tax'           => $tax_info->{tax},
+        'exempt_amount' => 0,
+      });
+      $log->info("creating tax rate for district ".$tax_info->{'district'});
       $error = $new->insert;
+
+    } else {
+
+      my $to_update = $existing[0];
+      # if there's somehow more than one, find the best candidate to be
+      # updated:
+      # - prefer tax > 0 over tax = 0 (leave disabled records disabled)
+      # - then, prefer taxname = the designated taxname
+      if ( scalar(@existing) > 1 ) {
+        $log->warning("tax district ".$tax_info->{district}." has multiple $method taxes.");
+        foreach (@existing) {
+          if ( $to_update->tax == 0 ) {
+            if ( $_->tax > 0 and $to_update->tax == 0 ) {
+              $to_update = $_;
+            } elsif ( $_->tax == 0 and $to_update->tax > 0 ) {
+              next;
+            } elsif ( $_->taxname eq $taxname and $to_update->tax ne $taxname ) {
+              $to_update = $_;
+            }
+          }
+        }
+        # don't remove the excess records here; upgrade does that.
+      }
+      my $taxnum = $to_update->taxnum;
+      if ( $to_update->tax == 0 ) {
+        $log->debug("tax#$taxnum is set to zero; not updating.");
+      } elsif ( $to_update->tax == $tax_info->{tax} ) {
+        # do nothing, no need to update
+      } else {
+        $to_update->set('tax', $tax_info->{tax});
+        $log->info("updating tax#$taxnum with new rate ($tax_info->{tax}).");
+        $error = $to_update->replace;
+      }
     }
+
     die $error if $error;
 
-  }
+  } # foreach $taxclass
+
   return;
 }
 

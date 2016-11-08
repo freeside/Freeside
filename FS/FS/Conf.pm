@@ -4728,7 +4728,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'tax_district_method',
-    'section'     => 'UI',
+    'section'     => 'billing', # 'UI', #???
     'description' => 'The method to use to look up tax district codes.',
     'type'        => 'select',
     #'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
@@ -4737,6 +4737,13 @@ and customer address. Include units.',
                        ''         => '',
                        'wa_sales' => 'Washington sales tax',
                      ],
+  },
+
+  {
+    'key'         => 'tax_district_taxname',
+    'section'     => 'billing',
+    'description' => 'The tax name to display on the invoice for district sales taxes. Defaults to "Tax".',
+    'type'        => 'text',
   },
 
   {

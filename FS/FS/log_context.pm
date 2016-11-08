@@ -14,6 +14,7 @@ my @contexts = ( qw(
   FS::Misc::Geo::standardize_uscensus
   FS::saved_search::send
   FS::saved_search::render
+  FS::cust_location::process_district_update
   Cron::bill
   Cron::upload
   spool_upload
