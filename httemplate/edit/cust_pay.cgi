@@ -1,24 +1,19 @@
 % if ( $link eq 'popup' ) { 
   <& /elements/header-popup.html, $title  &>
 % } else { 
-  <& /elements/header.html, $title, '' &>
+  <& /elements/header-cust_main.html, view=>'payment_history', custnum=>$custnum &>
+  <h2><% $title |h %></h2>
 % } 
 
 <& /elements/init_calendar.html &>
 
 <& /elements/error.html &>
 
-% unless ( $link eq 'popup' ) { 
-    <% small_custview($custnum, $conf->config('countrydefault')) %>
-% } 
-
 <FORM NAME="PaymentForm" ACTION="<% popurl(1) %>process/cust_pay.cgi" METHOD=POST onSubmit="document.PaymentForm.submitButton.disabled=true">
 <INPUT TYPE="hidden" NAME="link" VALUE="<% $link %>">
 <INPUT TYPE="hidden" NAME="linknum" VALUE="<% $linknum %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
-
-<BR>
 
 <% mt('Payment') |h %> 
 <% ntable("#cccccc", 2) %>
@@ -122,7 +117,7 @@
     </BODY>
     </HTML>
 % } else { 
-    <& /elements/footer.html &>
+    <& /elements/footer-cust_main.html &>
 % } 
 
 <%init>
