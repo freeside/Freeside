@@ -6,6 +6,7 @@
              'header'        => [ '#',
                                   'Prospect',
                                   'Contact(s)',
+                                  'Advertising source',
                                 ],
              'fields'        => [ 'prospectnum',
                                   'name',
@@ -16,11 +17,17 @@
                                           }
                                           $pm->prospect_contact
                                     ];
+                                    ''
+                                  },
+                                  sub {
+                                    my $pr = shift->part_referral;
+                                    $pr ? $pr->referral : '';
                                   },
                                 ],
              'links'         => [ '',
                                   $link,
                                   '', #link to contact edit???
+                                  '',
                                 ],
              'agent_virt'    => 1,
              'disableable'   => 1,
@@ -37,7 +44,7 @@ my %search_hash = ();
 
 #scalars
 my @scalars = qw (
-  agentnum 
+  agentnum refnum
 );
 
 for my $param ( @scalars ) {
