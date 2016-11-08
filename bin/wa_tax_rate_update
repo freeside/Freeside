@@ -89,6 +89,7 @@ while ( !$csv->eof ) {
       district  => $district,
       taxclass  => $opt_c,
       taxname   => $opt_t,
+      tax       => { op => '>', value => '0' },
   });
   if ($opt_t eq '') {
     push @rates, qsearch('cust_main_county', {
@@ -96,7 +97,8 @@ while ( !$csv->eof ) {
       state     => 'WA', # this is specific to WA
       district  => $district,
       taxclass  => $opt_c,
-      taxname   => 'Tax'
+      taxname   => 'Tax',
+      tax       => { op => '>', value => '0' },
     });
   }
   foreach my $rate (@rates) {
