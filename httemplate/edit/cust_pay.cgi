@@ -15,7 +15,7 @@
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
 
-<% ntable("#cccccc", 2) %>
+<TABLE CLASS="fsinnerbox">
 
 % my %date_args = (
 %   'name'    =>  '_date',
@@ -35,8 +35,8 @@
 % }
 
 <TR>
-  <TD ALIGN="right"><% mt('Amount') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $money_char |h %><INPUT TYPE="text" NAME="paid" ID="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
+  <TH ALIGN="right"><% mt('Amount') |h %></TH>
+  <TD><% $money_char |h %><INPUT TYPE="text" NAME="paid" ID="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
 </TR>
 
 % if ( $conf->exists('part_pkg-term_discounts') ) {
@@ -48,29 +48,29 @@
 
 % if ( $payby eq 'BILL' ) { 
   <TR>
-    <TD ALIGN="right"><% mt('Check #') |h %></TD>
+    <TH ALIGN="right"><% mt('Check #') |h %></TH>
     <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
   </TR>
 % }
 % elsif ( $payby eq 'CASH' and $conf->exists('require_cash_deposit_info') ) {
   <TR>
-    <TD ALIGN="right"><% mt('Bank') |h %></TD>
+    <TH ALIGN="right"><% mt('Bank') |h %></TH>
     <TD COLSPAN=3><INPUT TYPE="text" NAME="bank" VALUE="<% $cgi->param('bank') %>"></TD>
   </TR>
   <TR>
-    <TD ALIGN="right"><% mt('Check #') |h %></TD>
+    <TH ALIGN="right"><% mt('Check #') |h %></TH>
     <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
   </TR>
   <TR>
-    <TD ALIGN="right"><% mt('Teller #') |h %></TD>
+    <TH ALIGN="right"><% mt('Teller #') |h %></TH>
     <TD COLSPAN=2><INPUT TYPE="text" NAME="teller" VALUE="<% $cgi->param('teller') %>" SIZE=10></TD>
   </TR>
   <TR>
-    <TD ALIGN="right"><% mt('Depositor') |h %></TD>
+    <TH ALIGN="right"><% mt('Depositor') |h %></TH>
     <TD COLSPAN=3><INPUT TYPE="text" NAME="depositor" VALUE="<% $cgi->param('depositor') %>"></TD>
   </TR>
   <TR>
-    <TD ALIGN="right"><% mt('Account #') |h %></TD>
+    <TH ALIGN="right"><% mt('Account #') |h %></TH>
     <TD COLSPAN=2><INPUT TYPE="text" NAME="account" VALUE="<% $cgi->param('account') %>" SIZE=18></TD>
   </TR>
 % }
@@ -89,8 +89,8 @@
 
 % } elsif ( $link eq 'invnum' ) { 
 
-  <TD ALIGN="right"><% mt('Apply to') |h %></TD>
-  <TD COLSPAN=2 BGCOLOR="#ffffff">Invoice #<B><% $linknum %></B> only</TD>
+  <TH ALIGN="right"><% mt('Apply to') |h %></TH>
+  <TD COLSPAN=2>Invoice #<B><% $linknum %></B> only</TD>
   <INPUT TYPE="hidden" NAME="apply" VALUE="">
 
 % } 
