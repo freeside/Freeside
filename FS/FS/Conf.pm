@@ -5547,14 +5547,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'ie-compatibility_mode',
-    'section'     => 'UI',
-    'description' => "Compatibility mode META tag for Internet Explorer, used on the customer view page.  Not necessary in normal operation unless custom content (notes, cust_main-custom_link) is included on customer view that is incompatibile with newer IE verisons.",
-    'type'        => 'select',
-    'select_enum' => [ '', '7', 'EmulateIE7', '8', 'EmulateIE8' ],
-  },
-
-  {
     'key'         => 'disable_payauto_default',
     'section'     => 'payments',
     'description' => 'Disable the "Charge future payments to this (card|check) automatically" checkbox from defaulting to checked.',
