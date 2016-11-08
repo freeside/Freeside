@@ -1,6 +1,6 @@
-<& /elements/header.html, mt("Process [_1] payment",$type{$payby})  &>
-<& /elements/small_custview.html, $cust_main, '', '', popurl(2) . "view/cust_main.cgi" &>
-<BR>
+<& /elements/header-cust_main.html, view=>'payment_history', cust_main=>$cust_main &>
+
+<h2><% emt("Process [_1] payment",$type{$payby}) %></h2>
 
 <FORM NAME="OneTrueForm" ACTION="process/payment.cgi" METHOD="POST" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum"   VALUE="<% $custnum %>">
@@ -309,7 +309,7 @@ function change_batch_checkbox () {
 <INPUT TYPE="submit" NAME="process" VALUE="<% mt('Process payment') |h %>">
 </FORM>
 
-<& /elements/footer.html &>
+<& /elements/footer-cust_main.html &>
 <%once>
 
 my %weight = (
