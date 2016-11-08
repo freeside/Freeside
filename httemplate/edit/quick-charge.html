@@ -1,9 +1,11 @@
 % if ( $quotationnum ) {
-<& /elements/header.html, mt('One-time charge'), '',
-            ( ($quotationnum || $cgi->param('error')) ? '' : 'onload="addRow()"' ),
-&>
+<& /elements/header.html, mt('One-time charge') &>
 % } else {
-<& /elements/header-cust_main.html, view=>'packages', cust_main=>$cust_main &>
+<& /elements/header-cust_main.html,
+     view      => 'packages',
+     cust_main => $cust_main,
+     etc       => $cgi->param('error') ? '' : 'onload="addRow()"',
+&>
 <h2>One-time charge</h2>
 % }
 
@@ -113,7 +115,7 @@ function bill_now_changed (what) {
 <INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospect_main ? $prospect_main->prospectnum : '' %>">
 <INPUT TYPE="hidden" NAME="quotationnum" VALUE="<% $quotationnum %>">
 
-<TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
+<TABLE ID="QuickChargeTable" CLASS="fsinnerbox">
 
 % if ( $cust_pkg ) { #modify one-time charge
 
@@ -201,7 +203,7 @@ function bill_now_changed (what) {
 % } else { # new one-time charge
 
     <TR>
-      <TD ALIGN="right"><% mt('Amount to charge') |h %> </TD>
+      <TH ALIGN="right"><% mt('Amount to charge') |h %> </TH>
       <TD>
         <% $money_char %><INPUT TYPE       = "text"
                                 NAME       = "amount"
@@ -225,7 +227,7 @@ function bill_now_changed (what) {
 
 %   if ( $conf->exists('invoice-unitprice') ) {
     <TR>
-      <TD ALIGN="right"><% mt('Quantity') |h %> </TD>
+      <TH ALIGN="right"><% mt('Quantity') |h %> </TH>
       <TD>
         <INPUT TYPE       = "text"
                NAME       = "quantity"
@@ -241,7 +243,7 @@ function bill_now_changed (what) {
 % unless ( $quotationnum ) {
 
     <TR>
-      <TD ALIGN="right"><% mt('Invoice now') |h %></TD>
+      <TH ALIGN="right"><% mt('Invoice now') |h %></TH>
       <TD>
         <INPUT TYPE  = "checkbox"
                NAME  = "bill_now"
@@ -261,7 +263,7 @@ function bill_now_changed (what) {
 
 %   # false laziness w/misc/order_pkg.html
     <TR>
-      <TD ALIGN="right"><% mt('Charge date') |h %> </TD>
+      <TH ALIGN="right"><% mt('Charge date') |h %> </TH>
       <TD>
         <INPUT TYPE  = "text"
                NAME  = "start_date"
@@ -313,7 +315,7 @@ function bill_now_changed (what) {
 % }
 
 <TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %> </TD>
+  <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
   <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
 </TR>
 
@@ -331,7 +333,7 @@ function bill_now_changed (what) {
 % } # if !$cust_pkg
 
 <TR>
-  <TD ALIGN="right"><% mt('Description') |h %> </TD>
+  <TH ALIGN="right"><% mt('Description') |h %> </TH>
   <TD>
     <INPUT TYPE       = "text"
            NAME       = "pkg"
