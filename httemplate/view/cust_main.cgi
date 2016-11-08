@@ -148,8 +148,7 @@
 %   }
 % }
 
-</DIV>
-<& /elements/footer.html &>
+<& /elements/footer-cust_main.html &>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
