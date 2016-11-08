@@ -688,7 +688,11 @@ sub entry2link {
 
       # the menu head: always a link back to this page
       $cgi->param('show', $entry->{show});
-      $target = $cgi->self_url;
+
+      #$target = $cgi->self_url;
+      #XXX support installs outside /freeside in 4.x
+      $target = "/freeside/view/cust_main.cgi?show=$show;custnum=". $cust_main->custnum;
+
       $cgi->param('show', $show);
 
       my $a = qq[ <A HREF="$target"];
