@@ -108,7 +108,16 @@
       </TR>
 
       <TR>
-        <TH ALIGN="right">With package of class</TH>
+
+        <TH ALIGN="right">With</TH>
+        <TD><SELECT NAME="any_pkg_status">
+              <OPTION VALUE="0">active packages
+              <OPTION VALUE="1">any status packages
+            </SELECT>
+        </TD>
+     </TR>
+
+        <TH ALIGN="right">of class</TH>
         <TD>
             <& /elements/select-pkg_class.html,
                           'field'       => 'pkg_classnum',
