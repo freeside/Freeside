@@ -44,6 +44,10 @@ reconcile_breakage(%opt);
 use FS::Cron::upload qw(upload);
 upload(%opt);
 
+#this only takes effect if WA sales taxes are enabled
+use FS::Cron::tax_rate_update qw(tax_rate_update);
+tax_rate_update(%opt);
+
 use FS::Cron::set_lata_have_usage qw(set_lata_have_usage);
 set_lata_have_usage(%opt);
 

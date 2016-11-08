@@ -4434,6 +4434,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'tax_district_taxname',
+    'section'     => 'taxation',
+    'description' => 'The tax name to display on the invoice for district sales taxes. Defaults to "Tax".',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'company_latitude',
     'section'     => 'taxation',
     'description' => 'For Avalara taxation, your company latitude (-90 through 90)',
