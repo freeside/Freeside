@@ -446,8 +446,11 @@ function bill_now_changed (what) {
 
 </SCRIPT>
 
-</BODY>
-</HTML>
+% if ( $quotationnum ) {
+  <& /elements/footer.html &>
+% } else {
+  <& /elements/footer-cust_main.html &>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
