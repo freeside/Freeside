@@ -109,3 +109,5 @@ sub tax_rate_update {
   } # else $method isn't wa_sales, no other methods exist yet
   '';
 }
+
+1;
