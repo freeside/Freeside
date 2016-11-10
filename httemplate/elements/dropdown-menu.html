@@ -1,0 +1,241 @@
+<style type="text/css">
+
+#<% $opt{id} %> {
+  font-size: smaller;
+  border: none;
+}
+
+#<% $opt{id} %> li {
+  float: left;
+  padding: .25em;
+}
+
+/* #<% $opt{id} %> .ui-menu-item  */
+#<% $opt{id} %> > li {
+  padding-left: 0px;
+}
+    
+/* #<% $opt{id} %> .ui-menu-item  */
+#<% $opt{id} %> > li.ui-state-focus {
+  border: 1px solid transparent;
+}
+  
+#<% $opt{id} %> > li.ui-state-active {
+  border: 1px solid transparent;
+}
+
+#<% $opt{id} %> > li.ui-state-active > a {
+
+/* if i could find something light enough that didn't look pink?
+     or is this too visually distracting and not the useful hint i think it is?
+  background: #ED55E7;
+*/
+}
+
+#<% $opt{id} %> a {
+  white-space: nowrap;
+}
+
+#<% $opt{id} %> ul {
+  border: 1px solid #7e0079;
+  border-radius: 2px;
+  box-shadow: #333333 1px 1px 2px;
+}
+
+#<% $opt{id} %> ul li {
+  float: none;
+  margin-right: 2px;
+  margin-left: 2px;
+}
+
+#<% $opt{id} %> ul a {
+  color: #333333;
+}
+
+#<% $opt{id} %> li.ui-menu-divider {
+  border-color: #7e0079;
+}
+
+#<% $opt{id} %> a:hover {
+  text-decoration: underline;
+  color: #7e0079;
+}
+
+#<% $opt{id} %> ul li.ui-state-focus {
+  background: transparent;
+  border: 1px solid transparent;
+  margin-right: 1px;
+  margin-left: 1px;
+}
+
+#<% $opt{id} %> ul li.ui-state-active {
+  background: #f8f0fc;
+  border: 1px solid #7e0079;
+  border-radius: 2px;
+  margin-right: 1px;
+  margin-left: 1px;
+}
+
+#<% $opt{id} %> a .arrow {
+  float: right;
+  background-image: url("<% $p %>images/arrow.right.black.png");
+  width: 3px;
+  height: 6px;
+  margin-top:4px;
+}
+
+/* Firefox hack */
+@-moz-document url-prefix() {
+  #<% $opt{id} %> a .arrow {
+    margin-top:-.8em;
+  }
+}
+
+</style>
+
+<ul id="<% $opt{id} %>">
+% foreach my $submenu (@processed_menu) {
+  <li <% $opt{bgcolor} ? 'STYLE="background:'. $opt{bgcolor}.'"' : '' %>>
+    <% shift @$submenu %>
+%   if ( @$submenu ) {
+      <ul class="<% $opt{class} %>">
+%     foreach my $link ( @$submenu ) {
+        <li><% $link %></li>
+%     }
+      </ul>
+%   }
+  </li>
+% }
+</ul>
+
+<script type="text/javascript">
+
+  $("#<% $opt{id} %>").menu({
+    position: { my: "left top", at: "left+1 bottom+3" },
+    icons: { submenu: "ui-icon-blank" },
+    blur: function() {
+      $(this).menu("option", "position", { my:"left top", at:"left+1 bottom+3" } );
+    },
+    focus: function(e,ui) {
+      if ($("#<% $opt{id} %>").get(0) !== $(ui).get(0).item.parent().get(0)) {
+        $(this).menu("option", "position", { my:"left top", at:"right+2 top"} );
+      }
+    },
+  });
+
+</script>
+
+<%init>
+my %opt = @_;
+
+#my $cust_main = $opt{'cust_main'};
+#my $custnum = $cust_main->custnum;
+#my $curuser = $FS::CurrentUser::CurrentUser;
+#my $conf = FS::Conf->new;
+#
+#my %payby = map { $_ => 1 } $conf->config('payby');
+#
+## cached for conditions, to avoid looking it up twice
+#my $invoicing_list_emailonly = $cust_main->invoicing_list_emailonly;
+
+my @processed_menu;
+foreach my $submenu (@{ $opt{menu} }) {
+
+  my @links;
+  my $first = 1;
+  foreach my $entry ( @$submenu ) {
+    # if the menu head was skipped, skip the whole menu
+    last if (!$first and !@links);
+    $first = 0;
+
+    my $a = entry2link($entry, \%opt);
+    push @links, $a if length($a);
+
+  } # foreach $entry
+
+  if (@links) {
+    push @processed_menu, \@links;
+  }
+
+}
+
+sub entry2link {
+    my( $entry, $opt ) = @_;
+
+    # check conditions
+    if ( $entry->{acl} ) {
+      return ''
+        unless $FS::CurrentUser::CurrentUser->access_right( $entry->{acl} );
+    }
+    if ( $entry->{confexists} ) {
+      if ( $entry->{confexists} =~ /^!(.*)/ ) {
+        # confexists => !foo, a negative condition
+        return '' if FS::Conf->new->exists( $1 );
+      } else {
+        return '' unless FS::Conf->new->exists( $entry->{confexists} );
+      }
+    }
+    if ( $entry->{condition} ) {
+      return '' unless &{ $entry->{condition} }($opt->{cust_main});
+    }
+
+    my $label = emt($entry->{label});
+
+    if ( $entry->{submenu} ) {
+
+      my $a = '<a href="javascript:void(0);">'. $label.
+              '<span class="arrow"></span>'.
+              '</a><ul class="customer_subsubmenu">';
+      foreach my $submenu (@{ $entry->{submenu} }) {
+        $a .= '<li>'. entry2link($submenu, $opt->{cust_main}, $opt->{show}), '</li>';
+      }
+
+      return $a. '</ul>';
+
+    }
+
+    my $target = $entry->{content}
+              || $entry->{popup}
+              || $entry->{url};
+
+    if ( ref($target) eq 'CODE' ) {
+      $target = &$target($opt->{cust_main});
+    }
+
+    return $target if $entry->{content}; #the coderef specified the whole thing
+
+    if ( $entry->{show} ) {
+
+      $target = $opt->{self_url}. $entry->{show};
+
+      my $a = qq[ <A HREF="$target"];
+      $a .= ' class="current_show"' if $opt->{show} eq $entry->{show};
+      return $a. qq[>$label</A> ];
+
+    } elsif ( $entry->{popup} ) {
+
+      #$target =~ s/\$custnum/$custnum/g;
+      $target = $p.$target;
+
+      return include('/elements/popup_link.html',
+        action  => $target,
+        width   => 616,
+        height  => 410,
+        %$entry,
+        label   => $label,
+      );
+
+    } elsif ( $entry->{url} ) {
+
+      #$target =~ s/\$custnum/$custnum/g;
+      $target = $p.$target;
+
+      return qq[ <A HREF="$target">$label</A> ];
+
+    } else {
+      die "bad entry ". join(',',%$entry). " in menu: no url, popup or content";
+    }
+
+}
+
+</%init>
