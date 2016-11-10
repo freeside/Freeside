@@ -736,6 +736,86 @@ sub _upgrade_data {
       die $error if $error;
     }
   } # foreach $record
+
+  # separate wa_sales taxes by tax class as needed
+  my $district_taxname = $conf->config('tax_district_taxname');
+  $journal = 'cust_main_county__district_taxclass';
+  if (!FS::upgrade_journal->is_done($journal)
+      and $conf->config('enable_taxclasses')) {
+    eval "use FS::part_pkg_taxclass";
+    my @taxes = qsearch({
+        'table'     => 'cust_main_county',
+        'extra_sql' => " WHERE tax > 0 AND country = 'US' AND state = 'WA'".
+                       " AND district IS NOT NULL AND  source = 'wa_sales'".
+                       " AND taxclass IS NULL"
+    });
+    my @classes = FS::part_pkg_taxclass->taxclass_names;
+    if ( @taxes ) {
+      warn "Separating WA sales taxes: ".scalar(@taxes)." records.\n";
+      foreach my $oldtax (@taxes) {
+        my $error;
+        my $taxnum = $oldtax->taxnum;
+        warn "Separating tax #$taxnum into classes\n";
+        foreach my $taxclass (@classes) {
+          # ensure that we end up with a single copy of the tax in this
+          # jurisdiction+class. there may already be one (or more) there.
+          # if so, they all represent the same tax; merge them together.
+          my %newtax_hash = (
+            'country'   => 'US',
+            'state'     => 'WA',
+            'city'      => $oldtax->city,
+            'district'  => $oldtax->district,
+            'taxclass'  => $taxclass,
+            'source'    => 'wa_sales',
+          );
+          my @taxes_in_class = qsearch('cust_main_county', {
+            %newtax_hash,
+            'tax'       => { op => '>', value => 0 },
+            'setuptax'  => '',
+            'recurtax'  => '',
+          });
+          my $newtax = shift @taxes_in_class;
+          if ($newtax) {
+            foreach (@taxes_in_class) {
+              # allow the merge, even if this somehow differs.
+              $_->set('tax', $newtax->tax);
+              $_->_merge_into($newtax);
+            }
+          }
+          $newtax ||= FS::cust_main_county->new(\%newtax_hash);
+          # copy properties from the pre-split tax
+          $newtax->set('tax', $oldtax->tax);
+          $newtax->set('setuptax', $oldtax->setuptax);
+          $newtax->set('recurtax', $oldtax->recurtax);
+          # and assign the defined tax name
+          $newtax->set('taxname', $district_taxname);
+          $error = ($newtax->taxnum ? $newtax->replace : $newtax->insert);
+          die "splitting taxnum ".$oldtax->taxnum.": $error\n" if $error;
+        } # foreach $taxclass
+        $oldtax->set('tax', 0);
+        $error = $oldtax->replace;
+        die "splitting taxnum ".$oldtax->taxnum.": $error\n" if $error;
+      }
+    }
+    FS::upgrade_journal->set_done($journal);
+  }
+
+  # also ensure they all have the chosen taxname now
+  if ($district_taxname) {
+    my @taxes = qsearch('cust_main_county', {
+      'source'  => 'wa_sales',
+      'taxname' => { op => '!=', value => $district_taxname }
+    });
+    if (@taxes) {
+      warn "Renaming WA sales taxes: ".scalar(@taxes)." records.\n";
+      foreach my $tax (@taxes) {
+        $tax->set('taxname', $district_taxname);
+        my $error = $tax->replace;
+        die "renaming taxnum ".$tax->taxnum.": $error\n" if $error;
+      }   
+    }
+  }
+ 
   '';
 }
 
