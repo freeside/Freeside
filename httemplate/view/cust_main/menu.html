@@ -1,32 +1,22 @@
 <style type="text/css">
 
 #customer_menu {
-  font-size: smaller;
-  border: none;
   margin-top: .6em;
   margin-bottom: 16px;
-}
-
-#customer_menu li {
-  float: left;
-  padding: .25em;
 }
 
 /* #customer_menu .ui-menu-item  */
 #customer_menu > li {
   background-color: #f8f8f8;
-  padding-left: 0px;
 }
 
 /* #customer_menu .ui-menu-item  */
 #customer_menu > li.ui-state-focus {
   background-color: #f8f8f8;
-  border: 1px solid transparent;
 }
 
 #customer_menu > li.ui-state-active {
   background-color: #f8f8f8;
-  border: 1px solid transparent;
 }
 
 #customer_menu > li > a {
@@ -67,101 +57,32 @@
   font-weight: normal;
   background: #e0e0e0;
   color: #525151;
-  white-space: nowrap;
   text-decoration: none;
 }
 
-#customer_menu ul {
-  background: #ffffff;
-  border: 1px solid #7e0079;
-  border-radius: 2px;
-  box-shadow: #333333 1px 1px 2px;
-}
-
-#customer_menu ul li {
-  float: none;
-  margin-right: 2px;
-  margin-left: 2px;
-}
-
 #customer_menu ul a {
-  color: #333333;
   background: transparent;
 }
 
-#customer_menu li.ui-menu-divider {
-  border-color: #7e0079;
-/*  margin-right: 2px;
-  margin-left: 2px; */
-}
-
-#customer_menu a:hover {
-  text-decoration: underline;
-  color: #7e0079;
-}
-
-#customer_menu ul li.ui-state-focus {
-  background: transparent;
-  border: 1px solid transparent;
-  margin-right: 1px;
-  margin-left: 1px;
-}
-
-#customer_menu ul li.ui-state-active {
-  background: #f8f0fc;
-  border: 1px solid #7e0079;
-  border-radius: 2px;
-  margin-right: 1px;
-  margin-left: 1px;
-}
-
-#customer_menu a .arrow {
-  float: right;
-  background-image: url("<% $p %>images/arrow.right.black.png");
-  width: 3px;
-  height: 6px;
-  margin-top:4px;
-}
-
-@-moz-document url-prefix() {
-  #customer_menu a .arrow {
-    margin-top:-.8em;
-  }
-}
+%#  #customer_menu ul li.ui-state-active {
+%#    background: #f8f0fc;
+%#    border: 1px solid #7e0079;
+%#    border-radius: 2px;
+%#    margin-right: 1px;
+%#    margin-left: 1px;
+%#  }
 
 </style>
 
-<ul id="customer_menu">
-% foreach my $submenu (@processed_menu) {
-  <li>
-    <% shift @$submenu %>
-%   if ( @$submenu ) {
-      <ul class="customer_submenu">
-%     foreach my $link ( @$submenu ) {
-        <li><% $link %></li>
-%     }
-      </ul>
-%   }
-  </li>
-% }
-</ul>
-
-<script type="text/javascript">
-
-  $("#customer_menu").menu({
-    position: { my: "left top", at: "left+1 bottom+3" },
-    blur: function() {
-      $(this).menu("option", "position", { my:"left top", at:"left+1 bottom+3" } );
-    },
-    focus: function(e,ui) {
-      if ($("#customer_menu").get(0) !== $(ui).get(0).item.parent().get(0)) {
-        $(this).menu("option", "position", { my:"left top", at:"right+2 top"} );
-      }
-    },
-  });
-
-</script>
-
+<& /elements/dropdown-menu.html,
+     'id'        => 'customer_menu',
+     #'class'     => 'customer_submenu',
+                    #XXX support installs outside /freeside in 4.x
+     'self_url'  => "/freeside/view/cust_main.cgi?custnum=$custnum;show=",
+     'menu'      => \@menu,
+     'cust_main' => $cust_main,
+     'show'      => $opt{'show'},
+&>
 
 <%init>
 my %opt = @_;
@@ -175,7 +96,7 @@ my %payby = map { $_ => 1 } $conf->config('payby');
 # cached for conditions, to avoid looking it up twice
 my $invoicing_list_emailonly = $cust_main->invoicing_list_emailonly;
 
-# nice declarative menu; should be a parameter to some kind of menu generator
+# nice declarative menu; a parameter to some kind of menu generator
 my @menu = ( 
   [
     { show        => 'basics',
@@ -616,115 +537,5 @@ my @menu = (
     },
   ],
 );
-
-
-my @processed_menu;
-foreach my $submenu (@menu) {
-
-  my @links;
-  my $first = 1;
-  foreach my $entry ( @$submenu ) {
-    # if the menu head was skipped, skip the whole menu
-    last if (!$first and !@links);
-    $first = 0;
-
-    my $a = entry2link($entry, $cust_main, $opt{show});
-    push @links, $a if length($a);
-
-  } # foreach $entry
-
-  if (@links) {
-    push @processed_menu, \@links;
-  }
-
-}
-
-sub entry2link {
-    my( $entry, $cust_main, $show ) = @_;
-
-    # check conditions
-    if ( $entry->{acl} ) {
-      return ''
-        unless $FS::CurrentUser::CurrentUser->access_right( $entry->{acl} );
-    }
-    if ( $entry->{confexists} ) {
-      if ( $entry->{confexists} =~ /^!(.*)/ ) {
-        # confexists => !foo, a negative condition
-        return '' if FS::Conf->new->exists( $1 );
-      } else {
-        return '' unless FS::Conf->new->exists( $entry->{confexists} );
-      }
-    }
-    if ( $entry->{condition} ) {
-      return '' unless &{ $entry->{condition} }($cust_main);
-    }
-
-    my $label = emt($entry->{label});
-
-    if ( $entry->{submenu} ) {
-
-      my $a = '<a href="javascript:void(0);">'. $label.
-              '<span class="arrow"></span>'.
-              '</a><ul class="customer_subsubmenu">';
-      foreach my $submenu (@{ $entry->{submenu} }) {
-        $a .= '<li>'. entry2link($submenu, $cust_main, $show), '</li>';
-      }
-
-      return $a. '</ul>';
-
-    }
-
-    my $target = $entry->{content}
-              || $entry->{popup}
-              || $entry->{url};
-
-    if ( ref($target) eq 'CODE' ) {
-      $target = &$target($cust_main);
-    }
-
-    return $target if $entry->{content}; #the coderef specified the whole thing
-
-    if ( $entry->{show} ) {
-
-      # the menu head: always a link back to this page
-      $cgi->param('show', $entry->{show});
-
-      #$target = $cgi->self_url;
-      #XXX support installs outside /freeside in 4.x
-      $target = '/freeside/view/cust_main.cgi?'.
-                  'show='. $entry->{show}.
-                  ';custnum='. $cust_main->custnum;
-
-      $cgi->param('show', $show);
-
-      my $a = qq[ <A HREF="$target"];
-      $a .= ' class="current_show"' if $show eq $entry->{show};
-      return $a. qq[>$label</A> ];
-
-    } elsif ( $entry->{popup} ) {
-
-      $target =~ s/\$custnum/$custnum/g;
-      $target = $p.$target;
-
-      return include('/elements/popup_link.html',
-        action  => $target,
-        width   => 616,
-        height  => 410,
-        %$entry,
-        label   => $label,
-      );
-
-    } elsif ( $entry->{url} ) {
-
-      $target =~ s/\$custnum/$custnum/g;
-      $target = $p.$target;
-
-      return qq[ <A HREF="$target">$label</A> ];
-
-    } else {
-      die "bad entry ". join(',',%$entry). " in menu: no url, popup or content";
-    }
-
-}
 
 </%init>
