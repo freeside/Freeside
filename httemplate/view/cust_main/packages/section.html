@@ -34,6 +34,7 @@
 % my ($cust_pkg, %iopt) = @_;
 % $iopt{'cust_pkg'} = $cust_pkg;
 % $iopt{'part_pkg'} = $cust_pkg->part_pkg;
+% $iopt{'row'} = $row;
   <!--pkgnum: <% $cust_pkg->pkgnum %>-->
   <TR CLASS="row<%$row % 2%>">
     <& package.html, %iopt &>

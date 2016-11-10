@@ -7,6 +7,10 @@
              ? &{ $opt{before_pkg_callback} }( $cust_pkg )
              : ''
         %>
+
+% ###
+% # Package
+% ###
         <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
            ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
         ><% $opt{show_pkgnum} ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
@@ -42,79 +46,18 @@
       </TD>
     </TR>
 
-
+% ###
+% # Quantity
+% ###
+% if ( $cust_pkg->quantity > 1 ) {
     <TR>
       <TD COLSPAN=2>
-        <FONT SIZE=-1>
-
-%         if ( $part_pkg->freq eq '0' and !$opt{no_links} ) {
-%           # One-time charge.  Nothing you can do with this, unless:
-%           if ( $curuser->access_right('Modify one-time charge') ) {
-                (&nbsp;<%onetime_change_link($cust_pkg)%>&nbsp;)
-%           }
-%           # also, you can discount it
-%           if ( $can_discount_pkg ) {
-              (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
-%           }
-          <BR>
-%
-%         } elsif ( !$cust_pkg->get('cancel') and !$opt{no_links} ) {
-%
-%           if ( $change_from ) {
-%             # This is the target package for a future change.
-%             # Nothing you can do with it besides modify/cancel the 
-%             # future change, and that's on the current package.
-%           } elsif ( $supplemental ) {
-%             # Supplemental packages can't be changed independently.
-%             # Show only "Add comments" and "Add invoice details".
-%           } else {
-%             # the usual case: links to change package definition,
-%             # discount, and customization
-%             my $br = 0;
-%             if ( $curuser->access_right('Change customer package') ) {
-%               $br=1;
-                (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
-%             } 
-%
-%             if ( $can_discount_pkg ) {
-%               $br=1;
-                (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
-%             }
-%
-%             if ( $curuser->access_right('Customize customer package') ) {
-%               $br=1;
-                (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
-%             } 
-%
-              <% $br ? '<BR>' : '' %>
-%           } 
-
-%           if (    (    $curuser->access_right('Billing event reports')
-%                     || $curuser->access_right('View customer billing events')
-%                   )
-%                && $cust_pkg->exists_cust_event
-%              ) {
-              (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
-%           }
-%         } # a canceled recurring package, or else no_links is in effect
-
-        </FONT>
-      </TD>
-    </TR>
-
-
-    <TR>
-      <TD COLSPAN=2>
-
-%       my $change_quan_label = 'Change quantity';
-%       if ( $cust_pkg->quantity > 1 ) {
-%         $change_quan_label = 'change';
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Quantity:') |h %> 
           <B><% $cust_pkg->quantity %></B>
-%       }
 
 %       if ( $curuser->access_right('Change customer package')
 %              && ! $cust_pkg->get('cancel')
+%              && ! $change_from
 %              && ! $supplemental
 %              && $part_pkg->freq ne '0'
 %              && ! $opt{no_links}
@@ -122,40 +65,41 @@
 %          )
 %       {
           <FONT SIZE="-1">
-            (&nbsp;<% pkg_change_quantity_link($cust_pkg, $change_quan_label) %>&nbsp;)
+            (&nbsp;<% pkg_change_quantity_link($cust_pkg, 'change') %>&nbsp;)
           </FONT>
 %       }
-
       </TD>
     </TR>
+% }
 
-
+% ###
+% # Sales person
+% ###
+% if ( $cust_pkg->salesnum ) {
     <TR>
       <TD COLSPAN=2>
-
-%       my $change_sales_label = 'Change sales person';
-%       if ( $cust_pkg->salesnum ) {
-%         $change_sales_label = 'change';
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Sales Person:') |h %> 
           <B><% $cust_pkg->salesperson |h %></B>
-%       }
-
 %       if ( $curuser->access_right('Change customer package')
 %              && ! $cust_pkg->get('cancel')
+%              && ! $change_from
 %              && ! $supplemental
 %              #&& $part_pkg->freq ne '0'
 %              && ! $opt{no_links}
 %          )
 %       {
         <FONT SIZE="-1">
-          (&nbsp;<% pkg_change_salesnum_link($cust_pkg, $change_sales_label) %>&nbsp;)
+          (&nbsp;<% pkg_change_salesnum_link($cust_pkg, 'change') %>&nbsp;)
         </FONT>
 %     }
-
       </TD>
     </TR>
+% }
 
 
+% ###
+% # Invoice details & comments
+% ###
 %   my $editi = $curuser->access_right('Edit customer package invoice details');
 %   my $editc = $curuser->access_right('Edit customer package comments');
 %   my @cust_pkg_detail = $cust_pkg->cust_pkg_detail;
@@ -198,18 +142,6 @@
           </TD>
 %       } else {
           <TD>
-%           if ( $editi && ! $cust_pkg->get('cancel') && ! $opt{no_links} ) {
-              <FONT SIZE="-1">
-                (&nbsp;<% include('/elements/popup_link.html', { 
-                               'action'      => $editlink. 'I',
-                               'label'       => emt('Add invoice details'),
-                               'actionlabel' => emt('Add invoice details'),
-                               'color'       => '#333399',
-                               'width'       => 763,
-                            })
-                  %>&nbsp;)
-              </FONT>
-%           }
           </TD>
 %       }
 
@@ -242,18 +174,6 @@
           </TD>
 %       } else {
           <TD>
-%           if ( $editc && ! $opt{no_links} ) {
-              <FONT SIZE="-1">
-                (&nbsp;<& /elements/popup_link.html, { 
-                               'action'      => $editlink. 'C',
-                               'label'       => emt('Add comments'),
-                               'actionlabel' => emt('Add comments'),
-                               'color'       => '#333399',
-                               'width'       => 763,
-                            }
-                  &>&nbsp;)
-              </FONT>
-%           }
           </TD>
 %       }
 
@@ -286,7 +206,144 @@
   </TABLE>
 % }
 
+
+% ###
+% # Package actions dropdown
+% ###
+% unless ( $opt{no_links} ) {
+
+  <TABLE CLASS="inv package"> 
+    <TR>
+      <TD COLSPAN=2>
+
+%       my $plink = "pkgnum=$pkgnum";
+%       my $reg_recur_cond =  sub { $part_pkg->freq ne '0'
+%                                       && ! $change_from
+%                                       && ! $supplemental
+%                                       && ! $cust_pkg->get('cancel')
+%                                 };
+
+        <& /elements/dropdown-menu.html,
+             id      => 'cust_pkg'. $cust_pkg->pkgnum. '_menu',
+             bgcolor => $opt{row} % 2 ? '#ffffff' : '#eeeeee',
+             menu    => [
+               [ 
+
+                 #TODO: order/group these better
+
+                 { label => 'Package actions',
+                   content => '<FONT STYLE="text-decoration:underline"><B>Package actions</B></FONT> <IMG SRC="'.$p. 'images/arrow.down.black.png">',
+                 },
+
+                 { label       => 'Modify one-time charge',
+                   acl         => 'Modify one-time charge',
+                   condition   => sub { $part_pkg->freq eq '0' },
+                   url         => "edit/quick-charge.html?change_$plink",
+                 },
+
+                 { label       => 'Change package',
+                   acl         => 'Change customer package',
+                   condition   => $reg_recur_cond,
+                   popup       => "misc/change_pkg.cgi?$plink".
+                                    ';locationnum='. $cust_pkg->locationnum.
+                   actionlabel => emt('Change package'),
+                   #width       => 768,
+                   width       => 960,
+                   height      => 538,
+                 },
+
+                 { label       => 'Discount package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                         && ! $change_from
+                                         && ! $supplemental
+                                         && ! $cust_pkg->get('cancel')
+                                         && $can_discount_pkg
+                                      },
+                   popup       => "edit/cust_pkg_discount.html?$plink".
+                   actionlabel => emt('Discount package'),
+                   width       => 616,
+                 },
+
+                 { label       => 'Customize package',
+                   acl         => 'Customize customer package',
+                   condition   => $reg_recur_cond,
+                   url         => "edit/part_pkg.cgi?$plink".
+                                    ';clone='. $part_pkg->pkgpart,
+                 },
+
+                 { label       => 'View package events',
+                   acl         => [ 'Billing event reports',
+                                    'View customer billing events', ],
+                   condition   => sub { $cust_pkg->exists_cust_event },
+                   url         => "search/cust_event.html?$plink",
+                 },
+
+                 { label       => 'Change quantity',
+                   acl         => 'Change customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                        && ! $change_from
+                                        && ! $supplemental
+                                        && ! $cust_pkg->get('cancel')
+                                        && $opt{'invoice-unitprice'}
+                                  },
+                   popup       => "edit/cust_pkg_quantity.html?$plink",
+
+                   actionlabel => emt('Change quantity'),
+                   width       => 390,
+                   height      => 220,
+                 },
+
+                 { label       => 'Change sales person',
+                   acl         => 'Change customer package',
+                   condition   => sub { ! $change_from
+                                        && ! $supplemental
+                                        && ! $cust_pkg->get('cancel')
+                                  },
+                   popup       => "edit/cust_pkg_salesnum.html?$plink",
+                   actionlabel => emt('Change sales persion'),
+                   width       => 390,
+                   height      => 220,
+                 },
+
+                 { label       => (@invoice_detail ? 'Edit' : 'Add').
+                                    ' invoice details',
+                   acl         => 'Edit customer package invoice details',
+                   condition   => sub { ! $cust_pkg->get('cancel') },
+                   popup       => "edit/cust_pkg_detail.html?$plink".
+                                    ';detailtype=I',
+                   actionlabel => emt( (@invoice_detail ? 'Edit' : 'Add').
+                                       ' invoice details'
+                                     ),
+                   width       => 768,
+                },
+
+                { label       => (@comments ? 'Edit' : 'Add'). ' comments',
+                   acl         => 'Edit customer package comments',
+                   popup       => "edit/cust_pkg_detail.html?$plink".
+                                    ';detailtype=C',
+                   actionlabel => emt( (@comments ? 'Edit' : 'Add').
+                                       ' comments'
+                                     ),
+                   width       => 768,
+                },
+
+                 { label   => '-',
+                   content => '-',
+                 },
+
+
+               ],
+             ],
+        &>
+
+      </TD>
+    </TR>
+  </TABLE>
+
+% }
+
   <% join('', map '</DIV>', @marker ) %>
+
 </TD>
 
 <%init>
@@ -334,26 +391,6 @@ sub pkg_link {
   qq!<a href="$p$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
 }
 
-sub pkg_change_link {
-  my $cust_pkg = shift;
-  my $locationnum = $cust_pkg->locationnum;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p. "misc/change_pkg.cgi?locationnum=$locationnum",
-    'label'       => emt('Change package'),
-    'actionlabel' => emt('Change'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 960,
-    'height'      => 538,
-  );
-}
-
-sub onetime_change_link {
-  my $cust_pkg = shift;
-  my $pkgnum = $cust_pkg->pkgnum;
-  '<A HREF="' . $fsurl . "edit/quick-charge.html?change_pkgnum=$pkgnum" .
-  '">' . emt('Modify one-time charge') . '</A>'
-}
-
 sub pkg_change_location_link {
   my $cust_pkg = shift;
   my $pkgpart = $cust_pkg->pkgpart;
@@ -391,34 +428,6 @@ sub pkg_change_salesnum_link {
     'width'       => 390,
     'height'      => 220,
   );
-}
-
-sub pkg_discount_link {
-  my $cust_pkg = shift or return '';
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p.'edit/cust_pkg_discount.html',
-    'label'       => emt('Discount'),
-    'actionlabel' => emt('Discount'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 616,
-  );
-}
-
-sub pkg_customize_link {
-  my $cust_pkg = shift or return '';
-  my $part_pkg = shift;
-  my $custnum = $cust_pkg->custnum;
-  qq!<A HREF="${p}edit/part_pkg.cgi?!.
-    "clone=". $part_pkg->pkgpart. ';'.
-    "pkgnum=". $cust_pkg->pkgnum.
-    qq!">!.emt('Customize').'</A>';
-}
-
-sub pkg_event_link {
-  my($cust_pkg) = @_;
-  qq!<a href="${p}search/cust_event.html?pkgnum=!. $cust_pkg->pkgnum. qq!">!.
-  emt('View package events').
-  '</a>';
 }
 
 # figure out if this user will be able to edit either the setup or recurring
