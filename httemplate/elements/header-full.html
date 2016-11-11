@@ -193,6 +193,20 @@ Example:
             <% $title_noescape || encode_entities($title) %>
           </H1>
 
+% my %cookies = CGI::Cookie->fetch($r);
+% if ( $cookies{freeside_status} ) {
+    <BR>
+%   foreach my $status_msg ( $cookies{freeside_status}->value ) {
+      <TABLE CLASS="fsinnerbox" STYLE="background-color:#eeffee"><TR>
+        <TD><IMG SRC="<% $fsurl %>images/tick.png"> <% $status_msg |h %></TD>
+      </TR></TABLE>
+%   }
+    <script src="<% $fsurl %>elements/js.cookie.js"></script>
+    <SCRIPT TYPE="text/javascript">
+      Cookies.remove('freeside_status', { path: '/' });
+    </SCRIPT>
+% }
+
 % unless ( $nobr ) {
           <BR>
 % }

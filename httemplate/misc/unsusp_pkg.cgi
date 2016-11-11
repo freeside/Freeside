@@ -1,7 +1,16 @@
 %if ( $error ) {
 %  errorpage($error);
 %} else {
-<% $cgi->redirect(popurl(2). "view/cust_main.cgi?".$cust_pkg->getfield('custnum')) %>
+%  my $cookie = CGI::Cookie->new( -name    => 'freeside_status',
+%                                 -value   => mt('Package unsuspended'),
+%                                 -expires => '+5m',
+%                               );
+% #$r->headers_out->add( 'Set-Cookie' => $cookie->as_string );
+<% $cgi->redirect(
+     -uri => popurl(2). "view/cust_main.cgi?show=packages;custnum=".$cust_pkg->getfield('custnum'),
+     -cookie => $cookie
+  )
+%>
 %}
 <%init>
 

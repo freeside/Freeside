@@ -1,5 +1,9 @@
 <& /elements/header-popup.html, emt("Package $past_method") &>
+  <script src="<% $fsurl %>elements/js.cookie.js"></script>
   <SCRIPT TYPE="text/javascript">
+    Cookies.set('freeside_status', <% mt("Package $past_method") |js_string %>,{
+                  expires: 0.0035
+    });
     topreload();
   </SCRIPT>
   </BODY>
