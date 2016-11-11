@@ -1,13 +1,4 @@
-<& /elements/header-popup.html, mt("Customer cancelled") &>
-  <script src="<% $fsurl %>elements/js.cookie.js"></script>
-  <SCRIPT TYPE="text/javascript">
-    Cookies.set('freeside_status', <% mt("Customer cancelled") |js_string %>,{
-                  expires: 0.0035
-    });
-    topreload();
-  </SCRIPT>
-  </BODY>
-</HTML>
+<& /elements/popup-topreload.html, mt("Customer cancelled") &>
 <%init>
 
 die "access denied"
