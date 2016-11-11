@@ -1,5 +1,9 @@
 <& /elements/header-popup.html, mt("Customer suspended") &>
+  <script src="<% $fsurl %>elements/js.cookie.js"></script>
   <SCRIPT TYPE="text/javascript">
+    Cookies.set('freeside_status', <% mt("Customer suspended") |js_string %>,{
+                  expires: 0.0035
+    });
     topreload();
   </SCRIPT>
   </BODY>
