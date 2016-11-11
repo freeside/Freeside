@@ -1,12 +1,4 @@
-<& /elements/header-popup.html, mt("Customer unsuspended") &>
-  <SCRIPT TYPE="text/javascript">
-    Cookies.set('freeside_status', <% mt("Customer unsuspended") |js_string %>,{
-                  expires: 0.0035
-    });
-    topreload();
-  </SCRIPT>
-  </BODY>
-</HTML>
+<& /elements/popup-topreload.html, mt("Customer unsuspended") &>
 <%init>
 
 #false laziness w/cust_main-cancel.cgi
