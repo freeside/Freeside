@@ -13,8 +13,7 @@ In misc/something.html:
          #or { message => 'Finished!' },
          #or { url => $p.'where_to_go.html',
                message => 'Finished' },
-         # which displays the message, then waits for confirmation before 
-         # redirecting to the URL.
+         # which recirects to the URL and displays the message as a status
          #or { popup_url => $p.'popup_contents.html' }
          # which loads that URL into the popup after completion
          #or { url => $p.'where_to_go.html',
@@ -96,7 +95,7 @@ function <%$key%>process () {
     document.<%$formname%>.submit.disabled=true;
   }
 
-  overlib( 'Submitting job to server...', WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( 'Submitting job to server...', WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0, TEXTPADDING, 0, BASE, 0, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8' );
 
   // jQuery .serializeArray() maybe?
   var copy_fields = <% encode_json(\%copy_fields) %>;
@@ -140,7 +139,7 @@ function <%$key%>myCallback( jobnum ) {
 
   var url = <% $progress_url->as_string |js_string %>;
   url = url.replace('_JOBNUM_', jobnum);
-  overlib( OLiframeContent(url, 444, 168, '<% $popup_name %>'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( OLiframeContent(url, 444, 168, '<% $popup_name %>', 0), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0, TEXTPADDING, 0, BASE, 0, BGCOLOR, '#333399', CGCOLOR, '#333399', FGCOLOR, '#f8f8f8' );
 
 }
 

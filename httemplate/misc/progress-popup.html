@@ -1,26 +1,16 @@
-%
-%  my $jobnum = $cgi->param('jobnum');
-%  my $url = $cgi->param('url');
-%  my $message = $cgi->param('message');
-%  my $popup_url = $cgi->param('popup_url');
-%  my $formname = scalar($cgi->param('formname'));
-%  my $error_url = $cgi->param('error_url');
-%
+<& /elements/header-popup.html, {
+     'etc' => 'onLoad="refreshStatus()"',
+   }
+&>
 
-<HTML>
-  <HEAD>
-    <TITLE></TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#ccccff" onLoad="refreshStatus()">
-
-<% include('/elements/xmlhttp.html',
-              'url'  => $p.'misc/jsrsServer.html',
-              'subs' => [ 'job_status' ],
-           )
-%>
+<& /elements/xmlhttp.html,
+     'url'  => $p.'misc/jsrsServer.html',
+     'subs' => [ 'job_status' ],
+&>
 <SCRIPT TYPE="text/javascript" src="<%$fsurl%>elements/qlib/control.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" src="<%$fsurl%>elements/qlib/imagelist.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" src="<%$fsurl%>elements/qlib/progress.js"></SCRIPT>
+<script src="<% $fsurl %>elements/js.cookie.js"></script>
 <SCRIPT TYPE="text/javascript">
 function refreshStatus () {
   //jsrsExecute( '<%$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<% $jobnum %>' );
@@ -45,25 +35,22 @@ function updateStatus( status_statustext ) {
     //jsrsExecute( '<%$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<% $jobnum %>' );
     job_status( '<% $jobnum %>', updateStatus );
   } else if ( status.indexOf('complete') > -1 ) {
-% if ( $message ) {
-%
-%   my $onClick = $url
-%                   ? "window.top.location.href = \\'$url\\';"
-%                   : 'parent.nd(1);';
+% if ( $message && !$url ) {
 
     document.getElementById("progress_message").innerHTML = "<% $message %>";
     document.getElementById("progress_bar").innerHTML = '';
     document.getElementById("progress_percent").innerHTML =
-      '<INPUT TYPE="button" VALUE="OK" onClick="<% $onClick %>">';
+      '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1)">';
     document.getElementById("progress_jobnum").innerHTML = '';
 
-%   unless ( $url ) {
-        if ( parent.document.<%$formname%>.submit.disabled == true ) {
-          parent.document.<%$formname%>.submit.disabled=false;
-        }
-%   }
+    if ( parent.document.<%$formname%>.submit.disabled == true ) {
+      parent.document.<%$formname%>.submit.disabled=false;
+    }
 
 % } elsif ( $url ) {
+    Cookies.set('freeside_status', <% $message |js_string %>, {
+                  expires: 0.0035
+    });
     parent.nd(1);
     window.top.location.href = '<% $url %>';
 % } elsif ( $popup_url ) {
@@ -130,6 +117,14 @@ function updateStatus( status_statustext ) {
       </TR>
     </TABLE>
 
-  </BODY>
-</HTML>
+<& /elements/footer-popup.html &>
+<%init>
 
+my $jobnum = $cgi->param('jobnum');
+my $url = $cgi->param('url');
+my $message = $cgi->param('message');
+my $popup_url = $cgi->param('popup_url');
+my $formname = scalar($cgi->param('formname'));
+my $error_url = $cgi->param('error_url');
+
+</%init>

@@ -28,7 +28,7 @@ Example:
           $formname,
           [ 'custnum', @opt_keys ],
           $p.'misc/bill.cgi',
-          $url ? { url => $url } : { message => $message },
+          \%args,
           $formname, # use it as 'key'
 ) %>
 <A HREF="javascript:void(0);" onclick="javascript:<%$formname%>process();"><%$label%></A>
@@ -46,10 +46,11 @@ my $label     = $opt{'label'};
 # need one and it needs to be unique
 my $formname  = $opt{'formname'} ||
                 'bill'.sprintf('%04d',random_id(4)).$custnum;
-my $url       = $opt{'url'} || '';
-my $message   = $opt{'message'} || 'Finished!';
 my $bill_opts = $opt{'bill_opts'} || {};
 my @opt_keys  = keys(%$bill_opts);
 my @opt_vals  = values(%$bill_opts);
+
+my %args = ( 'message' => $opt{'message'} || mt('Customer billed') );
+$args{url} = $opt{url} if $opt{url};
 
 </%init>
