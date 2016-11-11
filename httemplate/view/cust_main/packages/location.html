@@ -19,7 +19,7 @@
 %     if ( $loc->latitude && $loc->longitude ) {
           <BR>
           <FONT SIZE=-1>
-          <% $loc->latitude %>, <% $loc->longitude %>
+          <!-- <% $loc->latitude %>, <% $loc->longitude %> -->
           <& /elements/coord-links.html, {
                'latitude'        => $loc->latitude,
                'longitude'       => $loc->longitude,
@@ -50,20 +50,6 @@
 %   } # all of this is hidden if packages are grouped by location, because
 %     # it's in the top banner
 
-%   if ( ! $cust_pkg->get('cancel')
-%      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')
-%     )
-%   {
-  <BR>
-  <FONT SIZE=-1>
-%     unless ( $opt{no_links} or $opt{'change_from'} ) {
-      (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
-%     }
-%     if ( $cust_pkg->locationnum && ! $opt{no_links} ) {
-        (&nbsp;<%pkg_edit_location_link($cust_pkg->locationnum)%>&nbsp;)
-%     }
-  </FONT>
-%   } 
 % } # if the package is a scheduled future package change without location
 %   # change, then don't show any of this at all.  It's all implied by the
 %   # preceding package.
@@ -79,31 +65,5 @@ my $statedefault   = $opt{'statedefault'}
 my $loc = $cust_pkg->cust_location_or_main('_cache'=>$opt{cust_location_cache});
 # dubious--they should all have a location now
 my $default = $cust_pkg->locationnum == $opt{'cust_main'}->ship_locationnum;
-
-sub pkg_change_location_link {
-  my $cust_pkg = shift;
-  my $pkgpart = $cust_pkg->pkgpart;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p. "misc/change_pkg.cgi?locationnum=-1;pkgpart=$pkgpart;".
-                     "address1=;address2=;city=;county=;state=$statedefault;".
-                     "zip=;country=$countrydefault",
-    'label'       => emt('Change location'),
-    'actionlabel' => emt('Change'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 960,
-    'height'      => 530,
-  );
-}
-
-sub pkg_edit_location_link {
-  my $locationnum = shift;
-  include( '/elements/popup_link.html',
-    'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
-    'label'       => emt('Edit location'),
-    'actionlabel' => emt('Edit'),
-    'width'       => 700,
-    'height'      => 355,
-   );
-}
 
 </%init>
