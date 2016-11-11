@@ -1,12 +1,15 @@
-% if ( $quotationnum ) {
-<& /elements/header.html, mt('One-time charge') &>
+% if ( $quotationnum && ! $cust_main ) {
+<& /elements/header.html, mt('Quotation #[_1]: add one-time charge', $quotationnum) &>
 % } else {
 <& /elements/header-cust_main.html,
-     view      => 'packages',
+     view      => $quotationnum ? 'quotations' : 'packages',
      cust_main => $cust_main,
      etc       => $cgi->param('error') ? '' : 'onload="addRow()"',
 &>
-<h2>One-time charge</h2>
+<h2><% $quotationnum
+         ? emt('Quotation #[_1]: add one-time charge', $quotationnum)
+         : mt('One-time charge')
+    %></h2>
 % }
 
 <& /elements/init_calendar.html &>
