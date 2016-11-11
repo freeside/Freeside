@@ -280,11 +280,20 @@
                                     ';clone='. $part_pkg->pkgpart,
                  },
 
+                 { label       => '-',
+                   content     => '-',
+                 },
+
                  { label       => 'View package events',
                    acl         => [ 'Billing event reports',
                                     'View customer billing events', ],
                    condition   => sub { $cust_pkg->exists_cust_event },
                    url         => "search/cust_event.html?$plink",
+                 },
+
+                 { label       => '-',
+                   condition   => sub { $cust_pkg->exists_cust_event },
+                   content     => '-',
                  },
 
                  { label       => 'Change quantity',
@@ -312,6 +321,10 @@
                    actionlabel => emt('Change sales persion'),
                    width       => 390,
                    height      => 220,
+                 },
+
+                 { label       => '-',
+                   content     => '-',
                  },
 
                  { label       => (@invoice_detail ? 'Edit' : 'Add').
@@ -549,6 +562,44 @@
                    width       => 960,
                    height      => 740,
 
+                 },
+
+                 { label       => '-',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $cust_pkg->get('cancel')
+                                      },
+                   content     => '-',
+                 },
+
+                 { label       => 'Add contact',
+                   #acl         => 'Add package contact',#or something like that
+                   condition   => sub { ! $cust_pkg->get('cancel') },
+                   popup       => "misc/change_pkg-contact.html?$plink",
+                   actionlabel => emt('Add contact'),
+                   width       => 616,
+                   height      => 192,
+                 },
+
+                 { label       => 'Change location',
+                   acl         => 'Change customer package',
+                   condition   => sub { ! $change_from },
+                   popup       => "misc/change_pkg.cgi?locationnum=-1;$plink;".
+                      "address1=;address2=;city=;county=;state=$statedefault;".
+                      "zip=;country=$countrydefault",
+                   actionlabel => emt('Change location'),
+                   width       => 960,
+                   height      => 530,
+                 },
+
+                 { label       => 'Edit location',
+                   acl         => 'Change customer package',
+                   condition   => sub { ! $change_from && $cust_pkg->locationnum != $cust_pkg->cust_main->ship_locationnum  },
+                   popup       => 'misc/cust_location.cgi?locationnum='.
+                                    $cust_pkg->locationnum,
+                   actionlabel => emt('Edit location'),
+                   width       => 700,
+                   height      => 355,
                  },
 
                ],
