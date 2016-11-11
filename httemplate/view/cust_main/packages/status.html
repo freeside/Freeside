@@ -31,18 +31,6 @@
 
 %   } 
 %
-%   if ( $part_pkg->freq && !$supplemental && !$cust_pkg->change_custnum ) { #?
-
-      <TR>
-        <TD COLSPAN=<%$opt{colspan}%>>
-          <FONT SIZE=-1>
-%           if ( $curuser->access_right('Un-cancel customer package') && ! $opt{no_links} ) { 
-              (&nbsp;<% pkg_uncancel_link($cust_pkg) %>&nbsp;)
-%           } 
-          <FONT>
-        </TD>
-      </TR>
-%   }
 %
 % } else { # not canceled
 %
@@ -97,48 +85,6 @@
     <% pkg_status_row_expire($cust_pkg, %opt, curuser=>$curuser) %>
     <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
-%   # Status changes for suspended packages: can unsuspend, future-unsuspend,
-%   # or future-change. If this package is a future change or is supplemental
-%   # disable them all.
-%   if ( !$supplemental && ! $opt{no_links} && !$change_from ) {
-      <TR>
-        <TD COLSPAN=<%$opt{colspan}%>>
-          <FONT SIZE=-1>
-%           if ( !$cust_pkg->change_to_pkgnum # because on a technical level, change won't propagate,
-%                                             # and there's not really a use case worth making that work
-%                 and $part_pkg->freq # technically possible to have contract_end w/o freq, but nonsensical
-%                 and $curuser->access_right('Change package contract end date')
-%           ) {
-                (&nbsp;<% pkg_change_contract_end_link($cust_pkg) %>&nbsp;)
-                <BR>
-%           }
-%           if ( $cust_pkg->change_to_pkgnum ) {
-%               # then you can modify the package change
-%               if ( $curuser->access_right('Change customer package') ) {
-                (&nbsp;<% pkg_change_now_link($cust_pkg) %>&nbsp;)
-                (&nbsp;<% pkg_change_later_link($cust_pkg) %>&nbsp;)
-                (&nbsp;<% pkg_unchange_link($cust_pkg) %>&nbsp;)
-                <BR>
-%               }
-%           }
-%           if ( $curuser->access_right('Unsuspend customer package') ) { 
-%             if ( $cust_pkg->order_date eq $cust_pkg->get('susp') ) { #on hold
-                (&nbsp;<% pkg_unhold_link($cust_pkg) %>&nbsp;)
-%             } else {
-                (&nbsp;<% pkg_unsuspend_link($cust_pkg) %>&nbsp;)
-                (&nbsp;<% pkg_resume_link($cust_pkg) %>&nbsp;)
-%             }
-%           }
-%           if ( !$cust_pkg->change_to_pkgnum and
-%                $curuser->access_right('Cancel customer package immediately')
-%           ) {
-              (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
-%           } 
-          </FONT>
-        </TD>
-      </TR>
-%     }
-%
 %   } else { #status: active
 %
 %     if ( $change_from ) { # future change
@@ -170,18 +116,6 @@
           %>
 
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
-
-%         if ( !$supplemental && ! $opt{no_links} ) {
-          <TR>
-            <TD COLSPAN=<%$opt{colspan}%>>
-              <FONT SIZE=-1>
-%               if ( $curuser->access_right('Cancel customer package immediately') ) { 
-                  (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
-%               } 
-              </FONT>
-            </TD>
-          </TR>
-%         }
 
 %       } else { # recurring package, not yet billed
 
@@ -270,80 +204,7 @@
       <% pkg_status_row_expire($cust_pkg, %opt, curuser=>$curuser) %>
       <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
-%     # Status changes for active recurring packages. If it has a future
-%     # package change scheduled, let that be modified. If it's supplemental,
-%     # then that's the only allowed action. Otherwise allow suspend, future
-%     # suspend, do-not-suspend, and immediate and future cancel.
-%     if ( $part_pkg->freq and ! $opt{no_links} ) { 
 
-        <TR>
-          <TD COLSPAN=<%$opt{colspan}%>>
-            <FONT SIZE=-1>
-
-% #change date links
-%           if ( !$change_from and !$supplemental ) {
-%             my $has_date_links = 0;
-%             if ( !$cust_pkg->get('setup')
-%                   and $curuser->access_right('Change package start date')
-%             ) {
-            (&nbsp;<% pkg_change_start_link($cust_pkg) %>&nbsp;)
-%               $has_date_links = 1;
-%             }
-%             if ( !$cust_pkg->change_to_pkgnum # because on a technical level, change won't propagate,
-%                                               # and there's not really a use case worth making that work
-%                   and $curuser->access_right('Change package contract end date')
-%             ) {
-            (&nbsp;<% pkg_change_contract_end_link($cust_pkg) %>&nbsp;)
-%               $has_date_links = 1;
-%             }
-%             if ($has_date_links) {
-            <BR>
-%             }
-%           }
-
-% # action links
-%           if ( $change_from ) {
-%               # nothing
-%           } elsif ( $cust_pkg->change_to_pkgnum ) {
-%               # then you can modify the package change
-%               if ( $curuser->access_right('Change customer package') ) {
-                (&nbsp;<% pkg_change_now_link($cust_pkg) %>&nbsp;)
-                (&nbsp;<% pkg_change_later_link($cust_pkg) %>&nbsp;)
-                (&nbsp;<% pkg_unchange_link($cust_pkg) %>&nbsp;)
-                <BR>
-%               }
-%           }
-
-%           if ( !$supplemental ) {
-%           # suspension actions--always available
-%             if ( $curuser->access_right('Suspend customer package') ) {
-                (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
-%             }
-%             if ( $curuser->access_right('Suspend customer package later') ) {
-                (&nbsp;<% pkg_adjourn_link($cust_pkg) %>&nbsp;)
-%             }
-%             if ( $curuser->access_right('Delay suspension events') ) { 
-                (&nbsp;<% pkg_delay_link($cust_pkg) %>&nbsp;)
-%             }
-%
-%             if ( $change_from or $cust_pkg->change_to_pkgnum ) {
-%                 # you can't cancel the package while in this state
-%             } else { # the normal case: links to cancel the package
-                <BR>
-%               if ( $curuser->access_right('Cancel customer package immediately') ) {
-                  (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
-%               }
-%               if ( $curuser->access_right('Cancel customer package later') ) {
-                  (&nbsp;<% pkg_expire_link($cust_pkg) %>&nbsp;)
-%               }
-%             }
-%           }
-
-            <FONT>
-          </TD>
-        </TR>
-%     }
-%
 %   } 
 % } 
 
@@ -484,7 +345,7 @@ sub pkg_status_row_changed {
   return '' unless $cust_pkg->change_date;
 
   my $html =
-    pkg_status_row( $cust_pkg, emt('Package changed'), 'change_date', %opt );
+    pkg_status_row( $cust_pkg, emt('Changed'), 'change_date', %opt );
 
   my $old = $cust_pkg->old_cust_pkg;
   if ( $old ) {
@@ -650,136 +511,8 @@ sub pkg_datestr {
   $strip;
 }
 
-sub pkg_suspend_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/cancel_pkg.html?method=suspend',
-             'label'       => emt('Suspend now'),
-             'actionlabel' => emt('Suspend'),
-             'color'       => '#FF9900',
-             'cust_pkg'    => shift,
-             'height'      => 420,
-         )
-}
-
-sub pkg_adjourn_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/cancel_pkg.html?method=adjourn',
-             'label'       => emt('Suspend later'),
-             'actionlabel' => emt('Adjourn'),
-             'color'       => '#CC6600',
-             'cust_pkg'    => shift,
-             'height'      => 445,
-         )
-}
-
-sub pkg_delay_link  {
-  my($cust_pkg) = shift;
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/delay_susp_pkg.html',
-             'label'       => ( $cust_pkg->dundate
-                                  ? emt('Edit suspension delay')
-                                  : emt('Delay suspend')
-                              ),
-             'actionlabel' => emt('Delay suspend for'),
-             'cust_pkg'    => $cust_pkg,
-         )
-}
-
-sub pkg_resume_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/cancel_pkg.html?method=resume',
-             'label'       => emt('Unsuspend later'),
-             'actionlabel' => emt('Resume'),
-             'color'       => '#00CC00',
-             'cust_pkg'    => shift,
-         )
-}
-
-sub pkg_unhold_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/unhold_pkg.html',
-             'label'       => emt('Start billing'),
-             'actionlabel' => emt('Start billing'),
-             'color'       => '#00CC00',
-             'width'       => 510,
-             'height'      => 310,
-             'cust_pkg'    => shift,
-         )
-}
-
-sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    emt('Unsuspend now'), @_ ); }
 sub pkg_unadjourn_link { pkg_link('misc/unadjourn_pkg', emt('Abort'),     @_ ); }
 sub pkg_unexpire_link  { pkg_link('misc/unexpire_pkg',  emt('Abort'),     @_ ); }
-sub pkg_unchange_link  { pkg_link('misc/do_not_change_pkg',  emt('Abort change'),     @_ ); }
-sub pkg_change_now_link  { pkg_link('misc/change_pkg_now',  emt('Change now'),     @_ ); }
-
-sub pkg_cancel_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/cancel_pkg.html?method=cancel',
-             'label'       => emt('Cancel now'),
-             'actionlabel' => emt('Cancel'),
-             'color'       => '#ff0000',
-             'cust_pkg'    => shift,
-         )
-}
-
-sub pkg_uncancel_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/cancel_pkg.html?method=uncancel',
-             'label'       => emt('Un-cancel'),
-             'actionlabel' => emt('Un-cancel'),
-             #'color'       =>  #?
-             'cust_pkg'    => shift,
-             'width'       => 960,
-             'height'      => 740,
-         )
-}
-
-sub pkg_expire_link {
-  include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/cancel_pkg.html?method=expire',
-             'label'       => emt('Cancel later'),
-             'actionlabel' => emt('Expire'),
-             'color'       => '#CC0000',
-             'cust_pkg'    => shift,
-         )
-}
-
-sub pkg_change_later_link {
-  my $cust_pkg = shift;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p . 'misc/change_pkg.cgi',
-    'label'       => emt('Reschedule'),
-    'actionlabel' => emt('Edit scheduled change for'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 960,
-    'height'      => 490,
-  )
-}
-
-sub pkg_change_start_link {
-  my $cust_pkg = shift;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p . 'misc/change_pkg_date.html?field=start_date',
-    'label'       => emt('Set start date'),
-    'actionlabel' => emt('Set start of billing for'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 510,
-    'height'      => 310,
-  )
-}
-
-sub pkg_change_contract_end_link {
-  my $cust_pkg = shift;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p . 'misc/change_pkg_date.html?field=contract_end',
-    'label'       => emt('Set contract end'),
-    'actionlabel' => emt('Set contract end for'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 510,
-    'height'      => 310,
-  )
-}
 
 sub svc_recharge_link {
   include( '/elements/popup_link-cust_svc.html',

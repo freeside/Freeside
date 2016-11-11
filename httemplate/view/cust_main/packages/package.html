@@ -222,6 +222,12 @@
 %                                       && ! $supplemental
 %                                       && ! $cust_pkg->get('cancel')
 %                                 };
+%       my $change_cond = sub { $part_pkg->freq ne '0'
+%                                 && ! $change_from
+%                                 && ! $supplemental
+%                                 && ! $cust_pkg->get('cancel')
+%                                 && $cust_pkg->change_to_pkgnum,
+%                             };
 
         <& /elements/dropdown-menu.html,
              id      => 'cust_pkg'. $cust_pkg->pkgnum. '_menu',
@@ -232,7 +238,10 @@
                  #TODO: order/group these better
 
                  { label => 'Package actions',
-                   content => '<FONT STYLE="text-decoration:underline"><B>Package actions</B></FONT> <IMG SRC="'.$p. 'images/arrow.down.black.png">',
+                   content =>
+                    '<FONT STYLE="text-decoration:underline;font-weight:bold">'.
+                    'Package actions</FONT>'.
+                    ' <IMG SRC="'.$p.'images/arrow.down.black.png">',
                  },
 
                  { label       => 'Modify one-time charge',
@@ -315,9 +324,9 @@
                                        ' invoice details'
                                      ),
                    width       => 768,
-                },
+                 },
 
-                { label       => (@comments ? 'Edit' : 'Add'). ' comments',
+                 { label        => (@comments ? 'Edit' : 'Add'). ' comments',
                    acl         => 'Edit customer package comments',
                    popup       => "edit/cust_pkg_detail.html?$plink".
                                     ';detailtype=C',
@@ -325,12 +334,222 @@
                                        ' comments'
                                      ),
                    width       => 768,
-                },
-
-                 { label   => '-',
-                   content => '-',
                  },
 
+                 { label       => '-',
+                   condition   => sub { $part_pkg->freq ne '0' },
+                   content     => '-',
+                 },
+
+                 { label       => 'Set start date',
+                   acl         => 'Change package start date',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && ! $cust_pkg->get('setup')
+                                      },
+                  popup       => "misc/change_pkg_date.html?$plink".
+                                   ';field=start_date',
+                  actionlabel => emt('Set start of billing for'),
+                  width       => 510,
+                  height      => 310,
+                 },
+
+                 { label       => 'Set contract end',
+                   acl         => 'Change package contract end date',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && ! $cust_pkg->change_to_pkgnum
+                                      },
+                   popup       => "misc/change_pkg_date.html?$plink".
+                                   ';field=contract_end',
+                   actionlabel => emt('Set contract end for'),
+                   width       => 510,
+                   height      => 310,
+                 },
+
+                 { label       => '-',
+                   condition   => sub { $part_pkg->freq ne '0' },
+                   content     => '-',
+                 },
+
+                 { label       => 'Change now',
+                   acl         => 'Change customer package',
+                   condition   => $change_cond,
+                   url         => "misc/change_pkg_now.cgi?$pkgnum",
+                 },
+
+                 { label       => 'Reschedule',
+                   acl         => 'Change customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && $cust_pkg->change_to_pkgnum,
+                                      },
+                   popup       => "misc/change_pkg.html?$plink",
+                   actionlabel => emt('Edit scheduled change for'),
+                   url         => "misc/change_pkg_now.cgi?$pkgnum",
+                   width       => 960,
+                   height      => 490,
+    
+                 },
+
+                 { label       => 'Abort change',
+                   acl         => 'Change customer package',
+                   condition   => $change_cond,
+                   url         => "misc/do_not_change_pkg.cgi?$pkgnum",
+                 },
+
+                 { label       => '-',
+                   acl         => 'Change customer package',
+                   condition   => $change_cond,
+                   content     => '-',
+                 },
+
+                 { label       => 'Suspend now',
+                   acl         => 'Suspend customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && ! $cust_pkg->get('susp')
+                                      },
+                   popup       => "misc/cancel_pkg.html?method=suspend;$plink",
+                   actionlabel => emt('Suspend now'),
+                   color       => '#FF9900',
+                   width       => 768,
+                   height      => 420,
+                 },
+
+                 { label       => 'Suspend later',
+                   acl         => 'Suspend customer package later',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && ! $cust_pkg->get('susp')
+                                      },
+                   popup       => "misc/cancel_pkg.html?method=adjourn;$plink",
+                   actionlabel => emt('Suspend later'),
+                   color       => '#CC6600',
+                   width       => 768,
+                   height      => 445,
+                 },
+
+                 { label       => $cust_pkg->dundate
+                                    ? 'Edit suspension delay'
+                                    : 'Delay suspend',
+
+                   acl         => 'Delay suspension events',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && ! $cust_pkg->get('susp')
+                                      },
+                   popup       => "misc/delay_susp_pkg.html?$plink",
+                   actionlabel => emt('Delay suspend for'),
+                   width       => 768,
+                 },
+
+                 { label       => 'Start billing',
+                   acl         => 'Unsuspend customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && $cust_pkg->get('susp')
+                                          && $cust_pkg->order_date == $cust_pkg->get('susp')
+                                      },
+                   popup        => "misc/unhold_pkg.html?$plink",
+                   actionlabel  => emt('Start billing'),
+                   color       => '#00CC00',
+                   width       => 510,
+                   height      => 310,
+                 },
+
+                 { label       => 'Unsuspend now',
+                   acl         => 'Unsuspend customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && $cust_pkg->get('susp')
+                                          && $cust_pkg->order_date != $cust_pkg->get('susp')
+                                      },
+                   'url'       => "misc/unsusp_pkg.cgi?$pkgnum",
+                 },
+
+                 { label       => 'Unsuspend later',
+                   acl         => 'Unsuspend customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && $cust_pkg->get('susp')
+                                          && $cust_pkg->order_date != $cust_pkg->get('susp')
+                                      },
+                   popup       => "misc/cancel_pkg.html?method=resume;$plink",
+                   actionlabel => emt('Unsuspend later'),
+                   color       => '#00CC00',
+                   width       => 768,
+                 },
+
+                 { label       => '-',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->get('cancel')
+                                          && ! $cust_pkg->get('susp')
+                                      },
+                   content     => '-',
+                 },
+
+                 { label       => 'Cancel now',
+                   acl         => 'Cancel customer package immediately',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->change_to_pkgnum
+                                          && ! $cust_pkg->get('cancel')
+                                      },
+                   popup       => "misc/cancel_pkg.html?method=cancel;$plink",
+                   actionlabel => emt('Cancel now'),
+                   color       => '#FF0000',
+                   width       => 768,
+                 },
+
+                 { label       => 'Cancel later',
+                   acl         => 'Cancel customer package later',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $change_from
+                                          && ! $supplemental
+                                          && ! $cust_pkg->change_to_pkgnum
+                                          && ! $cust_pkg->get('cancel')
+                                      },
+                   popup       => "misc/cancel_pkg.html?method=expire;$plink",
+                   actionlabel => emt('Cancel later'),
+                   color       => '#CC0000',
+                   width       => 768,
+                 },
+
+                 { label       => 'Un-cancel',
+                   acl         => 'Un-cancel customer package',
+                   condition   => sub { $part_pkg->freq ne '0'
+                                          && ! $supplemental
+                                          && ! $cust_pkg->change_custnum
+                                          && $cust_pkg->get('cancel')
+                                      },
+                   popup       => "misc/cancel_pkg.html?method=uncancel;$plink",
+                   actionlabel => emt('Un-cancel'),
+                   width       => 960,
+                   height      => 740,
+
+                 },
 
                ],
              ],
