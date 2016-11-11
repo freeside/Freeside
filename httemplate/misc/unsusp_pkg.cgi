@@ -1,15 +1,13 @@
 %if ( $error ) {
 %  errorpage($error);
 %} else {
-%  my $cookie = CGI::Cookie->new( -name    => 'freeside_status',
-%                                 -value   => mt('Package unsuspended'),
-%                                 -expires => '+5m',
-%                               );
-% #$r->headers_out->add( 'Set-Cookie' => $cookie->as_string );
 <% $cgi->redirect(
-     -uri => popurl(2). "view/cust_main.cgi?show=packages;custnum=".$cust_pkg->getfield('custnum'),
-     -cookie => $cookie
-  )
+     -uri    => popurl(2). "view/cust_main.cgi?show=packages;custnum=$custnum",
+     -cookie => CGI::Cookie->new( -name    => 'freeside_status',
+                                  -value   => mt('Package unsuspended'),
+                                  -expires => '+5m',
+                                ),
+   )
 %>
 %}
 <%init>
@@ -25,5 +23,7 @@ my $pkgnum = $1;
 my $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 
 my $error = $cust_pkg->unsuspend;
+
+my $custnum = $cust_pkg->custnum;
 
 </%init>
