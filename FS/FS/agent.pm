@@ -265,24 +265,14 @@ sub payment_gateway {
   my $conf = new FS::Conf;
 
   if ( $options{thirdparty} ) {
-    # still a kludge, but it gets the job done
-    # and the 'cardtype' semantics don't really apply to thirdparty
-    # gateways because we have to choose a gateway without ever 
-    # seeing the card number
-    my $gatewaynum =
-      $conf->config('selfservice-payment_gateway', $self->agentnum);
-    my $gateway;
-    $gateway = FS::payment_gateway->by_key($gatewaynum) if $gatewaynum;
-    return $gateway if $gateway;
 
-    # a little less kludgey than the above, and allows PayPal to coexist 
-    # with credit card gateways
+    # allows PayPal to coexist with credit card gateways
     my $is_paypal = { op => '!=', value => 'PayPal' };
     if ( uc($options{method}) eq 'PAYPAL' ) {
       $is_paypal = 'PayPal';
     }
 
-    $gateway = qsearchs({
+    my $gateway = qsearchs({
         table     => 'payment_gateway',
         addl_from => ' JOIN agent_payment_gateway USING (gatewaynum) ',
         hashref   => {
