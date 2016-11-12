@@ -2208,8 +2208,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-payment_gateway',
-    'section'     => 'self-service',
-    'description' => 'Force the use of this payment gateway for self-service.',
+    'section'     => 'deprecated',
+    'description' => '(no longer supported) Force the use of this payment gateway for self-service.',
     %payment_gateway_options,
   },
 

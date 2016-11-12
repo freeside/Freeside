@@ -401,20 +401,12 @@ sub payment_gateway {
   my $conf = new FS::Conf;
   my $cust_main = shift;
   my $cust_payby = shift;
-  my $gatewaynum = $conf->config('selfservice-payment_gateway');
-  if ( $gatewaynum ) {
-    my $pg = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
-    die "configured gatewaynum $gatewaynum not found!" if !$pg;
-    return $pg;
-  }
-  else {
-    return '' if ! FS::payby->realtime($cust_payby);
-    my $pg = $cust_main->agent->payment_gateway(
-      'method'  => FS::payby->payby2bop($cust_payby),
-      'nofatal' => 1
-    );
-    return $pg;
-  }
+  return '' if ! FS::payby->realtime($cust_payby);
+  my $pg = $cust_main->agent->payment_gateway(
+    'method'  => FS::payby->payby2bop($cust_payby),
+    'nofatal' => 1
+  );
+  return $pg;
 }
 
 sub access_info {

@@ -226,14 +226,6 @@ sub _bop_recurring_billing {
 sub _payment_gateway {
   my ($self, $options) = @_;
 
-  if ( $options->{'selfservice'} ) {
-    my $gatewaynum = FS::Conf->new->config('selfservice-payment_gateway');
-    if ( $gatewaynum ) {
-      return $options->{payment_gateway} ||= 
-          qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
-    }
-  }
-
   if ( $options->{'fake_gatewaynum'} ) {
 	$options->{payment_gateway} =
 	    qsearchs('payment_gateway',
