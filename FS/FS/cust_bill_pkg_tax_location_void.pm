@@ -119,7 +119,7 @@ sub check {
     || $self->ut_number('pkgnum', 'cust_pkg', 'pkgnum' )
     || $self->ut_foreign_key('locationnum', 'cust_location', 'locationnum' )
     || $self->ut_money('amount')
-    || $self->ut_foreign_key('taxable_billpkgnum', 'cust_bill_pkg_void', 'billpkgnum')
+    || $self->ut_foreign_keyn('taxable_billpkgnum', 'cust_bill_pkg_void', 'billpkgnum')
   ;
   return $error if $error;
 
