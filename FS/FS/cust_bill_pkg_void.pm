@@ -276,6 +276,7 @@ sub _upgrade_data {  # class method
   my $error;
   # fix voids with tax from before July 2013, when the taxable_billpkgnum
   # field was added to the void table
+  local $FS::Record::nowarn_classload = 1;
   my $search = FS::Cursor->new({
     'table'   => 'cust_bill_pkg_tax_location_void',
     'hashref' => { 'taxable_billpkgnum' => '' }
@@ -287,11 +288,14 @@ sub _upgrade_data {  # class method
     my $unvoid = qsearchs({
       'table'   => 'h_cust_bill_pkg_tax_location',
       'hashref' => { 'billpkgtaxlocationnum' => $num },
+      'extra_sql' => ' AND taxable_billpkgnum IS NOT NULL',
       'order_by' => ' ORDER BY history_date DESC LIMIT 1'
     });
     if (!$unvoid) {
       # should never happen
-      die "billpkgtaxlocationnum $num: could not find pre-void history record to restore taxable_billpkgnum.";
+      # but should this be fatal? or wait until someone actually tries to
+      # use the record?
+      warn "billpkgtaxlocationnum $num: could not find pre-void history record to restore taxable_billpkgnum.";
     }
     if ($unvoid) {
       $void->set('taxable_billpkgnum', $unvoid->taxable_billpkgnum);
