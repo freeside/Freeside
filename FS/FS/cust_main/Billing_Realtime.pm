@@ -413,15 +413,17 @@ sub realtime_bop {
 
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
-  if (!$self->tokenized($options{'payinfo'})) {
+  if (($options{method} eq 'CC') && !$self->tokenized($options{'payinfo'})) {
     my $token_error = $self->realtime_tokenize(\%options);
     return $token_error if $token_error;
     # in theory, all cust_payby will be tokenized during original save,
     # so we shouldn't get here with opt cust_payby...but just in case...
-    if ($options{'cust_payby'}) {
+    if ($options{'cust_payby'} && $self->tokenized($options{'payinfo'})) {
       $token_error = $options{'cust_payby'}->replace;
       return $token_error if $token_error;
     }
+    return "Cannot tokenize card info"
+      if $conf->exists('no_saved_cardnumbers') && !$self->tokenized($options{'payinfo'});
   }
 
   ### 
@@ -1765,11 +1767,13 @@ sub realtime_verify_bop {
 
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
-  if (!$self->tokenized($options{'payinfo'})) {
+  if (($options{method} eq 'CC') && !$self->tokenized($options{'payinfo'})) {
     my $token_error = $self->realtime_tokenize(\%options);
     return $token_error if $token_error;
     #important that we not replace cust_payby here,
     #because cust_payby->replace uses realtime_verify_bop!
+    return "Cannot tokenize card info"
+      if $conf->exists('no_saved_cardnumbers') && !$self->tokenized($options{'payinfo'});
   }
 
   ###
@@ -2216,6 +2220,8 @@ sub realtime_tokenize {
                                     $self->_bop_options(\%options),
                                   );
 
+  return '' unless $transaction->can('info');
+
   my %supported_actions = $transaction->info('supported_actions');
   return '' unless $supported_actions{'CC'} and grep(/^Tokenize$/,@{$supported_actions{'CC'}});
 
@@ -2317,11 +2323,204 @@ sub tokenized {
   FS::cust_pay->tokenized($payinfo);
 }
 
+=item remove_card_numbers
+
+NOT AN OBJECT METHOD.  Acts on all customers.  Placed here because it makes
+use of module-internal methods, and to keep everything that uses
+Billing::OnlinePayment all in one place.
+
+Removes all stored card numbers from payinfo in cust_payby and 
+CARD transactions in cust_pay_pending, cust_pay, cust_pay_void and cust_refund.
+Will fail if cust_payby records can't be tokenized.  Transaction records that
+cannot be tokenized will have their payinfo replaced with their paymask.
+
+THIS WILL OVERWRITE STORED PAYINFO ON OLD TRANSACTIONS.
+
+If the gateway originally used for the transaction can't tokenize, this may
+prevent the transaction from being voided or refunded.  Hence, it should
+not (yet) be run as part of a regular upgrade.  This is only intended to be
+run on systems with current gateways that tokenize, after the window has
+passed for voiding/refunding transactions from previous gateways, in order 
+to remove all real card numbers from the system.
+
+Also sets the no_saved_cardnumbers conf, to keep things this way.
+
+=cut
+
+# ??? probably should add MCRD handling to this
+
+sub remove_card_numbers {
+  # no input, always does the same thing
+
+  my $cache = {}; #cache for module info
+
+  eval "use FS::Cursor";  
+  return "Error initializing FS::Cursor: ".$@ if $@;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  # turn this on
+  $conf->touch('no_saved_cardnumbers');
+
+  ### Tokenize cust_payby
+
+  my $cust_search = FS::Cursor->new({ table => 'cust_main' },$dbh);
+  while (my $cust_main = $cust_search->fetch) {
+    foreach my $cust_payby ($cust_main->cust_payby('CARD','DCRD')) {
+      next if $cust_payby->tokenized;
+      # load gateway first, just so we can cache it
+      my $payment_gateway = $cust_main->_payment_gateway({
+        'payinfo' => $cust_payby->payinfo, # for cardtype agent overrides
+        'nofatal' => 1, # handle error smoothly below
+        # invnum -- XXX need to figure out how to handle taxclass overrides
+      });
+      unless ($payment_gateway) {
+        $cust_search->DESTROY;
+        $dbh->rollback if $oldAutoCommit;
+        return "No gateway found for custnum ".$cust_main->custnum;
+      }
+      my $info = $cust_main->_remove_card_numbers_gateway_info($cache,$payment_gateway);
+      unless (ref($info) && $info->{'can_tokenize'}) {
+        $cust_search->DESTROY;
+        $dbh->rollback if $oldAutoCommit;
+        my $error = ref($info)
+          ? "Gateway ".$payment_gateway->gatewaynum." cannot tokenize, for custnum ".$cust_main->custnum
+          : $info;
+        return $error;
+      }
+      my %tokenopts = (
+        'payment_gateway' => $payment_gateway,
+        'cust_payby'      => $cust_payby,
+      );
+      my $error = $cust_main->realtime_tokenize(\%tokenopts);
+      if ($cust_payby->tokenized) { # implies no error
+        $error = $cust_payby->replace;
+      } else {
+        $error = 'Unknown error';
+      }
+      if ($error) {
+        $cust_search->DESTROY;
+        $dbh->rollback if $oldAutoCommit;
+        return "Error tokenizing cust_payby ".$cust_payby->custpaybynum.": ".$error;
+      }
+    }
+  }
+
+  ### Tokenize/mask transaction tables
+
+  # grep assistance:
+  #   $cust_pay_pending->replace, $cust_pay->replace, $cust_pay_void->replace, $cust_refund->replace all run here
+  foreach my $table ( qw(cust_pay_pending cust_pay cust_pay_void cust_refund) ) {
+    my $search = FS::Cursor->new({
+      table     => $table,
+      hashref   => { 'payby' => 'CARD' },
+    },$dbh);
+    while (my $record = $search->fetch) {
+      next if $record->tokenized;
+      next if !$record->payinfo; #shouldn't happen, but just in case, no need to mask
+      next if $record->payinfo =~ /N\/A/; # ??? Not sure what's up with these, but no need to mask
+      next if $record->payinfo eq $record->paymask; #already masked
+      my $old_gateway;
+      if (my $old_gatewaynum = $record->gatewaynum) {
+        $old_gateway = 
+          qsearchs('payment_gateway',{ 'gatewaynum' => $old_gatewaynum, });
+        # not erring out if gateway can't be found, just use paymask
+      }
+      # first try to tokenize
+      my $cust_main = $record->cust_main;
+      if ($cust_main && $old_gateway) {
+        my $info = $cust_main->_remove_card_numbers_gateway_info($cache,$old_gateway);
+        unless (ref($info)) {
+          # only throws error if Business::OnlinePayment won't load,
+          #   which is just cause to abort this whole process
+          $search->DESTROY;
+          $dbh->rollback if $oldAutoCommit;
+          return $info;
+        }
+        if ($info->{'can_tokenize'}) {
+          my %tokenopts = (
+            'payment_gateway' => $old_gateway,
+            'method'          => 'CC',
+            'payinfo'         => $record->payinfo,
+            'paydate'         => $record->paydate,
+          );
+          my $error = $cust_main->realtime_tokenize(\%tokenopts);
+          if ($cust_main->tokenized($tokenopts{'payinfo'})) { # implies no error
+            $record->payinfo($tokenopts{'payinfo'});
+            $error = $record->replace;
+          } else {
+            $error = 'Unknown error';
+          }
+          if ($error) {
+            $search->DESTROY;
+            $dbh->rollback if $oldAutoCommit;
+            return "Error tokenizing $table ".$record->get($record->primary_key).": ".$error;
+          }
+          next;
+        }
+      }
+      # can't tokenize, so just replace with paymask
+      $record->set('payinfo',$record->paymask); #deliberately evade ->payinfo() remasking effects
+      my $error = $record->replace;
+      if ($error) {
+        $search->DESTROY;
+        $dbh->rollback if $oldAutoCommit;
+        return "Error masking payinfo for $table ".$record->get($record->primary_key).": ".$error;
+      }
+    }
+  }
+
+  $dbh->commit if $oldAutoCommit;
+
+  return '';
+}
+
+sub _remove_card_numbers_gateway_info {
+  my ($self,$cache,$payment_gateway) = @_;
+
+  return $cache->{$payment_gateway->gateway_module}
+    if $cache->{$payment_gateway->gateway_module};
+
+  my $info = {};
+  $cache->{$payment_gateway->gateway_module} = $info;
+
+  my $namespace = $payment_gateway->gateway_namespace;
+  return $info unless $namespace eq 'Business::OnlinePayment';
+  $info->{'is_bop'} = 1;
+
+  # only need to load this once,
+  # don't want to load if nothing is_bop
+  unless ($cache->{'Business::OnlinePayment'}) {
+    eval "use $namespace";  
+    return "Error initializing Business:OnlinePayment: ".$@ if $@;
+    $cache->{'Business::OnlinePayment'} = 1;
+  }
+
+  my $transaction = new $namespace( $payment_gateway->gateway_module,
+                                    $self->_bop_options({ 'payment_gateway' => $payment_gateway }),
+                                  );
+
+  return $info unless $transaction->can('info');
+  $info->{'can_info'} = 1;
+
+  my %supported_actions = $transaction->info('supported_actions');
+  $info->{'can_tokenize'} = 1
+    if $supported_actions{'CC'}
+      && grep /^Tokenize$/, @{$supported_actions{'CC'}};
+
+  $info->{'void_requires_card'} = 1
+    if $transaction->info('CC_void_requires_card');
+
+  $cache->{$payment_gateway->gateway_module} = $info;
+
+  return $info;
+}
+
 =back
 
 =head1 BUGS
-
-Not autoloaded.
 
 =head1 SEE ALSO
 
