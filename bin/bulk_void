@@ -6,7 +6,7 @@ use vars qw( %opt );
 use FS::Misc::Getopt;
 use FS::Record qw(qsearch qsearchs dbh);
 
-getopts('s:e:cpiXr:t:');
+getopts('cpiXr:t:');
 
 my $dbh = dbh;
 $FS::UID::AutoCommit = 0;
@@ -26,13 +26,13 @@ sub usage() {
 ";
 }
 
-if (!$opt{s} or !$opt{e} or !$opt{r}) {
+if (!$opt{start} or !$opt{end} or !$opt{r}) {
   die usage;
 }
 
 print "DRY RUN--changes will not be committed.\n" unless $opt{X};
 
-my $date = " WHERE _date >= $opt{s} AND _date <= $opt{e}";
+my $date = " WHERE _date >= $opt{start} AND _date <= $opt{end}";
 
 my %search = ();
 $search{payby} = $opt{t} if $opt{t} && $opt{p};
