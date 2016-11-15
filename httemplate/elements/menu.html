@@ -503,7 +503,7 @@ tie my %tools_importing, 'Tie::IxHash',
   'Phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'misc/cdr-import.html', '' ],
 ;
-if ( $conf->config('tax_data_vendor') eq 'cch' ) {
+if ( $conf->config('tax_data_vendor') ) {
   if ( $conf->exists('taxdatadirectdownload') ) {
       $tools_importing{'Tax rates from vendor site'} =
       [ $fsurl.'misc/tax-fetch_and_import.cgi', '' ];

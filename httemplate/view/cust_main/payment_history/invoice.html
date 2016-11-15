@@ -3,10 +3,12 @@
 
 my( $cust_bill, %opt ) = @_;
 
-my $invoice = emt("Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed);
-
 my $under = '';
-if ( $cust_bill->owed > 0 ) {
+my $invoice;
+if ( $cust_bill->pending ) {
+  $invoice = '<I><FONT SIZE="+1" COLOR="#D05000">' .
+    emt("Pending Invoice #[_1] (Charges of [_2])", $cust_bill->display_invnum, $cust_bill->charged);
+} elsif ( $cust_bill->owed > 0 ) {
   $invoice = '<B><FONT SIZE="+1" COLOR="#FF0000">' .
     emt("Open Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed) .
     '</FONT></B>';
@@ -14,7 +16,9 @@ if ( $cust_bill->owed > 0 ) {
     $under .= '<BR>'. emt('Payment promised on [_1]',
         time2str($opt{'date_format'}, $cust_bill->promised_date));
   }
-} #if $cust_bill->owed
+} else {
+  $invoice = emt("Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed);
+}
 
 my $invnum = $cust_bill->invnum;
 
