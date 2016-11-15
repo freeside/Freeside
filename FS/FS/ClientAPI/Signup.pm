@@ -1104,7 +1104,7 @@ sub capture_payment {
   my $conf = new FS::Conf;
 
   my $url = $packet->{url};
-  my $payment_gateway = $payment_gateway = qsearchs('payment_gateway', 
+  my $payment_gateway = qsearchs('payment_gateway', 
         { 'gateway_callback_url' => popurl(0, $url) } 
       );
   if (!$payment_gateway) { 
