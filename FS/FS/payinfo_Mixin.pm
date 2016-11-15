@@ -194,6 +194,8 @@ sub payinfo_check {
   FS::payby->can_payby($self->table, $self->payby)
     or return "Illegal payby: ". $self->payby;
 
+  my $conf = new FS::Conf;
+
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
 
     my $payinfo = $self->payinfo;
@@ -212,8 +214,10 @@ sub payinfo_check {
         $self->payinfo($1);
         validate($self->payinfo) or return "Illegal credit card number";
         return "Unknown card type" if $cardtype eq "Unknown";
+        return "Card number not tokenized"
+          if $conf->exists('no_saved_cardnumbers') && !$self->tokenized;
       } else {
-        $self->payinfo('N/A'); #???
+        $self->payinfo('N/A'); #??? re-masks card
       }
     }
   } else {
