@@ -32,10 +32,11 @@ if (!$opt{start} or !$opt{end} or !$opt{r}) {
 
 print "DRY RUN--changes will not be committed.\n" unless $opt{X};
 
-my $date = " WHERE _date >= $opt{start} AND _date <= $opt{end}";
-
 my %search = ();
 $search{payby} = $opt{t} if $opt{t} && $opt{p};
+
+my $date = (keys %search ? ' AND ' : ' WHERE ').
+           " _date >= $opt{start} AND _date <= $opt{end}";
 
 my %tables = (
   c => 'cust_credit',
