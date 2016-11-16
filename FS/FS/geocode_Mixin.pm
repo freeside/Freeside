@@ -260,6 +260,7 @@ sub process_district_update {
   die $@ if $@;
   die "$class has no location data" if !$class->can('location_hash');
 
+  my $error;
   my $conf = FS::Conf->new;
   my $method = $conf->config('tax_district_method')
     or return; #nothing to do if null
@@ -269,9 +270,11 @@ sub process_district_update {
   my $tax_info = get_district({ $self->location_hash }, $method);
   return unless $tax_info;
 
-  $self->set('district', $tax_info->{'district'} );
-  my $error = $self->replace;
-  die $error if $error;
+  if ($self->district ne $tax_info->{'district'}) {
+    $self->set('district', $tax_info->{'district'} );
+    $error = $self->replace;
+    die $error if $error;
+  }
 
   my %hash = map { $_ => uc( $tax_info->{$_} ) } 
     qw( district city county state country );
@@ -281,6 +284,9 @@ sub process_district_update {
   my $taxname = $conf->config('tax_district_taxname');
   # there must be exactly one cust_main_county for each district+taxclass.
   # do NOT exclude taxes that are zero.
+
+  # mutex here so that concurrent queue jobs can't make duplicates.
+  FS::cust_main_county->lock_table;
   foreach my $taxclass (@classes) {
     my @existing = qsearch('cust_main_county', {
       %hash,
