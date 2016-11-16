@@ -676,7 +676,7 @@ sub _upgrade_data {
   my $class = shift;
   # assume taxes in Washington with district numbers, and null name, or 
   # named 'sales tax', are looked up via the wa_sales method. mark them.
-  my $journal = 'cust_main_county__source_wa_sales';
+  my $journal = 'cust_main_county__source_wa_sales_201611';
   if (!FS::upgrade_journal->is_done($journal)) {
     my @taxes = qsearch({
         'table'     => 'cust_main_county',
@@ -695,26 +695,6 @@ sub _upgrade_data {
     FS::upgrade_journal->set_done($journal);
   }
   my @key_fields = (qw(city county state country district taxname taxclass));
-
-  # remove duplicates (except disabled records)
-  my @duplicate_sets = qsearch({
-    table => 'cust_main_county',
-    select => FS::Record::group_concat_sql('taxnum', ',') . ' AS taxnums, ' .
-              join(',', @key_fields),
-    extra_sql => ' WHERE tax > 0
-      GROUP BY city, county, state, country, district, taxname, taxclass
-      HAVING COUNT(*) > 1'
-  });
-  warn "Found ".scalar(@duplicate_sets)." set(s) of duplicate tax definitions\n"
-    if @duplicate_sets;
-  foreach my $set (@duplicate_sets) {
-    my @taxnums = split(',', $set->get('taxnums'));
-    my $first = FS::cust_main_county->by_key(shift @taxnums);
-    foreach my $taxnum (@taxnums) {
-      my $record = FS::cust_main_county->by_key($taxnum);
-      $record->_merge_into($first);
-    }
-  }
 
   # trim whitespace and convert to uppercase in the 'city' field.
   foreach my $record (qsearch({
@@ -741,7 +721,7 @@ sub _upgrade_data {
   my $district_taxname = $conf->config('tax_district_taxname');
   $journal = 'cust_main_county__district_taxclass';
   if (!FS::upgrade_journal->is_done($journal)
-      and $conf->config('enable_taxclasses')) {
+      and $conf->exists('enable_taxclasses')) {
     eval "use FS::part_pkg_taxclass";
     my @taxes = qsearch({
         'table'     => 'cust_main_county',
@@ -815,6 +795,27 @@ sub _upgrade_data {
       }   
     }
   }
+
+  # remove duplicates (except disabled records)
+  my @duplicate_sets = qsearch({
+    table => 'cust_main_county',
+    select => FS::Record::group_concat_sql('taxnum', ',') . ' AS taxnums, ' .
+              join(',', @key_fields),
+    extra_sql => ' WHERE tax > 0
+      GROUP BY city, county, state, country, district, taxname, taxclass
+      HAVING COUNT(*) > 1'
+  });
+  warn "Found ".scalar(@duplicate_sets)." set(s) of duplicate tax definitions\n"
+    if @duplicate_sets;
+  foreach my $set (@duplicate_sets) {
+    my @taxnums = split(',', $set->get('taxnums'));
+    my $first = FS::cust_main_county->by_key(shift @taxnums);
+    foreach my $taxnum (@taxnums) {
+      my $record = FS::cust_main_county->by_key($taxnum);
+      $record->_merge_into($first);
+    }
+  }
+
  
   '';
 }
