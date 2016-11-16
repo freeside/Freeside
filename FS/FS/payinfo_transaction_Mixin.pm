@@ -102,7 +102,11 @@ auth, and order_number) as well as payby and payinfo
 sub payinfo_check {
   my $self = shift;
 
-  # All of these can be null, so in principle this could go in payinfo_Mixin.
+  my $conf = new FS::Conf;
+
+  # allow masked payinfo if we never save card numbers
+  local $FS::payinfo_Mixin::ignore_masked_payinfo = 
+    $conf->exists('no_saved_cardnumbers') ? 1 : $FS::payinfo_Mixin::ignore_masked_payinfo;
 
   $self->SUPER::payinfo_check()
   || $self->ut_numbern('gatewaynum')

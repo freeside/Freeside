@@ -770,6 +770,13 @@ my $validate_email = sub { $_[0] =~
   },
   
   {
+    'key'         => 'no_saved_cardnumbers',
+    'section'     => 'credit_cards',
+    'description' => 'Do not allow credit card numbers to be written to the database.  Prevents realtime processing unless payment gateway supports tokenization.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'credit-card-surcharge-percentage',
     'section'     => 'credit_cards',
     'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
@@ -2185,8 +2192,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-payment_gateway',
-    'section'     => 'self-service',
-    'description' => 'Force the use of this payment gateway for self-service.',
+    'section'     => 'deprecated',
+    'description' => '(no longer supported) Force the use of this payment gateway for self-service.',
     %payment_gateway_options,
   },
 

@@ -1,9 +1,13 @@
 #!/usr/bin/perl
 
+use strict;
+use warnings;
+use vars qw( %opt );
 use FS::Misc::Getopt;
 use FS::Record qw(qsearch qsearchs dbh);
 
-getopts('cpifXr:');
+getopts('cpiXr:t:');
+
 my $dbh = dbh;
 $FS::UID::AutoCommit = 0;
 
@@ -11,11 +15,13 @@ sub usage() {
   "Usage: bulk_void  -s start -e end
                   -r void_reason
                   { -c | -p | -i }
+                  [ -t payby ]
                   [ -X ]
                   <user>
 -s, -e: date range (required)
 -r: void reason text (required)
--c, -p, -i, -f: void credits, payments, invoices
+-c, -p, -i: void credits, payments, invoices
+-t: only void payments with this payby
 -X: commit changes
 ";
 }
@@ -26,7 +32,11 @@ if (!$opt{start} or !$opt{end} or !$opt{r}) {
 
 print "DRY RUN--changes will not be committed.\n" unless $opt{X};
 
-my $date = " WHERE _date >= $opt{start} AND _date <= $opt{end}";
+my %search = ();
+$search{payby} = $opt{t} if $opt{t} && $opt{p};
+
+my $date = (keys %search ? ' AND ' : ' WHERE ').
+           " _date >= $opt{start} AND _date <= $opt{end}";
 
 my %tables = (
   c => 'cust_credit',
@@ -45,6 +55,7 @@ foreach my $k (keys %tables) {
 
   my $cursor = FS::Cursor->new({
     table     => $table,
+    hashref   => \%search,
     extra_sql => $date,
   });
   my $error;
