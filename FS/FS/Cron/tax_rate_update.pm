@@ -40,6 +40,7 @@ sub tax_rate_update {
 
   my $taxname = $conf->config('tax_district_taxname') || '';
 
+  FS::cust_main_county->lock_table;
   if ($method eq 'wa_sales') {
     # download the update file
     my $now = DateTime->now;
