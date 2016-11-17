@@ -122,10 +122,12 @@ Returns the MAC address and serial number.
 
 sub label {
   my $self = shift;
+  my $part_svc = $self->cust_svc->part_svc;
   my @label = ();
   push @label, 'MAC:'. $self->mac_addr_pretty
     if $self->mac_addr;
-  push @label, 'Serial#'. $self->serialnum
+  push @label, ($part_svc->part_svc_column('serialnum') || 'Serial#').
+               $self->serialnum
     if $self->serialnum;
   return join(', ', @label);
 }
