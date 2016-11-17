@@ -129,9 +129,12 @@ sub label {
   my @label = ();
   push @label, 'MAC:'. $self->mac_addr_pretty
     if $self->mac_addr;
-  push @label, ($part_svc->part_svc_column('serialnum') || 'Serial#').
-               $self->serialnum
-    if $self->serialnum;
+  if ( $self->serialnum ) {
+    my $serialnum_label = $part_svc->part_svc_column('serialnum');
+    push @label,
+      ($serialnum_label && $serialnum_label->columnlabel || 'Serial#').
+      $self->serialnum;
+  }
   return join(', ', @label);
 }
 
