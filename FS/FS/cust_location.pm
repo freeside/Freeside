@@ -915,7 +915,7 @@ sub _upgrade_data {
     next if $field eq 'disabled';
     foreach my $location (qsearch({
       table => 'cust_location',
-      extra_sql => " WHERE $field LIKE ' %' OR $field LIKE '% '"
+      extra_sql => " WHERE disabled IS NULL AND ($field LIKE ' %' OR $field LIKE '% ')"
     })) {
       my $error = $location->replace;
       die "$error (fixing whitespace in $field, locationnum ".$location->locationnum.')'

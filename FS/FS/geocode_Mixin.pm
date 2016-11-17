@@ -265,6 +265,7 @@ sub process_district_update {
   my $method = $conf->config('tax_district_method')
     or return; #nothing to do if null
   my $self = $class->by_key($id) or die "object $id not found";
+  return if $self->disabled;
 
   # dies on error, fine
   my $tax_info = get_district({ $self->location_hash }, $method);
