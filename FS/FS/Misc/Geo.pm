@@ -210,13 +210,13 @@ sub wa_sales {
         if ( lc($text) eq 'location code' ) {
           $p->get_tag('td'); # skip to the next column
           undef $u;
-          $u = $p->get_token until $u->[0] eq 'T'; # and then skip non-text
+          $u = $p->get_token until ($u->[0] || '') eq 'T'; # and then skip non-text
           $return->{'district'} = $u->[1];
         }
         elsif ( lc($text) eq 'total tax rate' ) {
           $p->get_tag('td');
           undef $u;
-          $u = $p->get_token until $u->[0] eq 'T';
+          $u = $p->get_token until ($u->[0] || '') eq 'T';
           $return->{'tax'} = $u->[1];
         }
       } # get_token
