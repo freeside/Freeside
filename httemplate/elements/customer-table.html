@@ -25,7 +25,7 @@ Example:
              'custnum_update_callback' => 'name_of_js_callback' #passed a rownum
 
              #listrefs
-             'types'         => ['immutable', ''], # immutable or ''/text
+             'type'          => ['immutable', ''], # immutable, checkbox, date or ''/text
              'align'         => [ 'c', 'l', 'r', '' ],
              'size'          => [],                # sizes ignored for immutable
              'color'         => [],
@@ -66,7 +66,10 @@ This mason element is currently only used by misc/batch-cust_pay.html,
 and probably should be cleaned up more before being used by anything else.
 
 </%doc>
-
+<LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">
 
   var num_open_invoices = new Array;
@@ -652,6 +655,12 @@ and probably should be cleaned up more before being used by anything else.
 %     } elsif ( $types->[$col] eq 'checkbox' ) {
       my_input.setAttribute('type', 'checkbox');
       my_input.checked = (values && values.<% $field %>) ? true : false;
+%     } elsif ( $types->[$col] eq 'date' ) {
+      my_input_button = document.createElement('IMG');
+      my_input_button.setAttribute('src', '<% $fsurl %>images/calendar.png');
+      my_input_button.setAttribute('title', <% mt('Select date') |js_string %>);
+      my_input_button.setAttribute('name', '<% $name %>'+thisrownum+'button');
+      my_input_button.setAttribute('id',   '<% $name %>'+thisrownum+'button');
 %     }
       my_input.value = (values && values.<% $field %>) || '';
 %     if ( $opt{onchange}->[$col] ) {
@@ -662,8 +671,20 @@ and probably should be cleaned up more before being used by anything else.
         my_input.onkeyup    = calc_total<%$col%>;
 %     }
       my_cell.appendChild(my_input);
+%     if ( $types->[$col] eq 'date' ) {
+      my_cell.appendChild(my_input_button);
+%     }
 
     row.appendChild(my_cell);
+
+%     if ( $types->[$col] eq 'date' ) {
+      Calendar.setup({
+        inputField: '<% $name %>'+thisrownum,
+        ifFormat:   "<% $date_format %>",
+        button:     '<% $name %>'+thisrownum+'button',
+        align:      "BR"
+      });
+%     }
 
 %     $col++;
 %   }
@@ -805,6 +826,7 @@ addRow();
 
 my(%opt) = @_;
 my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $types = $opt{'type'} ? [ @{$opt{'type'}} ] : [];
 my $sizes = $opt{'size'} ? [ @{$opt{'size'}} ] : [];
