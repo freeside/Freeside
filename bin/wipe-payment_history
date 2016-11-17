@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use FS::Record;
+use FS::UID qw( adminsuidsetup dbh );
+
+adminsuidsetup shift;
+
+foreach $table (qw(
+
+  cust_bill
+   cust_bill_pkg
+    cust_bill_pkg_detail
+    cust_bill_pkg_display
+    cust_bill_pkg_fee
+    cust_bill_pkg_tax_location
+    cust_bill_pkg_tax_rate_location
+    cust_bill_pkg_discount
+
+  cust_bill_void
+    cust_bill_pkg_void
+    cust_bill_pkg_detail_void
+    cust_bill_pkg_display_void
+    cust_bill_pkg_fee_void
+    cust_bill_pkg_tax_location_void
+    cust_bill_pkg_tax_rate_location_void
+    cust_bill_pkg_discount_void
+
+  cust_statement
+
+  cust_pay
+    cust_bill_pay
+    cust_bill_pay_batch
+    cust_bill_pay_pkg
+    cust_pay_refund
+
+  cust_pay_void
+    cust_bill_pay
+
+  cust_credit
+    cust_credit_bill
+    cust_credit_bill_pkg
+    cust_credit_source_bill_pkg
+
+  cust_credit_void
+
+  cust_refund
+    cust_credit_refund
+
+  cust_pay_pending
+
+  pay_batch
+  cust_pay_batch
+
+  bill_batch
+  cust_bill_batch
+  cust_bill_batch_option
+
+  cust_tax_exempt_pkg
+  cust_tax_exempt_pkg_void
+
+)) {
+  foreach $t ( $table, "h_$table" ) {
+    my $sql = "DELETE FROM $t";
+    print "$sql;\n"; #dbh->do($sql);
+  }
+}
+
+foreach my $e ( 'cust_event', 'h_cust_event' ) {
+  my $sql = "DELETE FROM cust_event WHERE 'cust_bill' = ( SELECT eventtable FROM part_event WHERE part_event.eventpart = cust_event.eventpart )"; # and not exists ( select 1 from cust_bill where cust_event.tablenum = cust_bill.invnum )";
+  print "$sql;\n"; #dbh->do($sql);
+}
+
+#cust_event_fee???
+
+1;
