@@ -137,14 +137,19 @@ sub label {
   my $part_svc = $self->cust_svc->part_svc;
   my @label = ();
   if (my $type = $self->hardware_type) {
-    push @label, ($part_svc->part_svc_column('typenum') || 'Type:').
+    my $typenum_label = $part_svc->part_svc_column('typenum');
+    push @label, ( $typenum_label && $typenum_label->columnlabel || 'Type:' ).
                  $type->description;
   }
   if (my $ser = $self->serial) {
-    push @label, ($part_svc->part_svc_column('serial') || 'Serial#'). $ser;
+    my $serial_label = $part_svc->part_svc_column('serial');
+    push @label, ( $serial_label && $serial_label->columnlabel || 'Serial#' ).
+                 $ser;
   }
   if (my $mac = $self->display_hw_addr) {
-    push @label, ($part_svc->part_svc_column('hw_addr') || 'MAC:'). $mac;
+    my $hw_addr_label = $part_svc->part_svc_column('hw_addr');
+    push @label, ( $hw_addr_label && $hw_addr_label->columnlabel || 'MAC:').
+    $mac;
   }
   return join(', ', @label);
 }
