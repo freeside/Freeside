@@ -8,7 +8,9 @@ Import a CSV file containing customer notes records.
 File format is CSV, with the following field order: <i>[custnum,] last, first, notefield1, notefield2, notefield3...</i>
 <BR>
 The optional custnum field is identified by being numeric.
-Anything after the character sequence #! is ignored.
+Anything after the character sequence #! is ignored.  If a notefield starts
+like <i>classnum|</i>, with a number followed by the pipe symbol (|), then it
+the note will be imported into that note class.
 <BR><BR>
 
 <% &ntable("#cccccc") %>

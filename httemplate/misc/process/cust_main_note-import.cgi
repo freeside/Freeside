@@ -40,7 +40,8 @@ my @uninserted = ();
 for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
   if ( $param->{"custnum$row"} ) {
     my $error = '';
-    if ( $param->{use_comments} ) { # why? notes are sexier
+    if ( $param->{use_comments} ) { # why? notes are sexier (i think this can
+                                    # come out now?  UI doesn't let you set it
       my $cust_main = qsearchs('cust_main',
                                { 'custnum' => $param->{"custnum$row"} }
                               );
@@ -53,12 +54,21 @@ for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
         $error = "Can't find customer " . $param->{"custnum$row"};
       }
     } else {
+
+      my $comments = $param->{"note$row"};
+      my $classnum = '';
+      if ( $comments =~ /^\s*(\d+)\s*\|\s*(.+)$/ ) {
+        $classnum = $1;
+        $comments = $2;
+      }
+
       my $cust_main_note = new FS::cust_main_note {
-                                            'custnum'  => $param->{"custnum$row"},
-                                            '_date'    => $date,
-                                            'otaker'   => $otaker,
-                                            'comments' => $param->{"note$row"},
-                                                  };
+                             'custnum'  => $param->{"custnum$row"},
+                             '_date'    => $date,
+                             'otaker'   => $otaker,
+                             'comments' => $comments,
+                             'classnum' => $classnum,
+                           };
       $error = $cust_main_note->insert unless ($op eq "Preview");
     }
     my $result = { 'custnum' => $param->{"custnum$row"},
