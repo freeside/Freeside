@@ -38,6 +38,7 @@ foreach my $row ( map /^custnum(\d+)$/, keys %$param ) {
                     'paid'           => $param->{"paid$row"},
                     'payby'          => 'BILL',
                     'payinfo'        => $param->{"payinfo$row"},
+                    '_date'          => $param->{"_date$row"},
                     'discount_term'  => $param->{"discount_term$row"},
                     'paybatch'       => $paybatch,
                     'no_auto_apply'  => exists($param->{"no_auto_apply$row"}) ? 'Y' : '',

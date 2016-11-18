@@ -469,16 +469,16 @@ die "access denied"
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
-my @header  = ( 'Amount', 'Check #' );
-my @fields  = ( 'paid', 'payinfo' );
-my @types   = ( '', '' );
-my @align   = ( 'r', 'r' );
-my @sizes   = ( 8, 10 );
-my @colors  = ( '', '' );
+my @header  = ( 'Amount', 'Check #', 'Date override' );
+my @fields  = ( 'paid', 'payinfo', '_date' );
+my @types   = ( '', '', 'date', );
+my @align   = ( 'r', 'r', 'r' );
+my @sizes   = ( 8, 10, 8 );
+my @colors  = ( '', '', '' );
 my %param   = ();
-my @footer  = ( '_TOTAL', '' );
-my @footer_align = ( 'r', 'r' );
-my @onchange = ( '', '' );;
+my @footer  = ( '_TOTAL', '', '' );
+my @footer_align = ( 'r', 'r', '' );
+my @onchange = ( '', '', '' );
 my $use_discounts = '';
 
 # Not entirely sure this works anymore...
