@@ -8,7 +8,8 @@ use FS::UID qw(driver_name);
 use FS::Cursor;
 use Time::Local qw(timelocal);
 
-use vars qw($ignore_masked_payinfo);
+# allow_closed_replace only relevant to cust_pay/cust_refund, for upgrade tokenizing
+use vars qw( $ignore_masked_payinfo $allow_closed_replace );
 
 =head1 NAME
 
@@ -214,8 +215,6 @@ sub payinfo_check {
         $self->payinfo($1);
         validate($self->payinfo) or return "Illegal credit card number";
         return "Unknown card type" if $cardtype eq "Unknown";
-        return "Card number not tokenized"
-          if $conf->exists('no_saved_cardnumbers') && !$self->tokenized;
       } else {
         $self->payinfo('N/A'); #??? re-masks card
       }

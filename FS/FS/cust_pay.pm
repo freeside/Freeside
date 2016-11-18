@@ -540,7 +540,8 @@ otherwise returns false.
 
 sub replace {
   my $self = shift;
-  return "Can't modify closed payment" if $self->closed =~ /^Y/i;
+  return "Can't modify closed payment"
+    if $self->closed =~ /^Y/i && !$FS::payinfo_Mixin::allow_closed_replace;
   $self->SUPER::replace(@_);
 }
 
