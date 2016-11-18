@@ -3623,6 +3623,22 @@ sub charge_postal_fee {
   $error ? $error : $cust_pkg;
 }
 
+=item num_cust_attachment_deleted
+
+Returns the number of deleted attachments for this customer (see
+L<FS::num_cust_attachment>).
+
+=cut
+
+sub num_cust_attachments_deleted {
+  my $self = shift;
+  $self->scalar_sql(
+    " SELECT COUNT(*) FROM cust_attachment ".
+      " WHERE custnum = ? AND disabled IS NOT NULL AND disabled > 0",
+    $self->custnum
+  );
+}
+
 =item cust_bill [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all the invoices (see L<FS::cust_bill>) for this customer.
