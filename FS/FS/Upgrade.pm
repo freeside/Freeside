@@ -47,6 +47,10 @@ sub upgrade_config {
 
   my $conf = new FS::Conf;
 
+  # to simplify tokenization upgrades
+  die "Conf selfservice-payment_gateway no longer supported"
+    if conf->config('selfservice-payment_gateway');
+
   $conf->touch('payment_receipt')
     if $conf->exists('payment_receipt_email')
     || $conf->config('payment_receipt_msgnum');
@@ -391,6 +395,10 @@ sub upgrade_data {
 
     #duplicate history records
     'h_cust_svc'  => [],
+
+    # need before transaction tables, 
+    # blocks tokenization upgrade if deprecated features still in use
+    'agent_payment_gateway' => [],
 
     #populate cust_pay.otaker
     'cust_pay'    => [],

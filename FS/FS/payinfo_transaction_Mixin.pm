@@ -104,10 +104,6 @@ sub payinfo_check {
 
   my $conf = new FS::Conf;
 
-  # allow masked payinfo if we never save card numbers
-  local $FS::payinfo_Mixin::ignore_masked_payinfo = 
-    $conf->exists('no_saved_cardnumbers') ? 1 : $FS::payinfo_Mixin::ignore_masked_payinfo;
-
   $self->SUPER::payinfo_check()
   || $self->ut_numbern('gatewaynum')
   # not ut_foreign_keyn, it causes upgrades to fail
