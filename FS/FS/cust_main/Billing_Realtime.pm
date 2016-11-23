@@ -223,6 +223,7 @@ sub _bop_recurring_billing {
 
 }
 
+#can run safely as class method if opt payment_gateway already exists
 sub _payment_gateway {
   my ($self, $options) = @_;
 
@@ -239,8 +240,9 @@ sub _payment_gateway {
   $options->{payment_gateway};
 }
 
+# not a method!!!
 sub _bop_auth {
-  my ($self, $options) = @_;
+  my ($options) = @_;
 
   (
     'login'    => $options->{payment_gateway}->gateway_username,
@@ -282,8 +284,9 @@ sub _bop_defaults {
 
 }
 
+# not a method!
 sub _bop_cust_payby_options {
-  my ($self,$options) = @_;
+  my ($options) = @_;
   my $cust_payby = $options->{'cust_payby'};
   if ($cust_payby) {
 
@@ -319,6 +322,8 @@ sub _bop_cust_payby_options {
   }
 }
 
+# can be called as class method,
+# but can't load default name/phone fields as class method
 sub _bop_content {
   my ($self, $options) = @_;
   my %content = ();
@@ -339,16 +344,16 @@ sub _bop_content {
       /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
       or return "Illegal payname $payname";
     ($payfirst, $paylast) = ($1, $2);
-  } else {
+  } elsif (ref($self)) { # can't set payname if called as class method
     $payfirst = $self->getfield('first');
     $paylast = $self->getfield('last');
     $payname = "$payfirst $paylast";
   }
 
-  $content{last_name} = $paylast;
-  $content{first_name} = $payfirst;
+  $content{last_name} = $paylast if $paylast;
+  $content{first_name} = $payfirst if $payfirst;
 
-  $content{name} = $payname;
+  $content{name} = $payname if $payname;
 
   $content{address} = $options->{'address1'};
   my $address2 = $options->{'address2'};
@@ -359,7 +364,9 @@ sub _bop_content {
   $content{zip} = $options->{'zip'};
   $content{country} = $options->{'country'};
 
-  $content{phone} = $self->daytime || $self->night;
+  # can't set phone if called as class method
+  $content{phone} = $self->daytime || $self->night
+    if ref($self);
 
   my $currency =    $conf->exists('business-onlinepayment-currency')
                  && $conf->config('business-onlinepayment-currency');
@@ -369,6 +376,7 @@ sub _bop_content {
 }
 
 # updates payinfo and cust_payby options with token from transaction
+# can be called as a class method
 sub _tokenize_card {
   my ($self,$transaction,$options) = @_;
   if ( $transaction->can('card_token') 
@@ -410,7 +418,7 @@ sub realtime_bop {
   }
 
   # set fields from passed cust_payby
-  $self->_bop_cust_payby_options(\%options);
+  _bop_cust_payby_options(\%options);
 
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
@@ -698,7 +706,7 @@ sub realtime_bop {
 
   $transaction->content(
     'type'           => $options{method},
-    $self->_bop_auth(\%options),          
+    _bop_auth(\%options),          
     'action'         => $action1,
     'description'    => $options{'description'},
     'amount'         => $options{amount},
@@ -760,7 +768,7 @@ sub realtime_bop {
       %content,
       type           => $options{method},
       action         => $action2,
-      $self->_bop_auth(\%options),          
+      _bop_auth(\%options),          
       order_number   => $ordernum,
       amount         => $options{amount},
       authorization  => $auth,
@@ -1291,7 +1299,7 @@ sub realtime_botpp_capture {
 
   $transaction->content(
     'type'           => $method,
-    $self->_bop_auth(\%options),
+    _bop_auth(\%options),
     'action'         => 'Post Authorization',
     'description'    => $options{'description'},
     'amount'         => $cust_pay_pending->paid,
@@ -1764,7 +1772,7 @@ sub realtime_verify_bop {
 
   # set fields from passed cust_payby
   return "No cust_payby" unless $options{'cust_payby'};
-  $self->_bop_cust_payby_options(\%options);
+  _bop_cust_payby_options(\%options);
 
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
@@ -1911,7 +1919,7 @@ sub realtime_verify_bop {
 
     $transaction->content(
       'type'           => 'CC',
-      $self->_bop_auth(\%options),          
+      _bop_auth(\%options),          
       'action'         => 'Authorization Only',
       'description'    => $options{'description'},
       'amount'         => '1.00',
@@ -1958,7 +1966,7 @@ sub realtime_verify_bop {
                                   );
 
       $reverse->content( 'action'        => 'Reverse Authorization',
-                         $self->_bop_auth(\%options),          
+                         _bop_auth(\%options),          
 
                          # B:OP
                          'amount'        => '1.00',
@@ -2177,8 +2185,13 @@ Otherwise, options I<method>, I<payinfo> and other cust_payby fields
 may be passed.  If options are passed as a hashref, I<payinfo>
 will be updated as appropriate in the passed hashref.
 
+Can be run as a class method if option I<payment_gateway> is passed,
+but default customer id/name/phone can't be set in that case.  This
+is really only intended for tokenizing old records on upgrade.
+
 =cut
 
+# careful--might be run as a class method
 sub realtime_tokenize {
   my $self = shift;
 
@@ -2196,7 +2209,7 @@ sub realtime_tokenize {
   }
 
   # set fields from passed cust_payby
-  $self->_bop_cust_payby_options(\%options);
+  _bop_cust_payby_options(\%options);
   return '' unless $options{method} eq 'CC';
   return '' if $self->tokenized($options{payinfo}); #already tokenized
 
@@ -2240,6 +2253,11 @@ sub realtime_tokenize {
   # massage data
   ###
 
+  ### Currently, cardfortress only keys in on card number and exp date.
+  ### We pass everything we'd pass to a normal transaction,
+  ### for ease of current and future development,
+  ### but note, when tokenizing old records, we may only have access to payinfo/paydate
+
   my $bop_content = $self->_bop_content(\%options);
   return $bop_content unless ref($bop_content);
 
@@ -2263,6 +2281,9 @@ sub realtime_tokenize {
   my $payissue       = $options{'payissue'};
   $content{issue_number} = $payissue if $payissue;
 
+  $content{customer_id} = $self->custnum
+    if ref($self);
+
   ###
   # run transaction
   ###
@@ -2273,10 +2294,9 @@ sub realtime_tokenize {
 
   $transaction->content(
     'type'           => 'CC',
-    $self->_bop_auth(\%options),          
+    _bop_auth(\%options),          
     'action'         => 'Tokenize',
-    'description'    => $options{'description'},
-    'customer_id'    => $self->custnum,
+    'description'    => $options{'description'}
     %$bop_content,
     %content, #after
   );
@@ -2314,7 +2334,9 @@ sub realtime_tokenize {
 
 Convenience wrapper for L<FS::payinfo_Mixin/tokenized>
 
-PAYINFO is required
+PAYINFO is required.
+
+Can be run as class or object method, never loads from object.
 
 =cut
 
@@ -2421,6 +2443,9 @@ sub token_check {
 
   ### Tokenize/mask transaction tables
 
+  # allow tokenization of closed cust_pay/cust_refund records
+  local $FS::payinfo_Mixin::allow_closed_replace = 1;
+
   # grep assistance:
   #   $cust_pay_pending->replace, $cust_pay->replace, $cust_pay_void->replace, $cust_refund->replace all run here
   foreach my $table ( qw(cust_pay_pending cust_pay cust_pay_void cust_refund) ) {
@@ -2456,34 +2481,35 @@ sub token_check {
       next unless $info->{'can_tokenize'};
 
       my $cust_main = $record->cust_main;
-      unless ($cust_main) {
-        # might happen for cust_pay_pending for failed verify records,
-        #   in which case it *should* already be tokenized if possible
-        #   but only get strict about it if we're expecting full tokenization
-        next if 
-          $table eq 'cust_pay_pending'
-            && $record->{'custnum_pending'}
-            && !$disallow_untokenized;
-        # XXX we currently need a $cust_main to run realtime_tokenize
-        #     even if we made it a class method, wouldn't have access to payname/etc.
-        #     fail for now, but probably could handle this better...
+      unless ($cust_main || (
+        # might happen for cust_pay_pending from failed verify records,
+        #   in which case we attempt tokenization without cust_main
         # everything else should absolutely have a cust_main
+        $table eq 'cust_pay_pending'
+          && $record->{'custnum_pending'}
+          && !$disallow_untokenized
+      )) {
         $search->DESTROY;
         $dbh->rollback if $oldAutoCommit;
         return "Could not load cust_main for $table ".$record->get($record->primary_key);
       }
+      # no clear record of name/address/etc used for transaction,
+      # but will load name/phone/id from customer if run as an object method,
+      # so we try that if we can
       my %tokenopts = (
         'payment_gateway' => $gateway,
         'method'          => 'CC',
         'payinfo'         => $record->payinfo,
         'paydate'         => $record->paydate,
       );
-      my $error = $cust_main->realtime_tokenize(\%tokenopts);
-      if ($cust_main->tokenized($tokenopts{'payinfo'})) { # implies no error
+      my $error = $cust_main
+                ? $cust_main->realtime_tokenize(\%tokenopts)
+                : FS::cust_main::Billing_Realtime->realtime_tokenize(\%tokenopts);
+      if (FS::cust_main::Billing_Realtime->tokenized($tokenopts{'payinfo'})) { # implies no error
         $record->payinfo($tokenopts{'payinfo'});
         $error = $record->replace;
       } else {
-        $error = 'Unknown error';
+        $error ||= 'Unknown error';
       }
       if ($error) {
         $search->DESTROY;

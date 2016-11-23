@@ -49,7 +49,7 @@ sub upgrade_config {
 
   # to simplify tokenization upgrades
   die "Conf selfservice-payment_gateway no longer supported"
-    if conf->config('selfservice-payment_gateway');
+    if $conf->config('selfservice-payment_gateway');
 
   $conf->touch('payment_receipt')
     if $conf->exists('payment_receipt_email')

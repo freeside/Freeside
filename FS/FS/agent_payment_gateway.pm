@@ -1,5 +1,6 @@
 package FS::agent_payment_gateway;
 use base qw(FS::Record);
+use FS::Record qw( qsearch );
 
 use strict;
 
