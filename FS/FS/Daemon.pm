@@ -64,12 +64,6 @@ sub daemonize1 {
     $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
   }
 
-  # set the logfile sensibly
-  if (!$logfile) {
-    my $logname = $me;
-    $logname =~ s/^freeside-//;
-    logfile("%%%FREESIDE_LOG%%%/$logname-log.$FS::UID::datasrc");
-  }
 }
 
 sub drop_root {
@@ -122,6 +116,12 @@ sub _die {
 
 sub _logmsg {
   chomp( my $msg = shift );
+  # set the logfile sensibly
+  if (!$logfile) {
+    my $logname = $me;
+    $logname =~ s/^freeside-//;
+    logfile("%%%FREESIDE_LOG%%%/$logname-log.$FS::UID::datasrc");
+  }
   my $log = new IO::File ">>$logfile";
   flock($log, LOCK_EX);
   seek($log, 0, 2);
