@@ -150,7 +150,14 @@ Interface
   </TR>
 
   <TR>
-    <TH ALIGN="right">How many recently-modified customers displayed on dashboard</TH>
+    <TH ALIGN="right"><% emt('Hide notification of new ticket activity') %></TH>
+    <TD ALIGN="left">
+      <INPUT TYPE="checkbox" NAME="hide_notify_tickets" VALUE="1" <% $curuser->option('hide_notify_tickets') ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right"><% emt("How many recently-modified customers displayed on dashboard") %></TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="text" NAME="dashboard_customers" VALUE="<% $curuser->option('dashboard_customers') %>"></TD>
     </TD>
