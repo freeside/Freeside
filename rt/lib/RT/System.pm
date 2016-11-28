@@ -86,6 +86,8 @@ our $RIGHTS = {
     LoadSavedSearch => "Allow loading of saved searches",     # loc_pair
     CreateSavedSearch => "Allow creation of saved searches",      # loc_pair
     ExecuteCode => "Allow writing Perl code in templates, scrips, etc", # loc_pair
+    #freeside
+    BulkUpdateTickets => "Bulk update tickets",
 };
 
 our $RIGHT_CATEGORIES = {
@@ -98,6 +100,8 @@ our $RIGHT_CATEGORIES = {
     LoadSavedSearch        => 'General',
     CreateSavedSearch      => 'General',
     ExecuteCode            => 'Admin',
+    #freeside
+    BulkUpdateTickets      => 'Staff',
 };
 
 # Tell RT::ACE that this sort of object can get acls granted

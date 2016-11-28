@@ -171,3 +171,9 @@ share/html/Search/Schedule.html
 share/html/Elements/CalendarSlotSchedule
 share/html/Ticket/Display.html
 
+# BulkUpdateTickets ACL
+lib/RT/System.pm
+share/html/Elements/Tabs
+share/html/Search/Bulk.html
+share/html/Ticket/Elements/Tabs
+

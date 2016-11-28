@@ -381,6 +381,25 @@ sub _upgrade_data {
     warn "Fixed $rows transactions with empty time values\n" if $rows > 0;
   }
 
+  # One-time fix: We've created a "BulkUpdateTickets" access right; grant
+  # it to all auth'd users initially.
+  eval "use FS::upgrade_journal;";
+  my $upgrade = 'RT_add_BulkUpdateTickets_ACL';
+  if (!FS::upgrade_journal->is_done($upgrade)) {
+    my $groups = RT::Groups->new(RT->SystemUser);
+    $groups->LimitToEnabled;
+    $groups->LimitToSystemInternalGroups;
+    $groups->Limit(FIELD => 'Type', VALUE => 'Privileged', OPERATOR => '=');
+    my $group = $groups->First
+      or die "No RT internal group found for Privileged users";
+    my ($val, $msg) = $group->PrincipalObj->GrantRight(
+      Right => 'BulkUpdateTickets', Object => RT->System
+    );
+    die "Couldn't grant BulkUpdateTickets right to all users: $msg\n"
+      if !$val;
+    FS::upgrade_journal->set_done($upgrade);
+  }
+
   return;
 }
 
