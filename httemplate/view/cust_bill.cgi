@@ -1,13 +1,6 @@
-<& /elements/header.html, mt('Invoice View'), menubar(
-  emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
-) &>
+<& /elements/header-cust_main.html, view=>'payment_history', custnum=>$custnum &>
 
-<SCRIPT TYPE="text/javascript">
-function areyousure(href, message) {
-  if (confirm(message) == true)
-    window.location.href = href;
-}
-</SCRIPT>
+<h2>Invoice #<% $invnum %></h2>
 
 % if ( !$cust_bill->closed ) { # otherwise allow no changes
 %   my $can_delete = $conf->exists('deleteinvoices')
@@ -187,7 +180,7 @@ function change_invoice_mode(obj) {
   <PRE><% join('', $cust_bill->print_text(\%opt) ) |h %></PRE>
 % } 
 
-<& /elements/footer.html &>
+<& /elements/footer-cust_main.html &>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

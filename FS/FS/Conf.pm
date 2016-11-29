@@ -4462,6 +4462,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'tax_district_taxname',
+    'section'     => 'taxation',
+    'description' => 'The tax name to display on the invoice for district sales taxes. Defaults to "Tax".',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'company_latitude',
     'section'     => 'taxation',
     'description' => 'For Avalara taxation, your company latitude (-90 through 90)',
@@ -5576,7 +5583,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ie-compatibility_mode',
-    'section'     => 'UI',
+    'section'     => 'deprecated',
     'description' => "Compatibility mode META tag for Internet Explorer, used on the customer view page.  Not necessary in normal operation unless custom content (notes, cust_main-custom_link) is included on customer view that is incompatibile with newer IE verisons.",
     'type'        => 'select',
     'select_enum' => [ '', '7', 'EmulateIE7', '8', 'EmulateIE8' ],

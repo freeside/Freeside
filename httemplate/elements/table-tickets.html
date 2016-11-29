@@ -57,7 +57,7 @@ View
     </TD>
   
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <A HREF=<%$href%>><% $ticket->{subject} %></A>
+      <A HREF=<%$href%>><% $ticket->{subject} |h %></A>
     </TD>
   
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
@@ -69,7 +69,7 @@ View
     </TD>
   
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% $ticket->{owner} %>
+      <% $ticket->{owner} |h %>
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
@@ -84,12 +84,13 @@ View
       <% $ticket->{content}
            ? $ticket->{content}.' ('.$ticket->{priority}.')'
            : $ticket->{priority}
+         |h
       %>
     </TD>
 
 %   if ( $ss_priority ) {
     <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% $ticket->{"CF.{$ss_priority}"} %>
+      <% $ticket->{"CF.{$ss_priority}"} |h %>
     </TD>
 %   }
 %   if ( $object->isa('FS::cust_main') ) {
@@ -106,9 +107,9 @@ View
 
 % } 
 
-%}
-
 </TABLE>
+
+%}
 
 <%init>
 

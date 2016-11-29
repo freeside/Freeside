@@ -1,11 +1,18 @@
-<& /elements/header.html, mt('One-time charge'), '',
-            ( ($quotationnum || $cgi->param('error')) ? '' : 'onload="addRow()"' ),
+% if ( $quotationnum && ! $cust_main ) {
+<& /elements/header.html, mt('Quotation #[_1]: add one-time charge', $quotationnum) &>
+% } else {
+<& /elements/header-cust_main.html,
+     view      => $quotationnum ? 'quotations' : 'packages',
+     cust_main => $cust_main,
+     etc       => $cgi->param('error') ? '' : 'onload="addRow()"',
 &>
+<h2><% $quotationnum
+         ? emt('Quotation #[_1]: add one-time charge', $quotationnum)
+         : mt('One-time charge')
+    %></h2>
+% }
 
-<LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
+<& /elements/init_calendar.html &>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/xregexp-all.js"></SCRIPT>
 
 <& /elements/error.html &>
@@ -95,13 +102,7 @@ function bill_now_changed (what) {
 </SCRIPT>
 
 <P>
-% if ( $cust_main ) {
-<& /elements/small_custview.html,
-             $cust_main->custnum,
-             scalar($conf->config('countrydefault')),
-             1, #no balance
-&>
-% } else {
+% if ( $prospect_main ) {
 <& /elements/small_prospect_view.html, $prospect_main &>
 % }
 </P>
@@ -117,7 +118,7 @@ function bill_now_changed (what) {
 <INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospect_main ? $prospect_main->prospectnum : '' %>">
 <INPUT TYPE="hidden" NAME="quotationnum" VALUE="<% $quotationnum %>">
 
-<TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
+<TABLE ID="QuickChargeTable" CLASS="fsinnerbox">
 
 % if ( $cust_pkg ) { #modify one-time charge
 
@@ -205,7 +206,7 @@ function bill_now_changed (what) {
 % } else { # new one-time charge
 
     <TR>
-      <TD ALIGN="right"><% mt('Amount to charge') |h %> </TD>
+      <TH ALIGN="right"><% mt('Amount to charge') |h %> </TH>
       <TD>
         <% $money_char %><INPUT TYPE       = "text"
                                 NAME       = "amount"
@@ -229,7 +230,7 @@ function bill_now_changed (what) {
 
 %   if ( $conf->exists('invoice-unitprice') ) {
     <TR>
-      <TD ALIGN="right"><% mt('Quantity') |h %> </TD>
+      <TH ALIGN="right"><% mt('Quantity') |h %> </TH>
       <TD>
         <INPUT TYPE       = "text"
                NAME       = "quantity"
@@ -245,7 +246,7 @@ function bill_now_changed (what) {
 % unless ( $quotationnum ) {
 
     <TR>
-      <TD ALIGN="right"><% mt('Invoice now') |h %></TD>
+      <TH ALIGN="right"><% mt('Invoice now') |h %></TH>
       <TD>
         <INPUT TYPE  = "checkbox"
                NAME  = "bill_now"
@@ -265,7 +266,7 @@ function bill_now_changed (what) {
 
 %   # false laziness w/misc/order_pkg.html
     <TR>
-      <TD ALIGN="right"><% mt('Charge date') |h %> </TD>
+      <TH ALIGN="right"><% mt('Charge date') |h %> </TH>
       <TD>
         <INPUT TYPE  = "text"
                NAME  = "start_date"
@@ -317,7 +318,7 @@ function bill_now_changed (what) {
 % }
 
 <TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %> </TD>
+  <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
   <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
 </TR>
 
@@ -335,7 +336,7 @@ function bill_now_changed (what) {
 % } # if !$cust_pkg
 
 <TR>
-  <TD ALIGN="right"><% mt('Description') |h %> </TD>
+  <TH ALIGN="right"><% mt('Description') |h %> </TH>
   <TD>
     <INPUT TYPE       = "text"
            NAME       = "pkg"
@@ -448,8 +449,11 @@ function bill_now_changed (what) {
 
 </SCRIPT>
 
-</BODY>
-</HTML>
+% if ( $quotationnum ) {
+  <& /elements/footer.html &>
+% } else {
+  <& /elements/footer-cust_main.html &>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

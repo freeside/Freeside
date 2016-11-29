@@ -11,11 +11,6 @@
         </FONT>
 %    }
     <BR>
-% } elsif ( $show_contact_link && ! $opt{no_links} ) {
-    <FONT SIZE=-1>
-      (&nbsp;<%pkg_add_contact_link($cust_pkg)%>&nbsp;)
-    </FONT>
-    <BR>
 % }
 <%init>
 
@@ -31,10 +26,6 @@ my $show_detach_link =
   ! $cust_pkg->get('cancel')
   && $FS::CurrentUser::CurrentUser->access_right('Detach customer package');
 
-my $show_contact_link =
-  ! $cust_pkg->get('cancel')
-  ; #&& $FS::CurrentUser::CurrentUser->access_right('Add package contact'); #or something like that
-
 my $contact = $cust_pkg->contact_obj;
 
 sub pkg_change_contact_link {
@@ -47,19 +38,6 @@ sub pkg_change_contact_link {
     'cust_pkg'    => $cust_pkg,
     'width'       => 616,
     'height'      => 220,
-  );
-}
-
-sub pkg_add_contact_link {
-  my $cust_pkg = shift;
-  #my $pkgpart = $cust_pkg->pkgpart;
-  include( '/elements/popup_link-cust_pkg.html',
-    'action'      => $p. "misc/change_pkg_contact.html",
-    'label'       => emt('Add contact'),
-    'actionlabel' => emt('Add contact'),
-    'cust_pkg'    => $cust_pkg,
-    'width'       => 616,
-    'height'      => 192,
   );
 }
 

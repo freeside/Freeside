@@ -326,10 +326,15 @@ if ($has_query) {
         title => loc('Show Results'),
     };
 
-    $tabs->{"j"} = {
-        path  => "Search/Bulk.html$args",
-        title => loc('Bulk Update'),
-    };
+    #freeside
+    if ( $session{'CurrentUser'}
+         ->HasRight(Right => 'BulkUpdateTickets', Object => $RT::System) )
+    {
+      $tabs->{"j"} = {
+          path  => "Search/Bulk.html$args",
+          title => loc('Bulk Update'),
+      };
+    }
 
     $tabs->{"k"} = {
         path  => "Search/Chart.html$args",

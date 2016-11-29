@@ -1,4 +1,4 @@
-<% include('/elements/header.html', 'Prospect Report' ) %>
+<& /elements/header.html, 'Prospect Report' &>
 
 <FORM ACTION="prospect_main.html" METHOD="GET">
 
@@ -8,11 +8,16 @@
       <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
 
-    <% include( '/elements/tr-select-agent.html',
-                  'curr_value'    => scalar($cgi->param('agentnum')),
-                  'disable_empty' => 0,
-               )
-    %>
+    <& /elements/tr-select-agent.html,
+         'curr_value'    => scalar($cgi->param('agentnum')),
+         'disable_empty' => 0,
+    &>
+
+    <& /elements/tr-select-part_referral.html,
+         'curr_value'    => scalar($cgi->param('refnum')),
+         'empty_label'   => 'all',
+         'disable_empty' => 0,
+    &>
 
   </TABLE>
 
@@ -21,7 +26,7 @@
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"

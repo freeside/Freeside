@@ -5079,6 +5079,17 @@ sub cancel_sql {
   "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
 }
 
+=item ncancelled_recurring_sql
+
+Returns an SQL expression identifying un-cancelled, recurring packages.
+
+=cut
+
+sub ncancelled_recurring_sql {
+  $_[0]->recurring_sql().
+  " AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 ) ";
+}
+
 =item status_sql
 
 Returns an SQL expression to give the package status as a string.
