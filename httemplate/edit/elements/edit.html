@@ -247,7 +247,7 @@ Example:
   >
 
   <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
-  <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
+  <INPUT TYPE="hidden" ID="<% $pkey %>" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
 
   <% defined($opt{'form_init'}) 
         ? ( ref($opt{'form_init'})

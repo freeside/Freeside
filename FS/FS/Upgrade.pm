@@ -362,7 +362,11 @@ sub upgrade_data {
     #fix whitespace - before cust_main
     'cust_location' => [],
 
-    #cust_main (remove paycvv from history, locations, cust_payby, etc)
+    # need before cust_main tokenization upgrade,
+    # blocks tokenization upgrade if deprecated features still in use
+    'agent_payment_gateway' => [],
+
+    #cust_main (tokenizes cards, remove paycvv from history, locations, cust_payby, etc)
     'cust_main' => [],
 
     #contact -> cust_contact / prospect_contact
@@ -389,10 +393,6 @@ sub upgrade_data {
 
     #duplicate history records
     'h_cust_svc'  => [],
-
-    # need before transaction tables, 
-    # blocks tokenization upgrade if deprecated features still in use
-    'agent_payment_gateway' => [],
 
     #populate cust_pay.otaker
     'cust_pay'    => [],

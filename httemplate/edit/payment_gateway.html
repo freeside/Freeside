@@ -22,6 +22,9 @@
 <SCRIPT TYPE="text/javascript">
   var modulesForNamespace = <% $json->encode(\%modules) %>;
   function changeNamespace() {
+    if (document.getElementById('gatewaynum').value) {
+      return true;
+    }
     var ns = document.getElementById('gateway_namespace').value;
     var select_module = document.getElementById('gateway_module');
     select_module.options.length = 0;
@@ -180,7 +183,13 @@ my $field_callback = sub {
   my ($cgi, $object, $field_hashref ) = @_;
   if ($object->gatewaynum) {
     if ( $field_hashref->{field} eq 'gateway_module' ) {
-      $field_hashref->{type} = 'fixed';
+      if ($object->gateway_namespace eq 'Business::OnlinePayment' &&
+          $object->gateway_module ne 'CardFortress'
+      ) {
+        $field_hashref->{options} = [ $object->gateway_module, 'CardFortress' ]
+      } else {
+        $field_hashref->{type} = 'fixed';
+      }
     } elsif ( $field_hashref->{field} eq 'gateway_namespace' ) {
       $field_hashref->{type} = 'fixed';
       $field_hashref->{formatted_value} = $object->namespace_description;
