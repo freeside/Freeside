@@ -1,9 +1,4 @@
-<& /elements/header-popup.html, mt("Customer cancelled") &>
-  <SCRIPT TYPE="text/javascript">
-    topreload();
-  </SCRIPT>
-  </BODY>
-</HTML>
+<& /elements/popup-topreload.html, mt("Customer cancelled") &>
 <%init>
 
 die "access denied"

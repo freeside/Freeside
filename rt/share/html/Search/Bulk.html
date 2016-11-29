@@ -203,6 +203,13 @@ unless ( defined $Rows ) {
 }
 my $title = loc("Update multiple tickets");
 
+#freeside
+unless ( $session{'CurrentUser'}
+         ->HasRight( Right => 'BulkUpdateTickets', Object => RT->System) )
+{
+    Abort('You are not allowed to bulk-update tickets.');
+}
+
 # Iterate through the ARGS hash and remove anything with a null value.
 map ( $ARGS{$_} =~ /^$/ && ( delete $ARGS{$_} ), keys %ARGS );
 

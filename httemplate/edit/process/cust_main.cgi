@@ -15,7 +15,14 @@
 %
 % } else { 
 %
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new->custnum) %>
+<% $cgi->redirect( -uri    => popurl(3). "view/cust_main.cgi?". $new->custnum,
+                   -cookie => CGI::Cookie->new(
+                     -name    => 'freeside_status',
+                     -value   => mt('Customer edited'),
+                     -expires => '+5m',
+                   ),
+   )
+%>
 %
 % }
 <%once>

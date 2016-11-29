@@ -105,6 +105,7 @@ sub create_batch {
     my %sales;
 
     foreach my $cust_bill_pkg ( $cust_bill->cust_bill_pkg ) {
+$DB::single = 1;
       my $cust_pkg = $cust_pkg{$cust_bill_pkg->pkgnum}
                  ||= $cust_bill_pkg->cust_pkg;
       my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;

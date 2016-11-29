@@ -1,0 +1,21 @@
+<%doc>
+
+Example:
+
+  <& /elements/popup-topreload, mt('Action completed') &>
+
+</%doc>
+<& /elements/header-popup.html, encode_entities($message) &>
+  <script src="<% $fsurl %>elements/js.cookie.js"></script>
+  <SCRIPT TYPE="text/javascript">
+    Cookies.set('freeside_status', <% $message |js_string %>,{
+                  expires: 0.0035
+    });
+    topreload();
+  </SCRIPT>
+<& /elements/footer-popup.html &>
+<%init>
+
+my $message = shift;
+
+</%init>

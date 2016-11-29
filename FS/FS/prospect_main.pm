@@ -406,13 +406,16 @@ sub search {
   my @where = ();
   my $orderby;
 
-  ##
-  # parse agent
-  ##
-
+  #agent
   if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
     push @where,
       "prospect_main.agentnum = $1";
+  }
+
+  #refnum
+  if ( $params->{'refnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where,
+      "prospect_main.refnum = $1";
   }
 
   ##

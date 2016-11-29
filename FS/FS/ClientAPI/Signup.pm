@@ -344,20 +344,11 @@ sub signup_info {
     my @paybys = @{ $signup_info->{'payby'} };
     $signup_info->{'hide_payment_fields'} = [];
 
-    my $gatewaynum = $conf->config('selfservice-payment_gateway');
-    my $force_gateway;
-    if ( $gatewaynum ) {
-      $force_gateway = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
-      warn "using forced gateway #$gatewaynum - " .
-        $force_gateway->gateway_username . '@' . $force_gateway->gateway_module
-        if $DEBUG > 1;
-      die "configured gatewaynum $gatewaynum not found!" if !$force_gateway;
-    }
     foreach my $payby (@paybys) {
       warn "$me checking $payby payment fields\n" if $DEBUG > 1;
       my $hide = 0;
       if ( FS::payby->realtime($payby) ) {
-        my $gateway = $force_gateway || 
+        my $gateway = 
           $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
                                    'nofatal' => 1,
                                  );
@@ -627,17 +618,9 @@ sub new_customer {
     return { 'error' => "Unknown reseller" }
       unless $agent;
 
-    my $gw;
-    my $gatewaynum = $conf->config('selfservice-payment_gateway');
-    if ( $gatewaynum ) {
-      $gw = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
-      die "configured gatewaynum $gatewaynum not found!" if !$gw;
-    }
-    else {
-      $gw = $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
-                                     'nofatal' => 1,
+    my $gw = $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
+                                      'nofatal' => 1,
                                     );
-    }
 
     $cust_main->payby('BILL')   # MCRD better?  no, that's for something else
       if $gw && $gw->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
@@ -1120,36 +1103,28 @@ sub capture_payment {
 
   my $conf = new FS::Conf;
 
-  my $payment_gateway;
-  if ( my $gwnum = $conf->config('selfservice-payment_gateway') ) {
-    $payment_gateway = qsearchs('payment_gateway', { 'gatewaynum' => $gwnum })
-      or die "configured gatewaynum $gwnum not found!";
-  }
-  else {
-    my $url = $packet->{url};
-
-    $payment_gateway = qsearchs('payment_gateway', 
+  my $url = $packet->{url};
+  my $payment_gateway = qsearchs('payment_gateway', 
         { 'gateway_callback_url' => popurl(0, $url) } 
       );
-    if (!$payment_gateway) { 
+  if (!$payment_gateway) { 
 
-      my ( $processor, $login, $password, $action, @bop_options ) =
-        $conf->config('business-onlinepayment');
-      $action ||= 'normal authorization';
-      pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-      die "No real-time processor is enabled - ".
-          "did you set the business-onlinepayment configuration value?\n"
-        unless $processor;
+    my ( $processor, $login, $password, $action, @bop_options ) =
+      $conf->config('business-onlinepayment');
+    $action ||= 'normal authorization';
+    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+    die "No real-time processor is enabled - ".
+        "did you set the business-onlinepayment configuration value?\n"
+      unless $processor;
 
-      $payment_gateway = new FS::payment_gateway( {
-        gateway_namespace => $conf->config('business-onlinepayment-namespace'),
-        gateway_module    => $processor,
-        gateway_username  => $login,
-        gateway_password  => $password,
-        gateway_action    => $action,
-        options   => [ ( @bop_options ) ],
-      });
-    }
+    $payment_gateway = new FS::payment_gateway( {
+      gateway_namespace => $conf->config('business-onlinepayment-namespace'),
+      gateway_module    => $processor,
+      gateway_username  => $login,
+      gateway_password  => $password,
+      gateway_action    => $action,
+      options   => [ ( @bop_options ) ],
+    });
   }
  
   die "No real-time third party processor is enabled - ".

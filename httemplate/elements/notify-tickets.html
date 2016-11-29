@@ -14,12 +14,20 @@
 use Class::Load 'load_class';
 
 my $enabled = $FS::TicketSystem::system eq 'RT_Internal';
+$enabled = 0 if $FS::CurrentUser::CurrentUser->option('hide_notify_tickets');
 my $UnrepliedTickets;
 if ($enabled) {
   my $class = 'RT::Search::UnrepliedTickets';
   load_class($class);
   my $session = FS::TicketSystem->session;
   my $CurrentUser = $session->{CurrentUser};
+  # if there are no tickets the current user could see, always hide it
+  my $AnyTickets = RT::Tickets->new($CurrentUser);
+  foreach my $status (qw(resolved rejected deleted)) {
+    $AnyTickets->LimitStatus( OPERATOR => '!=', VALUE => $status );
+  }
+  $enabled = 0 if $AnyTickets->Count == 0;
+
   $UnrepliedTickets = RT::Tickets->new($CurrentUser);
   my $search = $class->new(TicketsObj => $UnrepliedTickets);
   $search->Prepare;

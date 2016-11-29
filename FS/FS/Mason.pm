@@ -471,14 +471,18 @@ if ( -e $addl_handler_use_file ) {
   no warnings 'redefine';
   *CGI::redirect = sub {
     my $self = shift;
-    my $cookie = '';
-    if ( $_[0] eq '-cookie' ) { #this isn't actually used at the moment
-      (my $x, $cookie) = (shift, shift);
-      $HTML::Mason::r->err_headers_out->add( 'Set-cookie' => $cookie );
-    }
-    my $location = shift;
 
     use vars qw($m);
+
+    my $location = '';
+    if ( $_[0] =~ /^-/ ) {
+      my %opt = @_;
+      $location = $opt{'-uri'};
+      my $cookie = $opt{'-cookie'};
+      $m->apache_req->err_headers_out->{'Set-cookie'} = $cookie if $cookie;
+    } else {
+      $location = shift;
+    }
 
     # false laziness w/below
     if ( @DBIx::Profile::ISA ) {

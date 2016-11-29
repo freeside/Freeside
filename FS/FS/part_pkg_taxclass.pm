@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA );
 use Scalar::Util qw( blessed );
 use FS::UID qw( dbh );
-use FS::Record; # qw( qsearch qsearchs );
+use FS::Record qw(qsearch); # qsearchs );
 use FS::cust_main_county;
 
 @ISA = qw(FS::Record);
@@ -217,6 +217,26 @@ sub _upgrade_data { # class method
 
   }
 
+}
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item taxclass_names
+
+Returns a list of all the non-disabled tax classes. If tax classes aren't
+enabled, returns a single empty string.
+
+=cut
+
+sub taxclass_names {
+  if ( FS::Conf->new->exists('enable_taxclasses') ) {
+    return map { $_->get('taxclass') }
+      qsearch('part_pkg_taxclass', { disabled => '' });
+  } else {
+    return ( '' );
+  }
 }
 
 =head1 BUGS

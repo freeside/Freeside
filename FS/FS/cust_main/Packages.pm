@@ -155,7 +155,7 @@ sub order_pkg {
     }
     $cust_pkg->locationnum($opt->{'cust_location'}->locationnum);
 
-  } else {
+  } elsif ( ! $cust_pkg->locationnum ) {
 
     $cust_pkg->locationnum($self->ship_locationnum);
 

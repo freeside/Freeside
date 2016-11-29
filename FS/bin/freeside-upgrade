@@ -298,7 +298,7 @@ print "\n" if $DRY_RUN;
 
 if ( $dbh->{Driver}->{Name} =~ /^mysql/i && ! $opt_s ) {
 
-  foreach my $table (qw( svc_acct svc_phone )) {
+  foreach my $table (qw( svc_acct svc_phone cust_main_county )) {
 
     my $sth = $dbh->prepare(
       "SELECT COUNT(*) FROM duplicate_lock WHERE lockname = '$table'"

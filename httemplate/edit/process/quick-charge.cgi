@@ -1,4 +1,4 @@
-<% $cgi->redirect($redirect) %>
+<% $cgi->redirect(@redirect) %>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -148,14 +148,27 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
 
 }
 
-my $redirect;
+my @redirect = ();
 if ( $error ) {
   $cgi->param('error', $error );
-  $redirect = $p.'quick-charge.html?'. $cgi->query_string;
+  @redirect = ( $p.'quick-charge.html?'. $cgi->query_string );
 } elsif ( $quotation ) {
-  $redirect = $fsurl.'view/quotation.html?' . $quotation->quotationnum;
+  @redirect = (
+    -uri    => $fsurl.'view/quotation.html?' . $quotation->quotationnum,
+    -cookie => CGI::Cookie->new( -name    => 'freeside_status',
+                                 -value   => mt('One-time charge added to quotation'),
+                                 -expires => '+5m',
+                               ),
+  );
 } else {
-  $redirect = $fsurl.'view/cust_main.cgi?custnum=' . $cust_main->custnum . ';show=last';
+  @redirect = (
+    -uri    => $fsurl.'view/cust_main.cgi?custnum='. $cust_main->custnum.
+               ';show=last',
+    -cookie => CGI::Cookie->new( -name    => 'freeside_status',
+                                 -value   => mt('One-time charge ordered'),
+                                 -expires => '+5m',
+                               ),
+  );
 }
 
 </%init>

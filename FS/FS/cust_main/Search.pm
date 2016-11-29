@@ -695,6 +695,21 @@ sub search {
     push @where, FS::cust_main->$method();
   }
 
+  my $current = '';
+  unless ( $params->{location_history} ) {
+    $current = '
+      AND (    cust_location.locationnum IN ( cust_main.bill_locationnum,
+                                              cust_main.ship_locationnum
+                                            )
+            OR cust_location.locationnum IN (
+                 SELECT locationnum FROM cust_pkg
+                  WHERE cust_pkg.custnum = cust_main.custnum
+                    AND locationnum IS NOT NULL
+                    AND '. FS::cust_pkg->ncancelled_recurring_sql.'
+               )
+          )';
+  }
+
   ##
   # address
   ##
@@ -714,6 +729,7 @@ sub search {
         SELECT 1 FROM cust_location 
         WHERE cust_location.custnum = cust_main.custnum
           AND (".join(' OR ',@orwhere).")
+          $current
         )";
     }
   }
@@ -727,6 +743,7 @@ sub search {
       SELECT 1 FROM cust_location
       WHERE cust_location.custnum = cust_main.custnum
         AND cust_location.city = $city
+        $current
     )";
   }
 
@@ -739,6 +756,7 @@ sub search {
       SELECT 1 FROM cust_location
       WHERE cust_location.custnum = cust_main.custnum
         AND cust_location.county = $county
+        $current
     )";
   }
 
@@ -751,6 +769,7 @@ sub search {
       SELECT 1 FROM cust_location
       WHERE cust_location.custnum = cust_main.custnum
         AND cust_location.state = $state
+        $current
     )";
   }
 
@@ -763,6 +782,7 @@ sub search {
       SELECT 1 FROM cust_location
       WHERE cust_location.custnum = cust_main.custnum
         AND cust_location.zip LIKE $zip
+        $current
     )";
   }
 
@@ -775,6 +795,7 @@ sub search {
       SELECT 1 FROM cust_location
       WHERE cust_location.custnum = cust_main.custnum
         AND cust_location.country = '$country'
+        $current
     )";
   }
 

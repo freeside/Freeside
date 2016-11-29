@@ -1,9 +1,4 @@
-<& /elements/header-popup.html, mt("Customer unsuspended") &>
-  <SCRIPT TYPE="text/javascript">
-    topreload();
-  </SCRIPT>
-  </BODY>
-</HTML>
+<& /elements/popup-topreload.html, mt("Customer unsuspended") &>
 <%init>
 
 #false laziness w/cust_main-cancel.cgi

@@ -207,8 +207,8 @@ function post_standardization() {
     prefix = 'bill_';
   }
 
-  if ( new String(cf.elements[prefix + 'zip'].value).length < 10 )
-  {
+//  if ( new String(cf.elements[prefix + 'zip'].value).length < 10 )
+//  {
 
     var country_el = cf.elements[prefix + 'country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
@@ -238,12 +238,12 @@ function post_standardization() {
 
     }
 
-  } else {
-
-    cf.elements[prefix + 'geocode'].value = '';
-    <% $post_geocode %>;
-
-  }
+//  } else {
+//
+//    cf.elements[prefix + 'geocode'].value = '';
+//    <% $post_geocode %>;
+//
+//  }
 
 % } else {
 
