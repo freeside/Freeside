@@ -323,6 +323,108 @@ sub processor {
   }
 }
 
+=item default_gateway OPTIONS
+
+Class method.
+
+Returns default gateway (from business-onlinepayment conf) as a payment_gateway object.
+
+Accepts options
+
+conf - existing conf object
+
+nofatal - return blank instead of dying if no default gateway is configured
+
+method - if set to CHEK or ECHECK, returns object for business-onlinepayment-ach if available
+
+Before using this, be sure you wouldn't rather be using L</by_key_or_default> or,
+more likely, L<FS::agent/payment_gateway>.
+
+=cut
+
+# the standard settings from the config could be moved to a null agent
+# agent_payment_gateway referenced payment_gateway
+
+sub default_gateway {
+  my ($self,%options) = @_;
+
+  $options{'conf'} ||= new FS::Conf;
+  my $conf = $options{'conf'};
+
+  unless ( $conf->exists('business-onlinepayment') ) {
+    if ( $options{'nofatal'} ) {
+      return '';
+    } else {
+      die "Real-time processing not enabled\n";
+    }
+  }
+
+  #load up config
+  my $bop_config = 'business-onlinepayment';
+  $bop_config .= '-ach'
+    if ( $options{method}
+         && $options{method} =~ /^(ECHECK|CHEK)$/
+         && $conf->exists($bop_config. '-ach')
+       );
+  my ( $processor, $login, $password, $action, @bop_options ) =
+    $conf->config($bop_config);
+  $action ||= 'normal authorization';
+  pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+  die "No real-time processor is enabled - ".
+      "did you set the business-onlinepayment configuration value?\n"
+    unless $processor;
+
+  my $payment_gateway = new FS::payment_gateway;
+  $payment_gateway->gateway_namespace( $conf->config('business-onlinepayment-namespace') ||
+                                       'Business::OnlinePayment');
+  $payment_gateway->gateway_module($processor);
+  $payment_gateway->gateway_username($login);
+  $payment_gateway->gateway_password($password);
+  $payment_gateway->gateway_action($action);
+  $payment_gateway->set('options', [ @bop_options ]);
+  return $payment_gateway;
+}
+
+=item by_key_or_default OPTIONS
+
+Either returns the gateway specified by option gatewaynum, or the default gateway.
+
+Accepts the same options as L</default_gateway>.
+
+Also ensures that the gateway_namespace has been set.
+
+=cut
+
+sub by_key_or_default {
+  my ($self,%options) = @_;
+
+  if ($options{'gatewaynum'}) {
+    my $payment_gateway = $self->by_key($options{'gatewaynum'});
+    # regardless of nofatal, which is only meant for handling lack of default gateway
+    die "payment_gateway ".$options{'gatewaynum'}." not found"
+      unless $payment_gateway;
+    $payment_gateway->gateway_namespace('Business::OnlinePayment')
+      unless $payment_gateway->gateway_namespace;
+    return $payment_gateway;
+  } else {
+    return $self->default_gateway(%options);
+  }
+}
+
+# if it weren't for the way gateway_namespace default is set, this method would not be necessary
+# that should really go in check() with an accompanying upgrade, so we could just use qsearch safely,
+# but currently short on time to test deeper changes...
+#
+# if no default gateway is set and nofatal is passed, first value returned is blank string
+sub all_gateways {
+  my ($self,%options) = @_;
+  my @out;
+  foreach my $gatewaynum ('',( map {$_->gatewaynum} qsearch('payment_gateway') )) {
+    push @out, $self->by_key_or_default( %options, gatewaynum => $gatewaynum );
+  }
+  return @out;
+}
+
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.

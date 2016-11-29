@@ -9,6 +9,7 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::reg_code;
 use FS::agent_payment_gateway;
+use FS::payment_gateway;
 use FS::TicketSystem;
 use FS::Conf;
 
@@ -253,12 +254,7 @@ the business-onlinepayment-ach gateway will be returned if available.
 If I<thirdparty> is set and the I<method> is PAYPAL, the defined paypal
 gateway will be returned.
 
-If I<load_gatewaynum> exists, then either the specified gateway or the
-default gateway will be returned.  Agent overrides are ignored, and this can
-safely be called as a class method if this option is specified.  Not
-compatible with I<thirdparty>.
-
-Exsisting I<$conf> may be passed for efficiency.
+Exisisting I<$conf> may be passed for efficiency.
 
 =cut
 
@@ -268,8 +264,8 @@ Exsisting I<$conf> may be passed for efficiency.
 sub payment_gateway {
   my ( $self, %options ) = @_;
   
+  $options{'conf'} ||= new FS::Conf;
   my $conf = $options{'conf'};
-  $conf ||= new FS::Conf;
 
   if ( $options{thirdparty} ) {
 
@@ -299,72 +295,12 @@ sub payment_gateway {
     }
   }
 
-  my ($override, $payment_gateway);
-  if (exists $options{'load_gatewaynum'}) { # no agent overrides if this opt is in use
-    if ($options{'load_gatewaynum'}) {
-      $payment_gateway = qsearchs('payment_gateway', { gatewaynumnum => $options{'load_gatewaynum'} } );
-      # always fatal
-      die "Could not load payment gateway ".$options{'load_gatewaynum'} unless $payment_gateway;
-    } # else use default, loaded below
-  } else {
-    $override = qsearchs('agent_payment_gateway', { agentnum => $self->agentnum } );
-  }
+  my $override = qsearchs('agent_payment_gateway', { agentnum => $self->agentnum } );
 
-  if ( $override ) { #use a payment gateway override
-
-    $payment_gateway = $override->payment_gateway;
-
-    $payment_gateway->gateway_namespace('Business::OnlinePayment')
-      unless $payment_gateway->gateway_namespace;
-
-  } elsif (!$payment_gateway) { #use the standard settings from the config
-
-    # the standard settings from the config could be moved to a null agent
-    # agent_payment_gateway referenced payment_gateway
-
-    # remember, this block might be run as a class method if false load_gatewaynum exists
-
-    unless ( $conf->exists('business-onlinepayment') ) {
-      if ( $options{'nofatal'} ) {
-        return '';
-      } else {
-        die "Real-time processing not enabled\n";
-      }
-    }
-
-    #load up config
-    my $bop_config = 'business-onlinepayment';
-    $bop_config .= '-ach'
-      if ( $options{method}
-           && $options{method} =~ /^(ECHECK|CHEK)$/
-           && $conf->exists($bop_config. '-ach')
-         );
-    my ( $processor, $login, $password, $action, @bop_options ) =
-      $conf->config($bop_config);
-    $action ||= 'normal authorization';
-    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-    die "No real-time processor is enabled - ".
-        "did you set the business-onlinepayment configuration value?\n"
-      unless $processor;
-
-    $payment_gateway = new FS::payment_gateway;
-
-    $payment_gateway->gateway_namespace( $conf->config('business-onlinepayment-namespace') ||
-                                 'Business::OnlinePayment');
-    $payment_gateway->gateway_module($processor);
-    $payment_gateway->gateway_username($login);
-    $payment_gateway->gateway_password($password);
-    $payment_gateway->gateway_action($action);
-    $payment_gateway->set('options', [ @bop_options ]);
-
-  }
-
-  unless ( $payment_gateway->gateway_namespace ) {
-    $payment_gateway->gateway_namespace(
-      scalar($conf->config('business-onlinepayment-namespace'))
-      || 'Business::OnlinePayment'
-    );
-  }
+  my $payment_gateway = FS::payment_gateway->by_key_or_default(
+    gatewaynum => $override ? $override->gatewaynum : '',
+    %options,
+  );
 
   $payment_gateway;
 }
