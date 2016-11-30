@@ -427,8 +427,6 @@ sub realtime_bop {
       $token_error = $options{'cust_payby'}->replace;
       return $token_error if $token_error;
     }
-    return "Cannot tokenize card info"
-      if $conf->exists('no_saved_cardnumbers') && !$self->tokenized($options{'payinfo'});
   }
 
   ### 
@@ -1777,8 +1775,6 @@ sub realtime_verify_bop {
     return $token_error if $token_error;
     #important that we not replace cust_payby here,
     #because cust_payby->replace uses realtime_verify_bop!
-    return "Cannot tokenize card info"
-      if $conf->exists('no_saved_cardnumbers') && !$self->tokenized($options{'payinfo'});
   }
 
   ###
