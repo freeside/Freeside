@@ -10,20 +10,13 @@ die "agentnum $1 not found" unless $agent;
 
 #my $old
 
-my @new = map {
-                my $cardtype = $_;
-                new FS::agent_payment_gateway {
+my $new = new FS::agent_payment_gateway {
                   ( map { $_ => scalar($cgi->param($_)) }
                                     fields('agent_payment_gateway')
                   ),
-                  'cardtype' => $cardtype,
                 };
-              }
-              $cgi->param('cardtype');
 
-foreach my $new (@new) {
-  my $error = $new->insert;
-  die $error if $error;
-}
+my $error = $new->insert;
+die $error if $error;
 
 </%init>

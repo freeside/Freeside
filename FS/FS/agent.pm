@@ -239,8 +239,7 @@ sub ticketing_queue {
 
 Returns a payment gateway object (see L<FS::payment_gateway>) for this agent.
 
-Currently available options are I<nofatal>, I<method>, I<thirdparty>,
-<conf> and I<load_gatewaynum>.
+Currently available options are I<nofatal>, I<method>, I<thirdparty> and I<conf>.
 
 If I<nofatal> is set, and no gateway is available, then the empty string
 will be returned instead of throwing a fatal exception.
