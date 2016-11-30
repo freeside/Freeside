@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use FS::Test;
-use Test::More tests => 8;
+use Test::More tests => 9;
 use FS::Conf;
 
 ### can only run on test database (company name "Freeside Test")
@@ -37,6 +37,46 @@ $bopconf =
 TESTTERMINAL';
 $conf->set('business-onlinepayment' => $bopconf);
 is( join("\n",$conf->config('business-onlinepayment')), $bopconf, "setting first default gateway" ) or BAIL_OUT('');
+
+# generate a few void/refund records for upgrading
+my $counter = 20;
+foreach my $cust_pay ( $fs->qsearch('cust_pay',{ payby => 'CARD' }) ) {
+  if ($counter % 2) {
+    $err = $cust_pay->void('Testing');
+    $err = "Voiding: $err" if $err;
+  } else {
+    # from realtime_refund_bop, just the important bits    
+    while ( $cust_pay->unapplied < $cust_pay->paid ) {
+      my @cust_bill_pay = $cust_pay->cust_bill_pay;
+      last unless @cust_bill_pay;
+      my $cust_bill_pay = pop @cust_bill_pay;
+      $err = $cust_bill_pay->delete;
+      $err = "Refund unapply: $err" if $err;
+      last if $err;
+    }
+    last if $err;
+    my $cust_refund = new FS::cust_refund ( {
+      'custnum'  => $cust_pay->cust_main->custnum,
+      'paynum'   => $cust_pay->paynum,
+      'source_paynum' => $cust_pay->paynum,
+      'refund'   => $cust_pay->paid,
+      '_date'    => '',
+      'payby'    => $cust_pay->payby,
+      'payinfo'  => $cust_pay->payinfo,
+      'reason'     => 'Testing',
+      'gatewaynum'    => $cust_pay->gatewaynum,
+      'processor'     => $cust_pay->payment_gateway ? $cust_pay->payment_gateway->processor : '',
+      'auth'          => $cust_pay->auth,
+      'order_number'  => $cust_pay->order_number,
+    } );
+    $err = $cust_refund->insert( reason_type => 'Refund' );
+    $err = "Refunding: $err" if $err;
+  }
+  last if $err;
+  $counter -= 1;
+  last unless $counter > 0;
+}
+ok( !$err, "create some refunds and voids" ) or BAIL_OUT($err);
 
 $err = system('freeside-upgrade','admin');
 ok( !$err, 'initial upgrade' ) or BAIL_OUT('Error string: '.$!);

@@ -1,6 +1,6 @@
 <% include("/elements/header.html","$action payment gateway override for ". $agent->agent,  menubar(
   #'View all payment gateways' => $p. 'browse/payment_gateway.html',
-  'View all agents' => $p. 'browse/agent.html',
+  'View all agents' => $p. 'browse/agent.cgi',
 )) %>
 
 <% include('/elements/error.html') %>
@@ -18,32 +18,6 @@ Use gateway <SELECT NAME="gatewaynum">
 % } 
 
 </SELECT>
-<BR><BR>
-
-for <SELECT NAME="cardtype" MULTIPLE>
-% foreach my $cardtype (
-%  "",
-%  "VISA card",
-%  "MasterCard",
-%  "Discover card",
-%  "American Express card",
-%  "Diner's Club/Carte Blanche",
-%  "enRoute",
-%  "JCB",
-%  "BankCard",
-%  "Switch",
-%  "Solo",
-%  'ACH',
-%  'PayPal',
-%) { 
-
-  <OPTION VALUE="<% $cardtype %>"><% $cardtype || '(Default fallback)' %>
-% } 
-
-</SELECT>
-<BR><BR>
-
-(optional) when invoice contains only items of taxclass <INPUT TYPE="text" NAME="taxclass">
 <BR><BR>
 
 <INPUT TYPE="submit" VALUE="Add gateway override">

@@ -113,7 +113,6 @@ I<depend_jobnum> allows payment capture to unlock export jobs
 =cut
 
 # Currently only used by ClientAPI
-# NOT 4.x COMPATIBLE (see below)
 sub realtime_collect {
   my( $self, %options ) = @_;
 
@@ -126,10 +125,6 @@ sub realtime_collect {
 
   $options{amount} = $self->balance unless exists( $options{amount} );
   return '' unless $options{amount} > 0;
-
-  #### NOT 4.x COMPATIBLE
-  $options{method} = FS::payby->payby2bop($self->payby)
-    unless exists( $options{method} );
 
   return $self->realtime_bop({%options});
 
