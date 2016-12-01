@@ -11,9 +11,51 @@ use FS::upload_target;
 use Date::Format qw( time2str );
 use File::chdir;
 use File::Copy qw(move);
-use Parse::FixedLength;
+use Text::CSV_XS;
+use Locale::Country qw(country_code2code);
 
-$DEBUG = 1;
+# "use constant" this, for performance?
+our @input_cols = qw(
+  RequestType
+  BillToCountryISO
+  BillToZipCode
+  BillToZipP4
+  BillToPCode
+  BillToNpaNxx
+  OriginationCountryISO
+  OriginationZipCode
+  OriginationZipP4
+  OriginationNpaNxx
+  TerminationCountryISO
+  TerminationZipCode
+  TerminationZipP4
+  TerminationPCode
+  TerminationNpaNxx
+  TransactionType
+  ServiceType
+  Date
+  Charge
+  CustomerType
+  Lines
+  Sale
+  Regulated
+  Minutes
+  Debit
+  ServiceClass
+  Lifeline
+  Facilities
+  Franchise
+  BusinessClass
+  CompanyIdentifier
+  CustomerNumber
+  InvoiceNumber
+  DiscountType
+  ExemptionType
+  AdjustmentMethod
+  Optional
+);
+
+$DEBUG = 2;
 
 $TIMEOUT = 86400; # absolute time limit on waiting for a response file.
 
@@ -34,69 +76,114 @@ sub spooldir {
 
 sub spoolname {
   my $self = shift;
-  my $conf = FS::Conf->new;;
   my $spooldir = $self->spooldir;
   mkdir $spooldir, 0700 unless -d $spooldir;
-  my $basename = $conf->config('billsoft-company_code') .
+  my $upload = $self->spooldir . '/upload';
+  mkdir $upload, 0700 unless -d $upload;
+  my $basename = $self->conf->config('billsoft-company_code') .
                  time2str('%Y%m%d', time); # use the real clock time here
   my $uniq = 'AA';
-  while ( -e "$spooldir/$basename$uniq.CDF" ) {
+  while ( -e "$upload/$basename$uniq.CSV" ) {
     $uniq++;
     # these two letters must be unique within each day
   }
-  "$basename$uniq.CDF";
+  "$basename$uniq.CSV";
 }
 
-my $format =
-  '%10s' . # Origination
-  '%1s'   . # Origination Flag (NPA-NXX)
-  '%10s' . # Termination
-  '%1s'   . # Termination Flag (NPA-NXX)
-  '%10s' . # Service Location
-  '%1s'   . # Service Location Flag (Pcode)
-  '%1s'   . # Customer Type ('B'usiness or 'R'esidential)
-  '%8s'   . # Invoice Date
-  '+'     . # Taxable Amount Sign
-  '%011d' . # Taxable Amount (5 decimal places)
-  '%6d'  . # Lines
-  '%6d'  . # Locations
-  '%12s'  . # Transaction Type + Service Type
-  '%1s'   . # Client Resale Flag ('S'ale or 'R'esale)
-  '%1s'   . # Inc-Code ('I'n an incorporated city, or 'O'utside)
-  '    '  . # Fed/State/County/Local Exempt
-  '%1s'   . # Primary Output Key, flag (our field)
-  '%019d' . # Primary Output Key, numeric (our field)
-  'R'     . # 'R'egulated (or 'U'nregulated)
-  '%011d' . # Call Duration (tenths of minutes)
-  'C'     . # Telecom Type ('C'alls, other things)
-  '%1s'   . # Service Class ('L'ocal, Long 'D'istance)
-  ' NNC'  . # non-lifeline, non-facilities based,
-            # non-franchise, CLEC
-            # (gross assumptions, may need a config option
-  "\r\n";   # at least that's what was in the samples
+=item part_pkg_taxproduct PART_PKG, CLASSNUM
 
+Returns the taxproduct string (T-code and S-code concatenated) for
+PART_PKG with usage class CLASSNUM. CLASSNUM can be a numeric classnum,
+an empty string (for the package's base taxproduct), 'setup', or 'recur'.
+
+Returns undef if the package doesn't have a taxproduct.
+
+=cut
+
+sub part_pkg_taxproduct {
+  my ($self, $part_pkg, $classnum) = @_;
+  my $pkgpart = $part_pkg->get('pkgpart');
+  # all taxproducts
+  $self->{_taxproduct} ||= {};
+  # taxproduct(s) that are relevant to this package
+  my $pkg_taxproduct = $self->{_taxproduct}{$pkgpart} ||= {};
+  my $taxproduct; # return this
+  $classnum ||= '';
+  if (exists($pkg_taxproduct->{$classnum})) {
+    $taxproduct = $pkg_taxproduct->{$classnum};
+  } else {
+    my $part_pkg_taxproduct = $part_pkg->taxproduct($classnum);
+    $taxproduct = $pkg_taxproduct->{$classnum} = (
+      $part_pkg_taxproduct ? $part_pkg_taxproduct->taxproduct : undef
+    );
+    if (!$taxproduct) {
+      $self->log->error("part_pkg $pkgpart, class $_: taxproduct not found");
+      if ( !$self->conf->exists('ignore_incalculable_taxes') ) {
+        die "part_pkg $pkgpart, class $_: taxproduct not found\n";
+      }
+    }
+  }
+  warn "part_pkg $pkgpart, class $classnum: ".
+    ($taxproduct ?
+      "using taxproduct $taxproduct\n" :
+      "taxproduct not found\n")
+    if $DEBUG;
+  return $taxproduct;
+}
+
+sub log {
+  my $self = shift;
+  return $self->{_log} ||= FS::Log->new('FS::TaxEngine::billsoft');
+}
+
+sub conf {
+  my $self = shift;
+  return $self->{_conf} ||= FS::Conf->new;
+}
 
 sub create_batch {
   my ($self, %opt) = @_;
+
+  my @invoices = qsearch('cust_bill', { pending => 'Y' });
+  $self->log->info(scalar(@invoices)." pending invoice(s) found.");
+  return if @invoices == 0;
 
   $DB::single=1; # XXX
 
   my $spooldir = $self->spooldir;
   my $spoolname = $self->spoolname;
   my $fh = IO::File->new();
-  $fh->open("$spooldir/$spoolname", '>>');
+  $self->log->info("Starting batch in $spooldir/upload/$spoolname");
+  $fh->open("$spooldir/upload/$spoolname", '>');
   $self->{fh} = $fh;
+
+  my $csv = Text::CSV_XS->new({ binary => 1, eol => "\r\n" });
+  $csv->print($fh, \@input_cols);
+  $csv->column_names(\@input_cols);
 
   # XXX limit based on freeside-daily custnum/agentnum options
   # and maybe invoice date
-  my @invoices = qsearch('cust_bill', { pending => 'Y' });
-  warn scalar(@invoices)." pending invoice(s) found.\n";
   foreach my $cust_bill (@invoices) {
 
     my $invnum = $cust_bill->invnum;
     my $cust_main = $cust_bill->cust_main;
-    my $cust_type = $cust_main->company ? 'B' : 'R';
+    my $cust_type = $cust_main->taxstatus;
     my $invoice_date = time2str('%Y%m%d', $cust_bill->_date);
+
+    my %bill_to = do {
+      my $location = $cust_main->bill_location;
+      my $zip = $location->zip;
+      my $plus4 = '';
+      if ($location->country eq 'US') {
+        ($zip, $plus4) = split(/-/, $zip);
+      }
+      ( BillToCountryISO  => uc(country_code2code($location->country,
+                                                  'alpha-2' => 'alpha-3')),
+        BillToPCode       => $location->geocode,
+        BillToZipCode     => $zip,
+        BillToZipP4       => $plus4,
+      )
+    };
 
     # cache some things
     my (%cust_pkg, %part_pkg, %cust_location, %classname);
@@ -104,122 +191,123 @@ sub create_batch {
     # and then locationnums; for per-location taxes
     my %sales;
 
+    my @options = $self->conf->config('billsoft-taxconfig');
+    
+    my %bill_properties = (
+      %bill_to,
+      Date              => $invoice_date,
+      CustomerType      => $cust_type,
+      CustomerNumber    => $cust_bill->custnum,
+      InvoiceNumber     => $invnum,
+      Facilities        => ($options[0] || ''),
+      Franchise         => ($options[1] || ''),
+      Regulated         => ($options[2] || ''),
+      BusinessClass     => ($options[3] || ''),
+    );
+
     foreach my $cust_bill_pkg ( $cust_bill->cust_bill_pkg ) {
-$DB::single = 1;
       my $cust_pkg = $cust_pkg{$cust_bill_pkg->pkgnum}
                  ||= $cust_bill_pkg->cust_pkg;
       my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
       my $part_pkg = $part_pkg{$pkgpart} ||= FS::part_pkg->by_key($pkgpart);
-      my $resale_mode = ($part_pkg->option('wholesale',1) ? 'R' : 'S');
-      my $locationnum = $cust_pkg->locationnum;
-      my $location = $cust_location{$locationnum} ||= $cust_pkg->cust_location;
-      my %taxproduct; # CDR rated_classnum => taxproduct
-
-      my $usage_total = 0;
-      # go back to the original call details
-      my $detailnums = FS::Record->scalar_sql(
-        "SELECT array_to_string(array_agg(detailnum), ',') ".
-        "FROM cust_bill_pkg_detail WHERE billpkgnum = ".
-        $cust_bill_pkg->billpkgnum
+      my $resale_mode = ($part_pkg->option('wholesale',1) ? 'Resale' : 'Sale');
+      my %pkg_properties = (
+        %bill_properties,
+        Sale              => $resale_mode,
+        Optional          => $cust_bill_pkg->billpkgnum, # will be echoed
+        # others at this level? Lifeline?
+        # DiscountType may be relevant...
+        # and Proration
       );
 
-      # With summary details, even the number of CDRs returned from a single
-      # invoice detail could be scary large.  Avoid running out of memory.
-      if (length $detailnums > 0) {
-        my $cdr_search = FS::Cursor->new({
-          'table'     => 'cdr',
-          'hashref'   => { freesidestatus => 'done' },
-          'extra_sql' => "AND detailnum IN($detailnums)",
+      my $usage_total = 0;
+
+      # cursorized joined search on the invoice details, for memory efficiency
+      my $cdr_search = FS::Cursor->new({
+        'table'     => 'cdr',
+        'hashref'   => { freesidestatus => 'done' },
+        'addl_from' => ' JOIN cust_bill_pkg_detail USING (detailnum)',
+        'extra_sql' => "AND cust_bill_pkg_detail.billpkgnum = ".
+                       $cust_bill_pkg->billpkgnum
+      });
+
+      while (my $cdr = $cdr_search->fetch) {
+        my $classnum = $cdr->rated_classnum;
+        if ( $classnum ) {
+          $classname{$classnum} ||= FS::usage_class->by_key($classnum)->classname;
+        }
+
+        my $taxproduct = $self->part_pkg_taxproduct($part_pkg, $classnum)
+          or next;
+        my $tcode = substr($taxproduct, 0, 6);
+        my $scode = substr($taxproduct, 6, 6);
+
+        # For CDRs, use the call termination site rather than setting
+        # Termination fields to the service address.
+        $csv->print_hr($fh, {
+          %pkg_properties,
+          RequestType       => 'CalcTaxes',
+          OriginationNpaNxx => substr($cdr->src_lrn || $cdr->src, 0, 6),
+          TerminationNpaNxx => substr($cdr->dst_lrn || $cdr->dst, 0, 6),
+          TransactionType   => $tcode,
+          ServiceType       => $scode,
+          Charge            => $cdr->rated_price,
+          Minutes           => ($cdr->duration / 60.0), # floating point
         });
 
-        while (my $cdr = $cdr_search->fetch) {
-          my $classnum = $cdr->rated_classnum;
-          $classname{$classnum} ||= FS::usage_class->by_key($classnum)->classname
-            if $classnum;
-          $taxproduct{$classnum} ||= $part_pkg->taxproduct($classnum);
-          if (!$taxproduct{$classnum}) {
-            warn "part_pkg $pkgpart, class $classnum: ".
-              ($taxproduct{$classnum} ?
-                  "using taxproduct ".$taxproduct{$classnum}->description."\n" :
-                  "taxproduct not found\n")
-              if $DEBUG;
-            next;
-          }
+        $usage_total += $cdr->rated_price;
 
-          my $line = sprintf($format,
-              substr($cdr->src, 0, 6), 'N',
-              substr($cdr->dst, 0, 6), 'N',
-              $location->geocode, 'P',
-              $cust_type,
-              $invoice_date,
-              100000 * $cdr->rated_price, # price (5 decimal places)
-              0,                          # lines
-              0,                          # locations
-              $taxproduct{$classnum}->taxproduct,
-              $resale_mode,
-              ($location->incorporated ? 'I' : 'O'),
-              'C', # for Call
-              $cdr->acctid,
-              # Call duration (tenths of minutes)
-              $cdr->duration / 6,
-              # Service class indicator ('L'ocal, Long 'D'istance)
-              # stupid hack
-              (lc($classname{$classnum}) eq 'local' ? 'L' : 'D'),
-            );
-
-          print $fh $line;
-
-          $usage_total += $cdr->rated_price;
-
-        } # while $cdr = $cdr_search->fetch
-      } # if @$detailnums; otherwise there are no usage details for this line
+      } # while $cdr = $cdr_search->fetch
       
       my $recur_tcode;
       # now write lines for the non-CDR portion of the charges
+
+      my $locationnum = $cust_pkg->locationnum;
+
+      # use termination address for the service location
+      my %termination = do {
+        my $location = $cust_location{$locationnum} ||= $cust_pkg->cust_location;
+        my $zip = $location->zip;
+        my $plus4 = '';
+        if ($location->country eq 'US') {
+          ($zip, $plus4) = split(/-/, $zip);
+        }
+        ( TerminationCountryISO  => uc(country_code2code($location->country,
+                                                        'alpha-2' => 'alpha-3')),
+          TerminationPCode       => $location->geocode,
+          TerminationZipCode     => $zip,
+          TerminationZipP4       => $plus4,
+        )
+      };
+
       foreach (qw(setup recur)) {
-        my $taxproduct = $part_pkg->taxproduct($_);
-        warn "part_pkg $pkgpart, class $_: ".
-          ($taxproduct ?
-            "using taxproduct ".$taxproduct->description."\n" :
-            "taxproduct not found\n")
-          if $DEBUG;
+        my $taxproduct = $self->part_pkg_taxproduct($part_pkg, $_);
         next unless $taxproduct;
 
-        my ($tcode) = $taxproduct->taxproduct =~ /^(\d{6})/;
-        $sales{$tcode} ||= {};
-        $sales{$tcode}{$location->locationnum} ||= 0;
+        my $tcode = substr($taxproduct, 0, 6);
+        my $scode = substr($taxproduct, 6, 6);
+        $sales{$tcode} ||= 0;
         $recur_tcode = $tcode if $_ eq 'recur';
 
         my $price = $cust_bill_pkg->get($_);
-        $sales{$tcode}{$location->locationnum} += $price;
+        $sales{$tcode} += $price;
 
         $price -= $usage_total if $_ eq 'recur';
 
-        my $line = sprintf($format,
-          $location->geocode, 'P', # all 3 locations the same
-          $location->geocode, 'P',
-          $location->geocode, 'P',
-          $cust_type,
-          $invoice_date,
-          100000 * $price,            # price (5 decimal places)
-          0,                          # lines
-          0,                          # locations
-          $taxproduct->taxproduct,
-          $resale_mode,
-          ($location->incorporated ? 'I' : 'O'),
-          substr(uc($_), 0, 1), # 'S'etup or 'R'ecur
-          $cust_bill_pkg->billpkgnum,
-          0, # call duration
-          'D' # service class indicator
-        );
-
-        print $fh $line;
+        $csv->print_hr($fh, {
+            %pkg_properties,
+            %termination,
+            RequestType       => 'CalcTaxes',
+            TransactionType   => $tcode,
+            ServiceType       => $scode,
+            Charge            => $price,
+        } );
 
       } # foreach (setup, recur)
 
-      # S-code 23: taxes based on number of lines (E911, mostly)
+      # S-code 21: taxes based on number of lines (E911, mostly)
       # voip_cdr and voip_inbound packages know how to report this.  Not all 
-      # T-codes are eligible for this; only report it if the /23 taxproduct
+      # T-codes are eligible for this; only report it if the /21 taxproduct
       # exists.
       #
       # (note: the nomenclature of "service" and "transaction" codes is 
@@ -229,93 +317,49 @@ $DB::single = 1;
       # reverse.  I recommend calling them "S" and "T" codes internally just 
       # to avoid confusion.)
 
-      my $lines_taxproduct = qsearchs('part_pkg_taxproduct', {
-        'taxproduct' => sprintf('%06d%06d', $recur_tcode, 21)
-      });
-      my $lines = $cust_bill_pkg->units;
-
-      if ( $lines_taxproduct and $lines ) {
-
-        my $line = sprintf($format,
-          $location->geocode, 'P', # all 3 locations the same
-          $location->geocode, 'P',
-          $location->geocode, 'P',
-          $cust_type,
-          $invoice_date,
-          0,                        # price (5 decimal places)
-          $lines,                   # lines
-          0,                        # locations
-          $lines_taxproduct->taxproduct,
-          $resale_mode,
-          ($location->incorporated ? 'I' : 'O'),
-          'L',                      # 'L'ines
-          $cust_bill_pkg->billpkgnum,
-          0, # call duration
-          'D' # service class indicator
+      # XXX cache me
+      # XXX this isn't precisely correct. Local exchange service on
+      # high-capacity trunks, Centrex, and PBX trunks are supposed to be
+      # reported as three separate implicit transactions: number of trunks,
+      # of outbound channels, of extensions.
+      # This is also true for VoIP PBX trunks. Come back to this.
+      if ( $recur_tcode ) {
+        my $lines_taxproduct = FS::part_pkg_taxproduct->count(
+          'data_vendor = \'billsoft\' and taxproduct = ?',
+          sprintf('%06d%06d', $recur_tcode, 21)
         );
+        my $lines = $cust_bill_pkg->units;
 
+        if ( $lines_taxproduct and $lines ) {
+          $csv->print_hr($fh, {
+            %pkg_properties,
+            %termination,
+            RequestType       => 'CalcTaxes',
+            TransactionType   => $recur_tcode,
+            ServiceType       => 21,
+            Charge            => 0,
+            Lines             => $lines,
+          } );
+        }
       }
 
     } # foreach my $cust_bill_pkg
 
-    # Implicit transactions
     foreach my $tcode (keys %sales) {
 
-      # S-code 23: number of locations (rare)
-      my $locations_taxproduct =
-        qsearchs('part_pkg_taxproduct', {
-          'taxproduct' => sprintf('%06d%06d', $tcode, 23)
-        });
-
-      if ( $locations_taxproduct and keys %{ $sales{$tcode} } > 0 ) {
-        my $location = $cust_main->bill_location;
-        my $line = sprintf($format,
-          $location->geocode, 'P', # all 3 locations the same
-          $location->geocode, 'P',
-          $location->geocode, 'P',
-          $cust_type,
-          $invoice_date,
-          0,                        # price (5 decimal places)
-          0,                        # lines
-          keys(%{ $sales{$tcode} }),# locations
-          $locations_taxproduct->taxproduct,
-          'S',
-          ($location->incorporated ? 'I' : 'O'),
-          'O',                      # l'O'cations
-          sprintf('%07d%06d%06d', $invnum, $tcode, 0),
-          0, # call duration
-          'D' # service class indicator
-        );
-
-        print $fh $line;
-      }
-
       # S-code 43: per-invoice tax (apparently this is a thing)
-      my $invoice_taxproduct = 
-        qsearchs('part_pkg_taxproduct', {
-          'taxproduct' => sprintf('%06d%06d', $tcode, 43)
-        });
+      my $invoice_taxproduct = FS::part_pkg_taxproduct->count(
+        'data_vendor = \'billsoft\' and taxproduct = ?',
+        sprintf('%06d%06d', $tcode, 43)
+      );
       if ( $invoice_taxproduct ) {
-        my $location = $cust_main->bill_location;
-        my $line = sprintf($format,
-          $location->geocode, 'P', # all 3 locations the same
-          $location->geocode, 'P',
-          $location->geocode, 'P',
-          $cust_type,
-          $invoice_date,
-          0,                        # price (5 decimal places)
-          0,                        # lines
-          0,                        # locations
-          $invoice_taxproduct->taxproduct,
-          'S',                      # resale mode
-          ($location->incorporated ? 'I' : 'O'),
-          'I',                      # 'I'nvoice tax
-          sprintf('%07d%06d%06d', $invnum, $tcode, 0),
-          0, # call duration
-          'D' # service class indicator
-        );
-
-        print $fh $line;
+        $csv->print_hr($fh, {
+          RequestType       => 'CalcTaxes',
+          %bill_properties,
+          TransactionType   => $tcode,
+          ServiceType       => 43,
+          Charge            => 0,
+        } );
       }
     } # foreach $tcode
   } # foreach $cust_bill
@@ -332,6 +376,7 @@ sub cust_tax_locations {
   }
   my $zip = $location->zip;
   return () unless $location->country eq 'US';
+  return () unless $zip;
   # currently the only one supported
   if ( $zip =~ /^(\d{5})(-\d{4})?$/ ) {
     $zip = $1;
@@ -363,8 +408,12 @@ sub transfer_batch {
   my $target = qsearchs('upload_target', { hostname => 'ftp.billsoft.com' })
     or die "No Billsoft upload target defined.\n";
 
+  local $CWD = $self->spooldir . '/upload';
   # create the batch
-  my $upload = $self->create_batch(%opt);
+  my $upload = $self->create_batch(%opt); # name of the CSV file
+  # returns undef if there were no pending invoices; in that case
+  # skip the rest of this procedure
+  return if !$upload;
 
   # upload it
   my $ftp = $target->connect;
@@ -372,28 +421,33 @@ sub transfer_batch {
     die "Error connecting to Billsoft FTP server:\n$ftp\n";
   }
   my $fh = IO::File->new();
-  warn "Processing: $upload\n";
+  $self->log->info("Processing: $upload");
+  if ( stat('FTP.ZIP') ) {
+    unlink('FTP.ZIP') or die "Failed to remove old tax batch:\n$!\n";
+  }
   my $error = system("zip -j -o FTP.ZIP $upload");
   die "Failed to compress tax batch\n$!\n" if $error;
-  warn "Uploading file...\n";
+  $self->log->debug("Uploading file");
   $ftp->put('FTP.ZIP');
+  unlink('FTP.ZIP');
 
+  local $CWD = $self->spooldir;
   my $download = $upload;
-  # naming convention for these is: same as the CDF contained in the 
+  # naming convention for these is: same as the CSV contained in the 
   # zip file, but with an "R" inserted after the company ID prefix
-  $download =~ s/^(...)(\d{8}..).CDF/$1R$2.ZIP/;
-  warn "Waiting for output file ($download)...\n";
+  $download =~ s/^(...)(\d{8}..).CSV/$1R$2.ZIP/;
+  $self->log->debug("Waiting for output file ($download)");
   my $starttime = time;
   my $downloaded = 0;
   while ( time - $starttime < $TIMEOUT ) {
     my @ls = $ftp->ls($download);
     if ( @ls ) {
       if ($ftp->get($download, "download/$download")) {
-        warn "Downloaded '$download'.\n";
+        $self->log->debug("Downloaded '$download'");
         $downloaded = 1;
         last;
       } else {
-        warn "Failed to download '$download': ".$ftp->message."\n";
+        $self->log->warn("Failed to download '$download': ".$ftp->message);
         # We know the file exists, so continue trying to download it.
         # Maybe the problem will get fixed.
       }
@@ -401,21 +455,21 @@ sub transfer_batch {
     sleep 30;
   }
   if (!$downloaded) {
-    warn "No output file received.\n";
+    $self->log->error("No output file received.");
     next BATCH;
   }
-  warn "Decompressing...\n";
+  $self->log->debug("Decompressing...");
   system("unzip -o download/$download");
-  foreach my $csf (glob "*.CSF") {
-    warn "Processing '$csf'...\n";
-    $fh->open($csf, '<') or die "failed to open downloaded file $csf";
+  my $output = $upload;
+  $output =~ s/.CSV$/_dtl.rpt.csv/i;
+  if ([ -f $output ]) {
+    $self->log->info("Processing '$output'");
+    $fh->open($output, '<') or die "failed to open downloaded file $output";
     $self->batch_import($fh); # dies on error
     $fh->close;
-    unlink $csf unless $DEBUG;
+    unlink $output unless $DEBUG;
   }
   unlink 'FTP.ZIP';
-  move($upload, "upload/$upload");
-  warn "Finished.\n";
   $dbh->commit if $oldAutoCommit;
   return;
 }
@@ -433,91 +487,93 @@ sub batch_import {
   }
 
   my $href;
-  my $parser = Parse::FixedLength->new(
-    [
-      # key     => 20, # for our purposes we split it up
-      flag      => 1,
-      pkey      => 19,
-      taxtype   => 6,
-      authority => 1,
-      sign      => 1,
-      amount    => 11,
-      pcode     => 9,
-    ],
-  );
+  my $parser = Text::CSV_XS->new({binary => 1});
+  # set column names from header row
+  $parser->column_names($parser->getline($fh));
 
-  # start parsing the input file
+  # start parsing the file
   my $errors = 0;
   my $row = 1;
-  foreach my $line (<$fh>) {
-    warn $line if $DEBUG > 1;
-    %$href = ();
-    $href = $parser->parse($line);
-    # convert some of these to integers
-    $href->{$_} += 0 foreach(qw(pkey taxtype amount pcode));
-    next if $href->{amount} == 0; # then nobody cares
+  # the file is functionally a left join of submitted line items with their
+  # taxes; if a line item has no taxes then it will produce an output row
+  # with all the tax fields empty.
+  while ($href = $parser->getline_hr($fh)) {
+    next if $href->{TaxTypeID} eq ''; # then this row has no taxes
+    next if $href->{TaxAmount} == 0; # then the calculated tax is zero
 
-    my $flag = $href->{flag};
-    my $pkey = $href->{pkey};
+    my $billpkgnum = $href->{Optional};
+    my $invnum = $href->{InvoiceNumber};
     my $cust_bill_pkg; # the line item that this tax applies to
-    # resolve the taxable object
-    if ( $flag eq 'C' ) {
-      # this line represents a CDR.
-      my $cdr = FS::cdr->by_key($pkey);
-      if (!$cdr) {
-        warn "[$row]\tCDR #$pkey not found.\n";
-      } elsif (!$cdr->detailnum) {
-        warn "[$row]\tCDR #$pkey has not been billed.\n";
-        $errors++;
-        next;
-      } else {
-        my $detail = FS::cust_bill_pkg_detail->by_key($cdr->detailnum);
-        $cust_bill_pkg = $detail->cust_bill_pkg;
-      }
-    } elsif ( $flag =~ /S|R|L/ ) {
-      # this line represents a setup or recur fee, or a number of lines.
-      $cust_bill_pkg = FS::cust_bill_pkg->by_key($pkey);
-      if (!$cust_bill_pkg) {
-        warn "[$row]\tLine item #$pkey not found.\n";
-      }
-    } elsif ( $flag =~ /O|I/ ) {
-      warn "Per-invoice taxes are not implemented.\n";
-    } else {
-      warn "[$row]\tFlag '$flag' not recognized.\n";
-    }
-    if (!$cust_bill_pkg) {
-      $errors++; # this will trigger a rollback of the transaction
+    if ( !exists($self->{cust_bill}->{$invnum}) ) {
+      $self->log->error("invoice #$invnum invoice not in pending state");
+      $errors++;
       next;
     }
+    if ( $billpkgnum ) {
+      $cust_bill_pkg = FS::cust_bill_pkg->by_key($billpkgnum);
+      if ( $cust_bill_pkg->invnum != $invnum ) {
+        $self->log->error("invoice #$invnum invoice number mismatch");
+        $errors++;
+        next;
+      }
+    } else {
+      $cust_bill_pkg = ($self->{cust_bill}->{$invnum}->cust_bill_pkg)[0];
+      $billpkgnum = $cust_bill_pkg->billpkgnum;
+    }
+
     # resolve the tax definition
     # base name of the tax type (like "Sales Tax" or "Universal Lifeline 
     # Telephone Service Charge").
-    my $tax_class = $TAX_CLASSES{ $href->{taxtype} + 0 };
+    my $tax_class = $TAX_CLASSES{ $href->{TaxTypeID} };
     if (!$tax_class) {
-      warn "[$row]\tUnknown tax type $href->{taxtype}.\n";
-      $errors++;
-      next;
+      $self->log->warn("Unknown tax type $href->{TaxTypeID}");
+      $tax_class = FS::tax_class->new({
+        'data_vendor' => 'billsoft',
+        'taxclass'    => $href->{TaxTypeID},
+        'description' => $href->{TaxType}
+      });
+      my $error = $tax_class->insert;
+      if ($error) {
+        $self->log->error("Failed to insert tax_class record: $error");
+        $errors++;
+        next;
+      }
+      $TAX_CLASSES{ $href->{TaxTypeID} } = $tax_class;
     }
     my $itemdesc = uc($tax_class->description);
-    my $location = qsearchs('tax_rate_location',
-                            { geocode => $href->{pcode} }
-                           );
+    my $location = qsearchs('tax_rate_location', {
+                             data_vendor  => 'billsoft',
+                             disabled     => '',
+                             geocode      => $href->{PCode}
+                           });
     if (!$location) {
-      warn "Unknown tax authority location ".$href->{pcode}."\n";
-      $errors++;
-      next;
+      $location = FS::tax_rate_location->new({
+        'data_vendor' => 'billsoft',
+        'geocode'     => $href->{PCode},
+        'country'     => uc(country_code2code($href->{CountryISO},
+                                              'alpha-3' => 'alpha-2')),
+        'state'       => $href->{State},
+        'county'      => $href->{County},
+        'city'        => $href->{Locality},
+      });
+      my $error = $location->insert;
+      if ($error) {
+        $self->log->error("Failed to insert tax_class record: $error");
+        $errors++;
+        next;
+      }
     }
     # jurisdiction name
     my $prefix = '';
-    if ( $href->{authority} == 0 ) { # national-level tax
+    if ( $href->{TaxLevelID} == 0 ) { # national-level tax
       # do nothing
-    } elsif ( $href->{authority} == 1 ) {
+    } elsif ( $href->{TaxLevelID} == 1 ) {
       $prefix = $location->state;
-    } elsif ( $href->{authority} == 2 ) {
+    } elsif ( $href->{TaxLevelID} == 2 ) {
       $prefix = $location->county . ' COUNTY';
-    } elsif ( $href->{authority} == 3 ) {
+    } elsif ( $href->{TaxLevelID} == 3 ) {
       $prefix = $location->city;
-    } elsif ( $href->{authority} == 4 ) { # unincorporated area ta
+    } elsif ( $href->{TaxLevelID} == 4 ) { # unincorporated area ta
       # do nothing
     }
     # Some itemdescs start with the jurisdiction name; otherwise, prepend 
@@ -528,15 +584,14 @@ sub batch_import {
     # Create or locate a tax_rate record, because we need one to foreign-key
     # the cust_bill_pkg_tax_rate_location record.
     my $tax_rate = $self->find_or_insert_tax_rate(
-      geocode     => $href->{pcode},
+      geocode     => $href->{PCode},
       taxclassnum => $tax_class->taxclassnum,
       taxname     => $itemdesc,
     );
-    # Convert amount from 10^-5 dollars to dollars/cents
-    my $amount = sprintf('%.2f', $href->{amount} / 100000);
+    my $amount = sprintf('%.2f', $href->{TaxAmount});
     # and add it to the tax under this name
     my $tax_item = $self->add_tax_item(
-      invnum      => $cust_bill_pkg->invnum,
+      invnum      => $invnum,
       itemdesc    => $itemdesc,
       amount      => $amount,
     );
@@ -547,7 +602,7 @@ sub batch_import {
         taxtype             => 'FS::tax_rate',
         taxratelocationnum  => $location->taxratelocationnum,
         amount              => $amount,
-        taxable_billpkgnum  => $cust_bill_pkg->billpkgnum,
+        taxable_billpkgnum  => $billpkgnum,
     });
     my $error = $subitem->insert;
     die "Error linking tax to taxable item: $error\n" if $error;

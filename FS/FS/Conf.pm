@@ -2449,8 +2449,15 @@ and customer address. Include units.',
   {
     'key'         => 'billsoft-company_code',
     'section'     => 'taxation',
-    'description' => 'Billsoft tax service company code (3 letters)',
+    'description' => 'Billsoft (AvaTax for Communications) tax service company code (3 letters)',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'billsoft-taxconfig',
+    'section'     => 'taxation',
+    'description' => 'Billsoft tax configuration flags. Four lines: Facilities, Franchise, Regulated, Business Class. See the Avalara documentation for instructions on setting these flags.',
+    'type'        => 'textarea',
   },
 
   {

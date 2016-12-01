@@ -29,6 +29,7 @@ my @contexts = ( qw(
   freeside-paymentech-upload
   freeside-paymentech-download
   test
+  FS::TaxEngine::billsoft
 ) );
 
 =head1 NAME
