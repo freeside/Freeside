@@ -110,7 +110,7 @@ for my $i (0 .. scalar(@groups) - 1) {
   push @group_labels, $label;
 
   my @footer;
-  if ($opt{'subtotal_row'}) {
+  if ($opt{'subtotal_row'} and @groups > 1) {
     for( my $col = 0;
          exists($opt{'subtotal_row'}[$col]) or exists($opt{'header'}[$col]);
          $col++
