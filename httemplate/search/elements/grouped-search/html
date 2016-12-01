@@ -106,14 +106,18 @@ if ($group_info->{num} > 1) {
 &>
 
 <DIV CLASS="fstabcontainer">
+% if ( $group->num_rows > 0 ) {
+<P><% emt('[quant,_1,_2]', $group->num_rows, $opt{name_singular}) %>
+</P>
 %# download links
-<P><% emt('Download full results') %><BR>
+<P><% emt('Download results:') %>
 % $cgi->param('type', 'xls');
-<A HREF="<% $cgi->self_url %>"><% emt('as Excel spreadsheet') %></A><BR>
+<A HREF="<% $cgi->self_url %>"><% emt('Spreadsheet') %></A>&nbsp;|&nbsp;
 % $cgi->param('type', 'html-print');
-<A HREF="<% $cgi->self_url %>"><% emt('as printable copy') %></A><BR>
+<A HREF="<% $cgi->self_url %>"><% emt('webpage') %></A>
 % $cgi->delete('type');
 </P>
+% }
 
 <% $pager %>
 
