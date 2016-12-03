@@ -195,8 +195,6 @@ sub payinfo_check {
   FS::payby->can_payby($self->table, $self->payby)
     or return "Illegal payby: ". $self->payby;
 
-  my $conf = new FS::Conf;
-
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
 
     my $payinfo = $self->payinfo;
