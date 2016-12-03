@@ -385,6 +385,23 @@ sub default_gateway {
   return $payment_gateway;
 }
 
+=item by_key_with_namespace GATEWAYNUM
+
+Like usual by_key, but makes sure namespace is set,
+and dies if not found.
+
+=cut
+
+sub by_key_with_namespace {
+  my $self = shift;
+  my $payment_gateway = $self->by_key(@_);
+  die "payment_gateway not found"
+    unless $payment_gateway;
+  $payment_gateway->gateway_namespace('Business::OnlinePayment')
+    unless $payment_gateway->gateway_namespace;
+  return $payment_gateway;
+}
+
 =item by_key_or_default OPTIONS
 
 Either returns the gateway specified by option gatewaynum, or the default gateway.
@@ -399,13 +416,7 @@ sub by_key_or_default {
   my ($self,%options) = @_;
 
   if ($options{'gatewaynum'}) {
-    my $payment_gateway = $self->by_key($options{'gatewaynum'});
-    # regardless of nofatal, which is only meant for handling lack of default gateway
-    die "payment_gateway ".$options{'gatewaynum'}." not found"
-      unless $payment_gateway;
-    $payment_gateway->gateway_namespace('Business::OnlinePayment')
-      unless $payment_gateway->gateway_namespace;
-    return $payment_gateway;
+    return $self->by_key_with_namespace($options{'gatewaynum'});
   } else {
     return $self->default_gateway(%options);
   }

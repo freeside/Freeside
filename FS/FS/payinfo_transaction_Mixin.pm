@@ -102,8 +102,6 @@ auth, and order_number) as well as payby and payinfo
 sub payinfo_check {
   my $self = shift;
 
-  my $conf = new FS::Conf;
-
   $self->SUPER::payinfo_check()
   || $self->ut_numbern('gatewaynum')
   # not ut_foreign_keyn, it causes upgrades to fail

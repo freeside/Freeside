@@ -1480,10 +1480,12 @@ sub realtime_refund_bop {
       @bop_options = $payment_gateway->gatewaynum
                        ? $payment_gateway->options
                        : @{ $payment_gateway->get('options') };
+      my %bop_options = @bop_options;
 
       return "processor of payment $options{'paynum'} $processor does not".
              " match default processor $conf_processor"
-        unless $processor eq $conf_processor;
+        unless ($processor eq $conf_processor)
+            || (($conf_processor eq 'CardFortress') && ($processor eq $bop_options{'gateway'}));
 
     }
 
@@ -1492,9 +1494,7 @@ sub realtime_refund_bop {
            # like a normal transaction 
  
     my $payment_gateway =
-      $self->agent->payment_gateway( 'method'  => $options{method},
-                                     #'payinfo' => $payinfo,
-                                   );
+      $self->agent->payment_gateway( 'method'  => $options{method} );
     my( $processor, $login, $password, $namespace ) =
       map { my $method = "gateway_$_"; $payment_gateway->$method }
         qw( module username password namespace );
@@ -1627,18 +1627,22 @@ sub realtime_refund_bop {
     if length($payip);
 
   my $payinfo = '';
+  my $paymask = ''; # for refund record
   if ( $options{method} eq 'CC' ) {
 
     if ( $cust_pay ) {
       $content{card_number} = $payinfo = $cust_pay->payinfo;
+      $paymask = $cust_pay->paymask;
       (exists($options{'paydate'}) ? $options{'paydate'} : $cust_pay->paydate)
         =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/ &&
         ($content{expiration} = "$2/$1");  # where available
     } else {
-      $content{card_number} = $payinfo = $self->payinfo;
-      (exists($options{'paydate'}) ? $options{'paydate'} : $self->paydate)
-        =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-      $content{expiration} = "$2/$1";
+      # this really needs a better cleanup
+      die "Refund without paynum not supported";
+#      $content{card_number} = $payinfo = $self->payinfo;
+#      (exists($options{'paydate'}) ? $options{'paydate'} : $self->paydate)
+#        =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+#      $content{expiration} = "$2/$1";
     }
 
   } elsif ( $options{method} eq 'ECHECK' ) {
@@ -1702,6 +1706,7 @@ sub realtime_refund_bop {
     '_date'    => '',
     'payby'    => $bop_method2payby{$options{method}},
     'payinfo'  => $payinfo,
+    'paymask'  => $paymask,
     'reasonnum'     => $options{'reasonnum'},
     'gatewaynum'    => $gatewaynum, # may be null
     'processor'     => $processor,
@@ -2443,7 +2448,7 @@ CUSTLOOP:
       }
 
       # only load gateway if we need to, and only need to load it once
-      my $payment_gateway ||= $cust_main->_payment_gateway({
+      $payment_gateway ||= $cust_main->_payment_gateway({
         'method'  => 'CC',
         'conf'    => $conf,
         'nofatal' => 1, # handle lack of gateway smoothly below
@@ -2543,15 +2548,72 @@ CUSTLOOP:
         $dbh->commit or die $dbh->errstr; # commit log message
       }
 
-      # don't use customer agent gateway here, use the gatewaynum specified by the record
-      my $gateway = FS::payment_gateway->by_key_or_default( 
-        'method'     => 'CC',
-        'conf'       => $conf,
-        'nofatal'    => 1,
-        'gatewaynum' => $record->gatewaynum || '',
-      );
+      my $cust_main = $record->cust_main;
+      if (!$cust_main) {
+        # might happen for cust_pay_pending from failed verify records,
+        #   in which case we attempt tokenization without cust_main
+        # everything else should absolutely have a cust_main
+        unless ($table eq 'cust_pay_pending' && $record->{'custnum_pending'}) {
+          my $error = "Could not load cust_main for $table ".$record->get($record->primary_key);
+          if ($opt{'queue'}) {
+            $log->critical($error);
+            $dbh->commit or die $dbh->errstr; # commit log message
+            next;
+          }
+          $dbh->rollback if $oldAutoCommit;
+          die $error;
+        }
+      }
+
+      my $gateway;
+
+      # use the gatewaynum specified by the record if possible
+      $gateway = FS::payment_gateway->by_key_with_namespace(
+        'gatewaynum' => $record->gatewaynum,
+      ) if $record->gateway;
+
+      # otherwise use the cust agent gateway if possible (which realtime_refund_bop would do)
+      # otherwise just use default gateway
       unless ($gateway) {
-        # means no default gateway, no promise to tokenize, can skip
+
+        $gateway = $cust_main 
+                 ? $cust_main->agent->payment_gateway
+                 : FS::payment_gateway->default_gateway;
+
+        # check for processor mismatch
+        unless ($table eq 'cust_pay_pending') { # has no processor table
+          if (my $processor = $record->processor) {
+
+            my $conf_processor = $gateway->gateway_module;
+            my %bop_options = $gateway->gatewaynum
+                            ? $gateway->options
+                            : @{ $gateway->get('options') };
+
+            # this is the same standard used by realtime_refund_bop
+            unless (
+              ($processor eq $conf_processor) ||
+              (($conf_processor eq 'CardFortress') && ($processor eq $bop_options{'gateway'}))
+            ) {
+
+              # processors don't match, so refund already cannot be run on this object,
+              # regardless of what we do now...
+              # but unless we gotta tokenize everything, just leave well enough alone
+              unless ($require_tokenized) {
+                warn "Skipping mismatched processor for $table ".$record->get($record->primary_key) if $debug;
+                next;
+              }
+              ### no error--we'll tokenize using the new gateway, just to remove stored payinfo,
+              ### because refunds are already impossible for this record, anyway
+
+            } # end processor mismatch
+
+          } # end record has processor
+        } # end not cust_pay_pending
+
+      }
+
+      # means no default gateway, no promise to tokenize, can skip
+      unless ($gateway) {
         warn "Skipping missing gateway for $table ".$record->get($record->primary_key) if $debug;
         next;
       }
@@ -2570,24 +2632,7 @@ CUSTLOOP:
         next;
       }
 
-      my $cust_main = $record->cust_main;
-      if (!$cust_main) {
-        # might happen for cust_pay_pending from failed verify records,
-        #   in which case we attempt tokenization without cust_main
-        # everything else should absolutely have a cust_main
-        if ($table eq 'cust_pay_pending' && $record->{'custnum_pending'}) {
-          warn "ATTEMPTING GATEWAY-ONLY TOKENIZE" if $debug;
-        } else {
-          my $error = "Could not load cust_main for $table ".$record->get($record->primary_key);
-          if ($opt{'queue'}) {
-            $log->critical($error);
-            $dbh->commit or die $dbh->errstr; # commit log message
-            next;
-          }
-          $dbh->rollback if $oldAutoCommit;
-          die $error;
-        }
-      }
+      warn "ATTEMPTING GATEWAY-ONLY TOKENIZE" if $debug && !$cust_main;
 
       # if we got this far, time to mutex
       $record = $record->select_for_update;
