@@ -2553,7 +2553,11 @@ CUSTLOOP:
         # might happen for cust_pay_pending from failed verify records,
         #   in which case we attempt tokenization without cust_main
         # everything else should absolutely have a cust_main
-        unless ($table eq 'cust_pay_pending' && $record->{'custnum_pending'}) {
+        if ($table eq 'cust_pay_pending' and !$record->custnum ) {
+          # override the usual safety check and allow the record to be
+          # updated even without a custnum.
+          $record->set('custnum_pending', 1);
+        } else {
           my $error = "Could not load cust_main for $table ".$record->get($record->primary_key);
           if ($opt{'queue'}) {
             $log->critical($error);
@@ -2635,7 +2639,7 @@ CUSTLOOP:
       warn "ATTEMPTING GATEWAY-ONLY TOKENIZE" if $debug && !$cust_main;
 
       # if we got this far, time to mutex
-      $record = $record->select_for_update;
+      $record->select_for_update;
 
       # no clear record of name/address/etc used for transaction,
       # but will load name/phone/id from customer if run as an object method,
