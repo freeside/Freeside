@@ -137,27 +137,8 @@ ok( $payment[1]->tokenized, "payment is tokenized" );
 $payby[1] = $payby[1]->replace_old;
 ok( $payby[1]->tokenized, "card is now tokenized" );
 
-# test db doesn't have this
-#foreach my $pg ($fs->qsearch('payment_gateway')) {
-#  unless ($pg->gateway_module eq 'CardFortress') {
-#    note('UPGRADING NON-CF PAYMENT GATEWAY');
-#    my %pgopts = (
-#      gateway          => $pg->gateway_module,
-#      gateway_login    => $pg->gateway_username,
-#      gateway_password => $pg->gateway_password,
-#      private_key      => '/usr/local/etc/freeside/cardfortresstest.txt',
-#    );
-#    $pg->gateway_module('CardFortress');
-#    $pg->gateway_username('cardfortresstest');
-#    $pg->gateway_password('(TEST54)');
-#    $err = $pg->replace(\%pgopts);
-#    last if $err;
-#  }
-#}
-#ok( !$err, "remove non-CF payment gateways" ) or BAIL_OUT($err);
-
 # invoke the part of freeside-upgrade that tokenizes
-FS::cust_main->queueable_upgrade( quiet => 1 );
+FS::cust_main->queueable_upgrade();
 #$err = system('freeside-upgrade','admin');
 #ok( !$err, 'tokenizable upgrade' ) or BAIL_OUT('Error string: '.$!);
 
