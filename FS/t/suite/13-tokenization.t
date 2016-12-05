@@ -8,7 +8,7 @@ use FS::cust_main;
 use Business::CreditCard qw(generate_last_digit);
 use DateTime;
 if ( stat('/usr/local/etc/freeside/cardfortresstest.txt') ) {
-  plan tests => 18;
+  plan tests => 20;
 } else {
   plan skip_all => 'CardFortress test encryption key is not installed.';
 }
@@ -23,7 +23,23 @@ my $bopconf;
 
 like( $conf->config('company_name'), qr/^Freeside Test/, 'using test database' ) or BAIL_OUT('');
 
-# test db no longer contains cardtype overrides
+# some pre-upgrade cleanup, upgrade will fail if these are still configured
+foreach my $cust_main ( $fs->qsearch('cust_main') ) {
+  my @count = $fs->qsearch('agent_payment_gateway', { agentnum => $cust_main->agentnum } );
+  if (@count > 1) {
+    note("DELETING CARDTYPE GATEWAYS");
+    foreach my $apg (@count) {
+      $err = $apg->delete if $apg->cardtype;
+      last if $err;
+    }
+    @count = $fs->qsearch('agent_payment_gateway', { agentnum => $cust_main->agentnum } );
+    if (@count > 1) {
+      $err = "Still found ".@count." gateways for custnum ".$cust_main->custnum;
+      last;
+    }
+  }
+}
+ok( !$err, "remove obsolete payment gateways" ) or BAIL_OUT($err);
 
 $bopconf = 
 'IPPay
@@ -120,6 +136,24 @@ private_key
 /usr/local/etc/freeside/cardfortresstest.txt';
 $conf->set('business-onlinepayment' => $bopconf);
 is( join("\n",$conf->config('business-onlinepayment')), $bopconf, "setting tokenizable default gateway" ) or BAIL_OUT('');
+
+foreach my $pg ($fs->qsearch('payment_gateway')) {
+  unless ($pg->gateway_module eq 'CardFortress') {
+    note('UPGRADING NON-CF PAYMENT GATEWAY');
+    my %pgopts = (
+      gateway          => $pg->gateway_module,
+      gateway_login    => $pg->gateway_username,
+      gateway_password => $pg->gateway_password,
+      private_key      => '/usr/local/etc/freeside/cardfortresstest.txt',
+    );
+    $pg->gateway_module('CardFortress');
+    $pg->gateway_username('cardfortresstest');
+    $pg->gateway_password('(TEST54)');
+    $err = $pg->replace(\%pgopts);
+    last if $err;
+  }
+}
+ok( !$err, "remove non-CF payment gateways" ) or BAIL_OUT($err);
 
 # create a payment using a non-tokenized card. this should immediately
 # trigger tokenization.
