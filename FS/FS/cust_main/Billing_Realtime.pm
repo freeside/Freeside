@@ -14,6 +14,7 @@ use FS::cust_pay_pending;
 use FS::cust_bill_pay;
 use FS::cust_refund;
 use FS::banned_pay;
+use FS::payment_gateway;
 
 $realtime_bop_decline_quiet = 0;
 
@@ -112,7 +113,6 @@ I<depend_jobnum> allows payment capture to unlock export jobs
 =cut
 
 # Currently only used by ClientAPI
-# NOT 4.x COMPATIBLE (see below)
 sub realtime_collect {
   my( $self, %options ) = @_;
 
@@ -125,10 +125,6 @@ sub realtime_collect {
 
   $options{amount} = $self->balance unless exists( $options{amount} );
   return '' unless $options{amount} > 0;
-
-  #### NOT 4.x COMPATIBLE
-  $options{method} = FS::payby->payby2bop($self->payby)
-    unless exists( $options{method} );
 
   return $self->realtime_bop({%options});
 
@@ -223,6 +219,7 @@ sub _bop_recurring_billing {
 
 }
 
+#can run safely as class method if opt payment_gateway already exists
 sub _payment_gateway {
   my ($self, $options) = @_;
 
@@ -239,8 +236,9 @@ sub _payment_gateway {
   $options->{payment_gateway};
 }
 
+# not a method!!!
 sub _bop_auth {
-  my ($self, $options) = @_;
+  my ($options) = @_;
 
   (
     'login'    => $options->{payment_gateway}->gateway_username,
@@ -282,8 +280,9 @@ sub _bop_defaults {
 
 }
 
+# not a method!
 sub _bop_cust_payby_options {
-  my ($self,$options) = @_;
+  my ($options) = @_;
   my $cust_payby = $options->{'cust_payby'};
   if ($cust_payby) {
 
@@ -319,6 +318,8 @@ sub _bop_cust_payby_options {
   }
 }
 
+# can be called as class method,
+# but can't load default name/phone fields as class method
 sub _bop_content {
   my ($self, $options) = @_;
   my %content = ();
@@ -339,16 +340,16 @@ sub _bop_content {
       /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
       or return "Illegal payname $payname";
     ($payfirst, $paylast) = ($1, $2);
-  } else {
+  } elsif (ref($self)) { # can't set payname if called as class method
     $payfirst = $self->getfield('first');
     $paylast = $self->getfield('last');
     $payname = "$payfirst $paylast";
   }
 
-  $content{last_name} = $paylast;
-  $content{first_name} = $payfirst;
+  $content{last_name} = $paylast if $paylast;
+  $content{first_name} = $payfirst if $payfirst;
 
-  $content{name} = $payname;
+  $content{name} = $payname if $payname;
 
   $content{address} = $options->{'address1'};
   my $address2 = $options->{'address2'};
@@ -359,7 +360,9 @@ sub _bop_content {
   $content{zip} = $options->{'zip'};
   $content{country} = $options->{'country'};
 
-  $content{phone} = $self->daytime || $self->night;
+  # can't set phone if called as class method
+  $content{phone} = $self->daytime || $self->night
+    if ref($self);
 
   my $currency =    $conf->exists('business-onlinepayment-currency')
                  && $conf->config('business-onlinepayment-currency');
@@ -369,6 +372,7 @@ sub _bop_content {
 }
 
 # updates payinfo and cust_payby options with token from transaction
+# can be called as a class method
 sub _tokenize_card {
   my ($self,$transaction,$options) = @_;
   if ( $transaction->can('card_token') 
@@ -410,7 +414,7 @@ sub realtime_bop {
   }
 
   # set fields from passed cust_payby
-  $self->_bop_cust_payby_options(\%options);
+  _bop_cust_payby_options(\%options);
 
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
@@ -423,8 +427,6 @@ sub realtime_bop {
       $token_error = $options{'cust_payby'}->replace;
       return $token_error if $token_error;
     }
-    return "Cannot tokenize card info"
-      if $conf->exists('no_saved_cardnumbers') && !$self->tokenized($options{'payinfo'});
   }
 
   ### 
@@ -698,7 +700,7 @@ sub realtime_bop {
 
   $transaction->content(
     'type'           => $options{method},
-    $self->_bop_auth(\%options),          
+    _bop_auth(\%options),          
     'action'         => $action1,
     'description'    => $options{'description'},
     'amount'         => $options{amount},
@@ -760,7 +762,7 @@ sub realtime_bop {
       %content,
       type           => $options{method},
       action         => $action2,
-      $self->_bop_auth(\%options),          
+      _bop_auth(\%options),          
       order_number   => $ordernum,
       amount         => $options{amount},
       authorization  => $auth,
@@ -1291,7 +1293,7 @@ sub realtime_botpp_capture {
 
   $transaction->content(
     'type'           => $method,
-    $self->_bop_auth(\%options),
+    _bop_auth(\%options),
     'action'         => 'Post Authorization',
     'description'    => $options{'description'},
     'amount'         => $cust_pay_pending->paid,
@@ -1478,10 +1480,12 @@ sub realtime_refund_bop {
       @bop_options = $payment_gateway->gatewaynum
                        ? $payment_gateway->options
                        : @{ $payment_gateway->get('options') };
+      my %bop_options = @bop_options;
 
       return "processor of payment $options{'paynum'} $processor does not".
              " match default processor $conf_processor"
-        unless $processor eq $conf_processor;
+        unless ($processor eq $conf_processor)
+            || (($conf_processor eq 'CardFortress') && ($processor eq $bop_options{'gateway'}));
 
     }
 
@@ -1490,9 +1494,7 @@ sub realtime_refund_bop {
            # like a normal transaction 
  
     my $payment_gateway =
-      $self->agent->payment_gateway( 'method'  => $options{method},
-                                     #'payinfo' => $payinfo,
-                                   );
+      $self->agent->payment_gateway( 'method'  => $options{method} );
     my( $processor, $login, $password, $namespace ) =
       map { my $method = "gateway_$_"; $payment_gateway->$method }
         qw( module username password namespace );
@@ -1625,18 +1627,22 @@ sub realtime_refund_bop {
     if length($payip);
 
   my $payinfo = '';
+  my $paymask = ''; # for refund record
   if ( $options{method} eq 'CC' ) {
 
     if ( $cust_pay ) {
       $content{card_number} = $payinfo = $cust_pay->payinfo;
+      $paymask = $cust_pay->paymask;
       (exists($options{'paydate'}) ? $options{'paydate'} : $cust_pay->paydate)
         =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/ &&
         ($content{expiration} = "$2/$1");  # where available
     } else {
-      $content{card_number} = $payinfo = $self->payinfo;
-      (exists($options{'paydate'}) ? $options{'paydate'} : $self->paydate)
-        =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-      $content{expiration} = "$2/$1";
+      # this really needs a better cleanup
+      die "Refund without paynum not supported";
+#      $content{card_number} = $payinfo = $self->payinfo;
+#      (exists($options{'paydate'}) ? $options{'paydate'} : $self->paydate)
+#        =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+#      $content{expiration} = "$2/$1";
     }
 
   } elsif ( $options{method} eq 'ECHECK' ) {
@@ -1700,6 +1706,7 @@ sub realtime_refund_bop {
     '_date'    => '',
     'payby'    => $bop_method2payby{$options{method}},
     'payinfo'  => $payinfo,
+    'paymask'  => $paymask,
     'reasonnum'     => $options{'reasonnum'},
     'gatewaynum'    => $gatewaynum, # may be null
     'processor'     => $processor,
@@ -1764,7 +1771,7 @@ sub realtime_verify_bop {
 
   # set fields from passed cust_payby
   return "No cust_payby" unless $options{'cust_payby'};
-  $self->_bop_cust_payby_options(\%options);
+  _bop_cust_payby_options(\%options);
 
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
@@ -1773,8 +1780,6 @@ sub realtime_verify_bop {
     return $token_error if $token_error;
     #important that we not replace cust_payby here,
     #because cust_payby->replace uses realtime_verify_bop!
-    return "Cannot tokenize card info"
-      if $conf->exists('no_saved_cardnumbers') && !$self->tokenized($options{'payinfo'});
   }
 
   ###
@@ -1911,7 +1916,7 @@ sub realtime_verify_bop {
 
     $transaction->content(
       'type'           => 'CC',
-      $self->_bop_auth(\%options),          
+      _bop_auth(\%options),          
       'action'         => 'Authorization Only',
       'description'    => $options{'description'},
       'amount'         => '1.00',
@@ -1958,7 +1963,7 @@ sub realtime_verify_bop {
                                   );
 
       $reverse->content( 'action'        => 'Reverse Authorization',
-                         $self->_bop_auth(\%options),          
+                         _bop_auth(\%options),          
 
                          # B:OP
                          'amount'        => '1.00',
@@ -2177,8 +2182,13 @@ Otherwise, options I<method>, I<payinfo> and other cust_payby fields
 may be passed.  If options are passed as a hashref, I<payinfo>
 will be updated as appropriate in the passed hashref.
 
+Can be run as a class method if option I<payment_gateway> is passed,
+but default customer id/name/phone can't be set in that case.  This
+is really only intended for tokenizing old records on upgrade.
+
 =cut
 
+# careful--might be run as a class method
 sub realtime_tokenize {
   my $self = shift;
 
@@ -2196,7 +2206,7 @@ sub realtime_tokenize {
   }
 
   # set fields from passed cust_payby
-  $self->_bop_cust_payby_options(\%options);
+  _bop_cust_payby_options(\%options);
   return '' unless $options{method} eq 'CC';
   return '' if $self->tokenized($options{payinfo}); #already tokenized
 
@@ -2241,6 +2251,11 @@ sub realtime_tokenize {
   # massage data
   ###
 
+  ### Currently, cardfortress only keys in on card number and exp date.
+  ### We pass everything we'd pass to a normal transaction,
+  ### for ease of current and future development,
+  ### but note, when tokenizing old records, we may only have access to payinfo/paydate
+
   my $bop_content = $self->_bop_content(\%options);
   return $bop_content unless ref($bop_content);
 
@@ -2264,6 +2279,9 @@ sub realtime_tokenize {
   my $payissue       = $options{'payissue'};
   $content{issue_number} = $payissue if $payissue;
 
+  $content{customer_id} = $self->custnum
+    if ref($self);
+
   ###
   # run transaction
   ###
@@ -2274,10 +2292,9 @@ sub realtime_tokenize {
 
   $transaction->content(
     'type'           => 'CC',
-    $self->_bop_auth(\%options),          
+    _bop_auth(\%options),          
     'action'         => 'Tokenize',
     'description'    => $options{'description'},
-    'customer_id'    => $self->custnum,
     %$bop_content,
     %content, #after
   );
@@ -2315,7 +2332,9 @@ sub realtime_tokenize {
 
 Convenience wrapper for L<FS::payinfo_Mixin/tokenized>
 
-PAYINFO is required
+PAYINFO is required.
+
+Can be run as class or object method, never loads from object.
 
 =cut
 
@@ -2325,7 +2344,7 @@ sub tokenized {
   FS::cust_pay->tokenized($payinfo);
 }
 
-=item token_check
+=item token_check [ quiet => 1, queue => 1, daily => 1 ]
 
 NOT A METHOD.  Acts on all customers.  Placed here because it makes
 use of module-internal methods, and to keep everything that uses
@@ -2334,74 +2353,138 @@ Billing::OnlinePayment all in one place.
 Tokenizes all tokenizable card numbers from payinfo in cust_payby and 
 CARD transactions in cust_pay_pending, cust_pay, cust_pay_void and cust_refund.
 
-If all configured gateways have the ability to tokenize, then detection of
-an untokenizable record will cause a fatal error.
+If the I<queue> flag is set, newly tokenized records will be immediately
+committed, regardless of AutoCommit, so as to release the mutex on the record.
+
+If all configured gateways have the ability to tokenize, detection of an 
+untokenizable record will cause a fatal error.  However, if the I<queue> flag 
+is set, this will instead cause a critical error to be recorded in the log, 
+and any other tokenizable records will still be committed.
+
+If the I<daily> flag is also set, detection of existing untokenized records will 
+record a critical error in the system log (because they should have never appeared 
+in the first place.)  Tokenization will still be attempted.
+
+If any configured gateways do NOT have the ability to tokenize, or if a
+default gateway is not configured, then untokenized records are not considered 
+a threat, and no critical errors will be generated in the log.
 
 =cut
 
 sub token_check {
-  # no input, acts on all customers
+  #acts on all customers
+  my %opt = @_;
+  my $debug = !$opt{'quiet'} || $DEBUG;
 
-  eval "use FS::Cursor";  
-  return "Error initializing FS::Cursor: ".$@ if $@;
+  warn "token_check called with opts\n".Dumper(\%opt) if $debug;
 
-  my $dbh = dbh;
+  # force some explicitness when invoking this method
+  die "token_check must run with queue flag if run with daily flag"
+    if $opt{'daily'} && !$opt{'queue'};
 
-  # get list of all gateways in table (not counting default gateway)
+  my $conf = FS::Conf->new;
+
+  my $log = FS::Log->new('FS::cust_main::Billing_Realtime::token_check');
+
   my $cache = {}; #cache for module info
-  my $sth = $dbh->prepare('SELECT DISTINCT gatewaynum FROM payment_gateway')
-    or die $dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my @gatewaynums;
-  while (my $row = $sth->fetchrow_hashref) {
-    push(@gatewaynums,$row->{'gatewaynum'});
-  }
-  $sth->finish;
 
   # look for a gateway that can't tokenize
-  my $disallow_untokenized = 1;
-  foreach my $gatewaynum ('',@gatewaynums) {
-    my $gateway = FS::agent->payment_gateway( load_gatewaynum => $gatewaynum, nofatal => 1 );
-    if (!$gateway) { # already died if $gatewaynum
+  my $require_tokenized = 1;
+  foreach my $gateway (
+    FS::payment_gateway->all_gateways(
+      'method'  => 'CC',
+      'conf'    => $conf,
+      'nofatal' => 1,
+    )
+  ) {
+    if (!$gateway) {
       # no default gateway, no promise to tokenize
       # can just load other gateways as-needeed below
-      $disallow_untokenized = 0;
+      $require_tokenized = 0;
       last;
     }
     my $info = _token_check_gateway_info($cache,$gateway);
-    return $info unless ref($info); # means it's an error message
+    die $info unless ref($info); # means it's an error message
     unless ($info->{'can_tokenize'}) {
       # a configured gateway can't tokenize, that's all we need to know right now
       # can just load other gateways as-needeed below
-      $disallow_untokenized = 0;
+      $require_tokenized = 0;
       last;
     }
   }
 
+  warn "REQUIRE TOKENIZED" if $require_tokenized && $debug;
+
+  # upgrade does not call this with autocommit turned on,
+  # and autocommit will be ignored if opt queue is set,
+  # but might as well be thorough...
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  # for retrieving data in chunks
+  my $step = 500;
+  my $offset = 0;
 
   ### Tokenize cust_payby
 
-  my $cust_search = FS::Cursor->new({ table => 'cust_main' },$dbh);
-  while (my $cust_main = $cust_search->fetch) {
+  my @recnums;
+
+CUSTLOOP:
+  while (my $custnum = _token_check_next_recnum($dbh,'cust_main',$step,\$offset,\@recnums)) {
+    my $cust_main = FS::cust_main->by_key($custnum);
+    my $payment_gateway;
     foreach my $cust_payby ($cust_main->cust_payby('CARD','DCRD')) {
-      next if $cust_payby->tokenized;
-      # load gateway first, just so we can cache it
-      my $payment_gateway = $cust_main->_payment_gateway({
-        'nofatal' => 1, # handle error smoothly below
+
+      # see if it's already tokenized
+      if ($cust_payby->tokenized) {
+        warn "cust_payby ".$cust_payby->get($cust_payby->primary_key)." already tokenized" if $debug;
+        next;
+      }
+
+      if ($require_tokenized && $opt{'daily'}) {
+        $log->critical("Untokenized card number detected in cust_payby ".$cust_payby->custpaybynum);
+        $dbh->commit or die $dbh->errstr; # commit log message
+      }
+
+      # only load gateway if we need to, and only need to load it once
+      $payment_gateway ||= $cust_main->_payment_gateway({
+        'method'  => 'CC',
+        'conf'    => $conf,
+        'nofatal' => 1, # handle lack of gateway smoothly below
       });
       unless ($payment_gateway) {
         # no reason to have untokenized card numbers saved if no gateway,
-        #   but only fatal if we expected everyone to tokenize card numbers
-        next unless $disallow_untokenized;
-        $cust_search->DESTROY;
+        #   but only a problem if we expected everyone to tokenize card numbers
+        unless ($require_tokenized) {
+          warn "Skipping cust_payby for cust_main ".$cust_main->custnum.", no payment gateway" if $debug;
+          next CUSTLOOP; # can skip rest of customer
+        }
+        my $error = "No gateway found for custnum ".$cust_main->custnum;
+        if ($opt{'queue'}) {
+          $log->critical($error);
+          $dbh->commit or die $dbh->errstr; # commit error message
+          next; # not next CUSTLOOP, want to record error for every cust_payby
+        }
         $dbh->rollback if $oldAutoCommit;
-        return "No gateway found for custnum ".$cust_main->custnum;
+        die $error;
       }
+
       my $info = _token_check_gateway_info($cache,$payment_gateway);
+      unless (ref($info)) {
+        # only throws error if Business::OnlinePayment won't load,
+        #   which is just cause to abort this whole process, even if queue
+        $dbh->rollback if $oldAutoCommit;
+        die $info; # error message
+      }
       # no fail here--a configured gateway can't tokenize, so be it
-      next unless ref($info) && $info->{'can_tokenize'};
+      unless ($info->{'can_tokenize'}) {
+        warn "Skipping ".$cust_main->custnum." cannot tokenize" if $debug;
+        next;
+      }
+
+      # time to tokenize
+      $cust_payby = $cust_payby->select_for_update;
       my %tokenopts = (
         'payment_gateway' => $payment_gateway,
         'cust_payby'      => $cust_payby,
@@ -2413,90 +2496,205 @@ sub token_check {
         $error ||= 'Unknown error';
       }
       if ($error) {
-        $cust_search->DESTROY;
+        $error = "Error tokenizing cust_payby ".$cust_payby->custpaybynum.": ".$error;
+        if ($opt{'queue'}) {
+          $log->critical($error);
+          $dbh->commit or die $dbh->errstr; # commit log message, release mutex
+          next; # not next CUSTLOOP, want to record error for every cust_payby
+        }
         $dbh->rollback if $oldAutoCommit;
-        return "Error tokenizing cust_payby ".$cust_payby->custpaybynum.": ".$error;
+        die $error;
       }
+      $dbh->commit or die $dbh->errstr if $opt{'queue'}; # release mutex
+      warn "TOKENIZED cust_payby ".$cust_payby->get($cust_payby->primary_key) if $debug;
     }
+    warn "cust_payby upgraded for custnum ".$cust_main->custnum if $debug;
+
   }
 
   ### Tokenize/mask transaction tables
 
+  # allow tokenization of closed cust_pay/cust_refund records
+  local $FS::payinfo_Mixin::allow_closed_replace = 1;
+
   # grep assistance:
   #   $cust_pay_pending->replace, $cust_pay->replace, $cust_pay_void->replace, $cust_refund->replace all run here
   foreach my $table ( qw(cust_pay_pending cust_pay cust_pay_void cust_refund) ) {
-    my $search = FS::Cursor->new({
-      table     => $table,
-      hashref   => { 'payby' => 'CARD' },
-    },$dbh);
-    while (my $record = $search->fetch) {
-      next if $record->tokenized;
-      next if !$record->payinfo; #shouldn't happen, but at least it's not a card number
-      next if $record->payinfo =~ /N\/A/; # ??? Not sure why we do this, but it's not a card number
+    warn "Checking $table" if $debug;
 
-      # don't use customer agent gateway here, use the gatewaynum specified by the record
-      my $gatewaynum = $record->gatewaynum || '';
-      my $gateway = FS::agent->payment_gateway( load_gatewaynum => $gatewaynum );
-      unless ($gateway) { # already died if $gatewaynum
-        # only fatal if we expected everyone to tokenize
-        next unless $disallow_untokenized;
-        $search->DESTROY;
-        $dbh->rollback if $oldAutoCommit;
-        return "No gateway found for $table ".$record->get($record->primary_key);
+    # FS::Cursor does not seem to work over multiple commits (gives cursor not found errors)
+    # loading only record ids, then loading individual records one at a time
+    my $tclass = 'FS::'.$table;
+    $offset = 0;
+    @recnums = ();
+
+    while (my $recnum = _token_check_next_recnum($dbh,$table,$step,\$offset,\@recnums)) {
+      my $record = $tclass->by_key($recnum);
+      if (FS::cust_main::Billing_Realtime->tokenized($record->payinfo)) {
+        warn "Skipping tokenized record for $table ".$record->get($record->primary_key) if $debug;
+        next;
       }
+      if (!$record->payinfo) { #shouldn't happen, but at least it's not a card number
+        warn "Skipping blank payinfo for $table ".$record->get($record->primary_key) if $debug;
+        next;
+      }
+      if ($record->payinfo =~ /N\/A/) { # ??? Not sure why we do this, but it's not a card number
+        warn "Skipping NA payinfo for $table ".$record->get($record->primary_key) if $debug;
+        next;
+      }
+
+      if ($require_tokenized && $opt{'daily'}) {
+        $log->critical("Untokenized card number detected in $table ".$record->get($record->primary_key));
+        $dbh->commit or die $dbh->errstr; # commit log message
+      }
+
+      my $cust_main = $record->cust_main;
+      if (!$cust_main) {
+        # might happen for cust_pay_pending from failed verify records,
+        #   in which case we attempt tokenization without cust_main
+        # everything else should absolutely have a cust_main
+        if ($table eq 'cust_pay_pending' and !$record->custnum ) {
+          # override the usual safety check and allow the record to be
+          # updated even without a custnum.
+          $record->set('custnum_pending', 1);
+        } else {
+          my $error = "Could not load cust_main for $table ".$record->get($record->primary_key);
+          if ($opt{'queue'}) {
+            $log->critical($error);
+            $dbh->commit or die $dbh->errstr; # commit log message
+            next;
+          }
+          $dbh->rollback if $oldAutoCommit;
+          die $error;
+        }
+      }
+
+      my $gateway;
+
+      # use the gatewaynum specified by the record if possible
+      $gateway = FS::payment_gateway->by_key_with_namespace(
+        'gatewaynum' => $record->gatewaynum,
+      ) if $record->gateway;
+
+      # otherwise use the cust agent gateway if possible (which realtime_refund_bop would do)
+      # otherwise just use default gateway
+      unless ($gateway) {
+
+        $gateway = $cust_main 
+                 ? $cust_main->agent->payment_gateway
+                 : FS::payment_gateway->default_gateway;
+
+        # check for processor mismatch
+        unless ($table eq 'cust_pay_pending') { # has no processor table
+          if (my $processor = $record->processor) {
+
+            my $conf_processor = $gateway->gateway_module;
+            my %bop_options = $gateway->gatewaynum
+                            ? $gateway->options
+                            : @{ $gateway->get('options') };
+
+            # this is the same standard used by realtime_refund_bop
+            unless (
+              ($processor eq $conf_processor) ||
+              (($conf_processor eq 'CardFortress') && ($processor eq $bop_options{'gateway'}))
+            ) {
+
+              # processors don't match, so refund already cannot be run on this object,
+              # regardless of what we do now...
+              # but unless we gotta tokenize everything, just leave well enough alone
+              unless ($require_tokenized) {
+                warn "Skipping mismatched processor for $table ".$record->get($record->primary_key) if $debug;
+                next;
+              }
+              ### no error--we'll tokenize using the new gateway, just to remove stored payinfo,
+              ### because refunds are already impossible for this record, anyway
+
+            } # end processor mismatch
+
+          } # end record has processor
+        } # end not cust_pay_pending
+
+      }
+
+      # means no default gateway, no promise to tokenize, can skip
+      unless ($gateway) {
+        warn "Skipping missing gateway for $table ".$record->get($record->primary_key) if $debug;
+        next;
+      }
+
       my $info = _token_check_gateway_info($cache,$gateway);
       unless (ref($info)) {
         # only throws error if Business::OnlinePayment won't load,
-        #   which is just cause to abort this whole process
-        $search->DESTROY;
+        #   which is just cause to abort this whole process, even if queue
         $dbh->rollback if $oldAutoCommit;
-        return $info; # error message
+        die $info; # error message
       }
 
       # a configured gateway can't tokenize, move along
-      next unless $info->{'can_tokenize'};
-
-      my $cust_main = $record->cust_main;
-      unless ($cust_main) {
-        # might happen for cust_pay_pending for failed verify records,
-        #   in which case it *should* already be tokenized if possible
-        #   but only get strict about it if we're expecting full tokenization
-        next if 
-          $table eq 'cust_pay_pending'
-            && $record->{'custnum_pending'}
-            && !$disallow_untokenized;
-        # XXX we currently need a $cust_main to run realtime_tokenize
-        #     even if we made it a class method, wouldn't have access to payname/etc.
-        #     fail for now, but probably could handle this better...
-        # everything else should absolutely have a cust_main
-        $search->DESTROY;
-        $dbh->rollback if $oldAutoCommit;
-        return "Could not load cust_main for $table ".$record->get($record->primary_key);
+      unless ($info->{'can_tokenize'}) {
+        warn "Skipping, cannot tokenize $table ".$record->get($record->primary_key) if $debug;
+        next;
       }
+
+      warn "ATTEMPTING GATEWAY-ONLY TOKENIZE" if $debug && !$cust_main;
+
+      # if we got this far, time to mutex
+      $record->select_for_update;
+
+      # no clear record of name/address/etc used for transaction,
+      # but will load name/phone/id from customer if run as an object method,
+      # so we try that if we can
       my %tokenopts = (
         'payment_gateway' => $gateway,
         'method'          => 'CC',
         'payinfo'         => $record->payinfo,
         'paydate'         => $record->paydate,
       );
-      my $error = $cust_main->realtime_tokenize(\%tokenopts);
-      if ($cust_main->tokenized($tokenopts{'payinfo'})) { # implies no error
+      my $error = $cust_main
+                ? $cust_main->realtime_tokenize(\%tokenopts)
+                : FS::cust_main::Billing_Realtime->realtime_tokenize(\%tokenopts);
+      if (FS::cust_main::Billing_Realtime->tokenized($tokenopts{'payinfo'})) { # implies no error
         $record->payinfo($tokenopts{'payinfo'});
         $error = $record->replace;
       } else {
-        $error = 'Unknown error';
+        $error ||= 'Unknown error';
       }
       if ($error) {
-        $search->DESTROY;
+        $error = "Error tokenizing $table ".$record->get($record->primary_key).": ".$error;
+        if ($opt{'queue'}) {
+          $log->critical($error);
+          $dbh->commit or die $dbh->errstr; # commit log message, release mutex
+          next;
+        }
         $dbh->rollback if $oldAutoCommit;
-        return "Error tokenizing $table ".$record->get($record->primary_key).": ".$error;
+        die $error;
       }
+      $dbh->commit or die $dbh->errstr if $opt{'queue'}; # release mutex
+      warn "TOKENIZED $table ".$record->get($record->primary_key) if $debug;
+
     } # end record loop
   } # end table loop
 
-  $dbh->commit if $oldAutoCommit;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   return '';
+}
+
+# not a method!
+sub _token_check_next_recnum {
+  my ($dbh,$table,$step,$offset,$recnums) = @_;
+  my $recnum = shift @$recnums;
+  return $recnum if $recnum;
+  my $tclass = 'FS::'.$table;
+  my $sth = $dbh->prepare('SELECT '.$tclass->primary_key.' FROM '.$table.' ORDER BY '.$tclass->primary_key.' LIMIT '.$step.' OFFSET '.$$offset) or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+  my @recnums;
+  while (my $rec = $sth->fetchrow_hashref) {
+    push @$recnums, $rec->{$tclass->primary_key};
+  }
+  $sth->finish();
+  $$offset += $step;
+  return shift @$recnums;
 }
 
 # not a method!
@@ -2536,8 +2734,6 @@ sub _token_check_gateway_info {
   # not using this any more, but for future reference...
   $info->{'void_requires_card'} = 1
     if $transaction->info('CC_void_requires_card');
-
-  $cache->{$payment_gateway->gateway_module} = $info;
 
   return $info;
 }

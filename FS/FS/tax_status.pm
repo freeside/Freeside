@@ -155,6 +155,12 @@ sub _upgrade_data {
     'I' => 'Industrial',
     'L' => 'Lifeline',
   },
+  billsoft => {
+    'Residential' => 'Residential',
+    'Business'    => 'Business',
+    'Industrial'  => 'Industrial',
+    'Senior Citizen' => 'Senior Citizen',
+  },
 );
 
 =back

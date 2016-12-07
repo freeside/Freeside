@@ -11,6 +11,7 @@ my @contexts = ( qw(
   FS::cust_main::Billing_Realtime::realtime_bop
   FS::cust_main::Billing_Realtime::realtime_tokenize
   FS::cust_main::Billing_Realtime::realtime_verify_bop
+  FS::cust_main::Billing_Realtime::token_check
   FS::pay_batch::import_from_gateway
   FS::part_pkg
   FS::Misc::Geo::standardize_uscensus
@@ -28,6 +29,7 @@ my @contexts = ( qw(
   freeside-paymentech-upload
   freeside-paymentech-download
   test
+  FS::TaxEngine::billsoft
 ) );
 
 =head1 NAME

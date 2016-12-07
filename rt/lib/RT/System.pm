@@ -92,6 +92,9 @@ __PACKAGE__->AddRight( General => LoadSavedSearch     => 'Allow loading of saved
 __PACKAGE__->AddRight( General => CreateSavedSearch   => 'Allow creation of saved searches'); # loc
 __PACKAGE__->AddRight( Admin   => ExecuteCode         => 'Allow writing Perl code in templates, scrips, etc'); # loc
 
+#freeside
+__PACKAGE__->AddRight( Staff   => BulkUpdateTickets   => 'Bulk update tickets');
+
 =head2 AvailableRights
 
 Returns a hashref of available rights for this object.  The keys are the

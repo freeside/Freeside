@@ -5356,6 +5356,11 @@ sub _upgrade_data { #class method
 
 }
 
+sub queueable_upgrade {
+  my $class = shift;
+  FS::cust_main::Billing_Realtime::token_check(@_);
+}
+
 =back
 
 =head1 BUGS

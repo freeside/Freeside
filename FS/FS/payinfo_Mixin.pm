@@ -195,8 +195,6 @@ sub payinfo_check {
   FS::payby->can_payby($self->table, $self->payby)
     or return "Illegal payby: ". $self->payby;
 
-  my $conf = new FS::Conf;
-
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
 
     my $payinfo = $self->payinfo;
@@ -468,6 +466,7 @@ Optionally, an arbitrary payby and payinfo can be passed.
 sub tokenized {
   my $self = shift;
   my $payinfo = scalar(@_) ? shift : $self->payinfo;
+  return 0 unless $payinfo; #avoid uninitialized value error
   $payinfo =~ /^99\d{14}$/;
 }
 

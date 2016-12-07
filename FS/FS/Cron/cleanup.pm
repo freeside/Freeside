@@ -8,12 +8,26 @@ use FS::Record qw( qsearch );
 
 # start janitor jobs
 sub cleanup {
-# fix locations that are missing coordinates
+  my %opt = @_;
+
+  # fix locations that are missing coordinates
   my $job = FS::queue->new({
       'job'     => 'FS::cust_location::process_set_coord',
       'status'  => 'new'
   });
   $job->insert('_JOB');
+
+  # check card number tokenization
+  $job = FS::queue->new({
+      'job'     => 'FS::cust_main::Billing_Realtime::token_check',
+      'status'  => 'new'
+  });
+  $job->insert(
+    %opt,
+    'queue' => 1,
+    'daily' => 1,
+  );
+
 }
 
 sub cleanup_before_backup {
