@@ -675,7 +675,10 @@ sub send_reset_email {
     'svcnum'     => $opt{'svcnum'},
   };
 
-  my $timeout = '24 hours'; #?
+  
+  my $conf = new FS::Conf;
+  my $timeout =
+    ($conf->config('selfservice-password_reset_hours') || 24 ). ' hours';
 
   my $reset_session_id;
   do {

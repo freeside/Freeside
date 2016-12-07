@@ -3104,6 +3104,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-password_reset_hours',
+    'section'     => 'self-service',
+    'description' => 'Numbers of hours an email password reset is valid.  Defaults to 24.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'selfservice-password_reset_msgnum',
     'section'     => 'self-service',
     'description' => 'Template to use for password reset emails.',
