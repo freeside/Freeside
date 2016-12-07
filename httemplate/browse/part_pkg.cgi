@@ -601,12 +601,18 @@ if ( $taxclasses ) {
         { 'data'  => &$taxproduct_sub($base_ppt), 'align' => 'right' },
       ];
     }
+    if ( my $units_ppt = $part_pkg->units_taxproduct ) {
+      push @$out, [
+        { 'data'  => emt('Lines'), 'align' => 'left' },
+        { 'data'  => &$taxproduct_sub($units_ppt), 'align' => 'right' },
+      ];
+    }
     for (my $i = 0; $i < scalar @classnums; $i++) {
       my $num = $part_pkg->option('usage_taxproductnum_' . $classnums[$i]);
       next if !$num;
       my $ppt = FS::part_pkg_taxproduct->by_key($num);
       push @$out, [
-        { 'data'  => $classnames[$i] . ': ', 'align' => 'left', },
+        { 'data'  => $classnames[$i], 'align' => 'left', },
         { 'data'  => &$taxproduct_sub($ppt), 'align' => 'right' },
       ];
     }

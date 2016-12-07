@@ -40,7 +40,6 @@
                    'setuptax'         => 'Setup fee tax exempt',
                    'recurtax'         => 'Recurring fee tax exempt',
                    'taxclass'         => 'Tax class',
-                   'taxproduct_select'=> 'Tax products',
                    'plan'             => 'Price plan',
                    'disabled'         => 'Disable new orders',
                    'disable_line_item_date_ranges' => 'Disable line item date ranges',
@@ -73,6 +72,7 @@
                    'contract_end_months' => 'Contract ends after ',
                    'expire_months'    => 'Cancel the package after ',
                    'change_to_pkgpart'=> 'and replace it with ',
+                   'units_taxproductnum' => 'Per-line tax product',
                  },
 
      'fields' => [
@@ -214,28 +214,15 @@
                        type  => 'hidden',
                        value => join(',', @taxproductnums),
                      },
-                     #{ field => 'taxproduct_select',
-                     #  type  => 'selectlayers',
-                     #  options => [ '(default)', @taxproductnums ],
-                     #  curr_value => '(default)',
-                     #  labels  => { ( '(default)' => '(default)' ),
-                     #               map {($_=>$usage_class{$_})}
-                     #               @taxproductnums
-                     #             },
-                     #  layer_fields => \%taxproduct_fields,
-                     #  layer_values_callback => $taxproduct_values,
-                     #  layers_only  =>   !$taxproducts,
-                     #  cell_style   => ( !$taxproducts
-                     #                    ? 'display:none'
-                     #                    : ''
-                     #                  ),
-                     #},
                      { field => 'taxproductnum',
                        type  => 'part_pkg-taxproducts',
                        include_opt_callback =>
                          sub { pkgpart => $_[0]->pkgpart },
                      },
-
+                     { field => 'units_taxproductnum',
+                       type  => ($tax_data_vendor ?
+                                  'select-taxproduct' : 'hidden'),
+                     },
                      { type  => 'tablebreak-tr-title',
                        value => 'Promotions', #better name?
                      },
@@ -445,7 +432,7 @@ my $agent_clone_extra_sql =
   ' ) ';
 
 my $conf = new FS::Conf;
-my $taxproducts = $conf->config('tax_data_vendor') ne '';
+my $tax_data_vendor = $conf->config('tax_data_vendor');
 
 my $fcc_opts = $conf->exists('part_pkg-show_fcc_options');
 
@@ -1112,13 +1099,8 @@ my $html_bottom = sub {
   my $return =
     include('/elements/selectlayers.html', %selectlayers, 'layers_only'=>1 ).
     '<SCRIPT TYPE="text/javascript">'.
-      include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 );
-
-#  $return .=
-#    "taxproduct_selectchanged(document.getElementById('taxproduct_select'));\n"
-#      if $taxproducts;
-
-  $return .= '</SCRIPT>';
+      include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 ) .
+    '</SCRIPT>';
 
   $return;
 
@@ -1199,16 +1181,8 @@ my $field_callback = sub {
   my $field = $fieldref->{field};
   if ($field eq 'taxproductnums') {
     $fieldref->{value} = join(',', @taxproductnums);
-  } elsif ($field eq 'taxproduct_select') {
-    $fieldref->{options} = [ '(default)', @taxproductnums ];
-    $fieldref->{labels}  = { ( '(default)' => '(default)' ),
-                             map {( $_ => ($usage_class{$_} || $_) )}
-                               @taxproductnums
-                           };
-    $fieldref->{layer_fields} = \%taxproduct_fields;
-    $fieldref->{layer_values_callback} = $taxproduct_values;
   } elsif ($field eq 'taxproductnum') { # part_pkg-taxproduct, new style
-    if ( !$taxproducts ) {
+    if ( !$tax_data_vendor ) {
       # then make the widget go away
       $fieldref->{type} = 'hidden';
     }

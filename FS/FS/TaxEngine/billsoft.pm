@@ -188,8 +188,7 @@ sub create_batch {
     # cache some things
     my (%cust_pkg, %part_pkg, %cust_location, %classname);
     # keys are transaction codes (the first part of the taxproduct string)
-    # and then locationnums; for per-location taxes
-    my %sales;
+    my %all_tcodes;
 
     my @options = $self->conf->config('billsoft-taxconfig');
     
@@ -239,8 +238,7 @@ sub create_batch {
 
         my $taxproduct = $self->part_pkg_taxproduct($part_pkg, $classnum)
           or next;
-        my $tcode = substr($taxproduct, 0, 6);
-        my $scode = substr($taxproduct, 6, 6);
+        my ($tcode, $scode) = split(':', $taxproduct);
 
         # For CDRs, use the call termination site rather than setting
         # Termination fields to the service address.
@@ -259,9 +257,6 @@ sub create_batch {
 
       } # while $cdr = $cdr_search->fetch
       
-      my $recur_tcode;
-      # now write lines for the non-CDR portion of the charges
-
       my $locationnum = $cust_pkg->locationnum;
 
       # use termination address for the service location
@@ -284,13 +279,10 @@ sub create_batch {
         my $taxproduct = $self->part_pkg_taxproduct($part_pkg, $_);
         next unless $taxproduct;
 
-        my $tcode = substr($taxproduct, 0, 6);
-        my $scode = substr($taxproduct, 6, 6);
-        $sales{$tcode} ||= 0;
-        $recur_tcode = $tcode if $_ eq 'recur';
+        my ($tcode, $scode) = split(':', $taxproduct);
+        $all_tcodes{$tcode} ||= 1;
 
         my $price = $cust_bill_pkg->get($_);
-        $sales{$tcode} += $price;
 
         $price -= $usage_total if $_ eq 'recur';
 
@@ -305,10 +297,9 @@ sub create_batch {
 
       } # foreach (setup, recur)
 
-      # S-code 21: taxes based on number of lines (E911, mostly)
-      # voip_cdr and voip_inbound packages know how to report this.  Not all 
-      # T-codes are eligible for this; only report it if the /21 taxproduct
-      # exists.
+      # taxes based on number of lines (E911, mostly)
+      # mostly S-code 21 but can be others, as they want to know about
+      # Centrex trunks, PBX extensions, etc.
       #
       # (note: the nomenclature of "service" and "transaction" codes is 
       # backward from the way most people would use the terms.  you'd think
@@ -318,25 +309,18 @@ sub create_batch {
       # to avoid confusion.)
 
       # XXX cache me
-      # XXX this isn't precisely correct. Local exchange service on
-      # high-capacity trunks, Centrex, and PBX trunks are supposed to be
-      # reported as three separate implicit transactions: number of trunks,
-      # of outbound channels, of extensions.
-      # This is also true for VoIP PBX trunks. Come back to this.
-      if ( $recur_tcode ) {
-        my $lines_taxproduct = FS::part_pkg_taxproduct->count(
-          'data_vendor = \'billsoft\' and taxproduct = ?',
-          sprintf('%06d%06d', $recur_tcode, 21)
-        );
+      if ( my $lines_taxproduct = $part_pkg->units_taxproduct ) {
         my $lines = $cust_bill_pkg->units;
-
-        if ( $lines_taxproduct and $lines ) {
+        my $taxproduct = $lines_taxproduct->taxproduct;
+        my ($tcode, $scode) = split(':', $taxproduct);
+        $all_tcodes{$tcode} ||= 1;
+        if ( $lines ) {
           $csv->print_hr($fh, {
             %pkg_properties,
             %termination,
             RequestType       => 'CalcTaxes',
-            TransactionType   => $recur_tcode,
-            ServiceType       => 21,
+            TransactionType   => $tcode,
+            ServiceType       => $scode,
             Charge            => 0,
             Lines             => $lines,
           } );
@@ -345,12 +329,16 @@ sub create_batch {
 
     } # foreach my $cust_bill_pkg
 
-    foreach my $tcode (keys %sales) {
+    foreach my $tcode (keys %all_tcodes) {
 
-      # S-code 43: per-invoice tax (apparently this is a thing)
+      # S-code 43: per-invoice tax
+      # XXX not exactly correct; there's "Invoice Bundle" (7:94) and
+      # "Centrex Invoice" (7:623). Local Exchange service would benefit from
+      # more high-level selection of the tax properties. (Infer from the FCC
+      # reporting options?)
       my $invoice_taxproduct = FS::part_pkg_taxproduct->count(
         'data_vendor = \'billsoft\' and taxproduct = ?',
-        sprintf('%06d%06d', $tcode, 43)
+        $tcode . ':43'
       );
       if ( $invoice_taxproduct ) {
         $csv->print_hr($fh, {

@@ -735,6 +735,7 @@ sub check {
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
     || $self->ut_numbern('taxproductnum')
+    || $self->ut_numbern('units_taxproductnum')
     || $self->ut_foreign_keyn('classnum',       'pkg_class', 'classnum')
     || $self->ut_foreign_keyn('addon_classnum', 'pkg_class', 'classnum')
     || $self->ut_foreign_keyn('taxproductnum',
@@ -1731,6 +1732,19 @@ sub taxproduct_description {
   $part_pkg_taxproduct ? $part_pkg_taxproduct->description : '';
 }
 
+=item units_taxproduct
+
+Returns the L<FS::part_pkg_taxproduct> record used to report the taxable
+service units (usually phone lines) on this package.
+
+=cut
+
+sub units_taxproduct {
+  my $self = shift;
+  $self->units_taxproductnum
+    ? FS::part_pkg_taxproduct->by_key($self->units_taxproductnum)
+    : '';
+}
 
 =item tax_rates DATA_PROVIDER, GEOCODE, [ CLASS ]
 
