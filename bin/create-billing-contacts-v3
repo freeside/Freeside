@@ -1,0 +1,81 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::Misc::Getopt;
+use FS::Record qw(qsearchs qsearch dbh);
+use FS::cust_main;
+use FS::cust_main_invoice;
+use FS::contact;
+
+our %opt;
+getopts('c:'); # contact classname
+
+$FS::UID::AutoCommit = 0;
+
+my $error;
+
+my $classnum = '';
+if ( $opt{c} ) {
+  my $class = qsearchs('contact_class', { classname => $opt{c} });
+  if (!$class) {
+    $class = FS::contact_class->new({ classname => $opt{c} });
+    $error = $class->insert;
+    die $error if $error;
+  }
+  $classnum = $class->classnum;
+}
+
+# Find all invoice destinations that are email addresses,
+# except those where the customer already has a contact with that
+# email address.
+my @invoice_dests = qsearch({
+  select    => 'cust_main_invoice.*',
+  table     => 'cust_main_invoice',
+  hashref   => { 'dest' => { op=>'!=', value=>'POST' } },
+  addl_from => ' LEFT JOIN (contact JOIN contact_email USING (contactnum)) ON
+    (cust_main_invoice.custnum = contact.custnum AND
+     cust_main_invoice.dest    = contact_email.emailaddress)',
+  extra_sql => ' AND contact.contactnum IS NULL',
+});
+print "Found email destinations: ".scalar(@invoice_dests)."\n";
+  
+foreach my $invoice_dest (@invoice_dests) {
+  my $cust_main = $invoice_dest->cust_main;
+  my $last = $cust_main->get('last');
+  my $first = $cust_main->get('first');
+  my $email = $invoice_dest->dest;
+  print "$first $last <$email>\n";
+
+  my $contact = qsearchs('contact', {
+    'custnum' => $invoice_dest->custnum,
+    'last'    => $last,
+    'first'   => $first,
+  });
+  if ($contact) {
+    my $contact_email = FS::contact_email->new({
+      'contactnum'    => $contact->contactnum,
+      'emailaddress'  => $email
+    });
+    $error = $contact_email->insert;
+    die "inserting contact email: $error\n" if $error;
+  } else {
+    # use the 'emailaddress' param here so that send_reset_email will
+    # work right
+    $contact = FS::contact->new({
+      'custnum'     => $invoice_dest->custnum,
+      'locationnum' => $cust_main->bill_locationnum,
+      'last'        => $last,
+      'first'       => $first,
+      'classnum'    => $classnum,
+      'selfservice_access' => 'Y',
+      'emailaddress'  => $email,
+      '_password'   => '',
+      '_password_encoding' => '',
+    });
+    $error = $contact->insert;
+    die "inserting contact: $error\n" if $error;
+  }
+}
+dbh->commit;
+print "Finished!\n";
+
