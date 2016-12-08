@@ -212,8 +212,9 @@ sub insert_password_history {
     }
   
   } else {
-    warn "unrecognized password encoding '$encoding'; treating as plain text"
-      unless $encoding eq 'plain';
+    if ($encoding and $encoding ne 'plain') {
+      warn "unrecognized password encoding '$encoding'; treating as plain text";
+    }
 
     $auth = $self->_blowfishcrypt( $password );
 
