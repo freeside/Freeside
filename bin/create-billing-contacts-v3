@@ -25,19 +25,18 @@ if ( $opt{c} ) {
   $classnum = $class->classnum;
 }
 
-# Find all invoice destinations that are email addresses,
-# except those where the customer already has a contact with that
-# email address.
+# Find all invoice destinations that are email addresses, except those where
+# there is already a contact with that email address.
 my @invoice_dests = qsearch({
   select    => 'cust_main_invoice.*',
   table     => 'cust_main_invoice',
   hashref   => { 'dest' => { op=>'!=', value=>'POST' } },
-  addl_from => ' LEFT JOIN (contact JOIN contact_email USING (contactnum)) ON
-    (cust_main_invoice.custnum = contact.custnum AND
-     cust_main_invoice.dest    = contact_email.emailaddress)',
-  extra_sql => ' AND contact.contactnum IS NULL',
+  addl_from => ' LEFT JOIN contact_email ON
+     (cust_main_invoice.dest    = contact_email.emailaddress)',
+  extra_sql => ' AND contact_email.contactnum IS NULL',
 });
 print "Found email destinations: ".scalar(@invoice_dests)."\n";
+my %email_used;
   
 foreach my $invoice_dest (@invoice_dests) {
   my $cust_main = $invoice_dest->cust_main;
@@ -45,6 +44,11 @@ foreach my $invoice_dest (@invoice_dests) {
   my $first = $cust_main->get('first');
   my $email = $invoice_dest->dest;
   print "$first $last <$email>\n";
+  if (exists $email_used{$email}) {
+    print "-- in use by cust#$email_used{$email}\n";
+    next;
+  }
+  $email_used{$email} = $cust_main->custnum;
 
   my $contact = qsearchs('contact', {
     'custnum' => $invoice_dest->custnum,
