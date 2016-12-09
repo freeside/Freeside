@@ -515,14 +515,19 @@ sub bill {
 
     foreach my $part_pkg ( @part_pkg ) {
 
-      $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
+      my $this_cust_pkg = $cust_pkg;
+      # for add-on packages, copy the object to avoid leaking changes back to
+      # the caller if pkg_list is in use; see RT#73607
+      if ( $part_pkg->get('pkgpart') != $real_pkgpart ) {
+        $this_cust_pkg = FS::cust_pkg->new({ %hash });
+      }
 
       my $pass = '';
-      if ( $cust_pkg->separate_bill ) {
+      if ( $this_cust_pkg->separate_bill ) {
         # if no_auto is also set, that's fine. we just need to not have
         # invoices that are both auto and no_auto, and since the package
         # gets an invoice all to itself, it will only be one or the other.
-        $pass = $cust_pkg->pkgnum;
+        $pass = $this_cust_pkg->pkgnum;
         if (!exists $cust_bill_pkg{$pass}) { # it may not exist yet
           push @passes, $pass;
           $total_setup{$pass} = do { my $z = 0; \$z };
@@ -530,17 +535,17 @@ sub bill {
           $taxlisthash{$pass} = {};
           $cust_bill_pkg{$pass} = [];
         }
-      } elsif ( ($cust_pkg->no_auto || $part_pkg->no_auto) ) {
+      } elsif ( ($this_cust_pkg->no_auto || $part_pkg->no_auto) ) {
         $pass = 'no_auto';
       }
 
-      my $next_bill = $cust_pkg->getfield('bill') || 0;
+      my $next_bill = $this_cust_pkg->getfield('bill') || 0;
       my $error;
       # let this run once if this is the last bill upon cancellation
       while ( $next_bill <= $cmp_time or $options{cancel} ) {
         $error =
           $self->_make_lines( 'part_pkg'            => $part_pkg,
-                              'cust_pkg'            => $cust_pkg,
+                              'cust_pkg'            => $this_cust_pkg,
                               'precommit_hooks'     => \@precommit_hooks,
                               'line_items'          => $cust_bill_pkg{$pass},
                               'setup'               => $total_setup{$pass},
@@ -555,12 +560,12 @@ sub bill {
         last if $error;
 
         # or if we're not incrementing the bill date.
-        last if ($cust_pkg->getfield('bill') || 0) == $next_bill;
+        last if ($this_cust_pkg->getfield('bill') || 0) == $next_bill;
 
         # or if we're letting it run only once
         last if $options{cancel};
 
-        $next_bill = $cust_pkg->getfield('bill') || 0;
+        $next_bill = $this_cust_pkg->getfield('bill') || 0;
 
         #stop if -o was passed to freeside-daily
         last if $options{'one_recur'};
