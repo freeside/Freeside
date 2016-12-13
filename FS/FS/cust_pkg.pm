@@ -2973,7 +2973,7 @@ sub modify_charge {
       $pkg_opt_modified = 1;
     }
   }
-  $pkg_opt_modified = 1 if (scalar(@old_additional) - 1) != $i;
+  $pkg_opt_modified = 1 if scalar(@old_additional) != $i;
   $pkg_opt{'additional_count'} = $i if $i > 0;
 
   my $old_classnum;
@@ -3125,8 +3125,6 @@ sub modify_charge {
   $dbh->commit if $oldAutoCommit;
   '';
 }
-
-
 
 use Storable 'thaw';
 use MIME::Base64;

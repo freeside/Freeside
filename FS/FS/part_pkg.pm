@@ -355,11 +355,11 @@ can be set to a hashref of svcparts and flag values ('Y' or '') to set the
 to a hashref of svcparts and flag values ('Y' or '') to set the field 
 in those records.
 
-If I<primary_svc> is set to the svcpart of the primary service, the appropriate
-FS::pkg_svc record will be updated.
+If I<primary_svc> is set to the svcpart of the primary service, the
+appropriate FS::pkg_svc record will be updated.
 
-If I<options> is set to a hashref, the appropriate FS::part_pkg_option records
-will be replaced.
+If I<options> is set to a hashref, the appropriate FS::part_pkg_option
+records will be replaced.
 
 =cut
 
@@ -1985,6 +1985,55 @@ sub queueable_upgrade {
     FS::upgrade_journal->set_done($upgrade);
   }
 
+  # remove custom flag from one-time charge packages that were accidentally
+  # flagged as custom
+  $search = FS::Cursor->new({
+    'table'   => 'part_pkg',
+    'hashref' => { 'freq'   => '0',
+                   'custom' => 'Y',
+                   'family_pkgpart' => { op => '!=', value => '' },
+                 },
+    'addl_from' => ' JOIN
+  (select pkgpart from cust_pkg group by pkgpart having count(*) = 1)
+    AS singular_pkg USING (pkgpart)',
+  });
+  my @fields = grep {     $_ ne 'pkgpart'
+                      and $_ ne 'custom'
+                      and $_ ne 'disabled' } FS::part_pkg->fields;
+  PKGPART: while (my $part_pkg = $search->fetch) {
+    # can't merge the package back into its parent (too late for that)
+    # but we can remove the custom flag if it's not actually customized,
+    # i.e. nothing has been changed.
+
+    my $family_pkgpart = $part_pkg->family_pkgpart;
+    next PKGPART if $family_pkgpart == $part_pkg->pkgpart;
+    my $parent_pkg = FS::part_pkg->by_key($family_pkgpart);
+    foreach my $field (@fields) {
+      if ($part_pkg->get($field) ne $parent_pkg->get($field)) {
+        next PKGPART;
+      }
+    }
+    # options have to be identical too
+    # but links, FCC options, discount plans, and usage packages can't be
+    # changed through the "modify charge" UI, so skip them
+    my %newopt = $part_pkg->options;
+    my %oldopt = $parent_pkg->options;
+    OPTION: foreach my $option (keys %newopt) {
+      if (delete $newopt{$option} ne delete $oldopt{$option}) {
+        next PKGPART;
+      }
+    }
+    if (keys(%newopt) or keys(%oldopt)) {
+      next PKGPART;
+    }
+    # okay, now replace it
+    warn "Removing custom flag from part_pkg#".$part_pkg->pkgpart."\n";
+    $part_pkg->set('custom', '');
+    my $error = $part_pkg->replace;
+    die $error if $error;
+  } # $search->fetch
+
+  return;
 }
 
 =item curuser_pkgs_sql
