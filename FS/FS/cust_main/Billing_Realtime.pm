@@ -1454,9 +1454,10 @@ sub realtime_refund_bop {
       ( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
     }
 
+    my $payment_gateway;
     if ( $gatewaynum ) { #gateway for the payment to be refunded
 
-      my $payment_gateway =
+      $payment_gateway =
         qsearchs('payment_gateway', { 'gatewaynum' => $gatewaynum } );
       die "payment gateway $gatewaynum not found"
         unless $payment_gateway;
@@ -1470,7 +1471,7 @@ sub realtime_refund_bop {
     } else { #try the default gateway
 
       my $conf_processor;
-      my $payment_gateway =
+      $payment_gateway =
         $self->agent->payment_gateway('method' => $options{method});
 
       ( $conf_processor, $login, $password, $namespace ) =
@@ -1487,8 +1488,27 @@ sub realtime_refund_bop {
         unless ($processor eq $conf_processor)
             || (($conf_processor eq 'CardFortress') && ($processor eq $bop_options{'gateway'}));
 
+      $processor = $conf_processor;
+
     }
 
+    # if gateway has switched to CardFortress but token_check hasn't run yet,
+    # tokenize just this record now, so that token gets passed/set appropriately
+    if ($cust_pay->payby eq 'CARD' && !$cust_pay->tokenized) {
+      my %tokenopts = (
+        'payment_gateway' => $payment_gateway,
+        'method'          => 'CC',
+        'payinfo'         => $cust_pay->payinfo,
+        'paydate'         => $cust_pay->paydate,
+      );
+      my $error = $self->realtime_tokenize(\%tokenopts); # no-op unless gateway can tokenize
+      if ($self->tokenized($tokenopts{'payinfo'})) { # implies no error
+        warn "  tokenizing cust_pay\n" if $DEBUG > 1;
+        $cust_pay->payinfo($tokenopts{'payinfo'});
+        $error = $cust_pay->replace;
+      }
+      return $error if $error;
+    }
 
   } else { # didn't specify a paynum, so look for agent gateway overrides
            # like a normal transaction 
@@ -1566,6 +1586,12 @@ sub realtime_refund_bop {
           split('@', $cust_pay->payinfo);
         $content{'name'} = $self->get('first'). ' '. $self->get('last');
       }
+    }
+    if ( $cust_pay->payby eq 'CARD'
+         && !$content{'card_number'}
+         && $cust_pay->tokenized
+    ) {
+      $content{'card_token'} = $cust_pay->payinfo;
     }
     $void->content( 'action' => 'void', %content );
     $void->test_transaction(1)

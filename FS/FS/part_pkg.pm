@@ -401,19 +401,20 @@ I<bulk_skip>, I<provision_hold> and I<options>
 
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
 values, the appropriate FS::pkg_svc records will be replaced.  I<hidden_svc>
-can be set to a hashref of svcparts and flag values ('Y' or '') to set the 
-'hidden' field in these records.  I<bulk_skip> and I<provision_hold> can be set 
-to a hashref of svcparts and flag values ('Y' or '') to set the respective field 
-in those records.
+can be set to a hashref of svcparts and flag values ('Y' or '') to set the
+'hidden' field in these records.  I<bulk_skip> and I<provision_hold> can be
+set to a hashref of svcparts and flag values ('Y' or '') to set the
+respective field in those records.
 
-If I<primary_svc> is set to the svcpart of the primary service, the appropriate
-FS::pkg_svc record will be updated.
+If I<primary_svc> is set to the svcpart of the primary service, the
+appropriate FS::pkg_svc record will be updated.
 
-If I<options> is set to a hashref, the appropriate FS::part_pkg_option records
-will be replaced.
+If I<options> is set to a hashref, the appropriate FS::part_pkg_option
+records will be replaced.
 
 If I<part_pkg_currency> is set to a hashref of options (with the keys as
-option_CURRENCY), appropriate FS::part_pkg::currency records will be replaced.
+option_CURRENCY), appropriate FS::part_pkg::currency records will be
+replaced.
 
 =cut
 
@@ -735,6 +736,7 @@ sub check {
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
     || $self->ut_numbern('taxproductnum')
+    || $self->ut_numbern('units_taxproductnum')
     || $self->ut_foreign_keyn('classnum',       'pkg_class', 'classnum')
     || $self->ut_foreign_keyn('addon_classnum', 'pkg_class', 'classnum')
     || $self->ut_foreign_keyn('taxproductnum',
@@ -1731,6 +1733,19 @@ sub taxproduct_description {
   $part_pkg_taxproduct ? $part_pkg_taxproduct->description : '';
 }
 
+=item units_taxproduct
+
+Returns the L<FS::part_pkg_taxproduct> record used to report the taxable
+service units (usually phone lines) on this package.
+
+=cut
+
+sub units_taxproduct {
+  my $self = shift;
+  $self->units_taxproductnum
+    ? FS::part_pkg_taxproduct->by_key($self->units_taxproductnum)
+    : '';
+}
 
 =item tax_rates DATA_PROVIDER, GEOCODE, [ CLASS ]
 
@@ -2345,6 +2360,56 @@ sub queueable_upgrade {
       die $error if $error;
     }
   }
+
+  # remove custom flag from one-time charge packages that were accidentally
+  # flagged as custom
+  $search = FS::Cursor->new({
+    'table'   => 'part_pkg',
+    'hashref' => { 'freq'   => '0',
+                   'custom' => 'Y',
+                   'family_pkgpart' => { op => '!=', value => '' },
+                 },
+    'addl_from' => ' JOIN
+  (select pkgpart from cust_pkg group by pkgpart having count(*) = 1)
+    AS singular_pkg USING (pkgpart)',
+  });
+  my @fields = grep {     $_ ne 'pkgpart'
+                      and $_ ne 'custom'
+                      and $_ ne 'disabled' } FS::part_pkg->fields;
+  PKGPART: while (my $part_pkg = $search->fetch) {
+    # can't merge the package back into its parent (too late for that)
+    # but we can remove the custom flag if it's not actually customized,
+    # i.e. nothing has been changed.
+
+    my $family_pkgpart = $part_pkg->family_pkgpart;
+    next PKGPART if $family_pkgpart == $part_pkg->pkgpart;
+    my $parent_pkg = FS::part_pkg->by_key($family_pkgpart);
+    foreach my $field (@fields) {
+      if ($part_pkg->get($field) ne $parent_pkg->get($field)) {
+        next PKGPART;
+      }
+    }
+    # options have to be identical too
+    # but links, FCC options, discount plans, and usage packages can't be
+    # changed through the "modify charge" UI, so skip them
+    my %newopt = $part_pkg->options;
+    my %oldopt = $parent_pkg->options;
+    OPTION: foreach my $option (keys %newopt) {
+      if (delete $newopt{$option} ne delete $oldopt{$option}) {
+        next PKGPART;
+      }
+    }
+    if (keys(%newopt) or keys(%oldopt)) {
+      next PKGPART;
+    }
+    # okay, now replace it
+    warn "Removing custom flag from part_pkg#".$part_pkg->pkgpart."\n";
+    $part_pkg->set('custom', '');
+    my $error = $part_pkg->replace;
+    die $error if $error;
+  } # $search->fetch
+
+  return;
 }
 
 =item curuser_pkgs_sql

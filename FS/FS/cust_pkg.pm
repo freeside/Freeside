@@ -38,6 +38,8 @@ use FS::sales;
 # for modify_charge
 use FS::cust_credit;
 
+use Data::Dumper;
+
 # temporary fix; remove this once (un)suspend admin notices are cleaned up
 use FS::Misc qw(send_email);
 
@@ -3010,7 +3012,7 @@ sub modify_charge {
       $pkg_opt_modified = 1;
     }
   }
-  $pkg_opt_modified = 1 if (scalar(@old_additional) - 1) != $i;
+  $pkg_opt_modified = 1 if scalar(@old_additional) != $i;
   $pkg_opt{'additional_count'} = $i if $i > 0;
 
   my $old_classnum;
@@ -3164,9 +3166,6 @@ sub modify_charge {
   '';
 }
 
-
-
-use Data::Dumper;
 sub process_bulk_cust_pkg {
   my $job = shift;
   my $param = shift;
@@ -5575,6 +5574,32 @@ sub _upgrade_data {  # class method
     my $error = $part_pkg_link->remove_linked;
     die $error if $error;
   }
+
+  # RT#73607: canceling a package with billing addons sometimes changes its
+  # pkgpart.
+  # Find records where the last replace_new record for the package before it
+  # was canceled has a different pkgpart from the package itself.
+  my @cust_pkg = qsearch({
+    'table' => 'cust_pkg',
+    'select' => 'cust_pkg.*, h_cust_pkg.pkgpart AS h_pkgpart',
+    'addl_from' => ' JOIN (
+  SELECT pkgnum, MAX(historynum) AS historynum FROM h_cust_pkg
+    WHERE cancel IS NULL
+      AND history_action = \'replace_new\'
+    GROUP BY pkgnum
+  ) AS last_history USING (pkgnum)
+  JOIN h_cust_pkg USING (historynum)',
+    'extra_sql' => ' WHERE cust_pkg.cancel is not null
+                     AND cust_pkg.pkgpart != h_cust_pkg.pkgpart'
+  });
+  foreach my $cust_pkg ( @cust_pkg ) {
+    my $pkgnum = $cust_pkg->pkgnum;
+    warn "fixing pkgpart on canceled pkg#$pkgnum\n";
+    $cust_pkg->set('pkgpart', $cust_pkg->h_pkgpart);
+    my $error = $cust_pkg->replace;
+    die $error if $error;
+  }
+
 }
 
 =back

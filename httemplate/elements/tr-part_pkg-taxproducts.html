@@ -54,7 +54,8 @@ my %pkg_options;
 if ($pkgpart) {
   my $part_pkg = FS::part_pkg->by_key($pkgpart);
   %pkg_options = $part_pkg->options;
-  $curr_values{''} = $part_pkg->taxproductnum;
+  $curr_values{''} =   $cgi->param('taxproductnum')
+                    || $part_pkg->taxproductnum;
 }
 
 foreach my $usage_class (@classes) {
@@ -66,4 +67,5 @@ foreach my $usage_class (@classes) {
   $curr_values{$classnum} = $curr_value;
   $separate = 1 if ( length($classnum) and length($curr_value) );
 }
+
 </%init>

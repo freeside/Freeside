@@ -223,7 +223,8 @@ sub batch_import {
   
   my $imported = 0;
   my $csv = Text::CSV_XS->new;
-  # fields: taxproduct, description
+  my $error;
+  # for importing the "transervdesc.txt" file
   while ( my $row = $csv->getline($fh) ) {
     if (!defined $row) {
       $dbh->rollback if $oldAutoCommit;
@@ -236,15 +237,32 @@ sub batch_import {
       );
     }
 
-    my $new = FS::part_pkg_taxproduct->new({
-        'data_vendor' => 'billsoft',
-        'taxproduct'  => $row->[0],
-        'description' => $row->[1],
+    # columns 0-2: irrelevant here
+    my $taxproduct = $row->[3] . ':' . $row->[5];
+    my $description = $row->[4];
+    $description =~ s/\s+$//;
+    $description .= ':' . $row->[6];
+    $description =~ s/\s+$//;
+    my $ppt = qsearchs('part_pkg_taxproduct', {
+      'data_vendor' => 'billsoft',
+      'taxproduct'  => $taxproduct
     });
-    my $error = $new->insert;
+    if ( $ppt ) {
+      $ppt->set('description', $description);
+      $ppt->set('note', $row->[7]);
+      $error = $ppt->replace;
+    } else {
+      $ppt = FS::part_pkg_taxproduct->new({
+          'data_vendor' => 'billsoft',
+          'taxproduct'  => $taxproduct,
+          'description' => $description,
+          'note'        => $row->[7],
+      });
+      $error = $ppt->insert;
+    }
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "error inserting part_pkg_taxproduct: $error\n";
+      return "error inserting part_pkg_taxproduct $taxproduct: $error\n";
     }
     $imported++;
   }
