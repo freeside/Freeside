@@ -38,6 +38,8 @@ use FS::sales;
 # for modify_charge
 use FS::cust_credit;
 
+use Data::Dumper;
+
 # temporary fix; remove this once (un)suspend admin notices are cleaned up
 use FS::Misc qw(send_email);
 
@@ -3017,7 +3019,7 @@ sub modify_charge {
       $pkg_opt_modified = 1;
     }
   }
-  $pkg_opt_modified = 1 if (scalar(@old_additional) - 1) != $i;
+  $pkg_opt_modified = 1 if scalar(@old_additional) != $i;
   $pkg_opt{'additional_count'} = $i if $i > 0;
 
   my $old_classnum;
@@ -3171,9 +3173,6 @@ sub modify_charge {
   '';
 }
 
-
-
-use Data::Dumper;
 sub process_bulk_cust_pkg {
   my $job = shift;
   my $param = shift;
