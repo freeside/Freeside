@@ -33,6 +33,9 @@ sub cust_fields_avail { (
   'Cust# | Cust. Status | Customer' =>
     'custnum | Status | Last, First or Company (Last, First)',
 
+  'Agent | Agent Cust# or Cust# | Cust. Status | Customer' =>
+    'Agent | Agent Cust# | Status | Last, First or Company (Last, First)',
+
   'Customer | Day phone | Night phone | Mobile phone | Fax number' =>
     'Customer | (all phones)',
   'Cust# | Customer | Day phone | Night phone | Mobile phone | Fax number' =>

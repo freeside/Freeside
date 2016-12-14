@@ -346,6 +346,8 @@ sub cust_header {
     'Payment Type'             => 'cust_payby',
     'Current Balance'          => 'current_balance',
     'Agent Cust#'              => 'agent_custid',
+    'Agent'                    => 'agent_name',
+    'Agent Cust# or Cust#'     => 'display_custnum',
     'Advertising Source'       => 'referral',
   );
   $header2method{'Cust#'} = 'display_custnum'
@@ -450,6 +452,8 @@ sub cust_sql_fields {
   push @fields, "payby AS cust_payby"
     if grep { $_ eq 'cust_payby' } @cust_fields;
   push @fields, 'agent_custid';
+
+  push @fields, 'agentnum' if grep { $_ eq 'agent_name' } @cust_fields;
 
   my @extra_fields = ();
   if (grep { $_ eq 'current_balance' } @cust_fields) {
