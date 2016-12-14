@@ -20,16 +20,17 @@ use base qw( FS::cust_main::Packages
 require 5.006;
 use strict;
 use Carp;
+use Try::Tiny;
 use Scalar::Util qw( blessed );
-use Time::Local qw(timelocal);
-use Data::Dumper;
+use List::Util qw(min);
 use Tie::IxHash;
+use File::Temp; #qw( tempfile );
+use Data::Dumper;
+use Time::Local qw(timelocal);
 use Date::Format;
 #use Date::Manip;
-use File::Temp; #qw( tempfile );
+use Email::Address;
 use Business::CreditCard 0.28;
-use List::Util qw(min);
-use Try::Tiny;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Cursor;
@@ -3060,8 +3061,9 @@ sub contact_list_email {
   my @emails;
   foreach my $contact (@contacts) {
     foreach my $contact_email ($contact->contact_email) {
-      push @emails,
-        $contact->firstlast . ' <' . $contact_email->emailaddress . '>';
+      push @emails,  Email::Address->new( $contact->firstlast,
+                                          $contact_email->emailaddress
+                     )->format;
     }
   }
   @emails;
