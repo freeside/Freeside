@@ -13,22 +13,25 @@
 <TABLE WIDTH="100%">
   <TR>
     <TD WIDTH="50%">
-<%= if ($previous < $beginning) {
-    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;!;
-    $OUT .= qq!inbound=1;! if $inbound;
-    $OUT .= qq!beginning=$previous;ending=$beginning">Previous period</A>!;
-    }else{
+<%=
+    $ahref = qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;!;
+    $ahref = qq!inbound=1;! if $inbound;
+    if ($previous < $beginning) {
+      $OUT .= $ahref.
+              qq!beginning=$previous;ending=$beginning">Previous period</A>!;
+    } else {
       '';
-    } %>
+    }
+%>
     </TD>
     <TD  WIDTH="50%" ALIGN="right">
-<%= if ($next > $ending) {
-    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;!;
-    $OUT .= qq!inbound=1;! if $inbound;
-    $OUT .= qq!beginning=$ending;ending=$next">Next period</A>!;
-    }else{
+<%= 
+    if ($next > $ending) {
+      $OUT .= $ahref. qq!beginning=$ending;ending=$next">Next period</A>!;
+    } else {
       '';
-    }%>
+    }
+%>
     </TD>
   </TR>
 </TABLE>
