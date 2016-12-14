@@ -256,10 +256,17 @@ sub send_email {
   }
   
   push @to, $options{bcc} if defined($options{bcc});
+  # fully unpack all addresses found in @to (including Bcc) to make the
+  # envelope list
+  my @env_to;
+  foreach my $dest (@to) {
+    push @env_to, map { $_->address } Email::Address->parse($dest);
+  }
+
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
                               from      => $from,
-                              to        => \@to }) };
+                              to        => \@env_to }) };
 
   my $error = '';
   if(ref($@) and $@->isa('Email::Sender::Failure')) {
@@ -274,7 +281,7 @@ sub send_email {
   if ( $conf->exists('log_sent_mail') ) {
     my $cust_msg = FS::cust_msg->new({
         'env_from'  => $options{'from'},
-        'env_to'    => join(', ', @to),
+        'env_to'    => join(', ', @env_to),
         'header'    => $message->header_as_string,
         'body'      => $message->body_as_string,
         '_date'     => $time,

@@ -290,7 +290,7 @@ sub prepare {
   my @to;
   if ( exists($opt{'to'}) ) {
 
-    @to = split(/\s*,\s*/, $opt{'to'});
+    @to = map { $_->format } Email::Address->parse($opt{'to'});
 
   } elsif ( $cust_main ) {
 
@@ -393,14 +393,17 @@ sub prepare {
 
   # effective To: address (not in headers)
   push @to, $self->bcc_addr if $self->bcc_addr;
-  my $env_to = join(', ', @to);
+  my @env_to;
+  foreach my $dest (@to) {
+    push @env_to, map { $_->address } Email::Address->parse($dest);
+  }
 
   my $cust_msg = FS::cust_msg->new({
       'custnum'   => $cust_main ? $cust_main->custnum : '',
       'msgnum'    => $self->msgnum,
       '_date'     => $time,
       'env_from'  => $env_from,
-      'env_to'    => $env_to,
+      'env_to'    => join(',', @env_to),
       'header'    => $message->header_as_string,
       'body'      => $message->body_as_string,
       'error'     => '',
@@ -507,7 +510,9 @@ sub send_prepared {
     $domain = $1;
   }
 
-  my @to = split(/\s*,\s*/, $cust_msg->env_to);
+  # in principle should already be a list of bare addresses, but run it
+  # through Email::Address to make sure
+  my @env_to = map { $_->address } Email::Address->parse($cust_msg->env_to);
 
   my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
                    'helo' => $domain );
@@ -533,7 +538,7 @@ sub send_prepared {
   eval {
     sendmail( $message, { transport => $transport,
                           from      => $cust_msg->env_from,
-                          to        => \@to })
+                          to        => \@env_to })
   };
   my $error = '';
   if(ref($@) and $@->isa('Email::Sender::Failure')) {
