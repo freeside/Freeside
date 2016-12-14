@@ -191,6 +191,9 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'skip_dcontext' => { 'name' => 'Do not charge for CDRs where dcontext is set to any of these (comma-separated) values: ',
                        },
 
+    'skip_dcontext_prefix' => { 'name' => 'Do not charge for CDRs where dcontext starts with: ',
+                       },
+
     'skip_dcontext_suffix' => { 'name' => 'Do not charge for CDRs where dcontext ends with: ',
                        },
 
@@ -336,7 +339,8 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        use_cdrtypenum ignore_cdrtypenum
                        use_calltypenum ignore_calltypenum
                        ignore_disposition disposition_in disposition_prefix
-                       skip_dcontext skip_dcontext_suffix skip_dst_prefix 
+                       skip_dcontext skip_dcontext_prefix skip_dcontext_suffix
+                       skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
                        accountcode_tollfree_ratenum accountcode_tollfree_field
@@ -607,6 +611,12 @@ sub check_chargable {
   return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
     if $self->option_cacheable('skip_dcontext') =~ /\S/
     && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
+
+  my $len_dcontext_prefix =
+    length($self->option_cacheable('skip_dcontext_prefix'));
+  return "dcontext starts with ". $self->option_cacheable('skip_dcontext_prefix')
+    if $len_dcontext_prefix
+    && substr($cdr->dcontext,0,$len_dcontext_prefix) eq $self->option_cacheable('skip_dcontext_prefix');
 
   my $len_suffix = length($self->option_cacheable('skip_dcontext_suffix'));
   return "dcontext ends with ". $self->option_cacheable('skip_dcontext_suffix')
