@@ -690,8 +690,6 @@ sub send_reset_email {
 
   #email it
 
-  my $conf = new FS::Conf;
-
   my $cust_main = $self->cust_main
     or die "no customer"; #reset a password for a prospect contact?  someday
 
