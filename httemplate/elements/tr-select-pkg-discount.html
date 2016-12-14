@@ -34,7 +34,7 @@ description if curr_value_setup is set. Likewise "disable_recur".
 %   if ( $curuser->access_right('Waive setup fee') ) {
 %     push @$pre_options, -2 => 'Waive setup fee';
 %   }
-<& tr-td-label.html, label => emt('Setup fee') &>
+<& tr-td-label.html, label => $opt{setup_label} || emt('Setup fee') &>
   <td>
     <& select-discount.html,
       field       => 'setup_discountnum',
@@ -97,7 +97,7 @@ description if curr_value_setup is set. Likewise "disable_recur".
 % if ( $curuser->access_right('Discount customer package')
 %      and !$opt{disable_recur} ) {
 
-<& tr-td-label.html, label => emt('Recurring fee') &>
+<& tr-td-label.html, label => $opt{recur_label} || emt('Recurring fee') &>
   <td>
     <& select-discount.html,
       field       => 'recur_discountnum',
