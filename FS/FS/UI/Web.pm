@@ -300,7 +300,7 @@ sub cust_header {
   my %header2method = (
     'Customer'                 => 'name',
     'Cust. Status'             => 'cust_status_label',
-    'Cust#'                    => 'custnum',
+    'Cust#'                    => 'display_custnum',
     'Name'                     => 'contact',
     'Company'                  => 'company',
 
