@@ -61,7 +61,9 @@ $custmsgnum =~ /^(\d+)$/ or die "illegal custmsgnum";
 my $cust_msg = qsearchs('cust_msg', { 'custmsgnum' => $custmsgnum });
 my $date = '';
 $date = time2str('%Y-%m-%d %T', $cust_msg->_date) if ( $cust_msg->_date );
-my $env_to = join('</TD></TR><TR><TD></TD><TD>', split(',', $cust_msg->env_to));
+my @to = map { encode_entities($_->format) }
+          Email::Address->parse($cust_msg->env_to);
+my $env_to = join('</TD></TR><TR><TD></TD><TD>', @to);
 
 my %label = (
   'sent'   => 'Sent:',
