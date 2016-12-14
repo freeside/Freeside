@@ -888,8 +888,6 @@ sub send_reset_email {
 
   #email it
 
-  my $conf = new FS::Conf;
-
   my $cust_main = '';
   my @cust_contact = grep $_->selfservice_access, $self->cust_contact;
   $cust_main = $cust_contact[0]->cust_main if scalar(@cust_contact) == 1;
