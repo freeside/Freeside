@@ -32,6 +32,7 @@ use Digest::MD5 qw(md5_base64);
 use Date::Format;
 #use Date::Manip;
 use File::Temp; #qw( tempfile );
+use Email::Address;
 use Business::CreditCard 0.28;
 use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
@@ -3571,15 +3572,17 @@ sub contact_list_email {
         # unlike on 4.x, we have a separate list of invoice email
         # destinations.
         # make sure they're not redundant with contact emails
-        my $dest = $contact->firstlast . ' <' . $contact_email->emailaddress . '>';
-        $emails{ $contact_email->emailaddress } = $dest;
+        $emails{ $contact_email->emailaddress } =
+          Email::Address->new( $contact->firstlast,
+                               $contact_email->emailaddress
+                             )->format;
       }
     }
   }
   if ( $and_invoice ) {
     foreach my $email ($self->invoicing_list_emailonly) {
-      my $dest = $self->name_short . ' <' . $email . '>';
-      $emails{ $email } ||= $dest;
+      $emails{ $email } ||=
+        Email::Address->new( $self->name_short, $email )->format;
     }
   }
   values %emails;
