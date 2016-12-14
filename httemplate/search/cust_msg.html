@@ -19,7 +19,10 @@
                               ucfirst($_[0]->msgtype) || $_[0]->msgname
                             },
                             sub {
-                              join('<BR>', split(/,\s*/, $_[0]->env_to) )
+                              join('<BR>',
+                                map { encode_entities($_->format) }
+                                Email::Address->parse($_[0]->env_to)
+                              )
                             },
                             'status',
                             sub { encode_entities($_[0]->error) },

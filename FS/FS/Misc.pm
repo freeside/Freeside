@@ -254,13 +254,11 @@ sub send_email {
   }
 
   push @to, $options{bcc} if defined($options{bcc});
-  # make sure 
-  my @env_to = split(/\s*,\s*/, join(', ', @to));
-  # strip display-name from envelope addresses
-  foreach (@env_to) {
-    s/^\s*//;
-    s/\s*$//;
-    s/^(.*)\s*<(.*@.*)>$/$2/;
+  # fully unpack all addresses found in @to (including Bcc) to make the
+  # envelope list
+  my @env_to;
+  foreach my $dest (@to) {
+    push @env_to, map { $_->address } Email::Address->parse($dest);
   }
 
   local $@; # just in case
@@ -281,7 +279,7 @@ sub send_email {
   if ( $conf->exists('log_sent_mail') ) {
     my $cust_msg = FS::cust_msg->new({
         'env_from'  => $options{'from'},
-        'env_to'    => join(', ', @to),
+        'env_to'    => join(', ', @env_to),
         'header'    => $message->header_as_string,
         'body'      => $message->body_as_string,
         '_date'     => $time,
