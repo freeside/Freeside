@@ -14,16 +14,18 @@
   <TR>
     <TD WIDTH="50%">
 <%= if ($previous < $beginning) {
-    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;beginning=!;
-    $OUT .= qq!$previous;ending=$beginning">Previous period</A>!;
+    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;!;
+    $OUT .= qq!inbound=1;! if $inbound;
+    $OUT .= qq!beginning=$previous;ending=$beginning">Previous period</A>!;
     }else{
       '';
     } %>
     </TD>
     <TD  WIDTH="50%" ALIGN="right">
 <%= if ($next > $ending) {
-    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;beginning=!;
-    $OUT .= qq!$ending;ending=$next">Next period</A>!;
+    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;!;
+    $OUT .= qq!inbound=1;! if $inbound;
+    $OUT .= qq!beginning=$ending;ending=$next">Next period</A>!;
     }else{
       '';
     }%>
