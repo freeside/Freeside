@@ -12,6 +12,8 @@ Use gateway <SELECT NAME="gatewaynum">
 % foreach my $payment_gateway (
 %      qsearch('payment_gateway', { 'disabled' => '' } )
 %    ) {
+%   # don't let these be selected as agent overrides; there's a different mechanism
+%   next if $payment_gateway->gateway_namespace eq 'Business::BatchPayment';
 %
 
   <OPTION VALUE="<% $payment_gateway->gatewaynum %>"><% $payment_gateway->gateway_module %> (<% $payment_gateway->gateway_username %>)

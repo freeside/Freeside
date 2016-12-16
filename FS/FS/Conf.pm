@@ -669,6 +669,7 @@ my %batch_gateway_options = (
     );
     map { $_->gatewaynum, $_->label } @gateways;
   },
+  'per_agent' => 1,
 );
 
 my %invoice_mode_options = (
