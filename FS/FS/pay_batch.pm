@@ -14,6 +14,7 @@ use Scalar::Util 'blessed';
 use IO::Scalar;
 use FS::Misc qw(send_email); # for error notification
 use List::Util qw(sum);
+use Try::Tiny;
 
 @ISA = qw(FS::Record);
 
@@ -1080,16 +1081,21 @@ sub export_to_gateway {
   my $processor = $gateway->batch_processor(%proc_opt);
 
   my @items = map { $_->request_item } $self->cust_pay_batch;
-  my $batch = Business::BatchPayment->create(Batch =>
-    batch_id  => $self->batchnum,
-    items     => \@items
-  );
-  $processor->submit($batch);
+  try {
+    my $batch = Business::BatchPayment->create(Batch =>
+      batch_id  => $self->batchnum,
+      items     => \@items
+    );
+    $processor->submit($batch);
 
-  if ($batch->processor_id) {
-    $self->set('processor_id',$batch->processor_id);
-    $self->replace;
-  }
+    if ($batch->processor_id) {
+      $self->set('processor_id',$batch->processor_id);
+      $self->replace;
+    }
+  } catch {
+    $dbh->rollback if $oldAutoCommit;
+    die $_;
+  };
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
