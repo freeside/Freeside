@@ -14,6 +14,7 @@ use FS::Record qw( dbh qsearch qsearchs );
 use FS::Conf;
 use FS::cust_pay;
 use FS::Log;
+use Try::Tiny;
 
 =head1 NAME
 
@@ -1086,16 +1087,21 @@ sub export_to_gateway {
     return '';
   }
 
-  my $batch = Business::BatchPayment->create(Batch =>
-    batch_id  => $self->batchnum,
-    items     => \@items
-  );
-  $processor->submit($batch);
+  try {
+    my $batch = Business::BatchPayment->create(Batch =>
+      batch_id  => $self->batchnum,
+      items     => \@items
+    );
+    $processor->submit($batch);
 
-  if ($batch->processor_id) {
-    $self->set('processor_id',$batch->processor_id);
-    $self->replace;
-  }
+    if ($batch->processor_id) {
+      $self->set('processor_id',$batch->processor_id);
+      $self->replace;
+    }
+  } catch {
+    $dbh->rollback if $oldAutoCommit;
+    die $_;
+  };
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
