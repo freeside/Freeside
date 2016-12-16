@@ -22,6 +22,38 @@ $me = '[FS::Cron::pay_batch]';
 #  -r: Multi-process mode dry run option
 #  -a: Only process customers with the specified agentnum
 
+sub batch_gateways {
+  my $conf = FS::Conf->new;
+  # returns a list of arrayrefs: [ gateway, payby, agentnum ]
+  my %opt = @_;
+  my @agentnums;
+  if ( $conf->exists('batch-spoolagent') ) {
+    if ( $opt{a} ) {
+      @agentnums = split(',', $opt{a});
+    } else {
+      @agentnums = map { $_->agentnum } qsearch('agent');
+    }
+  } else {
+    @agentnums = ('');
+    if ( $opt{a} ) {
+      warn "Payment batch processing skipped in per-agent mode.\n" if $DEBUG;
+      return;
+    }
+  }
+  my @return;
+  foreach my $agentnum (@agentnums) {
+    my %gateways;
+    foreach my $payby ('CARD', 'CHEK') {
+      my $gatewaynum = $conf->config("batch-gateway-$payby", $agentnum);
+      next if !$gatewaynum;
+      my $gateway = FS::payment_gateway->by_key($gatewaynum)
+        or die "payment_gateway '$gatewaynum' not found\n";
+      push @return, [ $gateway, $payby, $agentnum ];
+    }
+  }
+  @return;
+}
+
 sub pay_batch_submit {
   my %opt = @_;
   local $DEBUG = ($opt{l} || 1) if $opt{v};
@@ -31,25 +63,14 @@ sub pay_batch_submit {
   my $dbh = dbh;
 
   warn "$me batch_submit\n" if $DEBUG;
-  my $conf = FS::Conf->new;
-
-  # need to respect -a somehow, but for now none of this is per-agent
-  if ( $opt{a} ) {
-    warn "Payment batch processing skipped in per-agent mode.\n" if $DEBUG;
-    return;
-  }
-  my %gateways;
-  foreach my $payby ('CARD', 'CHEK') {
-    my $gatewaynum = $conf->config("batch-gateway-$payby");
-    next if !$gatewaynum;
-    my $gateway = FS::payment_gateway->by_key($gatewaynum)
-      or die "payment_gateway '$gatewaynum' not found\n";
-
+  foreach my $config (batch_gateways(%opt)) {
+    my ($gateway, $payby, $agentnum) = @$config;
     if ( $gateway->batch_processor->can('default_transport') ) {
 
-      foreach my $pay_batch ( 
-        qsearch('pay_batch', { status => 'O', payby => $payby }) 
-      ) {
+      my $search = { status => 'O', payby => $payby };
+      $search->{agentnum} = $agentnum if $agentnum;
+
+      foreach my $pay_batch ( qsearch('pay_batch', $search) ) {
 
         warn "Exporting batch ".$pay_batch->batchnum."\n" if $DEBUG;
         eval { $pay_batch->export_to_gateway( $gateway, debug => $DEBUG ); };
@@ -80,38 +101,28 @@ sub pay_batch_receive {
   my $error;
 
   warn "$me batch_receive\n" if $DEBUG;
-  my $conf = FS::Conf->new;
 
-  # need to respect -a somehow, but for now none of this is per-agent
-  if ( $opt{a} ) {
-    warn "Payment batch processing skipped in per-agent mode.\n" if $DEBUG;
-    return;
-  }
-  my %gateways;
-  foreach my $payby ('CARD', 'CHEK') {
-    my $gatewaynum = $conf->config("batch-gateway-$payby");
-    next if !$gatewaynum;
-    # If the same gateway is selected for both paybys, only import it once
-    $gateways{$gatewaynum} = FS::payment_gateway->by_key($gatewaynum);
-    if ( !$gateways{$gatewaynum} ) {
+  my %gateway_done;
+    # If a gateway is selected for more than one payby+agentnum, still
+    # only import from it once; we expect it will send back multiple
+    # result batches.
+  foreach my $config (batch_gateways(%opt)) {
+    my ($gateway, $payby, $agentnum) = @$config;
+    next if $gateway_done{$gateway->gatewaynum};
+    next unless $gateway->batch_processor->can('default_transport');
+    # already warned about this above
+    warn "Importing results from '".$gateway->label."'\n" if $DEBUG;
+    # Note that import_from_gateway is not agent-limited; if a gateway
+    # returns results for batches not associated with this agent, we will
+    # still accept them. Well-behaved gateways will not do that.
+    $error = eval { 
+      FS::pay_batch->import_from_gateway( gateway =>$gateway, debug => $DEBUG ) 
+    } || $@;
+    if ( $error ) {
+      # this we can roll back
       $dbh->rollback;
-      die "batch-gateway-$payby gateway $gatewaynum not found\n";
+      die "error receiving from gateway '".$gateway->label."':\n$error\n";
     }
-  }
-
-  foreach my $gateway (values %gateways) {
-    if ( $gateway->batch_processor->can('default_transport') ) {
-      warn "Importing results from '".$gateway->label."'\n" if $DEBUG;
-      $error = eval { 
-        FS::pay_batch->import_from_gateway( gateway =>$gateway, debug => $DEBUG ) 
-      } || $@;
-      if ( $error ) {
-        # this we can roll back
-        $dbh->rollback;
-        die "error receiving from gateway '".$gateway->label."':\n$error\n";
-      }
-    } 
-    # else we already warned about it above
   } #$gateway
 
   # resolve batches if we can
