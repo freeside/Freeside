@@ -5777,6 +5777,90 @@ sub _upgrade_data { #class method
 
   $class->_upgrade_otaker(%opts);
 
+  # turn on encryption as part of regular upgrade, so all new records are immediately encrypted
+  # existing records will be encrypted in queueable_upgrade (below)
+  unless ($conf->exists('encryptionpublickey') || $conf->exists('encryptionprivatekey')) {
+    eval "use FS::Setup";
+    die $@ if $@;
+    FS::Setup::enable_encryption();
+  }
+
+}
+
+sub queueable_upgrade {
+  my $class = shift;
+
+  ### encryption gets turned on in _upgrade_data, above
+
+  eval "use FS::upgrade_journal";
+  die $@ if $@;
+
+  # prior to 2013 (commit f16665c9) payinfo was stored in history if not encrypted,
+  # clear that out before encrypting/tokenizing anything else
+  if (!FS::upgrade_journal->is_done('clear_payinfo_history')) {
+    foreach my $table ('cust_payby','cust_pay_pending','cust_pay','cust_pay_void','cust_refund') {
+      my $sql = 'UPDATE h_'.$table.' SET payinfo = NULL WHERE payinfo IS NOT NULL';
+      my $sth = dbh->prepare($sql) or die dbh->errstr;
+      $sth->execute or die $sth->errstr;
+    }
+    FS::upgrade_journal->set_done('clear_payinfo_history');
+  }
+
+  # encrypt old records
+  if ($conf->exists('encryption') && !FS::upgrade_journal->is_done('encryption_check')) {
+
+    # allow replacement of closed cust_pay/cust_refund records
+    local $FS::payinfo_Mixin::allow_closed_replace = 1;
+
+    # because it looks like nothing's changing
+    local $FS::Record::no_update_diff = 1;
+
+    # commit everything immediately
+    local $FS::UID::AutoCommit = 1;
+
+    # encrypt what's there
+    foreach my $table ('cust_payby','cust_pay_pending','cust_pay','cust_pay_void','cust_refund') {
+      my $tclass = 'FS::'.$table;
+      my $lastrecnum = 0;
+      my @recnums = ();
+      while (my $recnum = _upgrade_next_recnum(dbh,$table,\$lastrecnum,\@recnums)) {
+        my $record = $tclass->by_key($recnum);
+        next unless $record; # small chance it's been deleted, that's ok
+        next unless grep { $record->payby eq $_ } @FS::Record::encrypt_payby;
+        # window for possible conflict is practically nonexistant,
+        #   but just in case...
+        $record = $record->select_for_update;
+        my $error = $record->replace;
+        die $error if $error;
+      }
+    }
+
+    FS::upgrade_journal->set_done('encryption_check');
+  }
+
+}
+
+# not entirely false laziness w/ Billing_Realtime::_token_check_next_recnum
+# cust_payby might get deleted while this runs
+# not a method!
+sub _upgrade_next_recnum {
+  my ($dbh,$table,$lastrecnum,$recnums) = @_;
+  my $recnum = shift @$recnums;
+  return $recnum if $recnum;
+  my $tclass = 'FS::'.$table;
+  my $sql = 'SELECT '.$tclass->primary_key.
+            ' FROM '.$table.
+            ' WHERE '.$tclass->primary_key.' > '.$$lastrecnum.
+            ' ORDER BY '.$tclass->primary_key.' LIMIT 500';;
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+  my @recnums;
+  while (my $rec = $sth->fetchrow_hashref) {
+    push @$recnums, $rec->{$tclass->primary_key};
+  }
+  $sth->finish();
+  $$lastrecnum = $$recnums[-1];
+  return shift @$recnums;
 }
 
 =back
