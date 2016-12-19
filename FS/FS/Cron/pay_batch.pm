@@ -79,7 +79,7 @@ sub pay_batch_submit {
           # warn the error and continue. rolling back the transaction once 
           # we've started sending batches is bad.
           warn "error submitting batch ".$pay_batch->batchnum." to gateway '".
-          $gateway->label."\n$@\n";
+          $gateway->label."'\n$@\n";
         }
       }
 
