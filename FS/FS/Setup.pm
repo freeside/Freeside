@@ -84,6 +84,12 @@ sub enable_encryption {
   $conf->set('encryptionpublickey',  $rsa->get_public_key_string );
   $conf->set('encryptionprivatekey', $rsa->get_private_key_string );
 
+  # reload Record globals, false laziness with FS::Record
+  $FS::Record::conf_encryption           = $conf->exists('encryption');
+  $FS::Record::conf_encryptionmodule     = $conf->config('encryptionmodule');
+  $FS::Record::conf_encryptionpublickey  = join("\n",$conf->config('encryptionpublickey'));
+  $FS::Record::conf_encryptionprivatekey = join("\n",$conf->config('encryptionprivatekey'));
+
 }
 
 sub populate_numbering {

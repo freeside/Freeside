@@ -22,7 +22,7 @@ if (sudo grep -q '^test:' /usr/local/etc/freeside/htpasswd); then
   oldhtpasswd=$( cd /usr/local/etc/freeside; \
                  ls |grep -P 'htpasswd_\d{8}' | \
                  sort -nr |head -1 )
-  if [ -f $oldhtpasswd ]; then
+  if [ -f /usr/local/etc/freeside/$oldhtpasswd ]; then
     echo "Renaming $oldhtpasswd to htpasswd."
     sudo mv /usr/local/etc/freeside/$oldhtpasswd \
       /usr/local/etc/freeside/htpasswd
