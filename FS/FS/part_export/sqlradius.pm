@@ -26,6 +26,10 @@ tie %options, 'Tie::IxHash',
                    type    => 'select',
                    options => [qw( usergroup radusergroup ) ],
                  },
+  'skip_provisioning' => {
+    type  => 'checkbox',
+    label => 'Skip provisioning records to this database'
+  },
   'ignore_accounting' => {
     type  => 'checkbox',
     label => 'Ignore accounting records from this database'
@@ -154,6 +158,8 @@ sub radius_check { #override for other svcdb
 sub _export_insert {
   my($self, $svc_x) = (shift, shift);
 
+  return '' if $self->option('skip_provisioning');
+
   foreach my $table (qw(reply check)) {
     my $method = "radius_$table";
     my %attrib = $self->$method($svc_x);
@@ -178,6 +184,8 @@ sub _export_insert {
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
+
+  return '' if $self->option('skip_provisioning');
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -289,6 +297,8 @@ sub _export_replace {
 sub _export_suspend {
   my( $self, $svc_acct ) = (shift, shift);
 
+  return '' if $self->option('skip_provisioning');
+
   my $new = $svc_acct->clone_suspended;
   
   local $SIG{HUP} = 'IGNORE';
@@ -360,6 +370,8 @@ sub _export_suspend {
 sub _export_unsuspend {
   my( $self, $svc_x ) = (shift, shift);
 
+  return '' if $self->option('skip_provisioning');
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -398,6 +410,8 @@ sub _export_unsuspend {
 
 sub _export_delete {
   my( $self, $svc_x ) = (shift, shift);
+
+  return '' if $self->option('skip_provisioning');
 
   my $jobnum = '';
 
