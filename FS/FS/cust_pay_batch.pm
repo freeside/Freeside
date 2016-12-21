@@ -297,6 +297,7 @@ sub approve {
       'custnum'   => $new->custnum,
       'payby'     => $new->payby,
       'payinfo'   => $new->payinfo || $old->payinfo,
+      'paymask'   => $new->mask_payinfo,
       'paid'      => $new->paid,
       '_date'     => $new->_date,
       'usernum'   => $new->usernum,
