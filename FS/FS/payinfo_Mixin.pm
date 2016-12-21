@@ -307,13 +307,12 @@ sub payinfo_used {
   my $payinfo = shift || $self->payinfo;
   my %hash = (
     'custnum' => $self->custnum,
-    'payby'   => 'CARD',
+    'payby'   => $self->payby,
   );
 
   return 1
   if qsearch('cust_pay', { %hash, 'payinfo' => $payinfo } )
-  || qsearch('cust_pay', 
-    { %hash, 'paymask' => $self->mask_payinfo('CARD', $payinfo) }  )
+  || qsearch('cust_pay', { %hash, 'paymask' => $self->mask_payinfo } )
   ;
 
   return 0;
