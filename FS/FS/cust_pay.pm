@@ -548,7 +548,8 @@ otherwise returns false.
 
 sub replace {
   my $self = shift;
-  return "Can't modify closed payment" if $self->closed =~ /^Y/i;
+  return "Can't modify closed payment"
+    if $self->closed =~ /^Y/i && !$FS::payinfo_Mixin::allow_closed_replace;
   $self->SUPER::replace(@_);
 }
 
@@ -1252,6 +1253,30 @@ sub _upgrade_data {  #class method
   ###
   #$class->upgrade_set_cardtype;
 
+  # for batch payments, make sure paymask is set
+  do {
+    local $FS::payinfo_Mixin::allow_closed_replace = 1;
+    local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
+
+    my $cursor = FS::Cursor->new({
+      table => 'cust_pay',
+      extra_sql => ' WHERE paymask IS NULL AND payinfo IS NOT NULL
+                    AND payby IN(\'CARD\', \'CHEK\')
+                    AND batchnum IS NOT NULL',
+    });
+
+    # records from cursors for some reason don't decrypt payinfo, so
+    # call replace_old to fetch the record "normally"
+    while (my $cust_pay = $cursor->fetch) {
+      $cust_pay = $cust_pay->replace_old;
+      $cust_pay->set('paymask', $cust_pay->mask_payinfo);
+      my $error = $cust_pay->replace;
+      if ($error) {
+        die "$error (setting masked payinfo on payment#". $cust_pay->paynum.
+          ")\n"
+      }
+    }
+  };
 }
 
 sub process_upgrade_paybatch {

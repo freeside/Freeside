@@ -332,6 +332,7 @@ sub approve {
       'custnum'   => $new->custnum,
       'payby'     => $new->payby,
       'payinfo'   => $new->payinfo || $old->payinfo,
+      'paymask'   => $new->mask_payinfo,
       'paid'      => $new->paid,
       '_date'     => $new->_date,
       'usernum'   => $new->usernum,
@@ -458,6 +459,17 @@ sub request_item {
     die "unsupported BatchPayment method: ".$pay_batch->payby;
   }
 
+  my $recurring;
+  if ( $cust_main->status =~ /^active|suspended|ordered$/ ) {
+    if ( $self->payinfo_used ) {
+      $recurring = 'S'; # subsequent
+    } else {
+      $recurring = 'F'; # first use
+    }
+  } else {
+    $recurring = 'N'; # non-recurring
+  }
+
   Business::BatchPayment->create(Item =>
     # required
     action      => 'payment',
@@ -473,6 +485,7 @@ sub request_item {
     ( map { $_ => $location->$_ } qw(address2 city state country zip) ),
     
     invoice_number  => $self->invnum,
+    recurring_billing => $recurring,
     %payment,
   );
 }
