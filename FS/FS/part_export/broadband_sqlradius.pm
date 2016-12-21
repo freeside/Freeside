@@ -133,6 +133,8 @@ sub radius_check_suspended {
 sub _export_suspend {
   my( $self, $svc_broadband ) = (shift, shift);
 
+  return '' if $self->option('skip_provisioning');
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
