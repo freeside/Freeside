@@ -142,16 +142,25 @@ sub small_custview {
   }
 
   $html .= '</TD></TR><TR><TD></TD><TD BGCOLOR="#ffffff">';
-  if ( $cust_main->daytime && $cust_main->night ) {
-    $html .= ( FS::Msgcat::_gettext('daytime') || 'Day' ).
-             ' '. $cust_main->daytime.
-             '<BR>'. ( FS::Msgcat::_gettext('night') || 'Night' ).
-             ' '. $cust_main->night;
-  } elsif ( $cust_main->daytime || $cust_main->night ) {
-    $html .= $cust_main->daytime || $cust_main->night;
+
+  my $num_numbers = 0;
+  $num_numbers++ foreach grep $cust_main->$_(), qw( daytime night mobile );
+  if ( $num_numbers > 1 ) {
+    $html .= ucfirst( FS::Msgcat::_gettext('daytime') ).
+             ' '. $cust_main->daytime. '<BR>'
+      if $cust_main->daytime;
+    $html .= ucfirst( FS::Msgcat::_gettext('night') ).
+             ' '. $cust_main->night. '<BR>'
+      if $cust_main->night;
+    $html .= ucfirst( FS::Msgcat::_gettext('mobile') ).
+             ' '. $cust_main->mobile. '<BR>'
+      if $cust_main->night;
+  } elsif ( $num_numbers ) { # == 1 ) {
+    $html .= ( $cust_main->daytime || $cust_main->night || $cust_main->mobile ).
+             '<BR>';
   }
   if ( $cust_main->fax ) {
-    $html .= '<BR>Fax '. $cust_main->fax;
+    $html .= 'Fax '. $cust_main->fax;
   }
 
   $html .= '</TD></TR></TABLE></TD>';
