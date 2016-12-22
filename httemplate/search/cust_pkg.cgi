@@ -203,6 +203,8 @@ my %disable = (
 
 foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
 
+  $search_hash{$field.'_null'} = scalar( $cgi->param($field.'_null') );
+
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
   next if $beginning == 0 && $ending == 4294967295
