@@ -175,7 +175,14 @@ sub _upgrade_gateway {
   my $conf = FS::Conf->new;
   my @batchconfig = $conf->config('batchconfig-paymentech');
   my %options;
-  @options{ qw(bin terminalID merchantID login password ) } = @batchconfig;
+  @options{ qw(
+    bin
+    terminalID
+    merchantID
+    login
+    password
+    with_recurringInd
+  ) } = @batchconfig;
   $options{'industryType'} = 'EC';
   ( 'Paymentech', %options );
 }
