@@ -5533,29 +5533,38 @@ sub search {
 
     foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel )) {
 
-      next unless exists($params->{$field});
+      if ( $params->{$field.'_null'} ) {
 
-      my($beginning, $ending) = @{$params->{$field}};
+        push @where, "cust_pkg.$field IS NULL";
+             # this should surely be obsoleted by now: OR cust_pkg.$field == 0 
 
-      next if $beginning == 0 && $ending == 4294967295;
+      } else {
 
-      push @where,
-        "cust_pkg.$field IS NOT NULL",
-        "cust_pkg.$field >= $beginning",
-        "cust_pkg.$field <= $ending";
+        next unless exists($params->{$field});
 
-      $orderby ||= "ORDER BY cust_pkg.$field";
+        my($beginning, $ending) = @{$params->{$field}};
 
-      if ( $field eq 'setup' ) {
-        $exclude_change_from = 1;
-      } elsif ( $field eq 'cancel' ) {
-        $exclude_change_to = 1;
-      } elsif ( $field eq 'change_date' ) {
-        # if we are given setup and change_date ranges, and the setup date
-        # falls in _both_ ranges, then include the package whether it was 
-        # a change or not
-        $exclude_change_from = 0;
+        next if $beginning == 0 && $ending == 4294967295;
+
+        push @where,
+          "cust_pkg.$field IS NOT NULL",
+          "cust_pkg.$field >= $beginning",
+          "cust_pkg.$field <= $ending";
+
+        $orderby ||= "ORDER BY cust_pkg.$field";
+
+        if ( $field eq 'setup' ) {
+          $exclude_change_from = 1;
+        } elsif ( $field eq 'cancel' ) {
+          $exclude_change_to = 1;
+        } elsif ( $field eq 'change_date' ) {
+          # if we are given setup and change_date ranges, and the setup date
+          # falls in _both_ ranges, then include the package whether it was 
+          # a change or not
+          $exclude_change_from = 0;
+        }
       }
+
     }
 
     if ($exclude_change_from) {
@@ -5568,6 +5577,7 @@ sub search {
         WHERE cust_pkg.pkgnum = changed_to_pkg.change_pkgnum
       )";
     }
+
   }
 
   $orderby ||= 'ORDER BY bill';
