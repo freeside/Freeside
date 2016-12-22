@@ -80,6 +80,7 @@
 
                 what.form.<% $field %>_beginning_text.disabled = true;
                 what.form.<% $field %>_ending_text.disabled = true;
+                what.form.<% $field %>_null.disabled = true;
                 what.form.<% $field %>_beginning_text.style.backgroundColor = '#dddddd';
                 what.form.<% $field %>_ending_text.style.backgroundColor = '#dddddd';
 
@@ -90,15 +91,21 @@
 
 %             } else {
 
-                what.form.<% $field %>_beginning_text.disabled = false;
-                what.form.<% $field %>_ending_text.disabled = false;
-                what.form.<% $field %>_beginning_text.style.backgroundColor = '#ffffff';
-                what.form.<% $field %>_ending_text.style.backgroundColor = '#ffffff';
+                what.form.<% $field %>_null.disabled = false;
 
-                what.form.<% $field %>_beginning_button.style.display = '';
-                what.form.<% $field %>_ending_button.style.display = '';
-                what.form.<% $field %>_beginning_disabled.style.display = 'none';
-                what.form.<% $field %>_ending_disabled.style.display = 'none';
+                if ( ! what.form.<% $field %>_null.checked ) {
+
+                  what.form.<% $field %>_beginning_text.disabled = false;
+                  what.form.<% $field %>_ending_text.disabled = false;
+                  what.form.<% $field %>_beginning_text.style.backgroundColor = '#ffffff';
+                  what.form.<% $field %>_ending_text.style.backgroundColor = '#ffffff';
+
+                  what.form.<% $field %>_beginning_button.style.display = '';
+                  what.form.<% $field %>_ending_button.style.display = '';
+                  what.form.<% $field %>_beginning_disabled.style.display = 'none';
+                  what.form.<% $field %>_ending_disabled.style.display = 'none';
+
+                }
 
 %             }
 %           }
@@ -108,6 +115,37 @@
 %       }
 
       }
+
+%     foreach my $field (@date_fields) {
+
+        function <% $field %>_null_changed(what) {
+
+          if ( what.checked ) {
+            what.form.<% $field %>_beginning_text.disabled = true;
+            what.form.<% $field %>_ending_text.disabled = true;
+            what.form.<% $field %>_beginning_text.style.backgroundColor = '#dddddd';
+            what.form.<% $field %>_ending_text.style.backgroundColor = '#dddddd';
+            what.form.<% $field %>_beginning_button.style.display = 'none';
+            what.form.<% $field %>_ending_button.style.display = 'none';
+            what.form.<% $field %>_beginning_disabled.style.display = '';
+            what.form.<% $field %>_ending_disabled.style.display = '';
+
+          } else {
+            what.form.<% $field %>_beginning_text.disabled = false;
+            what.form.<% $field %>_ending_text.disabled = false;
+            what.form.<% $field %>_beginning_text.style.backgroundColor = '#ffffff';
+            what.form.<% $field %>_ending_text.style.backgroundColor = '#ffffff';
+
+            what.form.<% $field %>_beginning_button.style.display = '';
+            what.form.<% $field %>_ending_button.style.display = '';
+            what.form.<% $field %>_beginning_disabled.style.display = 'none';
+            what.form.<% $field %>_ending_disabled.style.display = 'none';
+
+          }
+
+        }
+
+%     }
 
     </SCRIPT>
 
@@ -135,6 +173,7 @@
             <TD></TD>
             <TD>From date <i>(m/d/y)</i></TD>
             <TD>To date <i>(m/d/y)</i></TD>
+            <TD>Empty date</TD>
           </TR>
 %   my $noinit = 0;
 %   foreach my $field (@date_fields) {
@@ -152,6 +191,13 @@
             </TD>
 %     $noinit = 1;
 %     }
+            <TD ALIGN="center">
+              <& /elements/checkbox.html,
+                   'field'    => $field.'_null',
+                   'value'    => 'Y',
+                   'onchange' => $field.'_null_changed',
+              &>
+            </TD>
           </TR>
 %   } #foreach $field
         </TABLE>
