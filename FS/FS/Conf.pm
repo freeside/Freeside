@@ -1680,6 +1680,14 @@ and customer address. Include units.',
   },
 
   { 
+    'key'         => 'invoice_omit_due_date',
+    'section'     => 'invoice_balances',
+    'description' => 'Omit the "Please pay by (date)" from invoices.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
