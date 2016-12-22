@@ -455,11 +455,9 @@ Also performs other upgrade functions:
   [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
           databases may be inaccessible.
 
-  [ -j ]: Run certain upgrades asychronously from the job queue.  Currently 
-          used only for the 2.x -> 3.x cust_location, cust_pay and part_pkg
-          upgrades.  This may cause odd behavior before the upgrade is
-          complete, so it's recommended only for very large cust_main, cust_pay
-          and/or part_pkg tables that take too long to upgrade.
+  [ -j ]: Run certain upgrades asychronously from the job queue.  Recommended
+          for very large cust_main or part_pkg tables that take too long to
+          upgrade.
 
   [ -a ]: Run schema changes in parallel (Pg only).  DBIx::DBSchema minimum 
           version 0.41 recommended.  Recommended only for large databases and
