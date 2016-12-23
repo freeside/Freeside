@@ -457,6 +457,8 @@ if ( $cgi->param('nottax') ) {
       push @where, "billpkgtaxratelocationnum IS NULL";
     }
 
+    $join_pkg .= ' LEFT JOIN cust_pkg USING ( pkgnum ) ';
+
     $join_pkg .= ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
 
   } elsif ( $conf->exists('tax-pkg_address') ) {
