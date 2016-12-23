@@ -5343,7 +5343,7 @@ sub search {
   }
 
   ###
-  # parse refnum (advertising source)
+  # parse (customer) refnum (advertising source)
   ###
 
   if ( exists($params->{'refnum'}) ) {
@@ -5354,7 +5354,7 @@ sub search {
       @refnum = ( $params->{'refnum'} );
     }
     my $in = join(',', grep /^\d+$/, @refnum);
-    push @where, "refnum IN($in)" if length $in;
+    push @where, "cust_main.refnum IN($in)" if length $in;
   }
 
   ###
