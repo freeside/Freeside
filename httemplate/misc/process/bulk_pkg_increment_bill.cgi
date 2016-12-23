@@ -45,7 +45,7 @@ my %disable = (
   ''                => {},
 );
 
-foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
+foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
