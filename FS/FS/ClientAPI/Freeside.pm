@@ -44,16 +44,34 @@ sub freesideinc_service {
     return { 'error' => 'bad support-key' };
   }
 
+  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+  my $custnum = $cust_pkg->custnum;
+
+  my $quantity = $packet->{'quantity'} || 1;
+
+  #false laziness w/webservice_log.pm
+  my $color = 1.10;
+  my $page = 0.10;
+
   #XXX check if some customers can use some API calls, rate-limiting, etc.
   # but for now, everybody can use everything
+  if ( $packet->{method} eq 'print' ) {
+    my $avail_credit = $cust_pkg->cust_main->credit_limit
+                       - $color - $quantity * $page
+                       - FS::webservice_log->price_print(
+                           'custnum' => $custnum,
+                         );
+
+    return { 'error' => 'Over credit limit' }
+      if $avail_credit <= 0;
+  }
 
   #record it happened
-  my $custnum = $svc_acct->cust_svc->cust_pkg->custnum;
   my $webservice_log = new FS::webservice_log {
     'custnum'  => $custnum,
     'svcnum'   => $svc_acct->svcnum,
     'method'   => $packet->{'method'},
-    'quantity' => $packet->{'quantity'} || 1,
+    'quantity' => $quantity,
   };
   my $error = $webservice_log->insert;
   return { 'error' => $error } if $error;
