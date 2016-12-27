@@ -125,6 +125,40 @@ sub check {
 
 =back
 
+=head1 CLASS METHODS
+
+=over 4
+
+=item price_print
+
+Calculates cost of printing unbilled print jobs for this customer.
+
+=cut
+
+sub price_print {
+  my( $class, %opt ) = @_;
+
+#  $opt{'beginning'} ||= 0;
+#  $opt{'ending'}    ||= 4294967295;
+
+  #false laziness w/ClientAPI/Freeside.pm
+  my $color = 1.10;
+  my $page = 0.10;
+
+  $class->scalar_sql("
+    SELECT SUM( $color + quantity * $page )
+      FROM webservice_log
+      WHERE custnum = $opt{custnum}
+        AND method = 'print'
+        AND status IS NULL
+   ");
+#        AND _date >= $opt{beginning}
+#        AND _date <  $opt{ending}
+
+}
+
+=back
+
 =head1 BUGS
 
 =head1 SEE ALSO
