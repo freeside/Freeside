@@ -5837,6 +5837,9 @@ sub queueable_upgrade {
         # window for possible conflict is practically nonexistant,
         #   but just in case...
         $record = $record->select_for_update;
+        if (!$record->custnum && $table eq 'cust_pay_pending') {
+          $record->set('custnum_pending',1);
+        }
         my $error = $record->replace;
         die $error if $error;
       }
