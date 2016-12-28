@@ -83,7 +83,10 @@ my $custnum = $cust_main->custnum;
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $conf = FS::Conf->new;
 
-my %payby = map { $_ => 1 } $conf->config('payby');
+my @payby = grep /\w/, $conf->config('payby');
+@payby = (qw( CARD DCRD CHEK DCHK ))
+  unless @payby;
+my %payby = map { $_ => 1 } @payby;
 
 # cached for conditions, to avoid looking it up twice
 my $invoicing_list_emailonly = $cust_main->invoicing_list_emailonly;
