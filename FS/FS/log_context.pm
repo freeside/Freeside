@@ -5,11 +5,13 @@ use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
 
 my @contexts = ( qw(
-  test
   bill_and_collect
   FS::cust_main::Billing::bill_and_collect
   FS::cust_main::Billing::bill
+  FS::cust_main::Billing_Realtime::realtime_bop
+  FS::cust_main::Billing_Realtime::realtime_tokenize
   FS::cust_main::Billing_Realtime::realtime_verify_bop
+  FS::cust_main::Billing_Realtime::token_check
   FS::pay_batch::import_from_gateway
   FS::part_pkg
   FS::Misc::Geo::standardize_uscensus
@@ -26,6 +28,7 @@ my @contexts = ( qw(
   upgrade_taxable_billpkgnum
   freeside-paymentech-upload
   freeside-paymentech-download
+  test
 ) );
 
 =head1 NAME

@@ -42,7 +42,7 @@ full offerings (via their type).<BR><BR>
     <TH CLASS="grid" BGCOLOR="#cccccc">Currencies</TH>
 % } 
 
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment Gateway Override</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Configuration Overrides</FONT></TH>
 </TR>
 
@@ -331,32 +331,24 @@ Unused
 % } 
 
 %       ##
-%       # payment gateway overrides
+%       # payment gateway override
 %       ##
 
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
-% foreach my $override (
-%                 # sort { }  want taxclass-full stuff first?  and default cards (empty cardtype)
-%                 qsearch('agent_payment_gateway', { 'agentnum' => $agent->agentnum } )
-%               ) {
-%            
-
+% my $gw_override = qsearchs('agent_payment_gateway', { 'agentnum' => $agent->agentnum } );
+% if ($gw_override) {
               <TR>
                 <TD> 
-                  <% $override->cardtype || 'Default' %> to <% $override->payment_gateway->gateway_module %> (<% $override->payment_gateway->gateway_username %>)
-                  <% $override->taxclass
-                        ? ' for '. $override->taxclass. ' only'
-                        : ''
-                  %>
-                  <FONT SIZE=-1><A HREF="javascript:areyousure('delete this payment gateway override', '<%$p%>misc/delete-agent_payment_gateway.cgi?<% $override->agentgatewaynum %>')">(delete)</A></FONT>
+                  <% $gw_override->payment_gateway->gateway_module %> (<% $gw_override->payment_gateway->gateway_username %>)
+                  <FONT SIZE=-1><A HREF="javascript:areyousure('delete this payment gateway override', '<%$p%>misc/delete-agent_payment_gateway.cgi?<% $gw_override->agentgatewaynum %>')">(delete)</A></FONT>
                 </TD>
               </TR>
-% } 
-
+% } else {
             <TR>
               <TD><FONT SIZE=-1><A HREF="<%$p%>edit/agent_payment_gateway.html?agentnum=<% $agent->agentnum %>">(add override)</A></FONT></TD>
             </TR>
+% }
           </TABLE>
         </TD>
 

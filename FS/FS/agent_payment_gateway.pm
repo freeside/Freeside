@@ -1,5 +1,6 @@
 package FS::agent_payment_gateway;
 use base qw(FS::Record);
+use FS::Record qw( qsearch );
 
 use strict;
 
@@ -109,6 +110,21 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub _upgrade_data {
+  # to simplify tokenization upgrades
+  die "Agent taxclass override no longer supported"
+    if qsearch({
+      'table' => 'agent_payment_gateway',
+      'extra_sql' => ' WHERE taxclass IS NOT NULL AND taxclass != \'\'',
+    });
+  die "Agent cardtype override no longer supported"
+    if qsearch({
+      'table' => 'agent_payment_gateway',
+      'extra_sql' => ' WHERE cardtype IS NOT NULL AND cardtype != \'\'',
+    });
+  return '';
 }
 
 =item payment_gateway

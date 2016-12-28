@@ -2128,7 +2128,7 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
-  return '' if $payinfo =~ /^99\d{14}$/; #token
+  return '' if $self->tokenized($payinfo); #token
 
   my %bop_card_types = map { $_=>1 } values %{ card_types() };
   my $cardtype = cardtype($payinfo);
@@ -4679,6 +4679,10 @@ CHEK only
 
 CHEK only
 
+=item saved_cust_payby
+
+scalar reference, for returning saved object
+
 =back
 
 =cut
@@ -4874,6 +4878,9 @@ PAYBYLOOP:
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  ${$opt{'saved_cust_payby'}} = $new
+    if $opt{'saved_cust_payby'};
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -5838,6 +5845,8 @@ sub queueable_upgrade {
     FS::upgrade_journal->set_done('encryption_check');
   }
 
+  # now that everything's encrypted, tokenize...
+  FS::cust_main::Billing_Realtime::token_check(@_);
 }
 
 # not entirely false laziness w/ Billing_Realtime::_token_check_next_recnum

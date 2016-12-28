@@ -102,8 +102,6 @@ auth, and order_number) as well as payby and payinfo
 sub payinfo_check {
   my $self = shift;
 
-  # All of these can be null, so in principle this could go in payinfo_Mixin.
-
   $self->SUPER::payinfo_check()
   || $self->ut_numbern('gatewaynum')
   # not ut_foreign_keyn, it causes upgrades to fail

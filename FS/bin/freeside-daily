@@ -97,7 +97,7 @@ use FS::Cron::backup qw(backup);
 backup();
 
 #except we'd rather not start cleanup jobs until the backup is done
-cleanup();
+cleanup( quiet => !$opt{'v'} );
 
 $log->info('finish');
 

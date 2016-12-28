@@ -47,6 +47,10 @@ sub upgrade_config {
 
   my $conf = new FS::Conf;
 
+  # to simplify tokenization upgrades
+  die "Conf selfservice-payment_gateway no longer supported"
+    if $conf->config('selfservice-payment_gateway');
+
   $conf->touch('payment_receipt')
     if $conf->exists('payment_receipt_email')
     || $conf->config('payment_receipt_msgnum');
@@ -364,8 +368,11 @@ sub upgrade_data {
     #fix whitespace - before cust_main
     'cust_location' => [],
 
+    # need before cust_main tokenization upgrade,
+    # blocks tokenization upgrade if deprecated features still in use
+    'agent_payment_gateway' => [],
+
     #cust_main (tokenizes cards, remove paycvv from history, locations, cust_payby, etc)
-    # (handles payinfo encryption/tokenization across all relevant tables)
     'cust_main' => [],
 
     #contact -> cust_contact / prospect_contact

@@ -9,6 +9,7 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::reg_code;
 use FS::agent_payment_gateway;
+use FS::payment_gateway;
 use FS::TicketSystem;
 use FS::Conf;
 
@@ -238,51 +239,42 @@ sub ticketing_queue {
 
 Returns a payment gateway object (see L<FS::payment_gateway>) for this agent.
 
-Currently available options are I<nofatal>, I<invnum>, I<method>, 
-I<payinfo>, and I<thirdparty>.
+Currently available options are I<nofatal>, I<method>, I<thirdparty> and I<conf>.
 
 If I<nofatal> is set, and no gateway is available, then the empty string
 will be returned instead of throwing a fatal exception.
 
-If I<invnum> is set to the number of an invoice (see L<FS::cust_bill>) then
-an attempt will be made to select a gateway suited for the taxes paid on 
-the invoice.
+The I<method> option can be used to influence the choice
+as well.  Presently only CHEK/ECHECK and PAYPAL methods are meaningful.
 
-The I<method> and I<payinfo> options can be used to influence the choice
-as well.  Presently only 'CC', 'ECHECK', and 'PAYPAL' methods are meaningful.
+If I<method> is CHEK/ECHECK and the default gateway is being returned,
+the business-onlinepayment-ach gateway will be returned if available.
 
-When the I<method> is 'CC' then the card number in I<payinfo> can direct
-this routine to route to a gateway suited for that type of card.
+If I<thirdparty> is set and the I<method> is PAYPAL, the defined paypal
+gateway will be returned.
 
-If I<thirdparty> is set, the defined self-service payment gateway will 
-be returned.
+Exisisting I<$conf> may be passed for efficiency.
 
 =cut
+
+# opts invnum/payinfo for cardtype/taxclass overrides no longer supported
+# any future overrides added here need to be reconciled with the tokenization process
 
 sub payment_gateway {
   my ( $self, %options ) = @_;
   
-  my $conf = new FS::Conf;
+  $options{'conf'} ||= new FS::Conf;
+  my $conf = $options{'conf'};
 
   if ( $options{thirdparty} ) {
-    # still a kludge, but it gets the job done
-    # and the 'cardtype' semantics don't really apply to thirdparty
-    # gateways because we have to choose a gateway without ever 
-    # seeing the card number
-    my $gatewaynum =
-      $conf->config('selfservice-payment_gateway', $self->agentnum);
-    my $gateway;
-    $gateway = FS::payment_gateway->by_key($gatewaynum) if $gatewaynum;
-    return $gateway if $gateway;
 
-    # a little less kludgey than the above, and allows PayPal to coexist 
-    # with credit card gateways
+    # allows PayPal to coexist with credit card gateways
     my $is_paypal = { op => '!=', value => 'PayPal' };
     if ( uc($options{method}) eq 'PAYPAL' ) {
       $is_paypal = 'PayPal';
     }
 
-    $gateway = qsearchs({
+    my $gateway = qsearchs({
         table     => 'payment_gateway',
         addl_from => ' JOIN agent_payment_gateway USING (gatewaynum) ',
         hashref   => {
@@ -302,105 +294,12 @@ sub payment_gateway {
     }
   }
 
-  my $taxclass = '';
-  if ( $options{invnum} ) {
+  my $override = qsearchs('agent_payment_gateway', { agentnum => $self->agentnum } );
 
-    my $cust_bill = qsearchs('cust_bill', { 'invnum' => $options{invnum} } );
-    die "invnum ". $options{'invnum'}. " not found" unless $cust_bill;
-
-    my @part_pkg =
-      map  { $_->part_pkg }
-      grep { $_ }
-      map  { $_->cust_pkg }
-      $cust_bill->cust_bill_pkg;
-
-    my @taxclasses = map $_->taxclass, @part_pkg;
-
-    $taxclass = $taxclasses[0]
-      unless grep { $taxclasses[0] ne $_ } @taxclasses; #unless there are
-                                                        #different taxclasses
-  }
-
-  #look for an agent gateway override first
-  my $cardtype = '';
-  if ( $options{method} ) {
-    if ( $options{method} eq 'CC' && $options{payinfo} ) {
-      $cardtype = cardtype($options{payinfo});
-    } elsif ( $options{method} eq 'ECHECK' ) {
-      $cardtype = 'ACH';
-    } else {
-      $cardtype = $options{method}
-    }
-  }
-
-  my $override =
-       qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
-                                           cardtype => $cardtype,
-                                           taxclass => $taxclass,       } )
-    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
-                                           cardtype => '',
-                                           taxclass => $taxclass,       } )
-    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
-                                           cardtype => $cardtype,
-                                           taxclass => '',              } )
-    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
-                                           cardtype => '',
-                                           taxclass => '',              } );
-
-  my $payment_gateway;
-  if ( $override ) { #use a payment gateway override
-
-    $payment_gateway = $override->payment_gateway;
-
-    $payment_gateway->gateway_namespace('Business::OnlinePayment')
-      unless $payment_gateway->gateway_namespace;
-
-  } else { #use the standard settings from the config
-
-    # the standard settings from the config could be moved to a null agent
-    # agent_payment_gateway referenced payment_gateway
-
-    unless ( $conf->exists('business-onlinepayment') ) {
-      if ( $options{'nofatal'} ) {
-        return '';
-      } else {
-        die "Real-time processing not enabled\n";
-      }
-    }
-
-    #load up config
-    my $bop_config = 'business-onlinepayment';
-    $bop_config .= '-ach'
-      if ( $options{method}
-           && $options{method} =~ /^(ECHECK|CHEK)$/
-           && $conf->exists($bop_config. '-ach')
-         );
-    my ( $processor, $login, $password, $action, @bop_options ) =
-      $conf->config($bop_config);
-    $action ||= 'normal authorization';
-    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-    die "No real-time processor is enabled - ".
-        "did you set the business-onlinepayment configuration value?\n"
-      unless $processor;
-
-    $payment_gateway = new FS::payment_gateway;
-
-    $payment_gateway->gateway_namespace( $conf->config('business-onlinepayment-namespace') ||
-                                 'Business::OnlinePayment');
-    $payment_gateway->gateway_module($processor);
-    $payment_gateway->gateway_username($login);
-    $payment_gateway->gateway_password($password);
-    $payment_gateway->gateway_action($action);
-    $payment_gateway->set('options', [ @bop_options ]);
-
-  }
-
-  unless ( $payment_gateway->gateway_namespace ) {
-    $payment_gateway->gateway_namespace(
-      scalar($conf->config('business-onlinepayment-namespace'))
-      || 'Business::OnlinePayment'
-    );
-  }
+  my $payment_gateway = FS::payment_gateway->by_key_or_default(
+    gatewaynum => $override ? $override->gatewaynum : '',
+    %options,
+  );
 
   $payment_gateway;
 }

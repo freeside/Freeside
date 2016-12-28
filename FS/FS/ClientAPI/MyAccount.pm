@@ -401,20 +401,12 @@ sub payment_gateway {
   my $conf = new FS::Conf;
   my $cust_main = shift;
   my $cust_payby = shift;
-  my $gatewaynum = $conf->config('selfservice-payment_gateway');
-  if ( $gatewaynum ) {
-    my $pg = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
-    die "configured gatewaynum $gatewaynum not found!" if !$pg;
-    return $pg;
-  }
-  else {
-    return '' if ! FS::payby->realtime($cust_payby);
-    my $pg = $cust_main->agent->payment_gateway(
-      'method'  => FS::payby->payby2bop($cust_payby),
-      'nofatal' => 1
-    );
-    return $pg;
-  }
+  return '' if ! FS::payby->realtime($cust_payby);
+  my $pg = $cust_main->agent->payment_gateway(
+    'method'  => FS::payby->payby2bop($cust_payby),
+    'nofatal' => 1
+  );
+  return $pg;
 }
 
 sub access_info {
@@ -1022,7 +1014,7 @@ sub validate_payment {
     validate($payinfo)
       or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
     return { 'error' => gettext('unknown_card_type') }
-      if $payinfo !~ /^99\d{14}$/ && cardtype($payinfo) eq "Unknown";
+      if !$cust_main->tokenized($payinfo) && cardtype($payinfo) eq "Unknown";
 
     if ( length($p->{'paycvv'}) && $p->{'paycvv'} !~ /^\s*$/ ) {
       if ( cardtype($payinfo) eq 'American Express card' ) {

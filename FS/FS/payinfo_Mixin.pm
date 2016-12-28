@@ -8,6 +8,7 @@ use FS::UID qw(driver_name);
 use FS::Cursor;
 use Time::Local qw(timelocal);
 
+# allow_closed_replace only relevant to cust_pay/cust_refund, for upgrade tokenizing
 use vars qw( $ignore_masked_payinfo $allow_closed_replace );
 
 =head1 NAME
@@ -67,8 +68,9 @@ sub payinfo {
   my($self,$payinfo) = @_;
 
   if ( defined($payinfo) ) {
+    $self->paymask($self->mask_payinfo) unless $self->getfield('paymask') || $self->tokenized; #make sure old mask is set
     $self->setfield('payinfo', $payinfo);
-    $self->paymask($self->mask_payinfo) unless $payinfo =~ /^99\d{14}$/; #token
+    $self->paymask($self->mask_payinfo) unless $self->tokenized($payinfo); #remask unless tokenizing
   } else {
     $self->getfield('payinfo');
   }
@@ -129,7 +131,7 @@ sub mask_payinfo {
   # Check to see if it's encrypted...
   if ( ref($self) && $self->is_encrypted($payinfo) ) {
     return 'N/A';
-  } elsif ( $payinfo =~ /^99\d{14}$/ || $payinfo eq 'N/A' ) { #token
+  } elsif ( $self->tokenized($payinfo) || $payinfo eq 'N/A' ) { #token
     return 'N/A (tokenized)'; #?
   } else { # if not, mask it...
 
@@ -197,7 +199,7 @@ sub payinfo_check {
 
     my $payinfo = $self->payinfo;
     my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $payinfo =~ /^99\d{14}$/;
+    $cardtype = 'Tokenized' if $self->tokenized;
     $self->set('paycardtype', $cardtype);
 
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
@@ -212,7 +214,7 @@ sub payinfo_check {
         validate($self->payinfo) or return "Illegal credit card number";
         return "Unknown card type" if $cardtype eq "Unknown";
       } else {
-        $self->payinfo('N/A'); #???
+        $self->payinfo('N/A'); #??? re-masks card
       }
     }
   } else {
@@ -232,6 +234,7 @@ sub payinfo_check {
     }
   }
 
+  return '';
 }
 
 =item payby_payinfo_pretty [ LOCALE ]
@@ -449,6 +452,21 @@ sub process_set_cardtype {
     my $error = $record->replace;
     die $error if $error;
   }
+}
+
+=item tokenized [ PAYINFO ]
+
+Returns true if object payinfo is tokenized
+
+Optionally, an arbitrary payby and payinfo can be passed.
+
+=cut
+
+sub tokenized {
+  my $self = shift;
+  my $payinfo = scalar(@_) ? shift : $self->payinfo;
+  return 0 unless $payinfo; #avoid uninitialized value error
+  $payinfo =~ /^99\d{14}$/;
 }
 
 =back

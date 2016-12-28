@@ -31,7 +31,7 @@ sub tax_rate_update {
   my %opt = @_;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
-  $FS::UID::AutoCommit = 0;
+  local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
   my $conf = FS::Conf->new;
