@@ -1587,12 +1587,6 @@ sub realtime_refund_bop {
         $content{'name'} = $self->get('first'). ' '. $self->get('last');
       }
     }
-    if ( $cust_pay->payby eq 'CARD'
-         && !$content{'card_number'}
-         && $cust_pay->tokenized
-    ) {
-      $content{'card_token'} = $cust_pay->payinfo;
-    }
     $void->content( 'action' => 'void', %content );
     $void->test_transaction(1)
       if $conf->exists('business-onlinepayment-test_transaction');
@@ -2414,8 +2408,9 @@ sub token_check {
 
   my $cache = {}; #cache for module info
 
-  # look for a gateway that can't tokenize
+  # look for a gateway that can and can't tokenize
   my $require_tokenized = 1;
+  my $someone_tokenizing = 0;
   foreach my $gateway (
     FS::payment_gateway->all_gateways(
       'method'  => 'CC',
@@ -2427,16 +2422,24 @@ sub token_check {
       # no default gateway, no promise to tokenize
       # can just load other gateways as-needeed below
       $require_tokenized = 0;
-      last;
+      last if $someone_tokenizing;
+      next;
     }
     my $info = _token_check_gateway_info($cache,$gateway);
     die $info unless ref($info); # means it's an error message
-    unless ($info->{'can_tokenize'}) {
+    if ($info->{'can_tokenize'}) {
+      $someone_tokenizing = 1;
+    } else {
       # a configured gateway can't tokenize, that's all we need to know right now
       # can just load other gateways as-needeed below
       $require_tokenized = 0;
-      last;
+      last if $someone_tokenizing;
     }
+  }
+
+  unless ($someone_tokenizing) { #no need to check, if no one can tokenize
+    warn "no gateways tokenize\n" if $debug;
+    return;
   }
 
   warn "REQUIRE TOKENIZED" if $require_tokenized && $debug;
