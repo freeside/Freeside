@@ -201,7 +201,6 @@ my $sql_query = {
                    $range_cols,
                    $packages_cols,
                    FS::UI::Web::cust_sql_fields(),
-                   'payby',
                  ),
   'extra_sql' => $where,
   'order_by'  => "order by coalesce(lower(company), ''), lower(last)",
