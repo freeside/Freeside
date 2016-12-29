@@ -254,7 +254,7 @@
                    acl         => 'Change customer package',
                    condition   => $reg_recur_cond,
                    popup       => "misc/change_pkg.cgi?$plink".
-                                    ';locationnum='. $cust_pkg->locationnum.
+                                    ';locationnum='. $cust_pkg->locationnum,
                    actionlabel => emt('Change package'),
                    #width       => 768,
                    width       => 960,
