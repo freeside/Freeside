@@ -1,14 +1,16 @@
 package FS::tower_sector;
 
-use Class::Load qw(load_class);
-use File::Path qw(make_path);
-use Data::Dumper;
-
 use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
 use FS::tower;
 use FS::svc_broadband;
+use Class::Load qw(load_class);
+use File::Path qw(make_path);
+use Data::Dumper;
+use Storable qw(thaw);
+use MIME::Base64 qw(decode_base64);
+
 
 =head1 NAME
 
@@ -271,6 +273,9 @@ PARAMS must include 'sectornum'.
 sub process_generate_coverage {
   my $job = shift;
   my $param = shift;
+  if (!ref($param)) {
+    $param = thaw(decode_base64($param));
+  }
   $job->update_statustext('0,generating map') if $job;
   my $sectornum = $param->{sectornum};
   my $sector = FS::tower_sector->by_key($sectornum)
