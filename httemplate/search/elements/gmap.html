@@ -99,11 +99,16 @@ function initMap() {
   // construct bounds around all of the features
   var bounds = new google.maps.LatLngBounds;
   map.data.forEach(function(feature) {
-    var g = feature.getGeometry();
-    if (g.getType() == 'Point') {
-      bounds.extend(g.get());
-    } else if (g.getArray) {
-      g.getArray().forEach(function(point) { bounds.extend(point); });
+    var b = feature.getProperty('bounds');
+    if (b) { // if it specifies an ROI, include all of it 
+      bounds.union(b);
+    } else {
+      var g = feature.getGeometry();
+      if (g.getType() == 'Point') {
+        bounds.extend(g.get());
+      } else if (g.getArray) {
+        g.getArray().forEach(function(point) { bounds.extend(point); });
+      }
     }
   });
 
