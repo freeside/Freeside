@@ -114,9 +114,44 @@ foreach my $svc_broadband (@rows) {
   } # if tower has coords
 } # foreach $svc_broadband
 
+# if we were given a towernum or sectornum, ensure that the map includes
+# that tower/sector, even if there are no services
+
+foreach my $towernum ($cgi->param('towernum')) {
+  next if $towernum !~ /^\d+$/;
+  next if exists($towers{$towernum});
+  $towers{$towernum} = FS::tower->by_key($towernum);
+}
+
+foreach my $sectornum ($cgi->param('sectornum')) {
+  next if $sectornum !~ /^\d+$/;
+  next if exists($sectors{$sectornum});
+  $sectors{$sectornum} = FS::tower_sector->by_key($sectornum)
+    or die "bad sectornum $sectornum";
+  # and put it on the tower list also
+  my $towernum = $sectors{$sectornum}->towernum;
+  if (!exists($towers{$towernum})) {
+    $towers{$towernum} = FS::tower->by_key($towernum);
+  }
+}
+
+# if the tower/sector was included in the search, but has no services, set
+# default bounds around it of 1 minute in each direction
+my $default_bounds = 0.017;
+
 foreach my $tower (values(%towers)) {
   my $towernum = $tower->towernum;
-  my $bounds = $tower_bounds{$towernum};
+  $tower_coord{$towernum} ||= [ $tower->longitude + 0,
+                                $tower->latitude + 0,
+                                ($tower->altitude || 0) + 0
+                              ];
+warn encode_json($tower_coord{$towernum});
+  my $bounds = $tower_bounds{$towernum}
+           ||= { 'north' => $tower->latitude + $default_bounds,
+                 'south' => $tower->latitude - $default_bounds,
+                 'east'  => $tower->longitude + $default_bounds,
+                 'west'  => $tower->longitude - $default_bounds,
+               };
   # add some padding for easier reading
   my $dx = 0.1 * ($bounds->{east} - $bounds->{west});
   my $dy = 0.1 * ($bounds->{north} - $bounds->{south});
@@ -135,7 +170,7 @@ foreach my $tower (values(%towers)) {
       style     => {
         icon => {
           path        => undef,
-          url         => $fsurl.'images/jcartier-antenna-square-21x51.png',
+          url         => $fsurl.'images/antenna-square-21x51.png',
           anchor      => { x => 10, y => 4 }
         },
       },
@@ -157,7 +192,6 @@ foreach my $sector (values %sectors) {
     push @overlays, $o;
   };
 };
-
 </%init>
 <%def .svc_broadband>
 % my $svc = shift;
