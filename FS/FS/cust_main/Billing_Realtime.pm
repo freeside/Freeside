@@ -416,6 +416,13 @@ sub realtime_bop {
   # set fields from passed cust_payby
   _bop_cust_payby_options(\%options);
 
+  # check for banned credit card/ACH
+  my $ban = FS::banned_pay->ban_search(
+    'payby'   => $bop_method2payby{$options{method}},
+    'payinfo' => $options{payinfo},
+  );
+  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
+
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
   if (($options{method} eq 'CC') && !$self->tokenized($options{'payinfo'})) {
@@ -500,16 +507,6 @@ sub realtime_bop {
 
   eval "use $namespace";  
   die $@ if $@;
-
-  ###
-  # check for banned credit card/ACH
-  ###
-
-  my $ban = FS::banned_pay->ban_search(
-    'payby'   => $bop_method2payby{$options{method}},
-    'payinfo' => $options{payinfo},
-  );
-  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
 
   ###
   # check for term discount validity
@@ -1793,6 +1790,13 @@ sub realtime_verify_bop {
   return "No cust_payby" unless $options{'cust_payby'};
   _bop_cust_payby_options(\%options);
 
+  # check for banned credit card/ACH
+  my $ban = FS::banned_pay->ban_search(
+    'payby'   => $bop_method2payby{'CC'},
+    'payinfo' => $options{payinfo},
+  );
+  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
+
   # possibly run a separate transaction to tokenize card number,
   #   so that we never store tokenized card info in cust_pay_pending
   if (($options{method} eq 'CC') && !$self->tokenized($options{'payinfo'})) {
@@ -1811,16 +1815,6 @@ sub realtime_verify_bop {
 
   eval "use $namespace";  
   die $@ if $@;
-
-  ###
-  # check for banned credit card/ACH
-  ###
-
-  my $ban = FS::banned_pay->ban_search(
-    'payby'   => $bop_method2payby{'CC'},
-    'payinfo' => $options{payinfo},
-  );
-  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
 
   ###
   # massage data
@@ -2230,6 +2224,13 @@ sub realtime_tokenize {
   return '' unless $options{method} eq 'CC';
   return '' if $self->tokenized($options{payinfo}); #already tokenized
 
+  # check for banned credit card/ACH
+  my $ban = FS::banned_pay->ban_search(
+    'payby'   => $bop_method2payby{'CC'},
+    'payinfo' => $options{payinfo},
+  );
+  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
+
   ###
   # select a gateway
   ###
@@ -2255,16 +2256,6 @@ sub realtime_tokenize {
 
   my %supported_actions = $transaction->info('supported_actions');
   return '' unless $supported_actions{'CC'} and grep(/^Tokenize$/,@{$supported_actions{'CC'}});
-
-  ###
-  # check for banned credit card/ACH
-  ###
-
-  my $ban = FS::banned_pay->ban_search(
-    'payby'   => $bop_method2payby{'CC'},
-    'payinfo' => $options{payinfo},
-  );
-  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
 
   ###
   # massage data

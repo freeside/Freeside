@@ -4,7 +4,7 @@ use base qw( FS::otaker_Mixin FS::Record );
 use strict;
 use Digest::MD5 qw(md5_base64);
 use Digest::SHA qw( sha512_base64 );
-use FS::Record qw( qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::CurrentUser;
 
 =head1 NAME
@@ -169,6 +169,14 @@ sub ban_search {
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
+
+  die "Cannot upgrade md5 banned_pay entries"
+    if qsearch({
+      'table'     => 'banned_pay',
+      'hashref'   => {},
+      'extra_sql' => "WHERE payinfo_hash IS NULL OR payinfo_hash = '' OR payinfo_hash = 'MD5'",
+    });
+
   $class->_upgrade_otaker(%opts);
 }
 
