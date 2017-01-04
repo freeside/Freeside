@@ -2,7 +2,7 @@
 
 use strict;
 use FS::Test;
-use Test::More tests => 13;
+use Test::More tests => 15;
 use FS::Conf;
 use FS::UID qw( dbh );
 use DateTime;
@@ -15,6 +15,22 @@ my @tables = qw(cust_payby cust_pay_pending cust_pay cust_pay_void cust_refund);
 
 ### can only run on test database (company name "Freeside Test")
 like( $conf->config('company_name'), qr/^Freeside Test/, 'using test database' ) or BAIL_OUT('');
+
+### remove gateway overrides and set non-tokenizing default gateway
+### so that we play nicely with tokenization upgrades
+### (though really, should just get rid of cardtype overrides in test db)
+# these will just get in the way for now
+foreach my $apg ($fs->qsearch('agent_payment_gateway')) {
+  $err = $apg->delete;
+  last if $err;
+}
+ok( !$err, 'removing agent gateway overrides' ) or BAIL_OUT($err);
+
+my $bopconf = 
+'IPPay
+TESTTERMINAL';
+$conf->set('business-onlinepayment' => $bopconf);
+is( join("\n",$conf->config('business-onlinepayment')), $bopconf, "set default gateway" ) or BAIL_OUT('');
 
 ### we need to unencrypt our test db before we can test turning it on
 
