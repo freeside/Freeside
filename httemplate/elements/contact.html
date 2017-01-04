@@ -126,12 +126,17 @@ if ( $curr_value ) {
                    'contactnum'  => $curr_value,
                    'prospectnum' => $opt{'prospectnum'},
                  });
+    $opt{'for_prospect'} = 1;
   } else {
     die 'neither custnum nor prospectnum specified';
   }
 } else {
   $contact = new FS::contact {};
-  $X_contact = new FS::cust_contact; #arbitrary, it could be prospect_contact
+  if ($opt{'for_prospect'}) {
+    $X_contact = new FS::prospect_contact;
+  } else {
+    $X_contact = new FS::cust_contact;
+  }
 }
 
 my %size = ( 'title' => 12 );
@@ -140,10 +145,13 @@ tie my %label, 'Tie::IxHash',
   'first'              => 'First name',
   'last'               => 'Last name',
   'title'              => 'Title/Position',
-  'emailaddress'       => 'Email',
-  'invoice_dest'       => 'Send invoices',
-  'selfservice_access' => 'Self-service'
+  'emailaddress'       => 'Email'
 ;
+
+unless ($opt{'for_prospect'}) {
+  $label{'invoice_dest'} = 'Send invoices';
+  $label{'selfservice_access'} = 'Self-service';
+}
 
 my $first = 0;
 foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
