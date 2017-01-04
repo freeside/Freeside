@@ -79,14 +79,14 @@ my $title = 'Net Credit Search Results';
 my @search = ();
 
 if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  push @search, "agentnum = $1";
+  push @search, "cust_main.agentnum = $1";
   my $agent = qsearchs('agent', { 'agentnum' => $1 } );
   die "unknown agentnum $1" unless $agent;
   $title = $agent->agent. " $title";
 }
 
 if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
-  push @search, "refnum = $1";
+  push @search, "cust_main.refnum = $1";
   my $part_referral = qsearchs('part_referral', { 'refnum' => $1 } );
   die "unknown refnum $1" unless $part_referral;
   $title = $part_referral->referral. " $title";
