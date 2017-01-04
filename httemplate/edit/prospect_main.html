@@ -39,7 +39,7 @@
          'm2m_dstcol'        => 'contactnum',
          'm2_label'          => 'Contact',
          'm2_error_callback' => $m2_error_callback,
-
+         'include_opt_callback' => sub { 'for_prospect' => 1 },
        },
        { 'field'         => 'locationnum',
          'type'          => 'select-cust_location',
