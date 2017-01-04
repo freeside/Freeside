@@ -373,6 +373,7 @@ sub upgrade_data {
     'agent_payment_gateway' => [],
 
     #cust_main (tokenizes cards, remove paycvv from history, locations, cust_payby, etc)
+    # (handles payinfo encryption/tokenization across all relevant tables)
     'cust_main' => [],
 
     #contact -> cust_contact / prospect_contact
