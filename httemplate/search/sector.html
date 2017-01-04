@@ -59,19 +59,20 @@
 %         $text = 'Reprocess';
 %       }
         <form name="create_<% $sectornum |h %>">
-        <input type="hidden" name="sectornum" value="<% $sectornum |h %>">
-        <& /elements/progress-init.html,
-          'create_'.$sectornum,
-          [ 'sectornum' ],
-          $fsurl.'misc/sector-create_map.html',
-          { 'message' => 'Map generated',
-            'url' => $cgi->self_url },
-          "sector$sectornum"
-        &>
-        <a class="createmap" href="#" onclick="sector<% $sectornum %>process()">
-          <% $text %>
-        </a>
-%     }
+          <input type="hidden" name="sectornum" value="<% $sectornum |h %>">
+          <& /elements/progress-init.html,
+            'create_'.$sectornum,
+            [ 'sectornum' ],
+            $fsurl.'misc/sector-create_map.html',
+            { 'message' => 'Map generated',
+              'url' => $cgi->self_url },
+            "sector$sectornum"
+          &>
+          <a class="createmap" href="#" onclick="sector<% $sectornum %>process()">
+            <% $text %>
+          </a>
+        </form>
+%     } # if @need_fields
     </td>
     <td>
 %   if ( length($sector->image) > 0 ) {

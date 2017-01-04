@@ -64,14 +64,6 @@
   background: transparent;
 }
 
-%#  #customer_menu ul li.ui-state-active {
-%#    background: #f8f0fc;
-%#    border: 1px solid #7e0079;
-%#    border-radius: 2px;
-%#    margin-right: 1px;
-%#    margin-left: 1px;
-%#  }
-
 </style>
 
 <& /elements/dropdown-menu.html,
@@ -91,7 +83,10 @@ my $custnum = $cust_main->custnum;
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $conf = FS::Conf->new;
 
-my %payby = map { $_ => 1 } $conf->config('payby');
+my @payby = grep /\w/, $conf->config('payby');
+@payby = (qw( CARD DCRD CHEK DCHK ))
+  unless @payby;
+my %payby = map { $_ => 1 } @payby;
 
 # cached for conditions, to avoid looking it up twice
 my $invoicing_list_emailonly = $cust_main->invoicing_list_emailonly;
