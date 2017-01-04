@@ -50,7 +50,7 @@
 
   var ship_locked_agents = <% encode_json(\%ship_locked_agents) %>;
   var ship_fields = [
-    'locationname', 'address1',<% $conf->exists('cust_main-no_city_in_address') ? '' : q( 'city',) %> 'state', 'zip', 'country', 
+    'locationname', 'address1','address2',<% $conf->exists('cust_main-no_city_in_address') ? '' : q( 'city',) %> 'state', 'zip', 'country', 
     'latitude', 'longitude', 'district'
   ];
 
