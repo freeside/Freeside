@@ -62,8 +62,11 @@ function show_route() {
     if ( status == google.maps.DirectionsStatus.OK ) {
       directionsDisplay.setDirections(result);
     } else { 
-      document.body.innerHTML = ('<P STYLE="color: red;">Directions lookup failed with the following error: '+status+'</P>')
-        + <% include('/elements/google_maps_api_key.html' ) |js_string%>;
+      var errmsg = ('<P STYLE="color: red;">Directions lookup failed with the following error: '+status+'</P>');
+      if (status == 'REQUEST_DENIED') {
+        errmsg = errmsg + <% include('/elements/google_maps_api_key.html' ) |js_string%>;
+      }
+      document.body.innerHTML = errmsg;
     }
   });
 }
