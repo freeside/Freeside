@@ -4402,8 +4402,10 @@ sub transfer {
     $target{$pkg_svc->svcpart} = $pkg_svc->quantity * ( $dest->quantity || 1 );
   }
 
-  foreach my $cust_svc ($dest->cust_svc) {
-    $target{$cust_svc->svcpart}--;
+  unless ( $self->pkgnum == $dest->pkgnum ) {
+    foreach my $cust_svc ($dest->cust_svc) {
+      $target{$cust_svc->svcpart}--;
+    }
   }
 
   my %svcpart2svcparts = ();
