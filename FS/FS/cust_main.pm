@@ -5372,11 +5372,14 @@ sub queueable_upgrade {
   eval "use FS::upgrade_journal";
   die $@ if $@;
 
-  # prior to 2013 (commit f16665c9) payinfo was stored in history if not encrypted,
-  # clear that out before encrypting/tokenizing anything else
+  # prior to 2013 (commit f16665c9) payinfo was stored in history if not
+  # encrypted, clear that out before encrypting/tokenizing anything else
   if (!FS::upgrade_journal->is_done('clear_payinfo_history')) {
-    foreach my $table ('cust_payby','cust_pay_pending','cust_pay','cust_pay_void','cust_refund') {
-      my $sql = 'UPDATE h_'.$table.' SET payinfo = NULL WHERE payinfo IS NOT NULL';
+    foreach my $table (qw(
+      cust_payby cust_pay_pending cust_pay cust_pay_void cust_refund
+    )) {
+      my $sql =
+        'UPDATE h_'.$table.' SET payinfo = NULL WHERE payinfo IS NOT NULL';
       my $sth = dbh->prepare($sql) or die dbh->errstr;
       $sth->execute or die $sth->errstr;
     }
@@ -5384,7 +5387,9 @@ sub queueable_upgrade {
   }
 
   # encrypt old records
-  if ($conf->exists('encryption') && !FS::upgrade_journal->is_done('encryption_check')) {
+  if ( $conf->exists('encryption')
+         && ! FS::upgrade_journal->is_done('encryption_check')
+  ) {
 
     # allow replacement of closed cust_pay/cust_refund records
     local $FS::payinfo_Mixin::allow_closed_replace = 1;
@@ -5396,11 +5401,15 @@ sub queueable_upgrade {
     local $FS::UID::AutoCommit = 1;
 
     # encrypt what's there
-    foreach my $table ('cust_payby','cust_pay_pending','cust_pay','cust_pay_void','cust_refund') {
+    foreach my $table (qw(
+      cust_payby cust_pay_pending cust_pay cust_pay_void cust_refund
+    )) {
       my $tclass = 'FS::'.$table;
       my $lastrecnum = 0;
       my @recnums = ();
-      while (my $recnum = _upgrade_next_recnum(dbh,$table,\$lastrecnum,\@recnums)) {
+      while (
+        my $recnum = _upgrade_next_recnum(dbh,$table,\$lastrecnum,\@recnums)
+      ) {
         my $record = $tclass->by_key($recnum);
         next unless $record; # small chance it's been deleted, that's ok
         next unless grep { $record->payby eq $_ } @FS::Record::encrypt_payby;
