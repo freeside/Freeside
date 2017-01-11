@@ -5410,6 +5410,12 @@ sub queueable_upgrade {
         if (!$record->custnum && $table eq 'cust_pay_pending') {
           $record->set('custnum_pending',1);
         }
+
+        local($ignore_expired_card) = 1;
+        local($ignore_banned_card) = 1;
+        local($skip_fuzzyfiles) = 1;
+        local($import) = 1;#prevent automatic geocoding (need its own variable?)
+
         my $error = $record->replace;
         die $error if $error;
       }
