@@ -4395,24 +4395,42 @@ sub transfer {
   my $error;
   foreach my $cust_svc ($self->cust_svc) {
     my $svcnum = $cust_svc->svcnum;
-    if($target{$cust_svc->svcpart} > 0
-       or $FS::cust_svc::ignore_quantity) { # maybe should be a 'force' option
+
+    if (    $target{$cust_svc->svcpart} > 0
+         or $FS::cust_svc::ignore_quantity # maybe should be a 'force' option
+       )
+    {
       $target{$cust_svc->svcpart}--;
+
+      local $FS::cust_svc::ignore_quantity = 1
+        if $self->pkgnum == $dest->pkgnum;
+
+      #why run replace at all in the $self->pkgnum == $dest->pkgnum case?
+      # we do want to trigger location and pkg_change exports, but 
+      # without pkgnum changing from an old to new package, cust_svc->replace
+      # doesn't know how to trigger those.  :/
+      # does this mean we scrap the whole idea of "safe to modify it in place",
+      # or do we special-case and pass the info needed to cust_svc->replace? :/
+
       my $new = new FS::cust_svc { $cust_svc->hash };
       $new->pkgnum($dest_pkgnum);
       $error = $new->replace($cust_svc);
+
     } elsif ( exists $opt{'change_svcpart'} && $opt{'change_svcpart'} ) {
+
       if ( $DEBUG ) {
         warn "looking for alternates for svcpart ". $cust_svc->svcpart. "\n";
         warn "alternates to consider: ".
              join(', ', @{$svcpart2svcparts{$cust_svc->svcpart}}). "\n";
       }
+
       my @alternate = grep {
                              warn "considering alternate svcpart $_: ".
                                   "$target{$_} available in new package\n"
                                if $DEBUG;
                              $target{$_} > 0;
                            } @{$svcpart2svcparts{$cust_svc->svcpart}};
+
       if ( @alternate ) {
         warn "alternate(s) found\n" if $DEBUG;
         my $change_svcpart = $alternate[0];
@@ -4424,13 +4442,16 @@ sub transfer {
       } else {
         $remaining++;
       }
+
     } else {
       $remaining++
     }
+
     if ( $error ) {
       my @label = $cust_svc->label;
       return "service $label[1]: $error";
     }
+
   }
   return $remaining;
 }
