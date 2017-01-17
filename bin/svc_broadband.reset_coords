@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV_XS;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch );
+use FS::svc_broadband;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+foreach my $svc_broadband (
+  qsearch({
+    'table'     => 'svc_broadband',
+    'hashref'   => {},
+    #'extra_sql' => 'WHERE latitude IS NOT NULL OR longitude IS NOT NULL',
+  })
+) {
+  $svc_broadband->latitude('');
+  $svc_broadband->longitude('');
+  my $error = $svc_broadband->replace;
+  die $error if $error;
+}
+
+sub usage {
+  "Usage:
+  svc_broadband.reset_coords user
+";
+}
+
+1;
