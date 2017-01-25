@@ -82,6 +82,7 @@ while (1) {
       my $svc_phone = qsearchs('svc_phone', { 'phonenum' => $number } );
       unless ( $svc_phone ) {
         #XXX set freesideratestatus or something so we don't keep retrying?
+        warn "no phone number found for CDR ". $cdr->acctid. "\n";
         next;
       }
 
@@ -94,7 +95,8 @@ while (1) {
       my $cust_pkg = $svc_phone{$number}->cust_svc->cust_pkg;
       unless ( $cust_pkg ) {
         #XXX unlinked svc_phone?
-        # warn and also set freesideratestatus or somesuch?
+        # also set freesideratestatus or somesuch?
+        warn "no package found (unlinked phone number?) for CDR ". $cdr->acctid. "\n";
         next;
       }
 
@@ -124,6 +126,7 @@ while (1) {
         #XXX no package for this CDR
         # warn and also set freesideratestatus or somesuch?
         #  or at least warn
+        warn "no CDR rating package for CDR ". $cdr->acctid. "\n";
         next;
       } elsif ( scalar(@part_pkg) > 1 ) {
         warn "multiple package could rate CDR ". $cdr->acctid. "\n";
@@ -140,6 +143,7 @@ while (1) {
       #then we can't prerate this CDR
       #some sort of warning?
       # (sucks if you're depending on credit limit fraud warnings)
+      warn "package has min_included; can't prerate CDR ". $cdr->acctid. "\n";
       next;
     }
     
@@ -184,7 +188,7 @@ sub _shouldrun {
 }
 
 sub usage { 
-  die "Usage:\n\n  freeside-cdrrewrited user\n";
+  die "Usage:\n\n  freeside-cdrrated user\n";
 }
 
 =head1 NAME
