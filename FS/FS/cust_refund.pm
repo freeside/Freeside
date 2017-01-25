@@ -472,19 +472,6 @@ sub unapplied_sql {
 
 }
 
-sub _upgrade_schema {
-  #my ($class, %opts) = @_;
-
-  my $sql = 'UPDATE cust_refund SET source_paynum = NULL
-               WHERE source_paynum IS NOT NULL
-                 AND NOT EXISTS ( SELECT 1 FROM cust_pay
-                                    WHERE paynum = cust_refund.source_paynum )
-            ';
-  my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  '';
-}
-
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
