@@ -443,7 +443,7 @@ my @sections = (qw(
     API ticketing appointments network_monitoring
     services
       username password
-      telephony RADIUS wireless_broadband shell BIND hosting
+      telephony telephony_invoicing RADIUS wireless_broadband shell BIND hosting
   ), '', qw( development deprecated )
 );
 
