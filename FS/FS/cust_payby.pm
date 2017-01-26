@@ -356,8 +356,7 @@ sub check {
     validate($payinfo)
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
-    my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $self->tokenized; #token
+    my $cardtype = $self->paycardtype || cardtype($payinfo);
     
     return gettext('unknown_card_type') if $cardtype eq "Unknown";
     
@@ -547,7 +546,6 @@ sub check_payinfo_cardtype {
   $payinfo =~ s/\D//g;
 
   if ( $self->tokenized($payinfo) ) {
-    $self->set('paycardtype', 'Tokenized');
     return '';
   }
 
