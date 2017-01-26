@@ -1615,28 +1615,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'usage_class_summary',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'On invoices, summarize total usage by usage class in a separate section',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'usage_class_as_a_section',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'On invoices, split usage into sections and label according to usage class name when enabled.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'phone_usage_class_summary',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'On invoices, summarize usage per DID by usage class and display all CDRs together regardless of usage class. Only valid when svc_phone_sections is enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'svc_phone_sections',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'On invoices, create a section for each svc_phone when enabled.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
@@ -1650,7 +1650,7 @@ and customer address. Include units.',
 
   { 
     'key'         => 'separate_usage',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'On invoices, split the rated call usage into a separate line from the recurring charges.',
     'type'        => 'checkbox',
   },
@@ -3577,28 +3577,28 @@ and customer address. Include units.',
 
   {
     'key'         => 'voip-cust_accountcode_cdr',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'Enable the per-customer option for CDR breakdown by accountcode.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'voip-cust_cdr_spools',
-    'section'     => 'telephony',
-    'description' => 'Enable the per-customer option for individual CDR spools.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated, used to enable the per-customer option for individual CDR spools.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'voip-cust_cdr_squelch',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'Enable the per-customer option for not printing CDR on invoices.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'voip-cdr_email',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'Include the call details inline on emailed invoices (and HTML invoices viewed in the backend), even if the customer is configured for not printing them on the invoices.  Useful for including these details in electronic delivery but omitting them when printing.',
     'type'        => 'checkbox',
   },
@@ -3612,7 +3612,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'voip-cdr_email_attach',
-    'section'     => 'telephony',
+    'section'     => 'telephony_invoicing',
     'description' => 'Enable the per-customer option for including CDR information as an attachment on emailed invoices.',
     'type'        => 'select',
     'select_hash' => [ ''    => 'Disabled',
