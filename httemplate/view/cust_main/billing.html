@@ -200,13 +200,6 @@ set_display_recurring(<% encode_json({'display_recurring' => [ $cust_main->displ
   </TD>
 </TR>
 
-% if ( $conf->exists('voip-cust_cdr_spools') ) { 
-  <TR>
-    <TH ALIGN="right"><% mt('Spool CDRs') |h %></TH>
-    <TD><% $cust_main->spool_cdr ? $yes : $no %></TD>
-  </TR>
-% } 
-
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
   <TR>
     <TH ALIGN="right"><% mt($conf->exists('voip-cdr_email') ? 'Print CDRs' : 'Show CDRs') |h %></TH>

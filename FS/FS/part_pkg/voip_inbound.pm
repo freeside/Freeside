@@ -206,9 +206,6 @@ sub calc_usage {
     if $self->recur_temporality eq 'preceding'
     && ( $last_bill eq '' || $last_bill == 0 );
 
-  my $spool_cdr = $cust_pkg->cust_main->spool_cdr;
-
-
   my $charges = 0;
 
 #  my $downstream_cdr = '';

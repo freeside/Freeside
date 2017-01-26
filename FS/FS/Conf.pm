@@ -3584,13 +3584,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'voip-cust_cdr_spools',
-    'section'     => 'deprecated',
-    'description' => 'Deprecated, used to enable the per-customer option for individual CDR spools.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'voip-cust_cdr_squelch',
     'section'     => 'telephony_invoicing',
     'description' => 'Enable the per-customer option for not printing CDR on invoices.',
