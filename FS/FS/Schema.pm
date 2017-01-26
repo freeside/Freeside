@@ -3911,6 +3911,7 @@ sub tables_hashref {
       'unique' => [],
       'index' => [ [ 'calldate' ],
                    [ 'src' ], [ 'dst' ], [ 'dcontext' ], [ 'charged_party' ],
+                   [ 'startdate' ],
                    [ 'lastapp' ],
                    ['accountcode'], ['uniqueid'], ['carrierid'], ['cdrid'],
                    [ 'sessionnum' ], [ 'subscriber' ],
