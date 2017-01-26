@@ -1969,7 +1969,6 @@ sub check {
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
     my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $self->payinfo =~ /^99\d{14}$/; # token
 
     return gettext('unknown_card_type') if $cardtype eq 'Unknown';
 
@@ -2186,7 +2185,6 @@ sub check_payinfo_cardtype {
   $payinfo =~ s/\D//g;
 
   if ( $payinfo =~ /^99\d{14}$/ ) {
-    $self->set('paycardtype', 'Tokenized');
     return '';
   }
 
