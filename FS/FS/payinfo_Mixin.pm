@@ -197,14 +197,16 @@ sub payinfo_check {
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
 
-    my $payinfo = $self->payinfo;
-    my $cardtype = cardtype($payinfo);
-    $cardtype = 'Tokenized' if $self->tokenized;
-    $self->set('paycardtype', $cardtype);
+    if ( $self->tokenized && ! $self->paycardtype ) {
+      return "paycardtype required (cannot be derived from a token)";
+    } else {
+      $self->set('paycardtype', cardtype($self->payinfo));
+    }
 
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
       # allow it
     } else {
+      my $payinfo = $self->payinfo;
       $payinfo =~ s/\D//g;
       $self->payinfo($payinfo);
       if ( $self->payinfo ) {
@@ -212,7 +214,7 @@ sub payinfo_check {
           or return "Illegal (mistyped?) credit card number (payinfo)";
         $self->payinfo($1);
         validate($self->payinfo) or return "Illegal credit card number";
-        return "Unknown card type" if $cardtype eq "Unknown";
+        return "Unknown card type" if $self->paycardtype eq "Unknown";
       } else {
         $self->payinfo('N/A'); #??? re-masks card
       }
