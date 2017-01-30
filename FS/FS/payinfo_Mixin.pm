@@ -238,6 +238,7 @@ sub payinfo_check {
     }
   }
 
+  return '';
 }
 
 =item payby_payinfo_pretty [ LOCALE ]
