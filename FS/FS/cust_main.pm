@@ -5795,7 +5795,7 @@ sub queueable_upgrade {
         local($import) = 1;#prevent automatic geocoding (need its own variable?)
 
         my $error = $record->replace;
-        die $error if $error;
+        die "Error replacing $table ".$record->get($record->primary_key).": $error" if $error;
       }
     }
 
