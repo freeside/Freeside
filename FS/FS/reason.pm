@@ -201,6 +201,7 @@ sub merge {
       cust_credit
       cust_credit_void
       cust_pkg_reason
+      cust_refund
     )) {
       last if $error;
       my @fields = ('reasonnum');
