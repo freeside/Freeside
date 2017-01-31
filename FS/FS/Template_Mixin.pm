@@ -3338,19 +3338,24 @@ sub _items_cust_bill_pkg {
             && ! $cust_bill_pkg->recur_show_zero;
 
           my @d = ();
-          my $svc_label;
+          my @svc_labels = ();
+          my $svc_label = '';
 
-          # always pass the svc_label through to the template, even if 
-          # not displaying it as an ext_description
-          my @svc_labels = map &{$escape_function}($_),
-            $cust_pkg->h_labels_short($self->_date,
-                                      undef,
-                                      'I',
-                                      $self->conf->{locale},
-                                     );
-          $svc_label = $svc_labels[0];
+          unless ( $part_pkg->hide_svc_detail ) {
 
-          unless ( $cust_pkg->part_pkg->hide_svc_detail
+            # still pass the svc_label through to the template, even if 
+            # not displaying it as an ext_description
+            @svc_labels = map &{$escape_function}($_),
+              $cust_pkg->h_labels_short($self->_date,
+                                        undef,
+                                        'I',
+                                        $self->conf->{locale},
+                                       );
+            $svc_label = $svc_labels[0];
+
+          }
+
+          unless ( $part_pkg->hide_svc_detail
                 || $cust_bill_pkg->hidden )
           {
 
@@ -3427,6 +3432,7 @@ sub _items_cust_bill_pkg {
 
           my @d = ();
           my @seconds = (); # for display of usage info
+          my @svc_labels = ();
           my $svc_label = '';
 
           #at least until cust_bill_pkg has "past" ranges in addition to
@@ -3436,11 +3442,13 @@ sub _items_cust_bill_pkg {
           push @dates, $prev->sdate if $prev;
           push @dates, undef if !$prev;
 
-          my @svc_labels = map &{$escape_function}($_),
-            $cust_pkg->h_labels_short(@dates,
-                                      'I',
-                                      $self->conf->{locale});
-          $svc_label = $svc_labels[0];
+          unless ( $part_pkg->hide_svc_detail ) {
+            @svc_labels = map &{$escape_function}($_),
+              $cust_pkg->h_labels_short(@dates,
+                                        'I',
+                                        $self->conf->{locale});
+            $svc_label = $svc_labels[0];
+          }
 
           # show service labels, unless...
                     # the package is set not to display them
