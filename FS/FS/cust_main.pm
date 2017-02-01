@@ -5813,8 +5813,11 @@ sub queueable_upgrade {
     FS::upgrade_journal->set_done('clear_payinfo_history');
   }
 
-  # encrypt old records
-  if ($conf->exists('encryption') && !FS::upgrade_journal->is_done('encryption_check')) {
+  # fix Tokenized paycardtype and encrypt old records
+  if (    ! FS::upgrade_journal->is_done('paycardtype_Tokenized')
+       || ! FS::upgrade_journal->is_done('encryption_check')
+     )
+  {
 
     # allow replacement of closed cust_pay/cust_refund records
     local $FS::payinfo_Mixin::allow_closed_replace = 1;
@@ -5840,6 +5843,7 @@ sub queueable_upgrade {
         if (!$record->custnum && $table eq 'cust_pay_pending') {
           $record->set('custnum_pending',1);
         }
+        $record->paycardtype('') if $record->paycardtype eq 'Tokenized';
 
         local($ignore_expired_card) = 1;
         local($ignore_banned_card) = 1;
@@ -5851,7 +5855,8 @@ sub queueable_upgrade {
       }
     }
 
-    FS::upgrade_journal->set_done('encryption_check');
+    FS::upgrade_journal->set_done('paycardtype_Tokenized');
+    FS::upgrade_journal->set_done('encryption_check') if $conf->exists('encryption');
   }
 
   # now that everything's encrypted, tokenize...
@@ -5869,6 +5874,8 @@ sub _upgrade_next_recnum {
   my $sql = 'SELECT '.$tclass->primary_key.
             ' FROM '.$table.
             ' WHERE '.$tclass->primary_key.' > '.$$lastrecnum.
+            "   AND payby IN ( 'CARD', 'DCRD', 'CHEK', 'DCHK' ) ".
+            "   AND ( length(payinfo) > 80 OR paycardtype = 'Tokenized' ) ".
             ' ORDER BY '.$tclass->primary_key.' LIMIT 500';;
   my $sth = $dbh->prepare($sql) or die $dbh->errstr;
   $sth->execute() or die $sth->errstr;
