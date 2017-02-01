@@ -18,6 +18,8 @@ sub option_fields {
   );
 }
 
+#lots of falze laziness w/has_pkgpart..
+
 sub condition {
   my($self, $object, %opt) = @_;
 
@@ -27,14 +29,23 @@ sub condition {
 
   my $if_pkgpart = $self->option('if_pkgpart') || {};
   grep $if_pkgpart->{ $_->pkgpart },
-    $cust_main->referral_custnum_cust_main->ncancelled_pkgs;
+    $cust_main->referral_custnum_cust_main->ncancelled_pkgs( 'skip_label_sort'=> 1);
                                             #maybe billing_pkgs
 }
 
-#XXX 
-#sub condition_sql {
-#
-#}
+sub condition_sql {
+  my( $self, $table ) = @_;
+
+  'ARRAY'. $self->condition_sql_option_option_integer('if_pkgpart').
+  ' && '. #overlap (have elements in common)
+  'ARRAY( SELECT pkgpart FROM cust_pkg AS has_referral_pkgpart_cust_pkg
+            WHERE has_referral_pkgpart_cust_pkg.custnum = cust_main.referral_custnum
+              AND (    has_referral_pkgpart_cust_pkg.cancel IS NULL
+                    OR has_referral_pkgpart_cust_pkg.cancel = 0
+                  )
+        )
+  ';
+}
 
 1;
 
