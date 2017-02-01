@@ -22,19 +22,30 @@ sub option_fields {
   );
 }
 
+#false laziness w/has_pkgpart.pm
+
 sub condition {
   my( $self, $object ) = @_;
 
   my $cust_main = $self->cust_main($object);
 
-  #XXX test
   my $unless_pkgpart = $self->option('unless_pkgpart') || {};
   ! grep $unless_pkgpart->{ $_->pkgpart }, $cust_main->ncancelled_pkgs;
 }
 
-#XXX
-#sub condition_sql {
-#
-#}
+sub condition_sql {
+  my( $self, $table ) = @_;
+
+  'NOT '.
+  'ARRAY'. $self->condition_sql_option_option_integer('unless_pkgpart').
+  ' && '. #overlap (have elements in common)
+  'ARRAY( SELECT pkgpart FROM cust_pkg AS has_pkgpart_cust_pkg
+            WHERE has_pkgpart_cust_pkg.custnum = cust_main.custnum
+              AND (    has_pkgpart_cust_pkg.cancel IS NULL
+                    OR has_pkgpart_cust_pkg.cancel = 0
+                  )
+        )
+  ';
+}
 
 1;
