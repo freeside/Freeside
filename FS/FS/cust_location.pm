@@ -518,17 +518,51 @@ sub disable_if_unused {
 
 }
 
-=item move_to
+=item move_pkgs
+
+Returns array of cust_pkg objects that would have their location
+updated by L</move_to> (all packages that have this location as 
+their service address, and aren't canceled, and aren't supplemental 
+to another package, and aren't one-time charges that have already been charged.)
+
+=cut
+
+sub move_pkgs {
+  my $self = shift;
+  my @pkgs = ();
+  # find all packages that have the old location as their service address,
+  # and aren't canceled,
+  # and aren't supplemental to another package
+  # and aren't one-time charges that have already been charged
+  foreach my $cust_pkg (
+    qsearch('cust_pkg', { 
+      'locationnum' => $self->locationnum,
+      'cancel'      => '',
+      'main_pkgnum' => '',
+    })
+  ) {
+    next if $cust_pkg->part_pkg->freq eq '0'
+            and ($cust_pkg->setup || 0) > 0;
+    push @pkgs, $cust_pkg;
+  }
+  return @pkgs;
+}
+
+=item move_to NEW [ move_pkgs => \@move_pkgs ]
 
 Takes a new L<FS::cust_location> object.  Moves all packages that use the 
 existing location to the new one, then sets the "disabled" flag on the old
 location.  Returns nothing on success, an error message on error.
+
+Use option I<move_pkgs> to override the list of packages to update
+(see L</move_pkgs>.)
 
 =cut
 
 sub move_to {
   my $old = shift;
   my $new = shift;
+  my %opt = @_;
   
   warn "move_to:\nFROM:".Dumper($old)."\nTO:".Dumper($new) if $DEBUG;
 
@@ -560,19 +594,32 @@ sub move_to {
     return '';
   }
 
-  # find all packages that have the old location as their service address,
-  # and aren't canceled,
-  # and aren't supplemental to another package.
-  my @pkgs = qsearch('cust_pkg', { 
-      'locationnum' => $old->locationnum,
-      'cancel'      => '',
-      'main_pkgnum' => '',
-    });
-  foreach my $cust_pkg (@pkgs) {
-    # don't move one-time charges that have already been charged
-    next if $cust_pkg->part_pkg->freq eq '0'
-            and ($cust_pkg->setup || 0) > 0;
+  my @pkgs;
+  if ($opt{'move_pkgs'}) {
+    @pkgs = @{$opt{'move_pkgs'}};
+    my $pkgerr;
+    foreach my $pkg (@pkgs) {
+      my $pkgnum = $pkg->pkgnum;
+      $pkgerr = "cust_pkg $pkgnum has already been charged"
+        if $pkg->part_pkg->freq eq '0'
+          and ($pkg->setup || 0) > 0;
+      $pkgerr = "cust_pkg $pkgnum is supplemental"
+        if $pkg->main_pkgnum;
+      $pkgerr = "cust_pkg $pkgnum already cancelled"
+        if $pkg->cancel;
+      $pkgerr = "cust_pkg $pkgnum does not use this location"
+        unless $pkg->locationnum eq $old->locationnum;
+      last if $pkgerr;
+    }
+    if ($pkgerr) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Cannot update package location: $pkgerr";
+    }
+  } else {
+    @pkgs = $old->move_pkgs;
+  }
 
+  foreach my $cust_pkg (@pkgs) {
     $error = $cust_pkg->change(
       'locationnum' => $new->locationnum,
       'keep_dates'  => 1
