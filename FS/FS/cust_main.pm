@@ -5871,11 +5871,12 @@ sub _upgrade_next_recnum {
   my $recnum = shift @$recnums;
   return $recnum if $recnum;
   my $tclass = 'FS::'.$table;
+  my $paycardtypecheck = ($table ne 'cust_pay_pending') ? q( OR paycardtype = 'Tokenized') : '';
   my $sql = 'SELECT '.$tclass->primary_key.
             ' FROM '.$table.
             ' WHERE '.$tclass->primary_key.' > '.$$lastrecnum.
             "   AND payby IN ( 'CARD', 'DCRD', 'CHEK', 'DCHK' ) ".
-            "   AND ( length(payinfo) < 80 OR paycardtype = 'Tokenized' ) ".
+            "   AND ( length(payinfo) < 80$paycardtypecheck ) ".
             ' ORDER BY '.$tclass->primary_key.' LIMIT 500';
   my $sth = $dbh->prepare($sql) or die $dbh->errstr;
   $sth->execute() or die $sth->errstr;
