@@ -1325,7 +1325,7 @@ set as the contact email address for a default contact with the same name as
 the customer.
 
 Currently available options are: I<tax_exemption>, I<cust_payby_params>, 
-I<contact_params>, I<invoicing_list>.
+I<contact_params>, I<invoicing_list>, and I<move_pkgs>.
 
 The I<tax_exemption> option can be set to an arrayref of tax names or a hashref
 of tax names and exemption numbers.  FS::cust_main_exemption records will be
@@ -1338,6 +1338,9 @@ and L<FS::contact> for the fields these can contain.
 
 I<invoicing_list> is a synonym for the INVOICING_LIST_ARYREF parameter, and
 should be used instead if possible.
+
+If I<move_pkgs> is an arrayref, it will override the list of packages
+to be moved to the new address (see L<FS::cust_location/move_pkgs>.)
 
 =cut
 
@@ -1533,7 +1536,7 @@ sub replace {
   $self->set('ship_location', ''); #flush cache
   if ( $old->ship_locationnum and # should only be null during upgrade...
        $old->ship_locationnum != $self->ship_locationnum ) {
-    $error = $old->ship_location->move_to($self->ship_location);
+    $error = $old->ship_location->move_to($self->ship_location, move_pkgs => $options{'move_pkgs'});
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
