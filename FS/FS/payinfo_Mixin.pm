@@ -199,11 +199,21 @@ sub payinfo_check {
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
 
-    if ( $self->payinfo =~ /^99\d{14}$/ && ! $self->paycardtype ) {
-      return "paycardtype required (cannot be derived from a token)";
-    } else {
-      $self->set('paycardtype', cardtype($self->payinfo));
-    }
+    unless ( $self->paycardtype ) {
+
+      if ( $self->payinfo =~ /^99\d{14}$/ ) {
+        if ( $self->paymask =~ /^\d+x/ ) {
+          $self->set('paycardtype', cardtype($self->paymask));
+        } else {
+          $self->set('paycardtype', '');
+         # return "paycardtype required ".
+         #        "(can't derive from a token and no paymask w/prefix provided)";
+        }
+      } else {
+        $self->set('paycardtype', cardtype($self->payinfo));
+      }
+
+     }
 
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
       # allow it
@@ -221,13 +231,22 @@ sub payinfo_check {
         $self->payinfo('N/A'); #???
       }
     }
+
   } else {
-    if ( $self->payby eq 'CARD' and $self->paymask ) {
-      # if we can't decrypt the card, at least detect the cardtype
-      $self->set('paycardtype', cardtype($self->paymask));
-    } else {
-      $self->set('paycardtype', '');
+
+    unless ( $self->paycardtype ) {
+
+      if ( $self->payby eq 'CARD' && $self->paymask =~ /^\d+x/  ) {
+        # if we can't decrypt the card, at least detect the cardtype
+        $self->set('paycardtype', cardtype($self->paymask));
+      } else {
+        $self->set('paycardtype', '');
+        # return "paycardtype required ".
+        #        "(can't derive from a token and no paymask w/prefix provided)";
+      }
+
     }
+
     if ( $self->is_encrypted($self->payinfo) ) {
       #something better?  all it would cause is a decryption error anyway?
       my $error = $self->ut_anything('payinfo');
