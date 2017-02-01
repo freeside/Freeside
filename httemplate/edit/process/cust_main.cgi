@@ -18,7 +18,7 @@
 <% $cgi->redirect( -uri    => popurl(3). "view/cust_main.cgi?". $new->custnum,
                    -cookie => CGI::Cookie->new(
                      -name    => 'freeside_status',
-                     -value   => mt('Customer edited'),
+                     -value   => mt($freeside_status),
                      -expires => '+5m',
                    ),
    )
@@ -220,7 +220,10 @@ if ( $vendor eq 'avalara' or $vendor eq 'suretax' ) {
 }
 
 #perhaps this stuff should go to cust_main.pm
+my $freeside_status = '';
 if ( $new->custnum eq '' or $duplicate_of ) {
+
+  $freeside_status = 'Customer added';
 
   my $cust_pkg = '';
   my $svc;
@@ -342,6 +345,8 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   } #if $duplicate_of
   
 } else { #create old record object
+
+  $freeside_status = 'Customer edited';
 
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   $error ||= "Old record not found!" unless $old;
