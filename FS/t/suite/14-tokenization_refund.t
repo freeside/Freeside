@@ -229,8 +229,10 @@ foreach my $voiding (0,1) {
 exit;
 
 sub random_card {
-  my $payinfo = '4111' . join('', map { int(rand(10)) } 1 .. 11);
-  $payinfo .= generate_last_digit($payinfo);
+#  my $payinfo = '4111' . join('', map { int(rand(10)) } 1 .. 11);
+#  $payinfo .= generate_last_digit($payinfo);
+# Use AmEx for everything, to make sure cardtype gets set correctly
+  my $payinfo = '347594362484937'; #American Express
   my $paydate = DateTime->now
                 ->add('years' => 1)
                 ->truncate(to => 'month')
@@ -239,6 +241,7 @@ sub random_card {
            'payinfo'  => $payinfo,
            'paydate'  => $paydate,
            'payname'  => 'Tokenize Me',
+           'paycvv'   => '1234', #American Express
   );
 }
 

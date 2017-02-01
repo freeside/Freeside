@@ -8,10 +8,12 @@ use FS::cust_main;
 use Business::CreditCard qw(generate_last_digit);
 use DateTime;
 if ( stat('/usr/local/etc/freeside/cardfortresstest.txt') ) {
-  plan tests => 20;
+  plan tests => 27;
 } else {
   plan skip_all => 'CardFortress test encryption key is not installed.';
 }
+
+#local $FS::cust_main::Billing_Realtime::DEBUG = 2;
 
 ### can only run on test database (company name "Freeside Test")
 ### will run upgrade, which uses lots of prints & warns beyond regular test output
@@ -100,6 +102,32 @@ my $pending_failed = FS::cust_pay_pending->new({
 });
 $err = $pending_failed->insert;
 ok( !$err, "create a failed payment attempt" ) or BAIL_OUT($err);
+
+# create two customers with an AmEx card & paycvv,
+# then run a payment with one, just to generate some test AmEx data
+
+my $amex_cust;
+foreach my $i (0,1) {
+  my $cust_main = $fs->new_customer("AmEx $i");
+  isa_ok ( $cust_main, 'FS::cust_main', "AmEx $i customer" ) or BAIL_OUT('');
+  $err = $cust_main->insert;
+  ok( !$err, "insert AmEx $i customer" ) or BAIL_OUT($err);
+  # add card
+  my $cust_payby;
+  my %card = random_card();
+  $card{'payinfo'} = '347594362484937';
+  $card{'paycvv'}  = '1234';
+  $err = $cust_main->save_cust_payby(
+    %card,
+    payment_payby => $card{'payby'},
+    auto => 1,
+    saved_cust_payby => \$cust_payby
+  );
+  ok( !$err, "save AmEx $i card" ) or BAIL_OUT($err);
+  $amex_cust = $cust_main;
+}
+$err = $amex_cust->realtime_cust_payby( amount => '1.00' );
+ok( !$err, "run AmEx payment" ) or BAIL_OUT($err);
 
 # find two stored credit cards.
 my @cust = map { FS::cust_main->by_key($_) } (10, 12);
