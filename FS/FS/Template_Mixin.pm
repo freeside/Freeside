@@ -1948,7 +1948,7 @@ sub balance_due_msg {
     if ( $self->due_date ) {
       $msg .= ' - ' . $self->mt('Please pay by'). ' '.
               $self->due_date2str('short')
-        unless $self->conf->config_bool('invoice_omit_due_date');
+       unless $self->conf->config_bool('invoice_omit_due_date',$self->agentnum);
     } elsif ( $self->terms ) {
       $msg .= ' - '. $self->mt($self->terms);
     }
