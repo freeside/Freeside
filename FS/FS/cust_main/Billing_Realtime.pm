@@ -2462,7 +2462,7 @@ CUSTLOOP:
       }
 
       if ($require_tokenized && $opt{'daily'}) {
-        $log->critical("Untokenized card number detected in cust_payby ".$cust_payby->custpaybynum);
+        $log->info("Untokenized card number detected in cust_payby ".$cust_payby->custpaybynum. '; tokenizing');
         $dbh->commit or die $dbh->errstr; # commit log message
       }
 
@@ -2563,7 +2563,7 @@ CUSTLOOP:
       }
 
       if ($require_tokenized && $opt{'daily'}) {
-        $log->critical("Untokenized card number detected in $table ".$record->get($record->primary_key));
+        $log->info("Untokenized card number detected in $table ".$record->get($record->primary_key). ';tokenizing');
         $dbh->commit or die $dbh->errstr; # commit log message
       }
 
@@ -2705,7 +2705,15 @@ sub _token_check_next_recnum {
   my $recnum = shift @$recnums;
   return $recnum if $recnum;
   my $tclass = 'FS::'.$table;
-  my $sth = $dbh->prepare('SELECT '.$tclass->primary_key.' FROM '.$table.' ORDER BY '.$tclass->primary_key.' LIMIT '.$step.' OFFSET '.$$offset) or die $dbh->errstr;
+  my $sth = $dbh->prepare(
+    'SELECT '.$tclass->primary_key.
+    ' FROM '.$table.
+    " WHERE payby IN ( 'CARD', 'DCRD' ) ".
+    "   AND ( length(payinfo) > 80 OR payinfo NOT LIKE '99%' )".
+    ' ORDER BY '.$tclass->primary_key.
+    ' LIMIT '.$step.
+    ' OFFSET '.$$offset
+  ) or die $dbh->errstr;
   $sth->execute() or die $sth->errstr;
   my @recnums;
   while (my $rec = $sth->fetchrow_hashref) {
