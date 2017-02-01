@@ -2372,7 +2372,7 @@ is set, this will instead cause a critical error to be recorded in the log,
 and any other tokenizable records will still be committed.
 
 If the I<daily> flag is also set, detection of existing untokenized records will 
-record a critical error in the system log (because they should have never appeared 
+record an info message in the system log (because they should have never appeared 
 in the first place.)  Tokenization will still be attempted.
 
 If any configured gateways do NOT have the ability to tokenize, or if a
@@ -2385,6 +2385,7 @@ sub token_check {
   #acts on all customers
   my %opt = @_;
   my $debug = !$opt{'quiet'} || $DEBUG;
+  my $hascritical = 0;
 
   warn "token_check called with opts\n".Dumper(\%opt) if $debug;
 
@@ -2481,6 +2482,7 @@ CUSTLOOP:
         }
         my $error = "No gateway found for custnum ".$cust_main->custnum;
         if ($opt{'queue'}) {
+          $hascritical = 1;
           $log->critical($error);
           $dbh->commit or die $dbh->errstr; # commit error message
           next; # not next CUSTLOOP, want to record error for every cust_payby
@@ -2517,6 +2519,7 @@ CUSTLOOP:
       if ($error) {
         $error = "Error tokenizing cust_payby ".$cust_payby->custpaybynum.": ".$error;
         if ($opt{'queue'}) {
+          $hascritical = 1;
           $log->critical($error);
           $dbh->commit or die $dbh->errstr; # commit log message, release mutex
           next; # not next CUSTLOOP, want to record error for every cust_payby
@@ -2549,6 +2552,10 @@ CUSTLOOP:
 
     while (my $recnum = _token_check_next_recnum($dbh,$table,$step,\$offset,\@recnums)) {
       my $record = $tclass->by_key($recnum);
+      unless ($record->payby eq 'CARD') {
+        warn "Skipping non-card record for $table ".$record->get($record->primary_key) if $debug;
+        next;
+      }
       if (FS::cust_main::Billing_Realtime->tokenized($record->payinfo)) {
         warn "Skipping tokenized record for $table ".$record->get($record->primary_key) if $debug;
         next;
@@ -2579,6 +2586,7 @@ CUSTLOOP:
         } else {
           my $error = "Could not load cust_main for $table ".$record->get($record->primary_key);
           if ($opt{'queue'}) {
+            $hascritical = 1;
             $log->critical($error);
             $dbh->commit or die $dbh->errstr; # commit log message
             next;
@@ -2681,6 +2689,7 @@ CUSTLOOP:
       if ($error) {
         $error = "Error tokenizing $table ".$record->get($record->primary_key).": ".$error;
         if ($opt{'queue'}) {
+          $hascritical = 1;
           $log->critical($error);
           $dbh->commit or die $dbh->errstr; # commit log message, release mutex
           next;
@@ -2696,7 +2705,7 @@ CUSTLOOP:
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  return '';
+  return $hascritical ? 'Critical errors occurred on some records, see system log' : '';
 }
 
 # not a method!
@@ -2708,8 +2717,6 @@ sub _token_check_next_recnum {
   my $sth = $dbh->prepare(
     'SELECT '.$tclass->primary_key.
     ' FROM '.$table.
-    " WHERE payby IN ( 'CARD', 'DCRD' ) ".
-    "   AND ( length(payinfo) > 80 OR payinfo NOT LIKE '99%' )".
     ' ORDER BY '.$tclass->primary_key.
     ' LIMIT '.$step.
     ' OFFSET '.$$offset
