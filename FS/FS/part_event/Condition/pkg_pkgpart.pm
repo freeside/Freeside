@@ -25,15 +25,16 @@ sub option_fields {
 sub condition {
   my( $self, $cust_pkg) = @_;
 
-  #XXX test
   my $if_pkgpart = $self->option('if_pkgpart') || {};
   $if_pkgpart->{ $cust_pkg->pkgpart };
 
 }
 
-#XXX 
-#sub condition_sql {
-#
-#}
+sub condition_sql {
+  my( $self, $table ) = @_;
+  
+  'cust_pkg.pkgpart IN '.
+    $self->condition_sql_option_option_integer('if_pkgpart');
+}
 
 1;
