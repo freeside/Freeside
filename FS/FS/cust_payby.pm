@@ -356,7 +356,19 @@ sub check {
     validate($payinfo)
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
-    my $cardtype = $self->paycardtype || cardtype($payinfo);
+    # see parallel checks in check_payinfo_cardtype & payinfo_Mixin::payinfo_check
+    my $cardtype = '';
+    if ( $self->tokenized ) {
+      if ( $self->paymask =~ /^\d+x/ ) {
+        $cardtype = cardtype($self->paymask);
+      } else {
+        $cardtype = '';
+        #return "paycardtype required ".
+        #       "(can't derive from a token and no paymask w/prefix provided)";
+      }
+    } else {
+      $cardtype = cardtype($self->payinfo);
+    }
     
     return gettext('unknown_card_type') if $cardtype eq "Unknown";
     
@@ -545,7 +557,15 @@ sub check_payinfo_cardtype {
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
 
+  # see parallel checks in cust_payby::check & payinfo_Mixin::payinfo_check
   if ( $self->tokenized($payinfo) ) {
+    if ( $self->paymask =~ /^\d+x/ ) {
+      $self->set('paycardtype', cardtype($self->paymask));
+    } else {
+      $self->set('paycardtype', '');
+      #return "paycardtype required ".
+      #       "(can't derive from a token and no paymask w/prefix provided)";
+    }
     return '';
   }
 
