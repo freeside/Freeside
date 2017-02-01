@@ -5821,8 +5821,8 @@ sub _upgrade_next_recnum {
             ' FROM '.$table.
             ' WHERE '.$tclass->primary_key.' > '.$$lastrecnum.
             "   AND payby IN ( 'CARD', 'DCRD', 'CHEK', 'DCHK' ) ".
-            "   AND ( length(payinfo) > 80 OR paycardtype = 'Tokenized' ) ".
-            ' ORDER BY '.$tclass->primary_key.' LIMIT 500';;
+            "   AND ( length(payinfo) < 80 OR paycardtype = 'Tokenized' ) ".
+            ' ORDER BY '.$tclass->primary_key.' LIMIT 500';
   my $sth = $dbh->prepare($sql) or die $dbh->errstr;
   $sth->execute() or die $sth->errstr;
   my @recnums;
