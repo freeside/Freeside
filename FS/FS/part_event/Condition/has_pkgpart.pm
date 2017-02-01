@@ -27,13 +27,23 @@ sub condition {
   my $cust_main = $self->cust_main($object);
 
   my $if_pkgpart = $self->option('if_pkgpart') || {};
-  grep $if_pkgpart->{ $_->pkgpart }, $cust_main->ncancelled_pkgs;
+  grep $if_pkgpart->{ $_->pkgpart },
+         $cust_main->ncancelled_pkgs( 'skip_label_sort'=>1 );
 
 }
 
-#XXX 
-#sub condition_sql {
-#
-#}
+sub condition_sql {
+  my( $self, $table ) = @_;
+
+  'ARRAY'. $self->condition_sql_option_option_integer('if_pkgpart').
+  ' && '. #overlap (have elements in common)
+  'ARRAY( SELECT pkgpart FROM cust_pkg AS has_pkgpart_cust_pkg
+            WHERE has_pkgpart_cust_pkg.custnum = cust_main.custnum
+              AND (    has_pkgpart_cust_pkg.cancel IS NULL
+                    OR has_pkgpart_cust_pkg.cancel = 0
+                  )
+        )
+  ';
+}
 
 1;
