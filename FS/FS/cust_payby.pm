@@ -357,14 +357,14 @@ sub check {
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
     # see parallel checks in check_payinfo_cardtype & payinfo_Mixin::payinfo_check
-    my $cardtype = '';
+    my $cardtype = $self->paycardtype;
     if ( $self->tokenized ) {
       if ( $self->paymask =~ /^\d+x/ ) {
         $cardtype = cardtype($self->paymask);
       } else {
-        $cardtype = '';
         #return "paycardtype required ".
-        #       "(can't derive from a token and no paymask w/prefix provided)";
+        #       "(can't derive from a token and no paymask w/prefix provided)"
+        #  unless $cardtype;
       }
     } else {
       $cardtype = cardtype($self->payinfo);
