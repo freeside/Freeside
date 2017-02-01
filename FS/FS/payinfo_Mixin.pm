@@ -197,20 +197,17 @@ sub payinfo_check {
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
 
-    unless ( $self->paycardtype ) {
-
-      if ( $self->tokenized ) {
-        if ( $self->paymask =~ /^\d+x/ ) {
-          $self->set('paycardtype', cardtype($self->paymask));
-        } else {
-          $self->set('paycardtype', '');
-         # return "paycardtype required ".
-         #        "(can't derive from a token and no paymask w/prefix provided)";
-        }
+    # see parallel checks in cust_payby::check & cust_payby::check_payinfo_cardtype
+    if ( $self->tokenized ) {
+      if ( $self->paymask =~ /^\d+x/ ) {
+        $self->set('paycardtype', cardtype($self->paymask));
       } else {
-        $self->set('paycardtype', cardtype($self->payinfo));
+        $self->set('paycardtype', '');
+        #return "paycardtype required ".
+        #       "(can't derive from a token and no paymask w/prefix provided)";
       }
-
+    } else {
+      $self->set('paycardtype', cardtype($self->payinfo));
     }
 
     if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
@@ -232,17 +229,13 @@ sub payinfo_check {
 
   } else {
 
-    unless ( $self->paycardtype ) {
-
-      if ( $self->payby eq 'CARD' && $self->paymask =~ /^\d+x/  ) {
-        # if we can't decrypt the card, at least detect the cardtype
-        $self->set('paycardtype', cardtype($self->paymask));
-      } else {
-        $self->set('paycardtype', '');
-        # return "paycardtype required ".
-        #        "(can't derive from a token and no paymask w/prefix provided)";
-      }
-
+    if ( $self->payby eq 'CARD' && $self->paymask =~ /^\d+x/  ) {
+      # if we can't decrypt the card, at least detect the cardtype
+      $self->set('paycardtype', cardtype($self->paymask));
+    } else {
+      $self->set('paycardtype', '');
+      # return "paycardtype required ".
+      #        "(can't derive from a token and no paymask w/prefix provided)";
     }
 
     if ( $self->is_encrypted($self->payinfo) ) {
