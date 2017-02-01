@@ -202,7 +202,7 @@ sub payinfo_check {
       if ( $self->paymask =~ /^\d+x/ ) {
         $self->set('paycardtype', cardtype($self->paymask));
       } else {
-        $self->set('paycardtype', '');
+        $self->set('paycardtype', '') unless $self->paycardtype;
         #return "paycardtype required ".
         #       "(can't derive from a token and no paymask w/prefix provided)";
       }
@@ -233,7 +233,7 @@ sub payinfo_check {
       # if we can't decrypt the card, at least detect the cardtype
       $self->set('paycardtype', cardtype($self->paymask));
     } else {
-      $self->set('paycardtype', '');
+      $self->set('paycardtype', '') unless $self->paycardtype;
       # return "paycardtype required ".
       #        "(can't derive from a token and no paymask w/prefix provided)";
     }
