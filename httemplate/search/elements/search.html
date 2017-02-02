@@ -383,7 +383,7 @@ unless ( $type =~ /^(csv|xml|\w*.xls)$/) {
     #setup some pagination things if we're in html mode
 
     my $conf = new FS::Conf;
-    $confmax = $conf->config('maxsearchrecordsperpage');
+    $confmax = $conf->config('maxsearchrecordsperpage') || 100;
     if ( $cgi->param('maxrecords') =~ /^(\d+)$/ ) {
       $maxrecords = $1;
     } else {
