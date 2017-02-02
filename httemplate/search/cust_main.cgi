@@ -332,7 +332,7 @@ die "access denied"
   unless $curuser->access_right('List all customers');
 
 my $conf = new FS::Conf;
-my $maxrecords = $conf->config('maxsearchrecordsperpage');
+my $maxrecords = $conf->config('maxsearchrecordsperpage') || 100;
 # summarize more than this many services of the same svcpart
 my $large_pkg_size = $conf->config('cust_pkg-large_pkg_size') || 0;
 

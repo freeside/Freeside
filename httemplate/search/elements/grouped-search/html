@@ -34,7 +34,7 @@ my $footer = $group_info->{group_footers}[$curr_group];
 my $total_footer =  $group_info->{total_footer} || [];
 # pagination
 my ($limit, $offset);
-my $maxrecords = $conf->config('maxsearchrecordsperpage') || 50;
+my $maxrecords = $conf->config('maxsearchrecordsperpage') || 100;
 if ( $cgi->param('maxrecords') =~ /^(\d+)$/ ) {
   $maxrecords = $1;
 }
