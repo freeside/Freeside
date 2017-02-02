@@ -1623,6 +1623,7 @@ sub tables_hashref {
         'paystate', 'varchar', 'NULL', $char_d, '', '', 
         'paytype',  'varchar', 'NULL', $char_d, '', '', 
         'payip',    'varchar', 'NULL', 15, '', '', 
+        'paycardtype', 'varchar', 'NULL',   $char_d, '', '',
 
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
@@ -1671,6 +1672,7 @@ sub tables_hashref {
                           [ 'archived' ],
                           [ 'ship_locationnum' ],
                           [ 'bill_locationnum' ],
+                          [ 'paycardtype' ],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
