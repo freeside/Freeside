@@ -50,7 +50,7 @@
     <TH ALIGN="right" STYLE="vertical-align:top"><% emt("Menu location:") %> </TH>
     <TD>
       <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> <% emt("Left") %><BR>
-      <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> <% emt("Top") %> <BR>
+      <INPUT TYPE="radio" NAME="menu_position" VALUE="top" onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> <% emt("Top") %> <BR>
     </TD>
     <TD><IMG NAME="menu_example" SRC="../images/menu-<% $menu_position %>-example.png"></TD>
   </TR>
