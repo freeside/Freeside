@@ -1,13 +1,13 @@
 package FS::part_export::netsapiens;
+use base qw( FS::part_export );
 
-use vars qw(@ISA $me %info);
+use vars qw( $me %info );
 use MIME::Base64;
 use Tie::IxHash;
-use FS::part_export;
 use Date::Format qw( time2str );
-use Regexp::Common qw/URI/;
+use Regexp::Common qw( URI );
+use REST::Client;
 
-@ISA = qw(FS::part_export);
 $me = '[FS::part_export::netsapiens]';
 
 #These export options set default values for the various commands
@@ -77,9 +77,6 @@ tie my %options, 'Tie::IxHash',
   'options'    => \%options,
   'no_machine' => 1,
   'notes'      => <<'END'
-Requires installation of
-<a href="http://search.cpan.org/dist/REST-Client">REST::Client</a>
-from CPAN.
 END
 );
 
@@ -118,8 +115,6 @@ sub _ns_command {
 
   # kludge to curb excessive paranoia in LWP 6.0+
   local $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
-  eval 'use REST::Client';
-  die $@ if $@;
 
   my $ns = new REST::Client 'host'=>$self->option($prefix.'url');
 
