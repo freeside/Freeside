@@ -593,6 +593,8 @@ this customer that are active (recurring).
 
 =cut
 
+#recurring_pkgs?  different from cust_pkg idea of "active" which has
+# a setup vs not_yet_billed which doesn't
 sub active_pkgs {
   my $self = shift; 
   grep { my $part_pkg = $_->part_pkg;
@@ -608,6 +610,8 @@ are active (recurring).
 
 =cut
 
+#ncancelled_recurring_pkgs?  different from cust_pkg idea of "active" which has
+# a setup vs not_yet_billed which doesn't
 sub ncancelled_active_pkgs {
   my $self = shift; 
   grep { my $part_pkg = $_->part_pkg;
@@ -807,7 +811,7 @@ sub display_recurring {
         my $discount = $cust_pkg_discount->discount;
         #and only one of these for each
         $pkg_amount -= $discount->amount;
-        $pkg_amount -= $amount * $discount->percent/100;
+        $pkg_amount -= $pkg_amount * $discount->percent/100;
       }
 
       $pkg_amount *= ( $cust_pkg->quantity || 1 );
