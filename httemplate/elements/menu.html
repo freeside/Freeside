@@ -865,7 +865,7 @@ $config_menu{'Billing'} = [ \%config_billing, '' ]
   if keys %config_billing;
 $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
   if $conf->config('ticket_system')
-  && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');
+  && eval { FS::TicketSystem->access_right(\%session, 'ShowConfigTab') };
 $config_menu{'Network Monitoring'} = [ \%config_nms, '' ]
   if $curuser->access_right('Configure network monitoring')
   && $conf->config('network_monitoring_system') eq 'Torrus_Internal';
