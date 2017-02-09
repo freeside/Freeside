@@ -25,7 +25,12 @@ if ($enabled) {
     # if there are no tickets the current user could see, always hide it
     my $AnyTickets = RT::Tickets->new($CurrentUser);
     foreach my $status (qw(resolved rejected deleted)) {
-      $AnyTickets->LimitStatus( OPERATOR => '!=', VALUE => $status );
+      $AnyTickets->RT::SearchBuilder::Limit(
+        FIELD => 'Status',
+        OPERATOR => '!=',
+        ENTRYAGGREGATOR => 'AND',
+        VALUE => $status,
+      );
     }
     $enabled = 0 if $AnyTickets->Count == 0;
 
