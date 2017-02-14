@@ -75,7 +75,7 @@
             }
             ( $option => $value );
           }
-          @{ $object->option_fields_listref };
+          @{ $object->option_fields_listref || [] };
 
     },
     'precheck_callback' => sub {
