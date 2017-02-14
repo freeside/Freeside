@@ -2,7 +2,7 @@ package FS::pkg_referral;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh );
 
 @ISA = qw(FS::Record);
 
@@ -106,6 +106,19 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM pkg_referral WHERE NOT EXISTS
+      ( SELECT 1 FROM cust_pkg WHERE cust_pkg.pkgnum = pkg_referral.pkgnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
 }
 
 =back
