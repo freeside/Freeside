@@ -2717,6 +2717,7 @@ sub _token_check_next_recnum {
   my $sth = $dbh->prepare(
     'SELECT '.$tclass->primary_key.
     ' FROM '.$table.
+    " WHERE ( is_tokenized IS NULL OR is_tokenized = '' ) ".
     ' ORDER BY '.$tclass->primary_key.
     ' LIMIT '.$step.
     ' OFFSET '.$$offset

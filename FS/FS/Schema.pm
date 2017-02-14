@@ -1625,6 +1625,8 @@ sub tables_hashref {
         'payip',    'varchar', 'NULL', 15, '', '', 
         'paycardtype', 'varchar', 'NULL',   $char_d, '', '',
 
+        'is_tokenized', 'char', 'NULL', '1', '', '',
+
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
         'censusyear', 'char', 'NULL', 4, '', '',
@@ -1673,6 +1675,7 @@ sub tables_hashref {
                           [ 'ship_locationnum' ],
                           [ 'bill_locationnum' ],
                           [ 'paycardtype' ],
+                          [ 'is_tokenized' ],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'agentnum' ],
@@ -1725,10 +1728,11 @@ sub tables_hashref {
         'paytype',     'varchar', 'NULL',   $char_d, '', '', 
         'payip',       'varchar', 'NULL',        15, '', '', 
         'locationnum',     'int', 'NULL',        '', '', '',
+        'is_tokenized',   'char', 'NULL',         1, '', '', 
       ],
       'primary_key'  => 'custpaybynum',
       'unique'       => [],
-      'index'        => [ [ 'custnum' ] ],
+      'index'        => [ [ 'custnum' ], [ 'is_tokenized' ] ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
@@ -2422,11 +2426,13 @@ sub tables_hashref {
         'manual',       'char',    'NULL',   1, '', '',
         'discount_term','int',     'NULL',  '', '', '',
         'failure_status','varchar','NULL',  16, '', '',
+        'is_tokenized',   'char', 'NULL',    1, '', '', 
       ],
       'primary_key'  => 'paypendingnum',
       'unique'       => [ [ 'payunique' ] ],
       'index'        => [ [ 'custnum' ], [ 'status' ],
                           ['paynum'], ['void_paynum'], ['jobnum'], ['invnum'],
+                          [ 'is_tokenized' ],
                         ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
@@ -2473,7 +2479,8 @@ sub tables_hashref {
         'closed',         'char', 'NULL',       1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'no_auto_apply',  'char', 'NULL',       1, '', '', 
-
+        'is_tokenized',   'char', 'NULL',       1, '', '', 
+          
         # cash/check deposit info fields
         'bank',        'varchar', 'NULL', $char_d, '', '',
         'depositor',   'varchar', 'NULL', $char_d, '', '',
@@ -2491,7 +2498,7 @@ sub tables_hashref {
       'primary_key'  => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
       'index'        => [ ['custnum'], ['paybatch'], ['payby'], ['_date'],
-                          ['usernum'],
+                          ['usernum'], ['is_tokenized'], 
                         ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
@@ -2529,6 +2536,7 @@ sub tables_hashref {
         'paybatch',    'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
         'closed',        'char',  'NULL',       1, '', '', 
         'pkgnum', 'int',   'NULL', '', '', '', #desired pkgnum for pkg-balances
+        'is_tokenized',   'char', 'NULL',       1, '', '', 
 
         # cash/check deposit info fields
         'bank',       'varchar', 'NULL', $char_d, '', '',
@@ -2551,7 +2559,9 @@ sub tables_hashref {
       ],
       'primary_key'  => 'paynum',
       'unique'       => [],
-      'index'        => [ ['custnum'], ['usernum'], ['void_usernum'] ],
+      'index'        => [ ['custnum'], ['usernum'], ['void_usernum'],
+                          ['is_tokenized'],
+                        ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',
@@ -3094,10 +3104,11 @@ sub tables_hashref {
         'processor',  'varchar', 'NULL', $char_d, '', '', # module name
         'auth',       'varchar','NULL',16, '', '', # CC auth number
         'order_number', 'varchar','NULL',$char_d, '', '', # transaction number
+        'is_tokenized',   'char', 'NULL',    1, '', '', 
       ],
       'primary_key'  => 'refundnum',
       'unique'       => [],
-      'index'        => [ ['custnum'], ['_date'], [ 'usernum' ], ],
+      'index'        => [ ['custnum'], ['_date'], [ 'usernum' ], ['is_tokenized'] ],
       'foreign_keys' => [
                           { columns    => [ 'custnum' ],
                             table      => 'cust_main',

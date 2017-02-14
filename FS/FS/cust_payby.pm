@@ -359,6 +359,7 @@ sub check {
     # see parallel checks in check_payinfo_cardtype & payinfo_Mixin::payinfo_check
     my $cardtype = $self->paycardtype;
     if ( $self->tokenized ) {
+      $self->('is_tokenized', 'Y'); #so we don't try to do it again
       if ( $self->paymask =~ /^\d+x/ ) {
         $cardtype = cardtype($self->paymask);
       } else {
@@ -559,6 +560,7 @@ sub check_payinfo_cardtype {
 
   # see parallel checks in cust_payby::check & payinfo_Mixin::payinfo_check
   if ( $self->tokenized($payinfo) ) {
+    $self->set('is_tokenized', 'Y'); #so we don't try to do it again
     if ( $self->paymask =~ /^\d+x/ ) {
       $self->set('paycardtype', cardtype($self->paymask));
     } else {
