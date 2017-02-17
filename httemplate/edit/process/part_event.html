@@ -40,6 +40,7 @@
                                            };
                                 } elsif ( $info->{'type'} eq 'freq' ) {
                                   $value = '0' if !length($value) and !$info->{'allow_blank'};
+                                  $value = '0' if $value =~ /[^\d]/;
                                   $value .= $params->{$cgi_field.'_units'} if length($value);
                                 }
 
