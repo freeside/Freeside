@@ -240,6 +240,7 @@ Example:
 
 % my $url = $opt{'post_url'} || popurl(1)."process/$table.html";
 
+% $js_form_validate = { 'edit_topform' => { 'name' => 'edit_topform', 'errormessage' => 'Please only numeric characters ' } };
   <FORM NAME   = "edit_topform"
         METHOD = POST
         ACTION = "<% $url %>"
@@ -407,6 +408,12 @@ Example:
 %
 %     $include_common{'layer_prefix'} = "$field$fieldnum."
 %       if $layer_prefix_on;
+%
+%     ## set conditionname field values for validation.
+%     if ($field eq 'conditionname') { 
+%       my $validate_field = $field . $fieldnum . '.after_event.run_delay';
+%       $js_form_validate->{edit_topform}{$validate_field} = 'numeric';
+%     }
 %
 %     my @include = 
 %     ( "/elements/$include.html",
@@ -834,7 +841,11 @@ Example:
         : $opt{'html_foot'}
   %>
 
-  <% include("/elements/footer.html") %>
+% my %footerdata = (
+%   'formvalidation' => $js_form_validate,
+% );  
+
+  <% include("/elements/footer.html", %footerdata) %>  
 
 % }
 <%init>
@@ -851,6 +862,8 @@ my $fields = $opt{'fields'}
              #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
              || [ grep { $_ ne $pkey } fields($table) ];
 #my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
+
+my $js_form_validate = {};
 
 my( $mode, $object);
 my $clone = '';

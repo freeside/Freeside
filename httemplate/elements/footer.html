@@ -1,5 +1,40 @@
         </TD>
       </TR>
     </TABLE>
+
+%  if ($opt{'formvalidation'}) { 
+%    my $form_validation = $opt{'formvalidation'};
+%    foreach my $name (sort keys $form_validation) {
+%      my $form = $form_validation->{$name}; 
+    <script>
+      var validator = new FormValidator('<% $name %>', [
+%      foreach my $field (sort keys $form) {      
+        {
+          name: '<%  $field %>',
+          rules: 'numeric'
+        },
+%      }
+      ], 
+          function(errors) { 
+            if (errors.length > 0) { 
+              for (var i = 0; i<= errors.length; i++) {
+                alert ('<% $form_validation->{$name}->{errormessage} %>');
+                  //alert ('<% $form_validation->{$name}->{errormessage} %>' + errors[i].message);
+                return false;
+              }
+            }
+            return true;
+          }
+  );
+    </script>
+%    } 
+%  }
+
   </BODY>
 </HTML>
+
+<%init>
+
+my(%opt) = @_; 
+
+</%init>
