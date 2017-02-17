@@ -1,3 +1,20 @@
+ <%doc>
+
+Example:
+
+  <& /elements/footer.html,  
+    'formname' =>  { #actual name of the form you want validated
+    		      'name'          => # name of the form
+    		      'errormessage'  => # js error message to display
+    		      'fieldname'     => # fieldname is actual name of field to be validated and value is type of validation
+    			         	 # validation types are required, valid_email, min_length(min_length[5]), max_length(max_length[7]),
+    				         # exact_length(exact_length[6]), greater_than(greater_than[4]), less_than(less_than[6]),
+    				         # alpha, alpha_numeric, numeric, valid_ip, is_file_type(is_file_type[gif,png,jpg])
+    			}
+
+   &>
+ </%doc>
+
         </TD>
       </TR>
     </TABLE>
