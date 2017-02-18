@@ -2,6 +2,7 @@ package FS::cust_bill_pkg_discount;
 use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
+use FS::Record qw( dbh );
 
 =head1 NAME
 
@@ -183,6 +184,19 @@ sub description {
              );
   }
   return $desc;
+}
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM cust_bill_pkg_discount WHERE NOT EXISTS
+      ( SELECT 1 FROM cust_bill_pkg WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_discount.billpkgnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
 }
 
 =back
