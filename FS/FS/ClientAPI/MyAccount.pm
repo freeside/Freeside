@@ -1007,7 +1007,7 @@ sub validate_payment {
     }
 
     $payinfo =~ s/\D//g;
-    $payinfo =~ /^(\d{13,16}|\d{8,9})$/
+    $payinfo =~ /^(\d{13,19}|\d{8,9})$/
       or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
     $payinfo = $1;
 

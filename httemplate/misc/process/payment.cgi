@@ -129,7 +129,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     $payinfo = $cgi->param('payinfo');
 
     $payinfo =~ s/\D//g;
-    $payinfo =~ /^(\d{13,16}|\d{8,9})$/
+    $payinfo =~ /^(\d{13,19}|\d{8,9})$/
       or errorpage(gettext('invalid_card'));
     $payinfo = $1;
     validate($payinfo)
