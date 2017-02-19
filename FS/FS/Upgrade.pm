@@ -559,6 +559,8 @@ sub upgrade_schema {
 sub upgrade_schema_data {
   my %opt = @_;
 
+  #auto-find tables/classes with an _update_schema method?
+
   tie my %hash, 'Tie::IxHash', 
 
     #fix classnum character(1)
@@ -568,6 +570,9 @@ sub upgrade_schema_data {
     #remove possible dangling records
     'password_history' => [],
     'cust_pay_pending' => [],
+    #remove records referencing removed things with their FKs
+    'pkg_referral' => [],
+    'cust_bill_pkg_discount' => [],
   ;
 
   \%hash;
