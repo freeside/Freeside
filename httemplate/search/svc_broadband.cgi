@@ -149,8 +149,14 @@ foreach my $pkg_field ( @pkg_fields ) {
   #not the most efficient to do it every field, but this is of niche use. so far
   push @fields_pkg, sub { my $svc_x = shift;
                           my $cust_pkg = $svc_x->cust_svc->cust_pkg or return '';
-                          my $value = $cust_pkg->get($pkg_field);#closures help alot
-                          $value ? time2str('%b %d %Y', $value ) : '';
+                          my $value;
+                          if ($pkg_field eq 'package') {
+                            $value = $cust_pkg->part_pkg->pkg;
+                          }
+                          else {
+                            $value = $cust_pkg->get($pkg_field);#closures help alot 
+                            $value ? time2str('%b %d %Y', $value ) : '';
+                          }
                         };
 
   push @blank_pkg, '';
