@@ -59,9 +59,16 @@ for my $param ( @scalars ) {
 }
 
 #lists
-for my $param (qw( classnum refnum tagnum pkg_classnum )) {
+for my $param (qw( classnum refnum pkg_classnum )) {
   $search_hash{$param} = [ $cgi->param($param) ];
 }
+
+#tags
+my $params = $cgi->Vars;
+$search_hash{'tagnum'} = [
+  map { /^tagnum(\d+)/ && $1 }
+    grep { /^tagnum(\d+)/ && $cgi->param($_) } keys %$params
+];
 
 ###
 # parse dates
