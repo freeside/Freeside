@@ -72,6 +72,16 @@
 </TABLE>
 </BR>
 
+% my $discount_cust_pkg = $curuser->access_right('Discount customer package');
+% my $waive_setup_fee   = $curuser->access_right('Waive setup fee');
+%
+% if ( $discount_cust_pkg || $waive_setup_fee ) {
+  <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
+  <% ntable("#cccccc") %>
+    <& /elements/tr-select-pkg-discount.html, disable_recur => 1, &>
+  </TABLE><BR>
+
+% }
 
 <FONT CLASS="fsinnerbox-title"><% mt('Location') |h %></FONT>
 <% ntable('#cccccc') %>

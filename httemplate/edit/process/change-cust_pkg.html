@@ -40,6 +40,16 @@ if ( $cgi->param('locationnum') == -1 ) {
   $change{'cust_location'} = $cust_location;
 }
 
+if ( $cgi->param('setup_discountnum') =~ /^(-?\d+)$/ ) { 
+  if ( $1 == -2 ) {
+    $change{waive_setup} = 'Y';
+  } else {
+    $change{setup_discountnum} = $1;
+    $change{setup_discountnum_amount} = $cgi->param('setup_discountnum_amount');
+    $change{setup_discountnum_percent} = $cgi->param('setup_discountnum_percent');
+  }
+}
+
 my $error;
 my $now = time;
 if (defined($cgi->param('contract_end'))) {
@@ -68,7 +78,9 @@ unless ($error) {
         $change_to->pkgpart      == $change{'pkgpart'} and
         $change_to->locationnum  == $change{'locationnum'} and
         $change_to->quantity     == $change{'quantity'} and
-        $change_to->contract_end == $change{'contract_end'}
+        $change_to->contract_end == $change{'contract_end'} and
+        $change_to->waive_setup  == $change{'waive_setup'} and
+        !$usagechanged
       ) {
         %change = ( 'cust_pkg' => $change_to );
       }

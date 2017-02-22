@@ -2363,13 +2363,15 @@ sub change {
     $same_pkgpart = 0;
   }
 
+  $self->set('waive_setup', $opt->{'waive_setup'}) if $opt->{'waive_setup'};
+
   # Before going any further here: if the package is still in the pre-setup
   # state, it's safe to modify it in place. No need to charge/credit for 
   # partial period, transfer usage pools, copy invoice details, or change any
   # dates. We DO need to "transfer" services (from the package to itself) to
   # check their validity on the new pkgpart.
   if ( ! $self->setup and ! $opt->{cust_pkg} and ! $opt->{cust_main} ) {
-    foreach ( qw( locationnum pkgpart quantity refnum salesnum ) ) {
+    foreach ( qw( locationnum pkgpart quantity refnum salesnum waive_setup ) ) {
       if ( length($opt->{$_}) ) {
         $self->set($_, $opt->{$_});
       }
