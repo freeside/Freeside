@@ -1968,7 +1968,19 @@ sub check {
     validate($payinfo)
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
-    my $cardtype = cardtype($payinfo);
+    my $cardtype = $self->paycardtype;
+    if ( $payinfo =~ /^99\d{14}$/ ) {
+      $self->('is_tokenized', 'Y'); #so we don't try to do it again
+      if ( $self->paymask =~ /^\d+x/ ) {
+        $cardtype = cardtype($self->paymask);
+      } else {
+        #return "paycardtype required ".
+        #       "(can't derive from a token and no paymask w/prefix provided)"
+        #  unless $cardtype;
+      }
+    } else {
+      $cardtype = cardtype($self->payinfo);
+    }
 
     return gettext('unknown_card_type') if $cardtype eq 'Unknown';
 
