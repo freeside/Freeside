@@ -5560,6 +5560,23 @@ sub forward_emails {
 }
 
 # Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_schema {  # class method
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    UPDATE cust_pkg SET change_to_pkgnum = NULL
+      WHERE change_to_pkgnum IS NOT NULL
+        AND NOT EXISTS ( SELECT 1 FROM cust_pkg AS ctcp
+                           WHERE ctcp.pkgnum = cust_pkg.change_to_pkgnum
+                       )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
+}
+
+# Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
   $class->_upgrade_otaker(%opts);

@@ -567,6 +567,8 @@ sub upgrade_schema_data {
     #remove records referencing removed things with their FKs
     'pkg_referral' => [],
     'cust_bill_pkg_discount' => [],
+    #update records referencing removed things with their FKs
+    'cust_pkg' => [],
   ;
 
   \%hash;
