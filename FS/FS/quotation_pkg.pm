@@ -258,25 +258,20 @@ on failure.
 
 sub estimate {
   my $self = shift;
-  my $part_pkg = $self->part_pkg;
-  my $quantity = $self->quantity || 1;
-  my ($unitsetup, $unitrecur);
-  # calculate base fees
-  if ( $self->waive_setup eq 'Y' || $self->{'_NO_SETUP_KLUDGE'} ) {
-    $unitsetup = '0.00';
-  } else {
-    $unitsetup = $part_pkg->option('setup_fee',1) || '0.00'; # XXX 3.x only
-  }
-  if ( $self->{'_NO_RECUR_KLUDGE'} ) {
-    $unitrecur = '0.00';
-  } else {
-    $unitrecur = $part_pkg->base_recur;
+
+  my( $unitsetup, $unitrecur ) = (0, 0);
+  foreach my $part_pkg ( $self->part_pkg->self_and_bill_linked ) {
+
+    $unitsetup += $part_pkg->option('setup_fee',1) || '0' # 3.x only
+      unless $self->waive_setup eq 'Y' || $self->{'_NO_SETUP_KLUDGE'};
+
+    $unitrecur += $part_pkg->base_recur
+      unless $self->{'_NO_RECUR_KLUDGE'};
+
   }
 
-  #XXX add-on packages
-
-  $self->set('unitsetup', $unitsetup);
-  $self->set('unitrecur', $unitrecur);
+  $self->set('unitsetup', sprintf('%.2f', $unitsetup) );
+  $self->set('unitrecur', sprintf('%.2f', $unitrecur) );
   my $error = $self->replace;
   return $error if $error;
 
