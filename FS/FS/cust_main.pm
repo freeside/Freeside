@@ -1970,7 +1970,7 @@ sub check {
 
     my $cardtype = $self->paycardtype;
     if ( $payinfo =~ /^99\d{14}$/ ) {
-      $self->('is_tokenized', 'Y'); #so we don't try to do it again
+      $self->set('is_tokenized', 'Y'); #so we don't try to do it again
       if ( $self->paymask =~ /^\d+x/ ) {
         $cardtype = cardtype($self->paymask);
       } else {
