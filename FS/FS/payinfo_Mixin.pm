@@ -199,7 +199,7 @@ sub payinfo_check {
 
     # see parallel checks in cust_payby::check & cust_payby::check_payinfo_cardtype
     if ( $self->tokenized ) {
-      $self->('is_tokenized', 'Y'); #so we don't try to do it again
+      $self->set('is_tokenized', 'Y'); #so we don't try to do it again
       if ( $self->paymask =~ /^\d+x/ ) {
         $self->set('paycardtype', cardtype($self->paymask));
       } else {

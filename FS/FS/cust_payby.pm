@@ -359,7 +359,7 @@ sub check {
     # see parallel checks in check_payinfo_cardtype & payinfo_Mixin::payinfo_check
     my $cardtype = $self->paycardtype;
     if ( $self->tokenized ) {
-      $self->('is_tokenized', 'Y'); #so we don't try to do it again
+      $self->set('is_tokenized', 'Y'); #so we don't try to do it again
       if ( $self->paymask =~ /^\d+x/ ) {
         $cardtype = cardtype($self->paymask);
       } else {
