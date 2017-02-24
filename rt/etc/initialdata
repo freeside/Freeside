@@ -798,6 +798,11 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
 #       ScripCondition => 'On Correspond',
 #       ScripAction    => 'Notify Requestors And Ccs',
 #       Template       => 'Correspondence in HTML' },
+    {  Description    => 'On Correspond Notify Requestors, Ccs, and Other Recipients',
+       ScripCondition => 'On Correspond',
+       ScripAction    => 'Notify Requestors, Ccs, and Other Recipients',
+       Template       => 'Correspondence', },
+
     {  Description    => 'On Correspond Open Tickets',
        ScripCondition => 'On Correspond',
        ScripAction    => 'Open Tickets',
@@ -838,6 +843,10 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
        ScripCondition => 'On Forward Ticket',
        ScripAction    => 'Send Forward',
        Template       => 'Forward Ticket' },
+    {  Description    => 'On Correspond, cancel future resolve',
+       ScripCondition => 'On Correspond',
+       ScripAction    => 'Cancel Scheduled Resolve',
+       Template       => 'Blank' },
 );
 
 @ACL = (
