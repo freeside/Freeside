@@ -152,6 +152,7 @@ foreach my $pkg_field ( @pkg_fields ) {
                           my $value;
                           if ($pkg_field eq 'package') {
                             $value = $cust_pkg->part_pkg->pkg;
+                            #$value = $cust_pkg->pkg_label;
                           }
                           else {
                             $value = $cust_pkg->get($pkg_field);#closures help alot 
