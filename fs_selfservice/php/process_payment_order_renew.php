@@ -68,7 +68,7 @@ $session_id = $response['session_id'];
   <BODY>
     <H1>Renew Early</H1>
 
-    Renewal processed sucessfully.
+    Renewal processed successfully.
 
   </BODY>
 </HTML>

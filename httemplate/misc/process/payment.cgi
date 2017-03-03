@@ -238,7 +238,7 @@ if ( $cgi->param('batch') ) {
 
     #and generate an invoice for it now too
     $error = $cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
-    errorpage("payment processed and fee ordered sucessfully, but error billing fee: $error")
+    errorpage("payment processed and fee ordered successfully, but error billing fee: $error")
       if $error;
 
   }
