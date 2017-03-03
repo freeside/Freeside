@@ -12,7 +12,7 @@ sub description { "Don't run this event again after it has completed successfull
 sub implicit_flag { 10; }
 
 sub remove_warning {
-  'Are you sure you want to remove this condition?  Doing so will allow this event to run every time the other conditions are satisfied, even if it has already run sucessfully.'; #better error msg?
+  'Are you sure you want to remove this condition?  Doing so will allow this event to run every time the other conditions are satisfied, even if it has already run successfully.'; #better error msg?
 }
 
 sub condition {
