@@ -240,7 +240,7 @@ Example:
 
 % my $url = $opt{'post_url'} || popurl(1)."process/$table.html";
 
-% $js_form_validate = { 'edit_topform' => { 'name' => 'edit_topform', 'errormessage' => 'Please only numeric characters ' } };
+% $js_form_validate = { 'edit_topform' => { 'name' => 'edit_topform' } };
   <FORM NAME   = "edit_topform"
         METHOD = POST
         ACTION = "<% $url %>"
@@ -412,7 +412,8 @@ Example:
 %     ## set conditionname field values for validation.
 %     if ($field eq 'conditionname') { 
 %       my $validate_field = $field . $fieldnum . '.after_event.run_delay';
-%       $js_form_validate->{edit_topform}{$validate_field} = 'numeric';
+%       $js_form_validate->{edit_topform}->{validate_fields}{$validate_field} = 'digits: true';
+%       $js_form_validate->{edit_topform}->{error_message}{$validate_field} = 'Please only enter numbers here.';
 %     }
 %
 %     my @include = 
