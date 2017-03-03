@@ -47,6 +47,7 @@ Example:
       <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
       <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
       <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.validate.min.js"></SCRIPT>
 %     if ( $FS::CurrentUser::CurrentUser->option('printtofit') ) {
       <SCRIPT SRC="<% $fsurl %>elements/printtofit.js"></SCRIPT>
 %     }
@@ -55,8 +56,6 @@ Example:
     <% include('rs_init_object.html') |n %>
     <script type="text/javascript" src="<% $fsurl %>elements/topreload.js"></script>
     <% $head |n %>
-
-    <SCRIPT SRC="<% $fsurl %>elements/validate.min.js"></SCRIPT>
 
 %# announce our base path, and the Mason comp path of this page
   <script type="text/javascript">

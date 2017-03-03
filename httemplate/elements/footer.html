@@ -4,12 +4,18 @@ Example:
 
   <& /elements/footer.html,  
     'formname' =>  { #actual name of the form you want validated
-    		      'name'          => # name of the form
-    		      'errormessage'  => # js error message to display
-    		      'fieldname'     => # fieldname is actual name of field to be validated and value is type of validation
-    			         	 # validation types are required, valid_email, min_length(min_length[5]), max_length(max_length[7]),
-    				         # exact_length(exact_length[6]), greater_than(greater_than[4]), less_than(less_than[6]),
-    				         # alpha, alpha_numeric, numeric, valid_ip, is_file_type(is_file_type[gif,png,jpg])
+    		      'name'             => # name of the form
+    		      'validate_fields'  => # list of key/value pairs with key being name of field to be validated and value is type
+                                    # of validation
+                                    # validation types are 
+                                    # required: true, email: true, url: true, number: true, digits: true
+                                    # validation size types are
+                                    # minlength: n, maxlength: n, rangelength: [n, n]
+                                    # validation value types are 
+                                    # min: n, max: n, range: [n, n],
+              'error_message'    => # list of key/value pairs with key being name of field to be validated and value is error
+                                    # message to display
+
     			}
 
    &>
@@ -21,28 +27,29 @@ Example:
 
 %  if ($opt{'formvalidation'}) { 
 %    my $form_validation = $opt{'formvalidation'};
-%    foreach my $name (sort keys $form_validation) {
-%      my $form = $form_validation->{$name}; 
+%    foreach my $name (sort keys %$form_validation) {
+%      my $validate_fields = $form_validation->{$name}->{validate_fields}; 
+%      my $error_message = $form_validation->{$name}->{error_message};
     <script>
-      var validator = new FormValidator('<% $name %>', [
-%      foreach my $field (sort keys $form) {      
-        {
-          name: '<%  $field %>',
-          rules: 'numeric'
+      $("form[name='<% $name %>']").validate({
+        rules: {
+%   foreach my $field (sort keys %$validate_fields) {      
+           '<%  $field %>': {
+              <% $validate_fields->{$field} %>
+           },
+%   }
         },
-%      }
-      ], 
-          function(errors) { 
-            if (errors.length > 0) { 
-              for (var i = 0; i<= errors.length; i++) {
-                alert ('<% $form_validation->{$name}->{errormessage} %>');
-                  //alert ('<% $form_validation->{$name}->{errormessage} %>' + errors[i].message);
-                return false;
-              }
-            }
-            return true;
-          }
-  );
+%   if ($error_message) {
+        messages: {
+%     foreach my $field (sort keys %$error_message) {      
+           '<%  $field %>': "<% $error_message->{$field} %>",
+%     }
+        },
+%   }
+        submitHandler: function(form) {
+          form.submit();
+        }
+      });
     </script>
 %    } 
 %  }
