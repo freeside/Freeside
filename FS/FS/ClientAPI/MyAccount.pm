@@ -1187,7 +1187,7 @@ sub do_process_payment {
 
     #and generate an invoice for it now too
     $error = $cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
-    return { 'error' => "payment processed and fee ordered sucessfully, but error billing fee: $error" }
+    return { 'error' => "payment processed and fee ordered successfully, but error billing fee: $error" }
       if $error;
 
   }
