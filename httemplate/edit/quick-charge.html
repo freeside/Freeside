@@ -449,10 +449,19 @@ function bill_now_changed (what) {
 
 </SCRIPT>
 
+%my %footer_args = (
+%    formvalidation => {
+%        QuickChargeForm => {
+%            validate_fields => {
+%                quantity => 'digits: true, min: 1, required: true',
+%            },
+%        },
+%    },
+%);
 % if ( $quotationnum ) {
-  <& /elements/footer.html &>
+  <& /elements/footer.html, %footer_args &>
 % } else {
-  <& /elements/footer-cust_main.html &>
+  <& /elements/footer-cust_main.html, %footer_args &>
 % }
 <%init>
 
