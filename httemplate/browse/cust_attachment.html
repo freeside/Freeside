@@ -11,10 +11,7 @@
                     <INPUT TYPE="hidden" NAME="orderby" VALUE="$orderby">
                     <INPUT TYPE="hidden" NAME="show_deleted" VALUE="$disabled">!
                     , 
-                 'query'       => { 'table'     => 'cust_attachment',
-                                    'hashref'   => $hashref,
-                                    'order_by' => 'ORDER BY '.$orderby,
-                                  },
+                 'query'       => $query,
                  'count_query' => $count_query,
                  'header' => [ selflink('#',orderby => 'attachnum'),
                                selflink('Customer',orderby => 'custnum'),
@@ -90,14 +87,20 @@ else {
   }
 }
 
-my $hashref = $disabled ? 
-  { disabled => { op => '>', value => 0 } } :
-  { disabled => '' };
-
-my $count_query = 'SELECT COUNT(*) FROM cust_attachment WHERE '. ($disabled ?
-  'disabled > 0' : 'disabled IS NULL');
-
 my $orderby = $cgi->param('orderby') || 'custnum';
+
+my $query = {
+    table     => 'cust_attachment',
+    hashref   => { disabled => $disabled ? { op => '>', value => 0 } : undef, },
+    order_by  => "ORDER BY $orderby",
+    addl_from => 'JOIN cust_main USING (custnum)',
+    extra_sql => ' AND ' . $curuser->agentnums_sql,
+};
+
+my $count_query = 'SELECT COUNT(*) FROM cust_attachment'
+  . ' JOIN cust_main USING (custnum)'
+  . ' WHERE ' . $curuser->agentnums_sql
+  . ' AND disabled ' . ( $disabled ? '> 0' : 'IS NULL' );
 
 my $sub_cust = sub {
   my $c = qsearchs('cust_main', { custnum => shift->custnum } );
