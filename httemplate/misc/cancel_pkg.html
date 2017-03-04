@@ -8,6 +8,8 @@
 
 <BR>
 <% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment(cust_pkg=>$cust_pkg) ) %>
+<BR>
+<font color="red"><% $unprovision_warning |h %></font>
 <table style="background-color: #cccccc; border-spacing: 2; width: 100%">
 
 % my $date_init = 0;
@@ -190,6 +192,23 @@ my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
   or die "Unknown pkgnum: $pkgnum";
 
 my $part_pkg = $cust_pkg->part_pkg;
+
+my $unprovision_warning = '';
+{
+    my @services_w_export;
+    for ( $cust_pkg->cust_svc ) {
+        push( @services_w_export, ($_->label)[0] . ': ' . ($_->label)[1], )
+          if $_->part_svc->export_svc;
+    }
+    if ( @services_w_export ) {
+        $unprovision_warning = 'NOTE: This package has ' . @services_w_export
+          . ' ' . PL( "service", @services_w_export )
+          . ' that will be unprovisioned';
+        $unprovision_warning .= ' (' . join( ', ', @services_w_export, ) . ')'
+          if @services_w_export < 10;
+        $unprovision_warning .= '.';
+    }
+}
 
 $date ||= $cust_pkg->get($method);
 $date ||= time;
