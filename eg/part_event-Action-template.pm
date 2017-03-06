@@ -48,7 +48,7 @@ sub do_action {
   #do your action
   
   #die "Error: $error";
-  return 'Null example action completed sucessfully.';
+  return 'Null example action completed successfully.';
 
 }
 
