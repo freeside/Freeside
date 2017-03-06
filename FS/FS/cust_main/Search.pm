@@ -358,13 +358,15 @@ sub smart_search {
 
       #substring
 
-      my @company_hashrefs = (
-        { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
-        { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
-      );
+      my @company_hashrefs = ();
+      if ( length($value) >= 3 ) {
+        @company_hashrefs = (
+          { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
+          { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
+        );
+      }
 
       my @hashrefs = ();
-
       if ( $first && $last ) {
 
         @hashrefs = (
@@ -373,12 +375,13 @@ sub smart_search {
           },
         );
 
-      } else {
+      } elsif ( length($value) >= 3 ) {
 
         @hashrefs = (
           { 'first'        => { op=>'ILIKE', value=>"%$value%" }, },
           { 'last'         => { op=>'ILIKE', value=>"%$value%" }, },
         );
+
       }
 
       foreach my $hashref ( @company_hashrefs, @hashrefs ) {
@@ -393,7 +396,7 @@ sub smart_search {
 
       }
 
-      if ( $conf->exists('address1-search') ) {
+      if ( $conf->exists('address1-search') && length($value) >= 3 ) {
 
         push @cust_main, qsearch( {
           table     => 'cust_main',
