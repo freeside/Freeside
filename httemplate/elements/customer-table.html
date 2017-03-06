@@ -105,6 +105,9 @@ and probably should be cleaned up more before being used by anything else.
       var customer = document.getElementById('customer'+searchrow);
       var customer_select = document.getElementById('cust_select'+searchrow);
 
+      var postPaymentBtn = document.getElementById('btnsubmit');
+      postPaymentBtn.disabled = false;
+
       display_custnum_obj.disabled = false;
       display_custnum_obj.style.backgroundColor = '#ffffff';
       customer.disabled = false;
@@ -327,6 +330,9 @@ and probably should be cleaned up more before being used by anything else.
 
         custnum_obj.value = 'Multiple'; // or something
         custnum_obj.style.color = '#ff0000';
+
+        var postPaymentBtn = document.getElementById('btnsubmit');
+        postPaymentBtn.disabled = true;
 
         //blank the current list
         customer_select.options.length = 0;
