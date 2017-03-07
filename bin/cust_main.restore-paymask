@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch dbh );
+
+adminsuidsetup shift
+  or die "Usage: cust_main.restore-paymask freeside_username\n";
+
+foreach my $cust_main ( 
+  qsearch({ 'table' => 'cust_main',
+            'extra_sql' => q[WHERE payby IN ('CARD','DCRD') AND paymask IS NULL OR paymask = 'N/A (tokenized)'],
+         })
+) {
+
+  my $custnum = $cust_main->custnum;
+
+  my $paymask = FS::Record->scalar_sql(qq[
+    SELECT paymask FROM h_cust_main WHERE custnum = $custnum AND history_action = 'replace_old' AND paymask IS NOT NULL AND paymask != 'N/A (tokenized)' ORDER BY historynum desc LIMIT 1
+  ]);
+
+  #dbh->do(
+  print
+    qq[UPDATE cust_main SET paymask = '$paymask' WHERE custnum = $custnum;]
+  ."\n"
+  ;
+
+  #print "$custnum: $paymask\n";
+}
+
+1;
