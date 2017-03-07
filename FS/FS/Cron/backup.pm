@@ -58,7 +58,9 @@ sub backup {
   if ( $scpdest ) {
     eval "use Net::SCP qw(scp);";
     backup_log_and_die($filename,$@) if $@;
-    scp("/var/tmp/$database.$ext", "$scpdest/$filename.$ext");
+    my $scp = new Net::SCP;
+    $scp->scp("/var/tmp/$database.$ext", "$scpdest/$filename.$ext")
+      or backup_log_and_die($filename, $scp->{errstr});
   }
 
   unlink "/var/tmp/$database.$ext" or backup_log_and_die($filename,$!); #or just warn?
