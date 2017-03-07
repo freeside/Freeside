@@ -67,8 +67,8 @@ from/subject/body cgi params
     <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% $msg_template->msgnum %>">
 %   # kludge these through hidden inputs because they're not really part
 %   # of the template, but should be sticky during draft editing
-    <INPUT TYPE="hidden" NAME="from_name" VALUE="<% $cgi->param('from_name') %>">
-    <INPUT TYPE="hidden" NAME="from_addr" VALUE="<% $cgi->param('from_addr') %>">
+    <INPUT TYPE="hidden" NAME="from_name" VALUE="<% scalar($cgi->param('from_name')) |h %>">
+    <INPUT TYPE="hidden" NAME="from_addr" VALUE="<% scalar($cgi->param('from_addr')) |h %>">
 
 %   if ( !$msg_template->disabled ) {
       <& /elements/tr-td-label.html, 'label' => 'Template:' &>
