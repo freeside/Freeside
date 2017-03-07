@@ -355,7 +355,11 @@ if ( !$cgi->param('preview') ) {
     my $cust_msg = $msg_template->prepare(%msgopts);
     $from = $cust_msg->env_from;
     $html_body = $cust_msg->preview;
-    if ( $cust_msg->header =~ /^subject: (.*)/mi ) {
+#hmm.  this came in with the #37098 rewrite, but isn't on v3 :/
+# causing problems with mangling subject of unrelated things
+# should probably decode instead of ignore the UTF-8 thing, but
+# this at least masks the ugliness for now :/
+    if ( $cust_msg->header =~ /^subject: (.*)/mi && $1 !~ /^\=\?UTF-8/ ) {
       $subject = $1;
     }
   }
