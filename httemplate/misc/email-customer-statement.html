@@ -53,7 +53,7 @@ my $post_search_hook = sub {
   # set from/subject/html_body based on date range
 
   $cgi->param('from',
-    $opt{'conf'}->config('invoice_from')
+    $opt{'conf'}->config('invoice_from', $cust_main->agentnum)
   );
 
   # shortcut for common text
@@ -63,18 +63,13 @@ my $post_search_hook = sub {
     ($cgi->param('end_date') ? ' through ' : '') .
     $cgi->param('end_date');
 
-  $cgi->param('subject',
-    $opt{'conf'}->config('company_name') . 
-    ' statement for ' .
-    $summary_text
-  );
+  my $company_name = $opt{'conf'}->config('company_name', $cust_main->agentnum);
+  my $subject = "$company_name statement for $summary_text";
+
+  $cgi->param('subject', $subject);
 
   $cgi->param('body',
-    '<P>' .
-    $opt{'conf'}->config('company_name') . 
-    ' statement of charges and payments for ' .
-    $summary_text . 
-    "</P>" .
+    "<P>$subject</P>".
     include('/elements/customer-statement.html',
       'history' => [ 
         $cust_main->payment_history(
