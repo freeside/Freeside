@@ -29,7 +29,7 @@ sub rt_daily {
 
   # RT_External installations should have their own cron scripts for this
   my $system = $FS::TicketSystem::system;
-  return if $system ne 'RT_Internal';
+  return if !defined($system) || $system ne 'RT_Internal';
 
   # if -d or -y is in use, bail out.  There's no reliable way to tell RT 
   # to use an alternate system time.
