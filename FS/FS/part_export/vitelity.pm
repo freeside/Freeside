@@ -1,33 +1,35 @@
 package FS::part_export::vitelity;
+use base qw( FS::part_export );
 
-use vars qw(@ISA %info);
+use vars qw( %info );
 use Tie::IxHash;
-use FS::Record qw(qsearch dbh);
-use FS::part_export;
+use FS::Record qw( qsearch dbh );
 use FS::phone_avail;
 
-@ISA = qw(FS::part_export);
-
 tie my %options, 'Tie::IxHash',
-  'login'         => { label=>'Vitelity API login' },
-  'pass'          => { label=>'Vitelity API password' },
-  'dry_run'       => { label=>"Test mode - don't actually provision" },
-  'routesip'      => { label=>'routesip (optional sub-account)' },
-  'type'	  => { label=>'type (optional DID type to order)' },
-  'fax'      => { label=>'vfax service', type=>'checkbox' },
-  'restrict_selection' => { type=>'select',
-			    label=>'Restrict DID Selection', 
-			    options=>[ '', 'tollfree', 'non-tollfree' ],
-			 }
-			    
+  'login'              => { label=>'Vitelity API login' },
+  'pass'               => { label=>'Vitelity API password' },
+  'routesip'           => { label=>'routesip (optional sub-account)' },
+  'type'               => { label=>'type (optional DID type to order)' },
+  'fax'                => { label=>'vfax service', type=>'checkbox' },
+  'restrict_selection' => { type    => 'select',
+                            label   => 'Restrict DID Selection', 
+                            options => [ '', 'tollfree', 'non-tollfree' ],
+                          },
+  'dry_run'            => { label => "Test mode - don't actually provision",
+                            type  => 'checkbox',
+                          },
+  'disable_e911'       => { label => "Disable E911 provisioning",
+                            type  => 'checkbox',
+                          },
 ;
 
 %info = (
-  'svc'     => 'svc_phone',
-  'desc'    => 'Provision phone numbers to Vitelity',
-  'options' => \%options,
+  'svc'        => 'svc_phone',
+  'desc'       => 'Provision phone numbers to Vitelity',
+  'options'    => \%options,
   'no_machine' => 1,
-  'notes'   => <<'END'
+  'notes'      => <<'END'
 Requires installation of
 <a href="http://search.cpan.org/dist/Net-Vitelity">Net::Vitelity</a>
 from CPAN.
@@ -55,8 +57,8 @@ sub get_dids {
     return [] if ( $tollfree[0] eq 'noneavailable' || $tollfree[0] eq 'none');
 
     foreach my $did ( @tollfree ) {
-	$did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
-	push @ret, $did;
+        $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+        push @ret, $did;
     }
 
     my @sorted_ret = sort @ret;
@@ -65,9 +67,9 @@ sub get_dids {
   } elsif ( $opt{'ratecenter'} && $opt{'state'} ) { 
 
     my %flushopts = ( 'state' => $opt{'state'}, 
-		    'ratecenter' => $opt{'ratecenter'},
-		    'exportnum' => $self->exportnum
-		  );
+                    'ratecenter' => $opt{'ratecenter'},
+                    'exportnum' => $self->exportnum
+                  );
     FS::phone_avail::flush( \%flushopts );
       
     local $SIG{HUP} = 'IGNORE';
@@ -124,7 +126,7 @@ sub get_dids {
             'hashref'  => { 'exportnum'   => $self->exportnum,
                             'countrycode' => '1', # vitelity is US/CA only now
                             'name'         => $opt{'ratecenter'},
-			    'state'	  => $opt{'state'},
+                            'state'          => $opt{'state'},
                           },
             'order_by' => 'ORDER BY npa, nxx, station',
           })
@@ -205,7 +207,7 @@ sub get_dids {
       }
 
       foreach my $did ( @dids ) {
-	$did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+        $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
         my($npa, $nxx, $station) = ($1, $2, $3);
         $npa{$npa}++;
 
@@ -263,6 +265,10 @@ sub _export_insert {
 
   #we want to provision and catch errors now, not queue
 
+  ###
+  # 1. provision the DID
+  ###
+
   my %vparams = ( 'did' => $svc_phone->phonenum );
   $vparams{'routesip'} = $self->option('routesip') 
     if defined $self->option('routesip');
@@ -275,9 +281,9 @@ sub _export_insert {
   # this is OK as Vitelity for now is US/CA only; it's not a hack
   $command = 'gettollfree' if $vparams{'did'} =~ /^800|^888|^877|^866|^855/;
 
-  if($self->option('fax')) {
-	$command = 'getdid';
-	$success = 'ok';
+  if ($self->option('fax')) {
+    $command = 'getdid';
+    $success = 'ok';
   }
   
   my $result = $self->vitelity_command($command,%vparams);
@@ -286,7 +292,66 @@ sub _export_insert {
     return "Error running Vitelity $command: $result";
   }
 
+  ###
+  # 2. Provision CNAM
+  ###
+
+  my $cnam_result = $self->vitelity_command('cnamenable',
+                                              'did'=>$svc_phone->phonenum,
+                                           );
+  if ( $result ne 'ok' ) {
+    #we already provisioned the DID, so...
+    warn "Vitelity error enabling CNAM for ". $svc_phone->phonenum. ": $result";
+  }
+
+  ###
+  # 3. Provision E911
+  ###
+
+  my $e911_error = $self->e911_send($svc_phone);
+
+  if ( $e911_error =~ /^(missingdata|invalid)/i ) {
+    #but we already provisioned the DID, so:
+    $self->vitelity_command('removedid', 'did'=> $svc_phone->phonenum,);
+    #and check the results?  if it failed, then what?
+
+    return $e911_error;
+  }
+
   '';
+}
+
+sub e911send {
+  my($self, $svc_phone) = (shift, shift);
+
+  return '' if $self->option('disable_e911');
+
+  my %location = $svc_phone->location_hash;
+  my %e911send = (
+    'did'     => $svc_phone->phonenum,
+    'address' => $location{'address1'},
+    'city'    => $location{'city'},
+    'state'   => $location{'state'},
+    'zip'     => $location{'zip'},
+  );
+  if ( $svc_phone->phone_name ) {
+    $e911send{'name'} = $svc_phone->phone_name;
+  } else {
+    my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
+    $e911send{'name'} = $cust_main->company || $cust_main->first. ' '.
+                                               $cust_main->get('last');
+  }
+  if ( $location{address2} =~ /^\s*(\w+)\W*(\d+)\s*$/ ) {
+    $e911send{'unittype'} = $1;
+    $e911send{'unitnumber'} = $2;
+  }
+
+  my $e911_result = $self->vitelity_command('e911send', %e911send);
+
+  return '' unless $result =~ /^(missingdata|invalid)/i;
+
+  return "Vitelity error provisioning E911 for". $svc_phone->phonenum.
+           ": $result";
 }
 
 sub _export_replace {
@@ -295,26 +360,26 @@ sub _export_replace {
   # Call Forwarding
   if( $old->forwarddst ne $new->forwarddst ) {
       my $result = $self->vitelity_command('callfw',
-	'did'           => $old->phonenum,
-	'forward'	=> $new->forwarddst ? $new->forwarddst : 'none',
+        'did'           => $old->phonenum,
+        'forward'        => $new->forwarddst ? $new->forwarddst : 'none',
       );
       if ( $result ne 'ok' ) {
-	return "Error running Vitelity callfw: $result";
+        return "Error running Vitelity callfw: $result";
       }
   }
 
   # vfax forwarding emails
   if( $old->email ne $new->email && $self->option('fax') ) {
       my $result = $self->vitelity_command('changeemail',
-	'did'           => $old->phonenum,
-	'emails'	=> $new->email ? $new->email : '',
+        'did'           => $old->phonenum,
+        'emails'        => $new->email ? $new->email : '',
       );
       if ( $result ne 'ok' ) {
-	return "Error running Vitelity changeemail: $result";
+        return "Error running Vitelity changeemail: $result";
       }
   }
 
-  '';
+  $self->e911_send($new);
 }
 
 sub _export_delete {
@@ -334,6 +399,8 @@ sub _export_delete {
   if ( $result ne 'success' ) {
     return "Error running Vitelity removedid: $result";
   }
+
+  return '' if $self->option('disable_e911');
 
   '';
 }
