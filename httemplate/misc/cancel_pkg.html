@@ -9,7 +9,11 @@
 <BR>
 <% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment(cust_pkg=>$cust_pkg) ) %>
 <BR>
-<font color="red"><% $unprovision_warning |h %></font>
+<font color="red">
+% for ( @unprovision_warning ) {
+<% $_ |h %><BR>
+% }
+</font>
 <table style="background-color: #cccccc; border-spacing: 2; width: 100%">
 
 % my $date_init = 0;
@@ -193,7 +197,7 @@ my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
 
 my $part_pkg = $cust_pkg->part_pkg;
 
-my $unprovision_warning = '';
+my @unprovision_warning;
 {
     my @services_w_export;
     for ( $cust_pkg->cust_svc ) {
@@ -201,12 +205,16 @@ my $unprovision_warning = '';
           if $_->part_svc->export_svc;
     }
     if ( @services_w_export ) {
-        $unprovision_warning = 'NOTE: This package has ' . @services_w_export
-          . ' ' . PL( "service", @services_w_export )
-          . ' that will be unprovisioned';
-        $unprovision_warning .= ' (' . join( ', ', @services_w_export, ) . ')'
-          if @services_w_export < 10;
-        $unprovision_warning .= '.';
+        push( @unprovision_warning, 'NOTE: This package has '
+          . @services_w_export . ' ' . PL( "service", @services_w_export )
+          . ' that will be unprovisioned', );
+        if ( @services_w_export < 10 ) {
+            $unprovision_warning[0] .= ':';
+            push( @unprovision_warning, @services_w_export, );
+        }
+        else {
+            $unprovision_warning[0] .= '.';
+        }
     }
 }
 
