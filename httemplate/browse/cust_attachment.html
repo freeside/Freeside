@@ -91,7 +91,7 @@ my $orderby = $cgi->param('orderby') || 'custnum';
 
 my $query = {
     table     => 'cust_attachment',
-    hashref   => { disabled => $disabled ? { op => '>', value => 0 } : undef, },
+    hashref   => { disabled => $disabled ? { op => '>', value => 0 } : '', },
     order_by  => "ORDER BY $orderby",
     addl_from => 'JOIN cust_main USING (custnum)',
     extra_sql => ' AND ' . $curuser->agentnums_sql,
