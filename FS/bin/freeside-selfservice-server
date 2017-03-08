@@ -63,9 +63,14 @@ logfile("$FREESIDE_LOG/selfservice.$machine.log");
 daemonize2();
 
 my $conf = new FS::Conf;
+my $ticket_system = $conf->config('ticket_system');
 if ( $conf->exists('selfservice-ignore_quantity') ) {
   $FS::cust_svc::ignore_quantity = 1;
   $FS::cust_svc::ignore_quantity = 1; #now it is used twice.
+}
+if ( $conf->exists('selfservice-db_profile') ) {
+  eval "use DBIx::Profile";
+  warn $@ if $@;
 }
 
 #clear the signup info cache so an "/etc/init.d/freeside restart" will pick
@@ -161,7 +166,7 @@ while (1) {
       $FS::UID::dbh->{InactiveDestroy} = 1;
       forksuidsetup($user);
 
-      FS::TicketSystem->init();
+      FS::TicketSystem->init() if $ticket_system;
 
       my $type = $packet->{_packet};
       warn "calling $type handler\n" if $Debug; 
