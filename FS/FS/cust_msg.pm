@@ -1,10 +1,9 @@
 package FS::cust_msg;
+use base qw( FS::cust_main_Mixin FS::Record );
 
 use strict;
-use base qw( FS::cust_main_Mixin FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh );
 use MIME::Parser;
-use vars qw( @statuses );
 
 =head1 NAME
 
@@ -72,7 +71,7 @@ sub table { 'cust_msg'; }
 sub nohistory_fields { ('header', 'body'); } 
 # history is kind of pointless on this table
 
-@statuses = qw( prepared sent failed );
+our @statuses = qw( prepared sent failed );
 
 =item insert
 
@@ -224,6 +223,22 @@ sub process_send {
   my $error = $cust_msg->send;
   die $error if $error;
 }
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM cust_msg WHERE NOT EXISTS
+      ( SELECT 1 FROM cust_main WHERE cust_main.custnum = cust_msg.custnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
+
+}
+
+=back
 
 =head1 SEE ALSO
 
