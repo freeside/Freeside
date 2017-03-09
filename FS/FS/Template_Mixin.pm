@@ -10,6 +10,7 @@ use vars qw( $invoice_lines @buf ); #yuck
 use List::Util qw(sum); #can't import first, it conflicts with cust_main.first
 use Date::Format;
 use Date::Language;
+use Time::Local qw( timelocal );
 use Text::Template 1.20;
 use File::Temp 0.14;
 use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
@@ -1924,6 +1925,12 @@ sub due_date {
   my $duedate = '';
   if ( $self->terms =~ /^\s*Net\s*(\d+)\s*$/ ) {
     $duedate = $self->_date() + ( $1 * 86400 );
+  } elsif ( $self->terms =~ /^End of Month$/ ) {
+    my ($mon,$year) = (localtime($self->_date) )[4,5];
+    $mon++;
+    until ( $mon < 12 ) { $mon -= 12; $year++; }
+    my $nextmonth_first = timelocal(0,0,0,1,$mon,$year);
+    $duedate = $nextmonth_first - 86400;
   }
   $duedate;
 }
