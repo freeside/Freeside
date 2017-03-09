@@ -2,6 +2,7 @@ package FS::cust_bill_pay_batch;
 use base qw( FS::Record );
 
 use strict;
+use FS::Record qw( dbh );
 
 =head1 NAME
 
@@ -102,6 +103,24 @@ sub check {
 }
 
 =back
+
+=cut
+
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM cust_bill_pay_batch WHERE NOT EXISTS
+      ( SELECT 1 FROM cust_pay_batch WHERE cust_pay_batch.paybatchnum = cust_bill_pay_batch.paybatchnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
+
+}
+
 
 =head1 BUGS
 
