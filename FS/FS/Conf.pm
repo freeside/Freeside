@@ -696,8 +696,8 @@ logo.eps
   '',
   'Payable upon receipt',
   'Net 0', 'Net 3', 'Net 5', 'Net 7', 'Net 9', 'Net 10', 'Net 14', 
-  'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'Net 30', 'Net 45', 
-  'Net 60', 'Net 90'
+  'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 25', 'End of Month', 'Net 30',
+  'Net 45', 'Net 60', 'Net 90'
 );
 
 my %msg_template_options = (
@@ -6260,6 +6260,14 @@ and customer address. Include units.',
   { key => "vonage-username", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "vonage-password", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "vonage-fromnumber", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+
+  {
+    'key'         => 'selfservice-db_profile',
+    'section'     => 'development',
+    'description' => 'Enable collection and logging of database profiling information for self-service servers.  This has significant overhead, do not leave enabled in production beyond that necessary to collect profiling data.',
+    'type'        => 'checkbox',
+  },
+
 
   # for internal use only; test databases should declare this option and
   # everyone else should pretend it doesn't exist
