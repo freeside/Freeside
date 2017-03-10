@@ -151,7 +151,10 @@ my $money_char = $conf->config('money_char') || '$';
 
 my %search_hash = ();
 
-#some false laziness w/misc/bulk_change_pkg.cgi
+#some false laziness w/misc/bulk_change_pkg.cgi and bulk_pkg_increment_bill.cgi
+# and misc/process/
+# with shitty results (bulk doing things to wrong packages) if you don't update
+# those too :/
   
 $search_hash{'query'} = $cgi->keywords;
 

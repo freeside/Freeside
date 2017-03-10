@@ -1,10 +1,8 @@
 package FS::pkg_referral;
+use base qw( FS::Record );
 
 use strict;
-use vars qw( @ISA );
 use FS::Record qw( dbh );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
