@@ -330,6 +330,7 @@ if ( $new->custnum eq '' or $duplicate_of ) {
      )
   {
     $new->payinfo($old->payinfo);
+    $new->paymask($old->paymask) if ! $new->paymask || $new->paymask =~ /^N\/A/;
 
   } elsif ( $new->payby =~ /^(CHEK|DCHK)$/ && $new->payinfo =~ /xx/ ) {
     #fix for #3085 "edit of customer's routing code only surprisingly causes
