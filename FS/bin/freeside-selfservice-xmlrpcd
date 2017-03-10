@@ -29,11 +29,6 @@ my $conf = new FS::Conf;
 die "not running; selfservice-xmlrpc conf option is off\n"
   unless $conf->exists('selfservice-xmlrpc');
 
-if ( $conf->exists('selfservice-db_profile') ) {
-  eval "use DBIx::Profile";
-  warn $@ if $@;
-}
-
 daemon_run( 'port' => 8080, 'handle_request' =>
   sub {
     my $request = shift;

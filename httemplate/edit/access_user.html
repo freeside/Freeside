@@ -83,14 +83,6 @@ sub edit_callback {
     if $sched_item[0] && ! $sched_item[0]->disabled;
 }
 
-sub error_callback {
-  my ($cgi, $access_user) = @_;
-warn $access_user->sched_item_enabled;
-warn $cgi->param('sched_item_enabled');
-  $access_user->sched_item_enabled('Y')
-    if $cgi->param('sched_item_enabled');  
-}
-
 sub field_callback {
   my ($c, $o, $f) = @_;
   if($f->{'type'} eq 'password' and $o->is_system_user) {
