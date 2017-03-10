@@ -1,8 +1,8 @@
 package FS::radius_group;
+use base qw( FS::o2m_Common FS::Record );
 
 use strict;
-use base qw( FS::o2m_Common FS::Record );
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearch dbh );
 use FS::radius_attr;
 
 =head1 NAME
@@ -125,6 +125,15 @@ sub delete {
       return $error;
     }
   }
+
+  foreach my $radius_attr ( $self->radius_attr ) {
+    $error = $radius_attr->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   dbh->commit;
   '';
 }
