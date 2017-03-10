@@ -571,6 +571,7 @@ sub upgrade_schema_data {
     'cust_bill_pay_batch' => [],
     'cust_event_fee' => [],
     'radius_attr' => [],
+    'queue_depend' => [],
     #update records referencing removed things with their FKs
     'cust_pkg' => [],
   ;
