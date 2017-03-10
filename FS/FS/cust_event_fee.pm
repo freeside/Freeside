@@ -1,8 +1,8 @@
 package FS::cust_event_fee;
+use base qw( FS::Record FS::FeeOrigin_Mixin );
 
 use strict;
-use base qw( FS::Record FS::FeeOrigin_Mixin );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch dbh );
 
 =head1 NAME
 
@@ -193,6 +193,24 @@ sub cust_pkg {
     return '';
   }
 }
+
+=back
+
+=cut
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM cust_event_Fee WHERE NOT EXISTS
+      ( SELECT 1 FROM cust_event WHERE cust_event.eventnum = cust_event_fee.eventnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
+}
+
 
 =head1 BUGS
 
