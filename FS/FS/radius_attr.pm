@@ -3,7 +3,7 @@ use base qw( FS::Record );
 
 use strict;
 use vars qw( $noexport_hack );
-use FS::Record qw( qsearch ); #qsearchs );
+use FS::Record qw( qsearch dbh );
 
 $noexport_hack = 0;
 
@@ -201,6 +201,21 @@ sub ops {
 }
 
 =back
+
+=cut
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM radius_attr WHERE NOT EXISTS
+      ( SELECT 1 FROM radius_group WHERE radius_group.groupnum = radius_attr.groupnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
+}
 
 =head1 BUGS
 
