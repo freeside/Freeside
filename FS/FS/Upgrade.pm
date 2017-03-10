@@ -569,6 +569,7 @@ sub upgrade_schema_data {
     'cust_bill_pkg_discount' => [],
     'cust_msg' => [],
     'cust_bill_pay_batch' => [],
+    'cust_event_fee' => [],
     #update records referencing removed things with their FKs
     'cust_pkg' => [],
   ;
