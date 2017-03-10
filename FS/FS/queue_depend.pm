@@ -1,7 +1,8 @@
 package FS::queue_depend;
-use base qw(FS::Record);
+use base qw( FS::Record );
 
 use strict;
+use FS::Record qw( dbh );
 
 =head1 NAME
 
@@ -104,6 +105,21 @@ sub check {
 }
 
 =back
+
+=cut
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = '
+    DELETE FROM queue_depend WHERE NOT EXISTS
+      ( SELECT 1 FROM queue WHERE queue.jobnum = queue_depend.jobnum )
+  ';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  '';
+}
 
 =head1 BUGS
 
