@@ -504,6 +504,16 @@ sub _upgrade_schema {
     )';
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
+
+  # fix records where custnum points to a nonexistent customer
+  $sql = 'UPDATE cust_pay_pending SET custnum = NULL
+    WHERE NOT EXISTS (
+      SELECT 1 FROM cust_main WHERE cust_main.custnum = cust_pay_pending.custnum
+    )';
+  $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+
   '';
 }
 
