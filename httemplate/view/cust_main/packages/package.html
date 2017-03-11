@@ -575,10 +575,10 @@
                  { label       => 'Add contact',
                    #acl         => 'Add package contact',#or something like that
                    condition   => sub { ! $cust_pkg->get('cancel') },
-                   popup       => "misc/change_pkg-contact.html?$plink",
+                   popup       => "misc/change_pkg_contact.html?$plink",
                    actionlabel => emt('Add contact'),
                    width       => 616,
-                   height      => 192,
+                   height      => 200,
                  },
 
                  { label       => 'Change location',
