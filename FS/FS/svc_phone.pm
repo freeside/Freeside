@@ -132,6 +132,19 @@ Account number of other provider. See lnp_other_provider.
 See lnp_status. If lnp_status is portin-reject or portout-reject, this is an
 optional reject reason.
 
+=item lnp_portid
+
+Port identifier from porting provider, for checking status
+
+=item lnp_signature
+
+Boolean (empty or `Y') indicating if a signature is required for the port
+
+=item lnp_bill
+
+Boolean (empty or `Y') indicating if a copy of an existing bill is required for
+the port
+
 =item e911_class
 
 Class of Service for E911 service (per the NENA 2.1 standard).
@@ -549,6 +562,9 @@ sub check {
 				'native', 'portin-reject', 'portout-reject'])
     || $self->ut_enumn('portable', ['','Y'])
     || $self->ut_textn('lnp_reject_reason')
+    || $self->ut_textn('lnp_portid')
+    || $self->ut_enumn('lnp_signature', ['','Y'])
+    || $self->ut_enumn('lnp_bill', ['','Y'])
     || $self->ut_domainn('sip_server')
   ;
   return $error if $error;
