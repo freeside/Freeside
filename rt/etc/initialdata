@@ -90,11 +90,11 @@
       Description => 'Sends mail to explicitly listed Ccs and Bccs',      # loc
       ExecModule  => 'NotifyAsComment',
       Argument    => 'OtherRecipients' },
-# deprecated
-#    { Name        => 'Notify Other Recipients',                           # loc
-#      Description => 'Sends mail to explicitly listed Ccs and Bccs',      # loc
-#      ExecModule  => 'Notify',
-#      Argument    => 'OtherRecipients' },
+# deprecated?  now default create scrips use it in 4.2
+    { Name        => 'Notify Other Recipients',                           # loc
+      Description => 'Sends mail to explicitly listed Ccs and Bccs',      # loc
+      ExecModule  => 'Notify',
+      Argument    => 'OtherRecipients' },
 
     { Name        => 'User Defined',                                      # loc
       Description => 'Perform a user-defined action',                     # loc
