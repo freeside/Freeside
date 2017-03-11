@@ -98,9 +98,8 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libtry-tiny-perl, libnumber-phone-perl, libxml-libxml-simple-perl,
  libxml-writer-perl, libio-socket-ssl-perl,
  libmap-splat-perl, libdatetime-format-ical-perl, librest-client-perl,
- libgeo-streetaddress-us-perl
+ libgeo-streetaddress-us-perl, libbusiness-onlinepayment-perl
 Conflicts: libparams-classify-perl (>= 0.013-6)
-Suggests: libbusiness-onlinepayment-perl
 Replaces: freeside (<<4)
 Breaks: freeside (<<4)
 Description: Libraries for Freeside billing and trouble ticketing
