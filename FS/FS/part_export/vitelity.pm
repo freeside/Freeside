@@ -3,8 +3,10 @@ use base qw( FS::part_export );
 
 use vars qw( %info );
 use Tie::IxHash;
+use Geo::StreetAddress::US;
 use FS::Record qw( qsearch dbh );
 use FS::phone_avail;
+use FS::svc_phone;
 
 tie my %options, 'Tie::IxHash',
   'login'              => { label=>'Vitelity API login' },
@@ -258,12 +260,69 @@ sub vitelity_command {
   $vitelity->$command(@args);
 }
 
+sub vitelity_lnp_command {
+  my( $self, $command, @args ) = @_;
+
+  eval "use Net::Vitelity 0.04;";
+  die $@ if $@;
+
+  my $vitelity = Net::Vitelity->new(
+    'login'   => $self->option('login'),
+    'pass'    => $self->option('pass'),
+    'apitype' => 'lnp',
+    #'debug'   => $debug,
+  );
+
+  $vitelity->$command(@args);
+}
+
 sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
 
   return '' if $self->option('dry_run');
 
   #we want to provision and catch errors now, not queue
+
+  #porting a number in?  different code path
+  if ( $svc_phone->lnp_status eq 'portingin' ) {
+
+    my %location = $svc_phone->location_hash;
+    my $sa = Geo::StreetAddress::US->parse_location( $location{'address1'} );
+
+    my $result = $self->vitelity_lnp_command('addport',
+      'portnumber'    => $svc_phone->phonenum,
+      'partial'       => 'no',
+      'wireless'      => 'no',
+      'carrier'       => $svc_phone->lnp_other_provider,
+      'company'       => $svc_phone->cust_svc->cust_pkg->cust_main->company,
+      'accnumber'     => $svc_phone->lnp_other_provider_account,
+      'name'          => $svc_phone->phone_name_or_cust,
+      'streetnumber'  => $sa->{number},
+      'streetprefix'  => $sa->{prefix},
+      'streetname'    => $sa->{street}. ' '. $street{type},
+      'streetsuffix'  => $sa->{suffix},
+      'unit'          => ( $sa->{sec_unit_num}
+                             ? $sa->{sec_unit_type}. ' '. $sa->{sec_unit_num}
+                             : ''
+                         ),
+      'city'          => $location{'city'},
+      'state'         => $location{'state'},
+      'zip'           => $location{'zip'},
+      'billnumber'    => $svc_phone->phonenum, #?? do we need a new field for this?
+      'contactnumber' => $svc_phone->cust_svc->cust_pkg->cust_main->daytime,
+    );
+
+    if ( $result =~ /^ok:/i ) {
+      my($ok, $portid, $sig, $bill) = split(':', $result);
+      $svc_phone->lnp_portid($portid);
+      $svc_phone->lnp_signature('Y') if $sig  =~ /y/i;
+      $svc_phone->lnp_bill('Y')      if $bill =~ /y/i;
+      return $svc_phone->replace;
+    } else {
+      return "Error initiating Vitelity port: $result";
+    }
+
+  }
 
   ###
   # 1. provision the DID
@@ -329,18 +388,12 @@ sub e911send {
   my %location = $svc_phone->location_hash;
   my %e911send = (
     'did'     => $svc_phone->phonenum,
+    'name'    => $svc_phone->phone_name_or_cust,
     'address' => $location{'address1'},
     'city'    => $location{'city'},
     'state'   => $location{'state'},
     'zip'     => $location{'zip'},
   );
-  if ( $svc_phone->phone_name ) {
-    $e911send{'name'} = $svc_phone->phone_name;
-  } else {
-    my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
-    $e911send{'name'} = $cust_main->company || $cust_main->first. ' '.
-                                               $cust_main->get('last');
-  }
   if ( $location{address2} =~ /^\s*(\w+)\W*(\d+)\s*$/ ) {
     $e911send{'unittype'} = $1;
     $e911send{'unitnumber'} = $2;
@@ -415,6 +468,44 @@ sub _export_unsuspend {
   my( $self, $svc_phone ) = (shift, shift);
   #nop for now
   '';
+}
+
+sub check_lnp {
+  my $self = shift;
+
+  my $in_svcpart = 'IN ('. join( ',', map $_->svcpart, $self->export_svc). ')';
+
+  foreach my $svc_phone (
+    qsearch({ 'table'     => 'svc_phone',
+              'hashref'   => {lnp_status=>'portingin'},
+              'extra_sql' => "AND svcpart $in_svcpart",
+           })
+  ) {
+
+    my $result = $self->vitelity_lnp_command('checkstatus',
+                                               'portid'=>$svc_phone->lnp_portid,
+                                            );
+
+    #XXX what $result values mean the port is done?
+
+    if ( $result =~ /^complete$/ ) { #"complete"?  nfi
+
+      $svc_phone->lnp_status('portedin');
+      my $error = $self->_export_insert($svc_phone);
+      if ( $error ) {
+        #XXX log this using our internal log instead, so we can alert on it
+        # properly
+        warn "ERROR provisioning ported-in DID ". $svc_phone->phonenum. ": $error";
+      } else {
+        $error = $svc_phone->replace; #to set the lnp_status
+        #XXX log this using our internal log instead, so we can alert on it
+        warn "ERROR setting lnp_status for DID ". $svc_phone->phonenum. ": $error" if $error;
+      }
+
+    }
+
+  }
+
 }
 
 1;

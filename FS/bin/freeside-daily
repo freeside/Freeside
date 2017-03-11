@@ -24,6 +24,10 @@ $log->info('start');
 use FS::Cron::nms_report qw(nms_report);
 nms_report(%opt);
 
+#you can skip this by not having any vitelity exports configured
+use FS::Cron::lnp_vitelity;
+lnp_vitelity(%opt);
+
 #no way to skip this yet, but should be harmless/quick
 use FS::Cron::expire_banned_pay qw(expire_banned_pay);
 expire_banned_pay(%opt);
