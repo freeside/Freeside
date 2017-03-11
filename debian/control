@@ -97,9 +97,8 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libcpanel-json-xs-perl, libarchive-zip-perl,
  libtry-tiny-perl, libnumber-phone-perl, libxml-libxml-simple-perl,
  libxml-writer-perl, libio-socket-ssl-perl,
- libmap-splat-perl,
- libdatetime-format-ical-perl,
- librest-client-perl
+ libmap-splat-perl, libdatetime-format-ical-perl, librest-client-perl,
+ libgeo-streetaddress-us-perl
 Conflicts: libparams-classify-perl (>= 0.013-6)
 Suggests: libbusiness-onlinepayment-perl
 Replaces: freeside (<<4)
