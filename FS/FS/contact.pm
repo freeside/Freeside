@@ -773,7 +773,7 @@ sub by_selfservice_email {
     'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
     'hashref'   => { 'emailaddress' => $email, },
     'extra_sql' => " AND ( contact.disabled IS NULL ) ".
-                   " AND ( contact.selfservice_access = 'Y' )",
+                   " AND ( cust_contact.selfservice_access = 'Y' )",
   }) or return '';
 
   $contact_email->contact;
