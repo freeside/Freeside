@@ -776,7 +776,9 @@ sub edit_info {
     @invoicing_list = split( /\s*\,\s*/, $p->{'invoicing_list'} );
     push @invoicing_list, 'POST' if $p->{'postal_invoicing'};
   } else {
-    @invoicing_list = $cust_main->invoicing_list;
+    my $error = $new->replace($cust_main);
+    return { 'error' => $error } if $error;
+    return { 'error' => '' };
   }
 
   my $error = $new->replace($cust_main, \@invoicing_list);
