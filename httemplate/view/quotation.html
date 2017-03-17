@@ -1,3 +1,12 @@
+% if ( $quotation->custnum ) {
+<& /elements/header-cust_main.html, view=>'quotations', custnum=>$quotation->custnum &>
+<h2>Quotation #<% $quotationnum %>
+% if ($quotation->quotation_description) {
+(<% $quotation->quotation_description %>)  
+% } 
+</h2>
+% } else { #eventually, header-prospect_main.html
+>>>>>>> 512a0bd... RT# 74666, Added quotation description to customer quotation list and quotation view
 <& /elements/header.html, mt('Quotation View'), $menubar &>
 
 <& /elements/init_overlib.html &>
