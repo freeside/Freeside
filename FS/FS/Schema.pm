@@ -1925,14 +1925,15 @@ sub tables_hashref {
     'quotation' => {
       'columns' => [
         #regular fields
-        'quotationnum',   'serial',     '', '', '', '', 
-        'prospectnum',       'int', 'NULL', '', '', '',
-        'custnum',           'int', 'NULL', '', '', '',
-        '_date',        @date_type,             '', '', 
-        'disabled',         'char', 'NULL',  1, '', '', 
-        'usernum',           'int', 'NULL', '', '', '',
-        'close_date',   @date_type,             '', '', 
-        'confidence',        'int', 'NULL', '', '', '',
+        'quotationnum',           'serial',     '', '',   '', '', 
+        'prospectnum',               'int', 'NULL', '',   '', '',
+        'custnum',                   'int', 'NULL', '',   '', '',
+        '_date',                @date_type,               '', '', 
+        'disabled',                 'char', 'NULL',  1,   '', '', 
+        'usernum',                   'int', 'NULL', '',   '', '',
+        'close_date',           @date_type,               '', '', 
+        'confidence',                'int', 'NULL', '',   '', '',
+        'quotation_description', 'varchar', 'NULL', '50', '', '',
         #'total',      @money_type,       '', '', 
         #'quotation_term', 'varchar', 'NULL', $char_d, '', '',
       ],
