@@ -14,6 +14,7 @@
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Setup') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Recurring') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Description') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       </TR>
       </THEAD>
@@ -30,6 +31,7 @@
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% time2str($date_format, $quotation->_date) |h %></A></TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->total_setup |h %></A></TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->total_recur |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->quotation_description |h %></A></TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>"><% $opt{convert_label} || 'Convert to customer' %></A></TD>
         </TR>
 %     }
