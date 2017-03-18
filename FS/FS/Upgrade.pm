@@ -567,6 +567,9 @@ sub upgrade_schema_data {
     'cust_bill_pkg_detail' => [],
     #add necessary columns to RT schema
     'TicketSystem' => [],
+    #remove h_access_user_log if it exists (since our regular auto schema
+    # upgrade doesn't have the drop tables flag turned on) 
+    'access_user_log' => [],
     #remove possible dangling records
     'password_history' => [],
     'cust_pay_pending' => [],
