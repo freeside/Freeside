@@ -486,9 +486,7 @@ sub check_lnp {
                                                'portid'=>$svc_phone->lnp_portid,
                                             );
 
-    #XXX what $result values mean the port is done?
-
-    if ( $result =~ /^complete$/ ) { #"complete"?  nfi
+    if ( $result =~ /^Complete/i ) {
 
       $svc_phone->lnp_status('portedin');
       my $error = $self->_export_insert($svc_phone);
