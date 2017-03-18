@@ -135,6 +135,17 @@ sub check {
 
 =back
 
+=cut
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  my $sql = 'DROP TABLE IF EXISTS h_access_user_log';
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+}
+
 =head1 BUGS
 
 =head1 SEE ALSO
