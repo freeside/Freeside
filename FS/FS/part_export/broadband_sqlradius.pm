@@ -28,6 +28,10 @@ tie %options, 'Tie::IxHash',
                   type    => 'select',
                   options => [qw( radusergroup usergroup )],
                 },
+  'ignore_accounting' => {
+    type  => 'checkbox',
+    label => 'Ignore accounting records from this database'
+  },
 # session report doesn't currently know about this export anyway
 #  'hide_ip' => {
 #    type  => 'checkbox',
