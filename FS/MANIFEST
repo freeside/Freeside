@@ -230,7 +230,6 @@ t/agent.t
 t/agent_type.t
 t/AccessRight.t
 t/CGI.t
-t/InitHandler.t
 t/ClientAPI.t
 t/ClientAPI_SessionCache.t
 t/Conf.t
@@ -315,13 +314,8 @@ t/part_export-www_shellcommands.t
 t/part_pkg.t
 t/part_pkg_option.t
 t/part_pkg-flat.t
-t/part_pkg-flat_comission.t
-t/part_pkg-flat_comission_cust.t
-t/part_pkg-flat_comission_pkg.t
 t/part_pkg-flat_delayed.t
 t/part_pkg-prorate.t
-t/part_pkg-sesmon_hour.t
-t/part_pkg-sesmon_minute.t
 t/part_pkg-sql_external.t
 t/part_pkg-sql_generic.t
 t/part_pkg-sqlradacct_hour.t
