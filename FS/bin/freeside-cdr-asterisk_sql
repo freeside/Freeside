@@ -12,7 +12,7 @@ use Getopt::Std;
 $DEBUG = 0;
 
 my %opt;
-getopts('e:H:U:P:D:T:', \%opt);
+getopts('e:H:U:P:D:T:V:', \%opt);
 my $user = shift or die &usage;
 
 my $engine = $opt{e} || 'mysql';
@@ -42,10 +42,17 @@ if ( $engine =~ /^mysql/ ) {
   }
 }
 
-my @cols = (qw( 
-  calldate clid src dst dcontext channel lastapp lastdata duration 
+my @cols = ();
+if ( $opt{V} > 12 ) {
+  push @cols, qw( start answer end );
+} else {
+  push @cols, qw( calldate );
+}
+
+push @cols,  qw( 
+  clid src dst dcontext channel lastapp lastdata duration 
   billsec disposition amaflags accountcode userfield
-));
+);
 
 # check for existence of uniqueid
 if ( $engine =~ /^mysql/ ) {
@@ -70,19 +77,29 @@ my $cdr_batch = new FS::cdr_batch({
 my $error = $cdr_batch->insert;
 die $error if $error;
 my $cdrbatchnum = $cdr_batch->cdrbatchnum;
+
 my $imports = 0;
 my $updates = 0;
 
-my $row;
-while ( $row = $sth->fetchrow_hashref ) {
+while ( my $row = $sth->fetchrow_hashref ) {
+
   my $cdr = FS::cdr->new($row);
-  $cdr->startdate(str2time($cdr->calldate));
+
+  if ( $opt{V} > 12 ) {
+    $cdr->calldate($cdr->start);
+    $cdr->startdate(str2time($cdr->start));
+    $cdr->answerdate(str2time($cdr->answer));
+    $cdr->enddate(str2time($cdr->end));
+  } else {
+    $cdr->startdate(str2time($cdr->calldate));
+  }
+
   $cdr->cdrbatchnum($cdrbatchnum);
+
   my $error = $cdr->insert;
   if ($error) {
     warn "failed import: $error\n";
-  }
-  else {
+  } else {
     $imports++;
     if( $dbi->do("UPDATE cdr SET freesidestatus = 'done' 
         WHERE calldate = ? AND src = ? AND dst = ?",
@@ -97,13 +114,14 @@ while ( $row = $sth->fetchrow_hashref ) {
       warn "failed to set status: ".$dbi->errstr."\n";
     }
   }
+
 }
 
 warn "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
 $dbi->disconnect;
 
 sub usage {
-  "Usage: \n  freeside-cdr-asterisk_sql\n\t-e mysql|Pg|... [ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+  "Usage: \n  freeside-cdr-asterisk_sql\n\t-e mysql|Pg|... [ -H host ]n\t-D database\n\t[ -T table ]\n\t[ -V asterisk_version]\n\t-U user\n\t-P password\n\tfreesideuser\n";
 }
 
 =head1 NAME
@@ -112,7 +130,7 @@ freeside-cdr-asterisk_sql - Import CDRs from an Asterisk SQL database
 
 =head1 SYNOPSIS
 
-  freeside-cdr-asterisk_sql -e mysql|Pg|... [ -H host ] -D database [ -T table ] -U user -P password [ -s ] freesideuser
+  freeside-cdr-asterisk_sql -e mysql|Pg|... [ -H host ] -D database [ -T table ][ -V asterisk_version ] -U user -P password freesideuser
 
 =head1 DESCRIPTION
 
@@ -129,6 +147,8 @@ Imports CDR records from an Asterisk SQL database.
 -U: username
 
 -P: password
+
+-V: Asterisk version.  Values of 12 or higher have a new database schema.  Currently defaults to 11, but may default to 12+ or be required in a future, so best to always specify the version.
 
 =cut
 
