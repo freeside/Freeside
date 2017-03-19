@@ -148,7 +148,7 @@ Imports CDR records from an Asterisk SQL database.
 
 -P: password
 
--V: Asterisk version.  Values of 12 or higher have a new database schema.  Currently defaults to 11, but may default to 12+ or be required in a future, so best to always specify the version.
+-V: Asterisk version.  Values of 12 or higher have a new database schema which no longer includes calldate.  Currently defaults to 11, but may default to 12+ or be required in a future, so best to always specify the version.
 
 =cut
 
