@@ -1,8 +1,8 @@
-freeside (4.2~git-1) UNRELEASED; urgency=medium
+freeside (4.2-1) unstable; urgency=medium
 
-  * 4.2~git
+  * 4.2
 
- -- Ivan Kohler <ivan-debian@420.am>  Fri, 05 Aug 2016 19:56:53 -0700
+ -- Ivan Kohler <ivan-debian@420.am>  Sun, 19 Mar 2017 09:18:54 -0700
 
 freeside (4.1-1) unstable; urgency=medium
 
