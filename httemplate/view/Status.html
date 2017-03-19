@@ -228,7 +228,8 @@ foreach my $agent (
   })
 ) {
   my $gateway = $agent->payment_gateway('method'=>'VISA card', 'nofatal'=>1, );
-  next unless $gateway->gateway_namespace eq 'Business::OnlinePayment';
+  next unless $gateway
+           && $gateway->gateway_namespace eq 'Business::OnlinePayment';
   eval "use Business::OnlinePayment";
   die $@ if $@; #die?
   my $bop = new Business::OnlinePayment( $gateway->gateway_module,
