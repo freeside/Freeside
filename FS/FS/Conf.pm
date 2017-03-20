@@ -1646,6 +1646,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'quotation_disable_after_days',
+    'section'     => 'quotations',
+    'description' => 'The number of days, if set, after which a non-converted quotation will be automatically disabled.',
+    'type'        => 'text'
+  },
+
+  {
     'key'         => 'invoice_print_pdf',
     'section'     => 'invoicing',
     'description' => 'For all invoice print operations, store postal invoices for download in PDF format rather than printing them directly.',
