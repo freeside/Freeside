@@ -91,6 +91,10 @@ export_batch_submit(%opt);
 use FS::Cron::send_subscribed qw(send_subscribed);
 send_subscribed(%opt);
 
+#does nothing unless quotation_disable_after_days is set.
+use FS::Cron::disable_quotation qw(disable_quotation);
+disable_quotation();
+
 #clears out cacti imports & deletes select database cache files
 use FS::Cron::cleanup qw( cleanup cleanup_before_backup );
 cleanup_before_backup();
