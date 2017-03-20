@@ -43,8 +43,8 @@ if ( $engine =~ /^mysql/ ) {
 }
 
 my @cols = ();
-if ( $opt{V} > 12 ) {
-  push @cols, qw( start answer end );
+if ( $opt{V} >= 12 ) {
+  push @cols, qw( id start answer end );
 } else {
   push @cols, qw( calldate );
 }
@@ -85,11 +85,12 @@ while ( my $row = $sth->fetchrow_hashref ) {
 
   my $cdr = FS::cdr->new($row);
 
-  if ( $opt{V} > 12 ) {
+  if ( $opt{V} >= 12 ) {
     $cdr->calldate($cdr->start);
     $cdr->startdate(str2time($cdr->start));
     $cdr->answerdate(str2time($cdr->answer));
     $cdr->enddate(str2time($cdr->end));
+    $cdr->cdrid($cdr->id);
   } else {
     $cdr->startdate(str2time($cdr->calldate));
   }
@@ -100,19 +101,25 @@ while ( my $row = $sth->fetchrow_hashref ) {
   if ($error) {
     warn "failed import: $error\n";
   } else {
-    $imports++;
-    if( $dbi->do("UPDATE cdr SET freesidestatus = 'done' 
-        WHERE calldate = ? AND src = ? AND dst = ?",
-                undef,
-                $row->{'calldate'},
-                $row->{'src'},
-                $row->{'dst'},
 
-      ) ) {
-        $updates++;
+    $imports++;
+
+    my $where = '';
+    my @args = ();
+    if ( $opt{V} >= 12 ) {
+      $where = 'id = '. $row->{'id'};
+      @args = ( undef );
+    } else {
+      $where = 'calldate = ? AND src = ? AND dst = ?';
+      @args = ( undef, $row->{'calldate'}, $row->{'src'}, $row->{'dst'}, );
+    }
+
+    if ( $dbi->do("UPDATE $table SET freesidestatus = 'done' $where", @args) ) {
+      $updates++;
     } else {
       warn "failed to set status: ".$dbi->errstr."\n";
     }
+
   }
 
 }
