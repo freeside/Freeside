@@ -581,6 +581,7 @@ sub upgrade_schema_data {
     'cust_event_fee' => [],
     'radius_attr' => [],
     'queue_depend' => [],
+    'cust_main_invoice' => [],
     #update records referencing removed things with their FKs
     'cust_pkg' => [],
   ;
