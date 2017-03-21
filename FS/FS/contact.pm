@@ -760,8 +760,8 @@ sub contact_email {
 =item by_selfservice_email EMAILADDRESS
 
 Alternate search constructor (class method).  Given an email address, returns
-the contact for that address. If that contact doesn't have selfservice access,
-or there isn't one, returns the empty string.
+the contact for that address, or the empty string if no contact has that
+email address.
 
 =cut
 
@@ -772,8 +772,7 @@ sub by_selfservice_email {
     'table'     => 'contact_email',
     'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
     'hashref'   => { 'emailaddress' => $email, },
-    'extra_sql' => " AND ( contact.disabled IS NULL ) ".
-                   " AND ( contact.selfservice_access = 'Y' )",
+    'extra_sql' => " AND ( contact.disabled IS NULL ) ",
   }) or return '';
 
   $contact_email->contact;
