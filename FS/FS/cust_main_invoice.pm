@@ -2,7 +2,7 @@ package FS::cust_main_invoice;
 use base qw( FS::Record );
 
 use strict;
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearchs dbh );
 use FS::Conf;
 use FS::svc_acct;
 use FS::Msgcat qw(gettext);
@@ -166,6 +166,22 @@ sub address {
 Returns the parent customer object (see L<FS::cust_main>).
 
 =back
+
+=cut
+
+sub _upgrade_schema {
+  my ($class, %opts) = @_;
+
+  # delete records where custnum points to a nonexistent customer
+  my $sql = 'DELETE FROM cust_main_invoice
+    WHERE NOT EXISTS (
+      SELECT 1 FROM cust_main WHERE cust_main.custnum = cust_main_invoice.custnum
+    )';
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+  '';
+}
 
 =head1 BUGS
 
