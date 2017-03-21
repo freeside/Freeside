@@ -144,7 +144,6 @@ if ( el ) el.scrollIntoView(true);
 
 % }
 
-<% $br++ ? ' | ' : '' %>
 % if ( $cust_main->num_cancelled_pkgs ) {
 %     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
 %          || ( $conf->exists('hidecancelledpackages')
@@ -162,6 +161,7 @@ if ( el ) el.scrollIntoView(true);
 %       $cgi->param('showcancelledpackages', 1);
 %   } 
 
+ <% $br++ ? ' | ' : '' %>
  <% mt('cancelled packages') |h %></a>
 % } 
 
