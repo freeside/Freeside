@@ -766,8 +766,13 @@ sub by_selfservice_email {
     'table'     => 'contact_email',
     'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
     'hashref'   => { 'emailaddress' => $email, },
-    'extra_sql' => " AND ( contact.disabled IS NULL ) ".
-                   " AND ( contact.selfservice_access = 'Y' )",
+    'extra_sql' => "
+      AND ( contact.disabled IS NULL )
+      AND EXISTS ( SELECT 1 FROM cust_contact
+                     WHERE contact.contactnum = cust_contact.contactnum
+                       AND cust_contact.selfservice_access = 'Y'
+                 )
+    ",
   }) or return '';
 
   $contact_email->contact;
