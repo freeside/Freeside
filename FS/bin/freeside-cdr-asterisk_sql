@@ -104,17 +104,17 @@ while ( my $row = $sth->fetchrow_hashref ) {
 
     $imports++;
 
-    my $where = '';
+    my $usql = "UPDATE $table SET freesidestatus = 'done' WHERE ";
     my @args = ();
     if ( $opt{V} >= 12 ) {
-      $where = 'id = '. $row->{'id'};
+      $usql .= ' id = '. $row->{'id'};
       @args = ( undef );
     } else {
-      $where = 'calldate = ? AND src = ? AND dst = ?';
+      $usql .= ' calldate = ? AND src = ? AND dst = ?';
       @args = ( undef, $row->{'calldate'}, $row->{'src'}, $row->{'dst'}, );
     }
 
-    if ( $dbi->do("UPDATE $table SET freesidestatus = 'done' $where", @args) ) {
+    if ( $dbi->do($usql, @args) ) {
       $updates++;
     } else {
       warn "failed to set status: ".$dbi->errstr."\n";
