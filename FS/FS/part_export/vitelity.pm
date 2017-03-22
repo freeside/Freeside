@@ -45,6 +45,7 @@ sub rebless { shift; }
 
 sub can_get_dids { 1; }
 sub get_dids_can_tollfree { 1; };
+sub can_lnp { 1; }
 
 sub get_dids {
   my $self = shift;
@@ -499,6 +500,12 @@ sub check_lnp {
         #XXX log this using our internal log instead, so we can alert on it
         warn "ERROR setting lnp_status for DID ". $svc_phone->phonenum. ": $error" if $error;
       }
+
+    } elsif ( $result ne $svc_phone->lnp_reject_reason ) {
+      $svc_phone->lnp_reject_reason($result);
+      $error = $svc_phone->replace;
+      #XXX log this using our internal log instead, so we can alert on it
+      warn "ERROR setting lnp_reject_reason for DID ". $svc_phone->phonenum. ": $error" if $error;
 
     }
 
