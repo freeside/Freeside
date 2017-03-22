@@ -2431,6 +2431,7 @@ sub postal_mail_fsinc {
     'ssl_opts' => { 
       verify_hostname => 0,
       SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE,
+      SSL_version     => 'SSLv3',
     }
   );
   my $response = $ua->request( POST $url, [
@@ -2461,7 +2462,8 @@ sub postal_mail_fsinc {
     'country'          => $bill_location->country,
   ]);
 
-  die "Print connection error: ". $response->message. "\n"
+  die "Print connection error: ". $response->message.
+      ' ('. $response->as_string. ")\n"
     unless $response->is_success;
 
   local $@;
