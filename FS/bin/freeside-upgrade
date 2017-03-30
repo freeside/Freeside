@@ -13,6 +13,7 @@ use FS::Misc::prune qw(prune_applications);
 use FS::Conf;
 use FS::Record qw(qsearch);
 use FS::Upgrade qw(upgrade_schema upgrade_config upgrade upgrade_sqlradius);
+use Config::General;
 
 my $start = time;
 
@@ -28,6 +29,33 @@ $DRY_RUN = $opt_d;
 my $user = shift or die &usage;
 $FS::CurrentUser::upgrade_hack = 1;
 $FS::UID::callback_hack = 1;
+
+# Check for old secrets file format and upgrade, if neccessary
+my $secrets_file = "%%%FREESIDE_CONF%%%/secrets";
+my $conf = Config::General->new($secrets_file);
+
+unless ({$conf->getall}->{'server'}->{'main'}) {
+  warn "secrets file is not in Config::General format";
+  my ($datasrc, $db_user, $db_pass, $schema) = 
+    map { /^(.*)$/; $1 } readline(new IO::File $secrets_file);
+
+  my $new_config = {
+    server => {
+      'main'   => {
+        ServerType  => 'ReadWrite',
+        DSN     => $datasrc,
+        Username  => $db_user,
+        Password  => $db_pass,
+      }
+    }
+  };
+
+  $new_config->{'server'}->{'main'}->{'Schema'} = $schema
+    if $schema;
+
+  $conf->save_file($secrets_file, $new_config);
+}
+
 my $dbh = adminsuidsetup($user);
 $FS::UID::callback_hack = 0;
 
