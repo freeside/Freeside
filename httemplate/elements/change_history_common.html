@@ -100,8 +100,13 @@
     </TD>
 
     <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+%     my $description = '';
 %     if ( $item->table eq 'legacy_cust_history' ) {
         <% $item->description |h %>
+%     } elsif ( $item->table eq 'h_cust_tag' ) {
+%        $description = &{ $h_table_descripsub{$item->table} }( $item, $tables{'cust_tag'} )
+%         if $single_cust && $h_table_descripsub{$item->table};
+         <% $description %>
 %     } else {
         <% join(', ',
              map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
@@ -127,7 +132,7 @@
 %       if ( $single_cust && $h_table_descripsub{$item->table} ) {
           <% &{ $h_table_descripsub{$item->table} }( $item ) %>
 %       }
-%     }
+%     }  
     </TD>
 
   </TR>
@@ -212,8 +217,14 @@ my %h_table_labelsub = (
   'h_svc_external'  => $svc_labelsub,
   'h_svc_phone'     => $svc_labelsub,
   #'h_phone_device'
-  'h_cust_tag'      => $tag_labelsub,
+  #'h_cust_tag'      => $tag_labelsub,
 );
+
+my $tag_descripsub = sub {
+  my($item, $label) = @_;
+  my $part_tag = qsearchs('part_tag',{ tagnum => $item->tagnum });
+  '<SPAN STYLE="background-color: #'.$part_tag->tagcolor.'">'. encode_entities($part_tag->tagname). '</SPAN>';
+};
 
 my $discounts = {};
 my $discount_descripsub = sub {
@@ -234,6 +245,7 @@ my $discount_descripsub = sub {
 
 my %h_table_descripsub = (
   'h_cust_pkg_discount' => $discount_descripsub,
+  'h_cust_tag'          => $tag_descripsub,
 );
 
 my $cust_pkg_date_format = '%b %o, %Y';
