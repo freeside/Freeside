@@ -8,7 +8,7 @@ use FS::Log;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:nmrkg:o", \%opt);
+getopts("p:a:d:vl:sy:nmrkg:ox", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -87,9 +87,9 @@ use FS::Cron::cleanup qw( cleanup cleanup_before_backup );
 cleanup_before_backup();
 
 #backup should be last
-#you can skip this just by not having the config
+#you can skip this just by not having the config (or with the -x option)
 use FS::Cron::backup qw(backup);
-backup();
+backup() unless $opt{'x'};
 
 #except we'd rather not start cleanup jobs until the backup is done
 cleanup();
@@ -110,7 +110,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]\n";
+  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] [ -x ] user [ custnum custnum ... ]\n";
 }
 
 ###
@@ -166,7 +166,9 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -k: skip notify_flat_delay
 
-user: From the mapsecrets file - see config.html from the base documentation
+  -x: skip backup
+
+user: Typically "fs_daily"
 
 custnum: if one or more customer numbers are specified, only bills those
 customers.  Otherwise, bills all customers.
