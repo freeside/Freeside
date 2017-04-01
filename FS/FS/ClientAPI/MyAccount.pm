@@ -878,6 +878,8 @@ sub payment_info {
 
   my %return = %$payment_info;
 
+  delete $return{'cust_main_county'} if $p->{'omit_cust_main_county'};
+
   my $custnum = $session->{'custnum'};
 
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
