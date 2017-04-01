@@ -745,6 +745,8 @@ Takes a hash reference as parameter with the following keys:
 
 Required session ID
 
+=item payment_payby
+
 =item omit_cust_main_county
 
 Optional, pass a true value to omit cust_main_county data for performance.
