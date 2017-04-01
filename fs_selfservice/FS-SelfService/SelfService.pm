@@ -267,7 +267,6 @@ FS::SelfService - Freeside self-service API
 
   my $customer_info = customer_info( { 'session_id' => $session_id } );
 
-  #payment_info and process_payment are available in 1.5+ only
   my $payment_info = payment_info( { 'session_id' => $session_id } );
 
   #!!! process_payment example
@@ -586,7 +585,19 @@ success or an error message on errors.
 
 Returns information that may be useful in displaying a payment page.
 
-Takes a hash reference as parameter with a single key: B<session_id>.
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Required session ID
+
+=item omit_cust_main_county
+
+Optional, pass a true value to omit cust_main_county data for performance.
+
+=back
 
 Returns a hash reference with the following keys:
 
