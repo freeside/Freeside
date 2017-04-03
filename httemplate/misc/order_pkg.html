@@ -30,7 +30,7 @@
   <FONT CLASS="fsinnerbox-title"><% mt('Sales') |h %></FONT>
 % }
 % if ( $show_sales_table ) {
-  <% ntable("#cccccc") %>
+  <TABLE CLASS="fsinnerbox">
 % }
 
 <& /elements/tr-select-sales.html,
@@ -53,7 +53,7 @@
 % }
 
 <FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
-<% ntable("#cccccc") %>
+<TABLE CLASS="fsinnerbox">
 
 % if ( $part_pkg ) {
     <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
@@ -145,7 +145,7 @@
 %
 % if ( $discount_cust_pkg || $waive_setup_fee ) {
   <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
-  <% ntable("#cccccc") %>
+  <TABLE CLASS="fsinnerbox">
     <& /elements/tr-select-pkg-discount.html &>
   </TABLE><BR>
 
@@ -156,7 +156,7 @@
 % my $contact_title = $lock_locationnum ? 'Contact'
 %                                       : 'Contact and Location';
 <FONT CLASS="fsinnerbox-title"><% mt($contact_title) |h %></FONT>
-<% ntable("#cccccc") %>
+<TABLE CLASS="fsinnerbox">
 
 <& /elements/tr-select-contact.html,
              'cgi'           => $cgi,
@@ -198,7 +198,7 @@
 % if ($quotationnum) {
 <BR>
 <FONT CLASS="fsinnerbox-title"><% mt('Quotation details') |h %></FONT>
-<TABLE ID="QuotationDetailTable" BORDER="0" BGCOLOR="#cccccc">
+<TABLE ID="QuotationDetailTable" CLASS="fsinnerbox">
   <TR>
     <TD></TD>
     <TD>
@@ -221,7 +221,7 @@
 % } else {
 <BR>
 <FONT CLASS="fsinnerbox-title"><% mt('Invoice details') |h %></FONT>
-<TABLE ID="InvoiceDetailTable" BORDER="0" BGCOLOR="#cccccc">
+<TABLE ID="InvoiceDetailTable" CLASS="fsinnerbox">
 <& /edit/elements/detail-table.html, 
      id      => 'InvoiceDetailTable',
      details => $details->{'invoice_detail'},
@@ -231,7 +231,7 @@
 
 <BR>
 <FONT CLASS="fsinnerbox-title"><% mt('Package comments') |h %></FONT>
-<TABLE ID="PackageCommentTable" BORDER="0" BGCOLOR="#cccccc">
+<TABLE ID="PackageCommentTable" CLASS="fsinnerbox">
 <& /edit/elements/detail-table.html, 
      id      => 'PackageCommentTable',
      details => $details->{'package_comment'},
