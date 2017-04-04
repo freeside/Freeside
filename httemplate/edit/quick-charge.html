@@ -118,6 +118,9 @@ function bill_now_changed (what) {
 <INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospect_main ? $prospect_main->prospectnum : '' %>">
 <INPUT TYPE="hidden" NAME="quotationnum" VALUE="<% $quotationnum %>">
 
+<TABLE><TR><TD>
+
+<FONT CLASS="fsinnerbox-title"><% mt('Charge') |h %>
 <TABLE ID="QuickChargeTable" CLASS="fsinnerbox">
 
 % if ( $cust_pkg ) { #modify one-time charge
@@ -134,15 +137,15 @@ function bill_now_changed (what) {
   prefix => $money_char,
 &> 
 
-% if ( $curuser->access_right('Edit package definition costs') ) {
-  <& $field,
-    label  => mt('Cost'),
-    field  => 'setup_cost',
-    value  => sprintf('%.2f',$part_pkg->setup_cost),
-    size   => 8,
-    prefix => $money_char,
-  &> 
-% }
+% if ( $curuser->access_right('Edit package definition costs') ) {             
+  <& $field,                                                                   
+    label  => mt('Cost'),                                                      
+    field  => 'setup_cost',                                                    
+    value  => sprintf('%.2f',$part_pkg->setup_cost),                           
+    size   => 8,                                                               
+    prefix => $money_char,                                                     
+  &>                                                                           
+% } 
 
 %   if ( $conf->exists('invoice-unitprice') ) {
 <& $field,
@@ -191,7 +194,7 @@ function bill_now_changed (what) {
         curr_value => $cust_pkg->get('separate_bill'),
       &>
       <TR>
-        <TD ALIGN="right"><% mt('Tax exempt') |h %> </TD>
+        <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
         <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
       </TR>
 
@@ -201,7 +204,10 @@ function bill_now_changed (what) {
         'label' => emt('Tax product'),
         'curr_value' => $part_pkg->get('taxproductnum')
       &>
-% }
+%   }
+
+  </TABLE>
+  </TD></TR></TABLE>
 
 % } else { # new one-time charge
 
@@ -219,13 +225,6 @@ function bill_now_changed (what) {
     </TR>
 
 %   if ( $curuser->access_right('Edit package definition costs') ) {
-      <& /elements/tr-input-text.html,
-           label  => mt('Cost'),
-           field  => 'setup_cost',
-           value  => $setup_cost,
-           size   => 8,
-           prefix => $money_char,
-      &> 
 %   }
 
 %   if ( $conf->exists('invoice-unitprice') ) {
@@ -242,98 +241,6 @@ function bill_now_changed (what) {
 %   }
 
 <& /elements/tr-select-pkg_class.html, 'curr_value' => $classnum  &>
-
-% unless ( $quotationnum ) {
-
-    <TR>
-      <TH ALIGN="right"><% mt('Invoice now') |h %></TH>
-      <TD>
-        <INPUT TYPE  = "checkbox"
-               NAME  = "bill_now"
-               VALUE = "1"
-               <% $cgi->param('bill_now') ? 'CHECKED' : '' %>
-               onClick  = "bill_now_changed(this);"
-               onChange = "bill_now_changed(this);"
-        >
-        <% mt('with terms') |h %> 
-        <& /elements/select-terms.html,
-             'curr_value' => scalar($cgi->param('invoice_terms')),
-             'disabled'   => ( $cgi->param('bill_now') ? 0 : 1 ),
-             'agentnum'   => $cust_or_prospect->agentnum,
-        &>
-      </TD>
-    </TR>
-
-%   # false laziness w/misc/order_pkg.html
-    <TR>
-      <TH ALIGN="right"><% mt('Charge date') |h %> </TH>
-      <TD>
-        <INPUT TYPE  = "text"
-               NAME  = "start_date"
-               SIZE  = 32
-               ID    = "start_date_text"
-               VALUE = "<% $start_date %>"
-               onKeyPress="return enable_quick_charge(event)"
-               <% $cgi->param('bill_now')
-                    ? 'STYLE = "background-color:#dddddd" DISABLED'
-                    : ''
-               %>
-        >
-        <IMG SRC   = "<%$fsurl%>images/calendar.png"
-             ID    = "start_date_button"
-             TITLE = "<% mt('Select date') |h %>"
-             STYLE = "cursor:pointer<% $cgi->param('bill_now') ? ';display:none' : '' %>"
-        >
-        <IMG SRC   = "<%$fsurl%>images/calendar-disabled.png"
-             ID    = "start_date_button_disabled"
-             <% $cgi->param('bill_now') ? '' : 'STYLE="display:none"' %>
-        >
-        <FONT SIZE=-1>(<% mt('leave blank to charge immediately') |h %>)</FONT>
-      </TD>
-    </TR>
-
-    <SCRIPT TYPE="text/javascript">
-      Calendar.setup({
-        inputField: "start_date_text",
-        ifFormat:   "<% $date_format %>",
-        button:     "start_date_button",
-        align:      "BR"
-      });
-    </SCRIPT>
-
-<& /elements/tr-checkbox.html,
-  label => emt('Invoice this charge separately'),
-  field => 'separate_bill',
-  value => 'Y'
-&>
-
-% }
-
-% if ( ! $quotationnum && $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
-%   my $what = lc(FS::payby->shortname($cust_main->payby));
-    <TR>
-      <TD ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TD>
-      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
-    </TR>
-% }
-
-<TR>
-  <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
-  <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
-</TR>
-
-<& /elements/tr-select-taxclass.html, 'curr_value' => scalar($cgi->param('taxclass')) &>
-
-<& /elements/tr-select-taxproduct.html,
-  'label'      => emt('Tax product'),
-  'curr_value' => scalar($cgi->param('taxproductnum')),
-&>
-
-<& /elements/tr-select-taxoverride.html,
-  'curr_value' => scalar($cgi->param('tax_override')),
-&>
-
-% } # if !$cust_pkg
 
 <TR>
   <TH ALIGN="right"><% mt('Description') |h %> </TH>
@@ -377,17 +284,9 @@ function bill_now_changed (what) {
 %   }
 % }
 
-
 </TABLE>
 
-<BR>
-% my $label = $cust_pkg
-%             ? emt('Modify one-time charge')
-%             : emt('Add one-time charge');
-<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% $label %>" \
-<% ($cgi->param('error') || $cust_pkg) ? '' :' DISABLED' %>>
-
-</FORM>
+</TD>
 
 
 <SCRIPT TYPE="text/javascript">
@@ -448,6 +347,157 @@ function bill_now_changed (what) {
   }
 
 </SCRIPT>
+
+
+% if ( $curuser->access_right('Edit package definition costs') ) {
+
+  <TD>
+
+    <FONT CLASS="fsinnerbox-title">Taxation</FONT>
+    <TABLE CLASS="fsinnerbox">
+
+    <TR>
+      <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
+      <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
+    </TR>
+
+    <& /elements/tr-select-taxclass.html, 'curr_value' => scalar($cgi->param('taxclass')) &>
+
+    <& /elements/tr-select-taxproduct.html,
+      'label'      => emt('Tax product'),
+      'curr_value' => scalar($cgi->param('taxproductnum')),
+    &>
+
+    <& /elements/tr-select-taxoverride.html,
+      'curr_value' => scalar($cgi->param('tax_override')),
+    &>
+
+    </TABLE>
+
+    <BR>
+    <FONT CLASS="fsinnerbox-title"><% mt('Cost Accounting') |h %>
+    <TABLE ID="QuickChargeTable" CLASS="fsinnerbox">
+
+    <& /elements/tr-input-text.html,
+         label  => mt('Cost'),
+         field  => 'setup_cost',
+         value  => $setup_cost,
+         size   => 8,
+         prefix => $money_char,
+    &> 
+
+    </TABLE>
+
+  </TD>
+
+% }
+
+</TR></TABLE>
+
+
+% if ( $curuser->access_right('Discount customer package') ) {
+    <BR>
+    <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
+      <& /elements/tr-select-pkg-discount.html,
+           'setup_label'         => emt('Discount'),
+           'disable_recur'       => 1,
+           'disable_waive_setup' => 1,
+      &>
+    </TABLE>
+% }
+
+
+% unless ( $quotationnum ) {
+
+    <BR>
+    <FONT CLASS="fsinnerbox-title"><% mt('Invoicing') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
+
+    <TR>
+      <TH ALIGN="right"><% mt('Invoice now') |h %></TH>
+      <TD>
+        <INPUT TYPE  = "checkbox"
+               NAME  = "bill_now"
+               VALUE = "1"
+               <% $cgi->param('bill_now') ? 'CHECKED' : '' %>
+               onClick  = "bill_now_changed(this);"
+               onChange = "bill_now_changed(this);"
+        >
+        <FONT SIZE=-1><% mt('with terms') |h %></FONT>
+        <& /elements/select-terms.html,
+             'curr_value' => scalar($cgi->param('invoice_terms')),
+             'disabled'   => ( $cgi->param('bill_now') ? 0 : 1 ),
+             'agentnum'   => $cust_or_prospect->agentnum,
+        &>
+      </TD>
+    </TR>
+
+%   # false laziness w/misc/order_pkg.html
+    <TR>
+      <TH ALIGN="right"><% mt('Charge date') |h %> </TH>
+      <TD>
+        <INPUT TYPE  = "text"
+               NAME  = "start_date"
+               SIZE  = 32
+               ID    = "start_date_text"
+               VALUE = "<% $start_date %>"
+               onKeyPress="return enable_quick_charge(event)"
+               <% $cgi->param('bill_now')
+                    ? 'STYLE = "background-color:#dddddd" DISABLED'
+                    : ''
+               %>
+        >
+        <IMG SRC   = "<%$fsurl%>images/calendar.png"
+             ID    = "start_date_button"
+             TITLE = "<% mt('Select date') |h %>"
+             STYLE = "cursor:pointer<% $cgi->param('bill_now') ? ';display:none' : '' %>"
+        >
+        <IMG SRC   = "<%$fsurl%>images/calendar-disabled.png"
+             ID    = "start_date_button_disabled"
+             <% $cgi->param('bill_now') ? '' : 'STYLE="display:none"' %>
+        >
+        <FONT SIZE=-1>(<% mt('leave blank to charge immediately') |h %>)</FONT>
+      </TD>
+    </TR>
+
+    <SCRIPT TYPE="text/javascript">
+      Calendar.setup({
+        inputField: "start_date_text",
+        ifFormat:   "<% $date_format %>",
+        button:     "start_date_button",
+        align:      "BR"
+      });
+    </SCRIPT>
+
+    <& /elements/tr-checkbox.html,
+      label => emt('Invoice this charge separately'),
+      field => 'separate_bill',
+      value => 'Y'
+    &>
+
+%   if (  $cust_main->has_cust_payby_auto ) {
+%     my $what = lc(FS::payby->shortname($cust_main->payby));
+      <TR>
+        <TD ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TD>
+        <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+      </TR>
+%   }
+
+    </TABLE>
+
+% }
+
+% } # if !$cust_pkg
+
+<BR>
+% my $label = $cust_pkg
+%             ? emt('Modify one-time charge')
+%             : emt('Add one-time charge');
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% $label %>" \
+<% ($cgi->param('error') || $cust_pkg) ? '' :' DISABLED' %>>
+
+</FORM>
 
 %my %footer_args = (
 %    formvalidation => {

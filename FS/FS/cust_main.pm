@@ -3267,6 +3267,7 @@ sub charge {
   my $cust_pkg_ref = '';
   my ( $bill_now, $invoice_terms ) = ( 0, '' );
   my $locationnum;
+  my ( $discountnum, $discountnum_amount, $discountnum_percent ) = ( '','','' );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $setup_cost = $_[0]->{setup_cost};
@@ -3287,6 +3288,9 @@ sub charge {
     $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
     $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
     $separate_bill = $_[0]->{separate_bill} || '';
+    $discountnum = $_[0]->{setup_discountnum};
+    $discountnum_amount = $_[0]->{setup_discountnum_amount};
+    $discountnum_percent = $_[0]->{setup_discountnum_percent};
   } else { # yuck
     $amount     = shift;
     $setup_cost = '';
@@ -3350,13 +3354,16 @@ sub charge {
   }
 
   my $cust_pkg = new FS::cust_pkg ( {
-    'custnum'    => $self->custnum,
-    'pkgpart'    => $pkgpart,
-    'quantity'   => $quantity,
-    'start_date' => $start_date,
-    'no_auto'    => $no_auto,
-    'separate_bill' => $separate_bill,
-    'locationnum'=> $locationnum,
+    'custnum'                   => $self->custnum,
+    'pkgpart'                   => $pkgpart,
+    'quantity'                  => $quantity,
+    'start_date'                => $start_date,
+    'no_auto'                   => $no_auto,
+    'separate_bill'             => $separate_bill,
+    'locationnum'               => $locationnum,
+    'setup_discountnum'         => $discountnum,
+    'setup_discountnum_amount'  => $discountnum_amount,
+    'setup_discountnum_percent' => $discountnum_percent,
   } );
 
   $error = $cust_pkg->insert;

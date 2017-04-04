@@ -510,6 +510,7 @@ sub charge {
   my $cust_pkg_ref = '';
   my ( $bill_now, $invoice_terms ) = ( 0, '' );
   my $locationnum;
+  my ( $discountnum, $discountnum_amount, $discountnum_percent ) = ( '','','' );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $setup_cost = $_[0]->{setup_cost};
@@ -529,6 +530,9 @@ sub charge {
     $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
     $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
     $locationnum = $_[0]->{locationnum};
+    $discountnum = $_->{setup_discountnum};
+    $discountnum_amount = $_->{setup_discountnum_amount};
+    $discountnum_percent = $_->{setup_discountnum_percent};
   } else {
     $amount     = shift;
     $setup_cost = '';
@@ -599,12 +603,15 @@ sub charge {
   # of ordering a customer package, no "bill now")
 
   my $quotation_pkg = new FS::quotation_pkg ( {
-    'quotationnum'  => $self->quotationnum,
-    'pkgpart'       => $pkgpart,
-    'quantity'      => $quantity,
-    #'start_date' => $start_date,
-    #'no_auto'    => $no_auto,
-    'locationnum'=> $locationnum,
+    'quotationnum'              => $self->quotationnum,
+    'pkgpart'                   => $pkgpart,
+    'quantity'                  => $quantity,
+    #'start_date'                => $start_date,
+    #'no_auto'                   => $no_auto,
+    'locationnum'               => $locationnum,
+    'setup_discountnum'         => $discountnum,
+    'setup_discountnum_amount'  => $discountnum_amount,
+    'setup_discountnum_percent' => $discountnum_percent,
   } );
 
   $error = $quotation_pkg->insert;
