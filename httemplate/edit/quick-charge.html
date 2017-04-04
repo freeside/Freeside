@@ -224,9 +224,6 @@ function bill_now_changed (what) {
       </TD>
     </TR>
 
-%   if ( $curuser->access_right('Edit package definition costs') ) {
-%   }
-
 %   if ( $conf->exists('invoice-unitprice') ) {
     <TR>
       <TH ALIGN="right"><% mt('Quantity') |h %> </TH>
@@ -262,7 +259,7 @@ function bill_now_changed (what) {
 % unless ($quotationnum) {
 <TR>
   <TD></TD>
-  <TD><FONT SIZE="-1"><% mt('Optional additional description (also printed on invoice):') |h %> </FONT></TD>
+  <TH ALIGN="left"><% mt('Optional additional description (also printed on invoice):') |h %></TH>
 </TR>
 
 %   foreach (@description) {
@@ -349,30 +346,30 @@ function bill_now_changed (what) {
 </SCRIPT>
 
 
+<TD>
+
+  <FONT CLASS="fsinnerbox-title">Taxation</FONT>
+  <TABLE CLASS="fsinnerbox">
+
+  <TR>
+    <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
+    <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
+  </TR>
+
+  <& /elements/tr-select-taxclass.html, 'curr_value' => scalar($cgi->param('taxclass')) &>
+
+  <& /elements/tr-select-taxproduct.html,
+    'label'      => emt('Tax product'),
+    'curr_value' => scalar($cgi->param('taxproductnum')),
+  &>
+
+  <& /elements/tr-select-taxoverride.html,
+    'curr_value' => scalar($cgi->param('tax_override')),
+  &>
+
+  </TABLE>
+
 % if ( $curuser->access_right('Edit package definition costs') ) {
-
-  <TD>
-
-    <FONT CLASS="fsinnerbox-title">Taxation</FONT>
-    <TABLE CLASS="fsinnerbox">
-
-    <TR>
-      <TH ALIGN="right"><% mt('Tax exempt') |h %> </TH>
-      <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
-    </TR>
-
-    <& /elements/tr-select-taxclass.html, 'curr_value' => scalar($cgi->param('taxclass')) &>
-
-    <& /elements/tr-select-taxproduct.html,
-      'label'      => emt('Tax product'),
-      'curr_value' => scalar($cgi->param('taxproductnum')),
-    &>
-
-    <& /elements/tr-select-taxoverride.html,
-      'curr_value' => scalar($cgi->param('tax_override')),
-    &>
-
-    </TABLE>
 
     <BR>
     <FONT CLASS="fsinnerbox-title"><% mt('Cost Accounting') |h %>
@@ -388,9 +385,10 @@ function bill_now_changed (what) {
 
     </TABLE>
 
-  </TD>
-
 % }
+
+</TD>
+
 
 </TR></TABLE>
 
