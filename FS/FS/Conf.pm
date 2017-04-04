@@ -1688,6 +1688,14 @@ and customer address. Include units.',
   },
 
   { 
+    'key'         => 'invoice_pay_by_msg',
+    'section'     => 'invoicing',
+    'description' => 'Test of the "Please pay by (date)" message.  Include [_1] to indicate the date, for example: "Please pay by [_1]"',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
