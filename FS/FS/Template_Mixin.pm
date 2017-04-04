@@ -1953,8 +1953,11 @@ sub balance_due_msg {
     # _items_total) and not here
     # (yes, or if invoice_sections is enabled; this is just for compatibility)
     if ( $self->due_date ) {
-      $msg .= ' - ' . $self->mt('Please pay by'). ' '.
-              $self->due_date2str('short')
+      my $please_pay_by =
+        $self->conf->config('invoice_pay_by_msg', $self->agentnum)
+        || 'Please pay by [_1]';
+      $msg .= ' - ' . $self->mt($please_pay_by, $self->due_date2str('short')).
+              ' '
        unless $self->conf->config_bool('invoice_omit_due_date',$self->agentnum);
     } elsif ( $self->terms ) {
       $msg .= ' - '. $self->mt($self->terms);
