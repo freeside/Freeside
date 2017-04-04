@@ -3,10 +3,11 @@
 In order_pkg.html or similar:
 
 <& /elements/tr-select-pkg-discount.html,
-  curr_value_setup => ($cgi->param('setup_discountnum') || ''),
-  curr_value_recur => ($cgi->param('recur_discountnum') || ''),
-  disable_setup    => 0,
-  disable_recur    => 0,
+  curr_value_setup    => ($cgi->param('setup_discountnum') || ''),
+  curr_value_recur    => ($cgi->param('recur_discountnum') || ''),
+  disable_setup       => 0,
+  disable_recur       => 0,
+  disable_waive_setup => 0
 &>
 
 This provides the following:
@@ -31,9 +32,9 @@ description if curr_value_setup is set. Likewise "disable_recur".
 %      and !$opt{disable_setup} )
 % {
 %   my $pre_options = [ '' => '(none)' ];
-%   if ( $curuser->access_right('Waive setup fee') ) {
-%     push @$pre_options, -2 => 'Waive setup fee';
-%   }
+%   push @$pre_options, -2 => 'Waive setup fee'
+%     if $curuser->access_right('Waive setup fee')
+%     && ! $opt{'disable_waive_setup'};
 <& tr-td-label.html, label => $opt{setup_label} || emt('Setup fee') &>
   <td>
     <& select-discount.html,
@@ -68,7 +69,9 @@ description if curr_value_setup is set. Likewise "disable_recur".
 </tr>
 
 % } elsif ( $curuser->access_right('Waive setup fee')
-%           and !$opt{disable_setup} )
+%             && !$opt{disable_waive_setup}
+%             && !$opt{disable_setup}
+%         )
 % {
 
 <& tr-td-label.html, label => emt('Waive setup fee') &>

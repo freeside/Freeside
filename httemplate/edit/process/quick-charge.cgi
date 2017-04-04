@@ -123,21 +123,18 @@ if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) { #modifying an existing one-time charge
     'amount'        => $amount,
     'setup_cost'    => $setup_cost,
     'quantity'      => $quantity,
-    'bill_now'      => scalar($cgi->param('bill_now')),
-    'invoice_terms' => scalar($cgi->param('invoice_terms')),
     'start_date'    => ( scalar($cgi->param('start_date'))
                            ? parse_datetime($cgi->param('start_date'))
                            : ''
                        ),
-    'no_auto'       => scalar($cgi->param('no_auto')),
-    'separate_bill' => scalar($cgi->param('separate_bill')),
-    'pkg'           => scalar($cgi->param('pkg')),
-    'setuptax'      => scalar($cgi->param('setuptax')),
-    'taxclass'      => scalar($cgi->param('taxclass')),
-    'taxproductnum' => scalar($cgi->param('taxproductnum')),
     'tax_override'  => $override,
-    'classnum'      => scalar($cgi->param('classnum')),
     'additional'    => \@description,
+
+    map { $_ => scalar($cgi->param($_)), } qw(
+      bill_now invoice_terms no_auto separate_bill pkg
+      setuptax taxclass taxproductnum classnum
+      setup_discountnum setup_discountnum_amount setup_discountnum_percent
+    )
   );
 
   if ( $quotation ) {

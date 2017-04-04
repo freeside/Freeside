@@ -18,12 +18,16 @@
   </TR>
 
 <& /elements/tr-select-pkg-discount.html,
-  curr_value_setup  => $setup_discountnum,
-  curr_value_recur  => $recur_discountnum,
-  disable_setup     => $disable_setup,
-  disable_recur     => $disable_recur,
-  setup_label       => emt('Setup fee discount'),
-  recur_label       => emt('Recurring fee discount'),
+  curr_value_setup    => $setup_discountnum,
+  curr_value_recur    => $recur_discountnum,
+  disable_setup       => $disable_setup,
+  disable_recur       => $disable_recur,
+  disable_waive_setup => ($part_pkg->freq eq '0'),
+  setup_label         => ( $part_pkg->freq eq '0'
+                            ? emt('Discount')
+                            : emt('Setup fee discount')
+                         ),
+  recur_label         => emt('Recurring fee discount'),
 &>
   
 </TABLE>
@@ -81,7 +85,7 @@ if ( !$cust_pkg->get('setup') and $cust_pkg->base_setup > 0 ) {
   $disable_setup = 0;
 }
 my $disable_recur = 1;
-if ( $cust_pkg->base_recur > 0 ) {
+if ( $cust_pkg->base_recur > 0 && $part_pkg->freq ne '0' ) {
   $disable_recur = 0;
 }
 
