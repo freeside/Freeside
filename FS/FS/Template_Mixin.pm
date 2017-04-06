@@ -566,6 +566,7 @@ sub print_generic {
     'notice_name'     => $notice_name, # escape?
     'current_charges' => sprintf("%.2f", $self->charged),
     'duedate'         => $self->due_date2str('rdate'), #date_format?
+    'duedate_long'    => $self->due_date2str('long'),
 
     #customer info
     'custnum'         => $cust_main->display_custnum,
