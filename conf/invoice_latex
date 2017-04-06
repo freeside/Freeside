@@ -38,6 +38,16 @@
 '';
 --@]
 
+\catcode`\{=1
+\catcode`\}=2
+\special{ps:%
+  SDict begin [
+    /Title (Invoice \#[@-- $invnum --@])
+    /DOCINFO pdfmark
+  end
+}
+\end
+
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
 \addtolength{\hoffset}{-0.6cm}		% left margin on page
 \addtolength{\topmargin}{[@-- defined($topmargin) ? $topmargin : '-1.00cm' --@]}
