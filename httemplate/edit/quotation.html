@@ -18,7 +18,7 @@
                    { field=>'custnum',               type=>'fixed-cust_main' },
                    { field=>'_date',                 type=>'fixed-date' },
                    { field=>'quotation_description', type=>'text', size=>50 },
-                   { field=>'close_date',            type=>'input-date-field' },
+                   { field=>'close_date',            type=>'input-date-field', value=>'30' },
                    { field=>'confidence',            type=>'text', size=>3, postfix=>'%' },
                    ($can_disable ? { field=>'disabled', type=>'checkbox', value=>'Y'} : ()),
                               ],
