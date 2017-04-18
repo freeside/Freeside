@@ -26,15 +26,50 @@ error_log( "COOKIE: ". $_COOKIE['freeside_session_id'] );
 
 ?>
 
-<P>Hello <?php echo htmlspecialchars($name); ?></P>
+<h3>Billing</h3>
+
+<p><big><strong>Name</strong></big></p>
+<p><?php echo htmlspecialchars($name); ?></p>
 
 <?php if ( $signupdate_pretty ) { ?>
-  <P>Thank you for being a customer since <?php echo $signupdate_pretty; ?></P>
+  <p><big><strong>Signup Date</strong></big></p>
+  <p><?php echo htmlspecialchars($signupdate_pretty); ?></p>
 <?php } ?>
 
-<P>Your account number is: <B><?php echo $display_custnum ?></B></P>
+<p><big><strong>Username</strong></big></p>
+<p>me@gmail.com</p>
 
-<P>Your current balance is: <B><?php echo $balance_pretty ?></B></P>
+<p><big><strong>Account Number</strong></big></p>
+<p><?php echo $display_custnum ?></p>
+
+<p><big><strong>Address</strong></big></p>
+<address>
+Box 564, Disneyland<br>
+USA
+</address>
+
+<p><big><strong>Email Address</strong></big></p>
+<p>me@gmail.com</p>
+
+<br>
+<br>
+<br>
+<p><big><strong>Total Balance</strong></big></p>
+<h4><?php echo $balance_pretty ?></h4>
+
+<br>
+<br>
+<br>
+<p><big><strong> <font color="	#4682B4">View my Bill</strong></big></font></p>
+<p><big><strong> <font color="#4682B4">Change Bill Deliver Options</strong></big></font></p>
+
+
+
+<h3>Services</h3>
+
+<h4><font color="#4682B4"> <i class="fa fa-laptop"> </i> </font> Internet </h4>
+<h4><font color="#4682B4"> <i class="fa fa-volume-control-phone"> </i> </font>   Voice </h4>
+
 
 <?php echo $announcement ?>
 
@@ -47,5 +82,6 @@ your tickets.  some notification if there's new responses since your last login
 
 anything else?
 -->
+
 
 <?php get_footer(); ?>
