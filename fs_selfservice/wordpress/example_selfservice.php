@@ -60,6 +60,7 @@ get_header();
 <p><a href="view_invoice.php?invnum=<?php echo $max_invnum ?>">View my Bill</a></p>
 <p><a href="change_bill.php">Change Bill Deliver Options</a></p>
 
+<p><a href="process_logout.php">Logout</a></p>
 
 
 <h3>Services</h3>

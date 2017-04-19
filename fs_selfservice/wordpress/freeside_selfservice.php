@@ -46,6 +46,22 @@ function freeside_server_input() {
 //TODO: remove freeside_server on uninstall
 
 function freeside_init() {
+
+  if ( $GLOBALS['FREESIDE_PROCESS_LOGOUT'] ) {
+    $GLOBALS['FREESIDE_PROCESS_LOGOUT'] = false;
+
+    $freeside = new FreesideSelfService();
+    $response = $freeside->logout( array(
+      'session_id' => $_COOKIE['freeside_session_id'],
+    ) );
+    setcookie('freeside_session_id', '', time() - 3600);
+    $error = $response['error'];
+    if ( $error ) {
+      error_log("Logout error: $error");
+    }
+    return;
+  }
+
   if ( ! $GLOBALS['FREESIDE_PROCESS_LOGIN'] ) {
     return;
   } else {
@@ -129,7 +145,7 @@ class FreesideSelfService {
         )));
         $file = file_get_contents($URL, false, $context);
         $response = xmlrpc_decode($file);
-        if (xmlrpc_is_fault($response)) {
+        if (isset($response) && xmlrpc_is_fault($response)) {
             trigger_error("[FreesideSelfService] XML-RPC communication error: $response[faultString] ($response[faultCode])");
         } else {
             //error_log("[FreesideSelfService] $response");

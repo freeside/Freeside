@@ -38,10 +38,11 @@ VPN or tunnel.
 
 Usage:
 
-See the included example_login.php, process_login.php, example_selfservice.php
-and view_invoice.php files.  These files perform a self-service login
-and display a basic landing page.  To use, copy them to the wordpress content
-directory (or a subdirectory), and point your browser to example_login.php
+See the included example_login.php, process_login.php, process_login.php,
+example_selfservice.php and view_invoice.php files.  These files perform a
+self-service login and display a basic landing page.  To use, copy them and
+the elements/ subdirectory to the wordpress content directory (or a
+subdirectory) and point your browser to example_login.php
 
 For full API documentation including all available functions, their arguments
 and return data, see
