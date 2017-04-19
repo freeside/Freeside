@@ -18,8 +18,8 @@ self-service" plugin, and click "Activate".
 
 Configuration:
 
-In Wordpress, go to Settings -> General and set "Freeside self-service URL"
-to the 
+In Wordpress, go to Settings -> General and set "Freeside server"
+to your Freeside server name or IP address.
 
 
 Freeside configuration:
@@ -38,8 +38,8 @@ VPN or tunnel.
 
 Usage:
 
-See the included example_login.php, process_login.php and
-example_selfservice.php files.  These files perform a self-service login
+See the included example_login.php, process_login.php, example_selfservice.php
+and view_invoice.php files.  These files perform a self-service login
 and display a basic landing page.  To use, copy them to the wordpress content
 directory (or a subdirectory), and point your browser to example_login.php
 

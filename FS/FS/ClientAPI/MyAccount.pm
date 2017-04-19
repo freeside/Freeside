@@ -593,6 +593,7 @@ sub customer_info_short {
       or return { 'error' => "customer_info_short: unknown custnum $custnum" };
 
     $return{display_custnum} = $cust_main->display_custnum;
+    $return{max_invnum}      = $cust_main->max_invnum;
 
     if ( $session->{'pkgnum'} ) { 
       $return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
