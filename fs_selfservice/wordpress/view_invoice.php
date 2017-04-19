@@ -18,6 +18,13 @@ if ( isset($invoice_info['error']) && $invoice_info['error'] ) {
 
 extract($invoice_info);
 
+//if we don't need multi-company logo support, this is probably easier than
+// calling invoice_logo()
+$invoice_html = preg_replace( '/cust_bill-logo\.cgi\?invnum=\d+;template=/',
+                              'mylogo.png?',
+                              $invoice_html
+                            );
+
 get_header();
 
 ?>
