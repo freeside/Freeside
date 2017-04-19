@@ -1,64 +1,17 @@
 <?php
 
 $GLOBALS['FREESIDE_PROCESS_LOGIN'] = true;
-//error_log($GLOBALS['$FREESIDE_PROCESS_LOGIN']);
 
 require( dirname( __FILE__ ) . '/wp-blog-header.php' );
-
-//add_action('muplugins_loaded', 'freeside_process_login');
-//error_log("action added");
-
-function notfreeside_process_login() {
-error_log("FINALLY action run");
-
-$freeside = new FreesideSelfService();
-
-$response = $freeside->login( array( 
-  'email'    => strtolower($_POST['email']),
-  'username' => strtolower($_POST['username']),
-  'domain'   => strtolower($_POST['domain']),
-  'password' => $_POST['password'],
-) );
-
-#error_log("[login] received response from freeside: $response");
-
-$error = $response['error'];
-
-if ( $error ) {
-
-  wp_redirect('example_login.php?username='. urlencode($username).
-                           '&domain='.   urlencode($domain).
-                           '&email='.    urlencode($email).
-                           '&freeside_error='.    urlencode($error)
-        );
-  exit;
-
-}
-
-// sucessful login
-
-$session_id = $response['session_id'];
-
-error_log("[login] logged into freeside with session_id=$session_id, setting cookie");
-
-// now what?  for now, always redirect to the main page (or the select a
-// customer diversion).
-// eventually, other options?
-
-setcookie('session_id', $session_id);
-
-}
 
 $response = $GLOBALS['FREESIDE_LOGIN_RESPONSE'];
 
 if ( $response['custnum'] || $response['svcnum'] ) {
 
-  error_log('redirecting to example_selfservice.php');
   wp_redirect("example_selfservice.php");
   exit;
 
 } elseif ( $response['customers'] ) {
-  error_log('sending header');
   get_header();
 ?>
 

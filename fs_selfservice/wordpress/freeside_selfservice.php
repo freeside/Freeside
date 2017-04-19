@@ -5,7 +5,7 @@ Plugin URI:  http://freeside.biz/freeside
 Description: Call the Freeside signup and self-service APIs from within Wordpress
 Version:     0.20170417
 Author:      Freeside Internet Services, Inc.
-Author URI:  https://freeside.biz/freeside/
+Author URI:  http://freeside.biz/freeside/
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Text Domain: freeside_selfserivce
 Domain Path: /languages
@@ -46,9 +46,6 @@ function freeside_server_input() {
 //TODO: remove freeside_server on uninstall
 
 function freeside_init() {
-  //error_log("FINALLY action run ". $FREESIDE_PROCESS_LOGIN);
-
-  //error_log($GLOBALS['$FREESIDE_PROCESS_LOGIN']);
   if ( ! $GLOBALS['FREESIDE_PROCESS_LOGIN'] ) {
     return;
   } else {
@@ -75,11 +72,12 @@ function freeside_init() {
     $url .= $_SERVER['SERVER_NAME'];
     $url .= $_SERVER['REQUEST_URI'];
 
-    wp_redirect(dirname($url). '/example_login.php?username='. urlencode($_POST['freeside_username']).
-                             '&domain='.   urlencode($_POST['freeside_domain']).
-                             '&email='.    urlencode($_POST['freeside_email']).
-                             '&freeside_error='.    urlencode($error)
-          );
+    wp_redirect(dirname($url). '/example_login.php?'.
+                  'username='.        urlencode($_POST['freeside_username']).
+                  '&domain='.         urlencode($_POST['freeside_domain']).
+                  '&email='.          urlencode($_POST['freeside_email']).
+                  '&freeside_error='. urlencode($error)
+    );
     exit;
 
   }
@@ -89,10 +87,6 @@ function freeside_init() {
   $session_id = $response['session_id'];
 
   //error_log("[login] logged into freeside with session_id=$freeside_session_id, setting cookie");
-
-// now what?  for now, always redirect to the main page (or the select a
-// customer diversion).
-// eventually, other options?
 
   setcookie('freeside_session_id', $session_id);
 
@@ -125,7 +119,7 @@ class FreesideSelfService {
     public function __call($name, $arguments) {
     
         $URL = 'http://'. get_option('freeside_server'). ':8080';
-        error_log("[FreesideSelfService] $name called, sending to ". $URL);
+        //error_log("[FreesideSelfService] $name called, sending to ". $URL);
 
         $request = xmlrpc_encode_request("FS.ClientAPI_XMLRPC.$name", freeside_flatten($arguments[0]));
         $context = stream_context_create( array( 'http' => array(

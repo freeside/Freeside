@@ -22,7 +22,7 @@ if ( $error ) {
 <FORM ACTION="process_login.php" METHOD=POST>
 <INPUT TYPE="hidden" NAME="session" VALUE="login">
 
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+<TABLE>
 
 <?php if ( $single_domain ) { ?>
 
@@ -64,7 +64,7 @@ if ( $error ) {
     
   <FORM ACTION="process_login.php" METHOD=POST>
   <INPUT TYPE="hidden" NAME="session" VALUE="login">
-  <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+  <TABLE>
   <TR>
     <TH ALIGN="right">Phone number </TH>
     <TD>
