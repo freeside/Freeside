@@ -4,9 +4,6 @@ require( dirname( __FILE__ ) . '/wp-blog-header.php' );
 
 $freeside = new FreesideSelfService();
 
-error_log( "COOKIE: ". $_COOKIE['freeside_session_id'] );
-error_log( "COOKIE: ". $GLOBALS['FREESIDE_SESSION_ID'] );
-
 $customer_info = $freeside->customer_info_short( array(
   'session_id' => $_COOKIE['freeside_session_id'],
 ) );
@@ -22,8 +19,6 @@ extract($customer_info);
 
 get_header();
 
-error_log( "COOKIE: ". $_COOKIE['freeside_session_id'] );
-
 ?>
 
 <h3>Billing</h3>
@@ -37,19 +32,21 @@ error_log( "COOKIE: ". $_COOKIE['freeside_session_id'] );
 <?php } ?>
 
 <p><big><strong>Username</strong></big></p>
-<p>me@gmail.com</p>
+<p><?php echo htmlspecialchars($svc_label) ?></p>
 
 <p><big><strong>Account Number</strong></big></p>
 <p><?php echo $display_custnum ?></p>
 
 <p><big><strong>Address</strong></big></p>
 <address>
-Box 564, Disneyland<br>
-USA
+<?php echo htmlspecialchars($address1); ?><br>
+<?php echo strlen($address2) ? htmlspecialchars($address2).'<br>' : '' ?>
+<?php echo $city ?>, <?php echo $state ?>  <?php echo $zip ?><br>
+<?php echo $country ?>
 </address>
 
 <p><big><strong>Email Address</strong></big></p>
-<p>me@gmail.com</p>
+<p><?php echo htmlspecialchars($invoicing_list) ?></p>
 
 <br>
 <br>
@@ -60,8 +57,8 @@ USA
 <br>
 <br>
 <br>
-<p><big><strong> <font color="	#4682B4">View my Bill</strong></big></font></p>
-<p><big><strong> <font color="#4682B4">Change Bill Deliver Options</strong></big></font></p>
+<p><a href="view_invoice.php?invnum=<?php echo $max_invnum ?>">View my Bill</a></p>
+<p><a href="change_bill.php">Change Bill Deliver Options</a></p>
 
 
 
@@ -69,7 +66,6 @@ USA
 
 <h4><font color="#4682B4"> <i class="fa fa-laptop"> </i> </font> Internet </h4>
 <h4><font color="#4682B4"> <i class="fa fa-volume-control-phone"> </i> </font>   Voice </h4>
-
 
 <?php echo $announcement ?>
 

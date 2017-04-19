@@ -50,8 +50,6 @@ function freeside_init() {
 
   //error_log($GLOBALS['$FREESIDE_PROCESS_LOGIN']);
   if ( ! $GLOBALS['FREESIDE_PROCESS_LOGIN'] ) {
-error_log("DACOOKIE: ". $_COOKIE['freeside_session_id']);
-    $GLOBALS['FREESIDE_SESSION_ID'] = $_COOKIE['freeside_session_id'];
     return;
   } else {
     $GLOBALS['FREESIDE_PROCESS_LOGIN'] = false;
@@ -90,7 +88,7 @@ error_log("DACOOKIE: ". $_COOKIE['freeside_session_id']);
 
   $session_id = $response['session_id'];
 
-  error_log("[login] logged into freeside with session_id=$freeside_session_id, setting cookie");
+  //error_log("[login] logged into freeside with session_id=$freeside_session_id, setting cookie");
 
 // now what?  for now, always redirect to the main page (or the select a
 // customer diversion).

@@ -3432,6 +3432,20 @@ sub num_cust_attachments_deleted {
   );
 }
 
+=item max_invnum
+
+Returns the most recent invnum (invoice number) for this customer.
+
+=cut
+
+sub max_invnum {
+  my $self = shift;
+  $self->scalar_sql(
+    " SELECT MAX(invnum) FROM cust_bill WHERE custnum = ?",
+    $self->custnum
+  );
+}
+
 =item cust_bill [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all the invoices (see L<FS::cust_bill>) for this customer.
