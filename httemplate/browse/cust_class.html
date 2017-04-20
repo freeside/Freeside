@@ -23,12 +23,62 @@ my $html_init =
   'Customer classes define groups of customer for reporting.<BR><BR>'.
   qq!<A HREF="${p}edit/cust_class.html"><I>Add a customer class</I></A><BR><BR>!;
 
+#cust_class-disable_counts?  or just migrate this to one config probably
+#my $disable_counts = $conf->exists('agent-disable_counts');
+my $disable_counts = 0; 
+
+my $customers_sub = sub {
+  my $cust_class = shift;
+
+  my $cust_main_link = $p. 'search/cust_main.html?'.
+                       'classnum='. $cust_class->classnum;
+
+  #false laziness w/agent.cgi
+  my $OUT = '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>';
+
+  my @cust_status =
+    qw( prospect inactive ordered active suspended cancelled );
+  my %PL = ( 'prospect' => 'prospects', );
+  #my %link = ( 'cancelled' => 'showcancelledcustomers=1&cancelled' );
+  my $statuscolor = FS::cust_main->statuscolors;
+
+  foreach my $status ( @cust_status ) {
+    my $meth = 'num_'. $status;
+    #my $link = exists($link{$status}) ? $link{$status} : $status;
+
+    $OUT .= '<TR>';
+      my $num = 0;
+      unless ( $disable_counts ) {
+        $num = $cust_class->$meth();
+        $OUT .= '<TH ALIGN="right" WIDTH="40%">'.
+                '<FONT COLOR="#'. $statuscolor->{$status}. '">'.
+                $num. '&nbsp;</FONT></TH>';
+      }
+    $OUT .= '<TD>';
+
+    if ( $num || $disable_counts ) { 
+      $OUT .= '<A HREF="'. $cust_main_link. "&status=$status". '">';
+    } 
+    $OUT .= exists($PL{$status}) ? $PL{$status} : $status;
+    if ($num || $disable_counts ) {
+      $OUT .= '</A>';
+    } 
+
+    $OUT .= '</TD></TR>';
+
+  }
+
+  $OUT .= '</TABLE>';
+
+  $OUT;
+
+};
+
 my $count_query = 'SELECT COUNT(*) FROM cust_class';
 
 my $link = [ $p.'edit/cust_class.html?', 'classnum' ];
-
-my $header = [ '#', 'Class' ];
-my $fields = [ 'classnum', 'classname' ];
+my $header = [ '#', 'Class', 'Customers' ];
+my $fields = [ 'classnum', 'classname', $customers_sub, ];
 my $links  = [ $link, $link ];
 
 my $cat_query = 'SELECT COUNT(*) FROM cust_class where categorynum IS NOT NULL';
