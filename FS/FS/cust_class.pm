@@ -3,6 +3,7 @@ use base qw( FS::class_Common );
 
 use strict;
 use FS::cust_category;
+use FS::Record qw( dbh );
 
 =head1 NAME
 
@@ -117,7 +118,34 @@ sub cust_category {
 Returns the category name associated with this class, or false if there
 is none.
 
+=item num_prospect
+
+=item num_ordered
+
+=item num_active
+
+=item num_inactive
+
+=item num_suspended
+
+=item num_cancelled
+
 =cut
+
+sub num_sql {
+  my( $self, $sql ) = @_;
+  my $statement = "SELECT COUNT(*) FROM cust_main WHERE classnum = ? AND $sql";
+  my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
+  $sth->execute($self->classnum) or die $sth->errstr. " executing $statement";
+  $sth->fetchrow_arrayref->[0];
+}
+
+sub num_prospect  { shift->num_sql(FS::cust_main->prospect_sql) }
+sub num_ordered   { shift->num_sql(FS::cust_main->ordered_sql) }
+sub num_active    { shift->num_sql(FS::cust_main->active_sql) }
+sub num_inactive  { shift->num_sql(FS::cust_main->inactive_sql) }
+sub num_suspended { shift->num_sql(FS::cust_main->susp_sql) }
+sub num_cancelled { shift->num_sql(FS::cust_main->cancel_sql) }
 
 =back
 
