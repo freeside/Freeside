@@ -1641,24 +1641,24 @@ sub print_generic {
   die "no invoice_lines() functions in template?"
     if ( $format eq 'template' && !$wasfunc );
 
-  if ($format eq 'template') {
+  if ( $invoice_lines ) {
+    $invoice_data{'total_pages'} = int( scalar(@buf) / $invoice_lines );
+    $invoice_data{'total_pages'}++
+      if scalar(@buf) % $invoice_lines;
+  }
 
-    if ( $invoice_lines ) {
-      $invoice_data{'total_pages'} = int( scalar(@buf) / $invoice_lines );
-      $invoice_data{'total_pages'}++
-        if scalar(@buf) % $invoice_lines;
+  #setup subroutine for the template
+  $invoice_data{invoice_lines} = sub {
+    my $lines = shift || scalar(@buf);
+    map { 
+      scalar(@buf)
+        ? shift @buf
+        : [ '', '' ];
     }
+    ( 1 .. $lines );
+  };
 
-    #setup subroutine for the template
-    $invoice_data{invoice_lines} = sub {
-      my $lines = shift || scalar(@buf);
-      map { 
-        scalar(@buf)
-          ? shift @buf
-          : [ '', '' ];
-      }
-      ( 1 .. $lines );
-    };
+  if ($format eq 'template') {
 
     my $lines;
     my @collect;
