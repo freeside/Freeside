@@ -864,8 +864,15 @@ the entire result set.
 =cut
 
 sub psearch_cdrs {
-
   my($self, %options) = @_;
+
+  unless ( $options{'billsec_sum'} ) {
+    #fixes a weird sequential scan of the whole cdr table on startdate, but only
+    # for a few charged_party values here and there.
+    # Pg 9.1 only?  need to retest on 9.4, 9.6
+    dbh->do('SET enable_indexscan TO OFF');
+  }
+
   my @fields;
   my %hash;
   my @where;
