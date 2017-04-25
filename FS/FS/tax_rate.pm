@@ -689,7 +689,9 @@ sub tax_on_tax {
     "AND (".  join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
 
   qsearch({ 'table'     => 'tax_rate',
-            'hashref'   => { 'geocode' => $geocode, },
+            'hashref'   => { 'data_vendor' => $self->data_vendor,
+                             'geocode'     => $geocode,
+                           },
             'extra_sql' => $extra_sql,
          })
 
