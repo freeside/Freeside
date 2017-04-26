@@ -1601,6 +1601,42 @@ sub list_invoices {
           };
 }
 
+sub list_payments {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  return  { 'error'       => '',
+            'balance'     => $cust_main->balance,
+            'money_char'  => FS::Conf->new->config("money_char") || '$',
+            'payments'    => [ map $_->SSAPI_getinfo, $cust_main->cust_pay ],
+          };
+}
+
+sub payment_receipt {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_pay = qsearchs('cust_pay', { 'custnum' => $custnum,
+                                        'paynum'  => $p->{'paynum'},
+                                      }
+                         )
+    or return { 'error' => "unknown payment ". $p->{'paynum'} };
+
+  return { 
+           'error' => '',
+           %{ $cust_pay->SSAPI_getinfo },
+         };
+}
+
 sub cancel {
   my $p = shift;
   my $session = _cache->get($p->{'session_id'})
