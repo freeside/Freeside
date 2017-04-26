@@ -478,6 +478,7 @@ sub check_lnp {
 
   foreach my $svc_phone (
     qsearch({ 'table'     => 'svc_phone',
+              'addl_from' => 'LEFT JOIN cust_svc USING (svcnum)',
               'hashref'   => {lnp_status=>'portingin'},
               'extra_sql' => "AND svcpart $in_svcpart",
            })
