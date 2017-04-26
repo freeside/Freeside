@@ -128,6 +128,8 @@ sub ss2clientapi {
   'legacy_invoice_pdf'        => 'MyAccount/legacy_invoice_pdf',
   'invoice_logo'              => 'MyAccount/invoice_logo',
   'list_invoices'             => 'MyAccount/list_invoices', #?
+  'list_payments'             => 'MyAccount/list_payments',
+  'payment_receipt'           => 'MyAccount/payment_receipt',
   'list_payby'                => 'MyAccount/list_payby',
   'insert_payby'              => 'MyAccount/insert_payby',
   'update_payby'              => 'MyAccount/update_payby',

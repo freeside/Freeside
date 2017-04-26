@@ -49,6 +49,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'legacy_invoice_pdf'        => 'MyAccount/legacy_invoice_pdf',
   'invoice_logo'              => 'MyAccount/invoice_logo',
   'list_invoices'             => 'MyAccount/list_invoices', #?
+  'list_payments'             => 'MyAccount/list_payments',
+  'payment_receipt'           => 'MyAccount/payment_receipt',
   'list_payby'                => 'MyAccount/list_payby',
   'insert_payby'              => 'MyAccount/insert_payby',
   'update_payby'              => 'MyAccount/update_payby',
@@ -595,6 +597,73 @@ Invoice ID
 =item _date
 
 Invoice date, in UNIX epoch time
+
+=back
+
+=back
+
+=item list_payments HASHREF
+
+Returns a list of all customer payments.  Takes a hash reference with a single
+key, session_id.
+
+Returns a hash reference with the following keys:
+
+=over 4
+
+=item error
+
+Empty on success, or an error message on errors
+
+=item payments
+
+Reference to array of hash references with the following keys:
+
+=over 4
+
+=item paynum
+
+Payment #
+
+=item _date
+
+Payument date, in UNIX epoch time
+
+=item date
+
+Payment date, in a human-readable format
+
+=item date_short
+
+Payment date, in a shorter human-readable format
+
+=item paid
+
+Amount paid
+
+=item payby
+
+Payment method: CARD, CHEK (electronic check), or BILL (physical check).
+
+=item paycardtype
+
+Payment card type
+
+=item paymask
+
+Payment card mask
+
+=item processor
+
+Processor for cards and electronic checks
+
+=item auth
+
+Authorization number
+
+=item order_number
+
+Order number
 
 =back
 

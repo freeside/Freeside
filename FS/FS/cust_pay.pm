@@ -1071,6 +1071,30 @@ sub API_getinfo {
   };
 }
 
+=item SSAPI_getinfo
+
+=cut
+
+sub SSAPI_getinfo {
+  #my( $self, %opt ) = @_;
+  my $self = shift;
+
+  +{ 'paynum'       => $self->paynum,
+     '_date'        => $self->_date,
+     'date'         => time2str("%b %o, %Y", $self->_date),
+     'date_short'   => time2str("%m-%d-%Y",  $self->_date),
+     'paid'         => sprintf('%.2f', $self->paid),
+     'payby'        => $self->payby,
+     'paycardtype'  => $self->paycardtype,
+     'paymask'      => $self->paymask,
+     'processor'    => $self->processor,
+     'auth'         => $self->auth,
+     'order_number' => $self->order_number,
+  };
+
+}
+
+
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
