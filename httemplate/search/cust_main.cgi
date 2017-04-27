@@ -329,7 +329,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('List all customers');
+  unless $curuser->access_right('List all customers')
+      || $curuser->access_right('List customers');
 
 my $conf = new FS::Conf;
 my $maxrecords = $conf->config('maxsearchrecordsperpage') || 100;
@@ -586,7 +587,7 @@ sub cardsearch {
 
   my($card)=$cgi->param('card');
   $card =~ s/\D//g;
-  $card =~ /^(\d{13,16}|\d{8,9})$/ or errorpage(emt("Illegal card number"));
+  $card =~ /^(\d{13,19}|\d{8,9})$/ or errorpage(emt("Illegal card number"));
   my($payinfo)=$1;
 
   [ qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'}),
