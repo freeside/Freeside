@@ -60,6 +60,8 @@ our $upgrade = 0; #go away after setup+start dates cleaned up for old customers
 
 our $cache_enabled = 0;
 
+our $disable_start_on_hold = 0;
+
 sub _simplecache {
   my( $self, $hashref ) = @_;
   if ( $cache_enabled && $hashref->{'pkg'} && $hashref->{'plan'} ) {
@@ -397,7 +399,10 @@ sub insert {
       $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
     }
 
-    if ($self->susp eq 'now' or $part_pkg->start_on_hold) {
+    if ( $self->susp eq 'now'
+           or ( $part_pkg->start_on_hold && ! $disable_start_on_hold )
+       )
+    {
       # if the package was ordered on hold:
       # - suspend it
       # - don't set the start date (it will be started manually)

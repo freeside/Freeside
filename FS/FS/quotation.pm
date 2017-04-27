@@ -698,6 +698,7 @@ sub estimate {
     }
 
     # order packages
+    local($FS::cust_pkg::disable_start_on_hold) = 1;
     $error = $fake_self->order(\%pkgnum_of);
     die "$error (simulating package order)\n" if $error;
 
