@@ -1057,9 +1057,10 @@ sub cancel {
      )
   {
     my $msgnum = $conf->config('cancel_msgnum', $cust_main->agentnum);
+    my $error = '';
     if ( $msgnum ) {
       my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
-      my $error = $msg_template->send(
+      $error = $msg_template->send(
         'cust_main' => $cust_main,
         'object'    => $self,
       );
@@ -1090,8 +1091,8 @@ sub cancel {
       'cust_main' => $cust_main->referring_cust_main,
       'object'    => $self,
     );
-     #should this do something on errors?
-   }
+    #should this do something on errors?
+  }
 
   ''; #no errors
 
