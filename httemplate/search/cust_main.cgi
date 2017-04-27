@@ -352,9 +352,11 @@ my(@cust_main, $sortby, $orderby);
 my @select = ();
 my @addl_headers = ();
 my @addl_cols = ();
-if ( $cgi->param('browse')
-     || $cgi->param('otaker_on')
-     || $cgi->param('agentnum_on')
+if ( (    $cgi->param('browse')
+       || $cgi->param('otaker_on')
+       || $cgi->param('agentnum_on')
+     )
+     and $curuser->access_right('List all customers')
 ) {
 
   my %search = ();
