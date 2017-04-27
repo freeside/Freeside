@@ -2444,6 +2444,21 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cancel_msgnum-referring_cust-pkg_class',
+    'section'     => 'cancellation',
+    'description' => 'Enable cancellation messages to the referring customer for these package classes.',
+    'type'        => 'select-pkg_class',
+    'multiple'    => 1,
+  },
+
+  {
+    'key'         => 'cancel_msgnum-referring_cust',
+    'section'     => 'cancellation',
+    'description' => 'Template to use for cancellation emails sent to the referring customer.',
+    %msg_template_options,
+  },
+
+  {
     'key'         => 'require_cardname',
     'section'     => 'credit_cards',
     'description' => 'Require an "Exact name on card" to be entered explicitly; don\'t default to using the first and last name.',
