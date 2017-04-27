@@ -257,6 +257,7 @@ sub _upgrade_data { # class method
                                        'Change package contract end date',
                                      ],
     'Resend invoices' => 'Print and mail invoices',
+    'List customers' => 'Customers: Customer churn report',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

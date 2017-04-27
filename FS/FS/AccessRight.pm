@@ -296,6 +296,7 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'View system logs' },
 
     'Download report data',
+    'Customers: Customer churn report',
     'Services: Accounts',
     'Services: Accounts: Advanced search',
     'Services: Domains',

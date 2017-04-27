@@ -27,6 +27,6 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List customers');
+  unless $FS::CurrentUser::CurrentUser->access_right('Customers: Customer churn report');
 
 </%init>

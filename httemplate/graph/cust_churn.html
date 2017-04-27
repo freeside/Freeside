@@ -18,7 +18,7 @@
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $curuser->access_right('List customers');
+  unless $curuser->access_right('Customers: Customer churn report');
 
 my( $agentnum, $agent ) = ('', '');
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
