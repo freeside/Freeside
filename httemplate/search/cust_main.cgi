@@ -330,7 +330,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('List all customers');
+  unless $curuser->access_right('List all customers')
+      || $curuser->access_right('List customers');
 
 my $conf = new FS::Conf;
 my $maxrecords = $conf->config('maxsearchrecordsperpage') || 100;
