@@ -359,7 +359,7 @@ sub smart_search {
       #substring
 
       my @company_hashrefs = ();
-      if ( length($value) >= 3 ) {
+      if ( length($value) >= 4 ) {
         @company_hashrefs = (
           { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
           { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
@@ -375,7 +375,7 @@ sub smart_search {
           },
         );
 
-      } elsif ( length($value) >= 3 ) {
+      } elsif ( length($value) >= 4 ) {
 
         @hashrefs = (
           { 'first'        => { op=>'ILIKE', value=>"%$value%" }, },
@@ -396,7 +396,7 @@ sub smart_search {
 
       }
 
-      if ( $conf->exists('address1-search') && length($value) >= 3 ) {
+      if ( $conf->exists('address1-search') && length($value) >= 4 ) {
 
         push @cust_main, qsearch( {
           table     => 'cust_main',
@@ -444,7 +444,8 @@ sub smart_search {
             'contact.first'  => $first }, #
           %fuzopts
         );
-     }
+      }
+
       foreach my $field ( 'first', 'last', 'company', 'ship_company' ) {
         push @cust_main, FS::cust_main::Search->fuzzy_search(
           { $field => $value },
