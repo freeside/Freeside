@@ -26,12 +26,15 @@ sub option_fields {
     'discountnum' => { 'label'    => 'Discount',
                        'type'     => 'select-table', #we don't handle the select-discount create a discount case
                        'table'    => 'discount',
-                       'name_col' => 'description', #well, method
-                       'order_by' => 'ORDER BY discountnum', #requied because name_col is a method
+                       #(well, since 2013 it winds up calling select-discount
+                       # anyway (but not tr-select-discount)
+                       #'name_col' => 'description', #well, method
+                       #'order_by' => 'ORDER BY discountnum', #requied because name_col is a method
+                       'disable_empty' => 1,
                        'hashref'  => { 'disabled' => '',
                                        'months'   => { op=>'!=', value=>'0' },
                                      },
-                       'disable_empty' => 1,
+                       'disable_custom_discount' => 1,
                      },
   );
 }
