@@ -129,6 +129,7 @@ $report_customers_lists{'by active trouble tickets'} = [ $fsurl. 'search/cust_ma
   if $conf->config('ticket_system');
 $report_customers_lists{'with USPS-unvalidated addresses'} = [ $fsurl. 'search/cust_main.cgi?browse=uspsunvalid', '' ]
   if $conf->config('usps_webtools-userid') && $conf->config('usps_webtools-password');
+$report_customers_lists{'with referrals'} = [ $fsurl. 'search/cust_main.html?with_referrals=1' ];
 
 tie my %report_customers, 'Tie::IxHash';
 $report_customers{'List customers'} = [ \%report_customers_lists, 'List customers' ]

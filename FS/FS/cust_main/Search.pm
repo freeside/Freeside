@@ -878,6 +878,15 @@ sub search {
     if $params->{'no_tax'};
 
   ##
+  # with referrals
+  ##
+  if ( $params->{'with_referrals'} ) {
+    push @where,
+      ' EXISTS ( SELECT 1 FROM cust_main AS referred_cust_main
+                   WHERE cust_main.custnum = referred_cust_main.referral_custnum )';
+  }
+
+  ##
   # dates
   ##
 
@@ -1144,6 +1153,20 @@ sub search {
                                          $p;
                                         };!;
     }
+
+  }
+
+  if ( $params->{'with_referrals'} ) {
+
+    #XXX next: num for each customer status
+     
+    push @select,
+      '( SELECT COUNT(*) FROM cust_main AS referred_cust_main
+           WHERE cust_main.custnum = referred_cust_main.referral_custnum
+       ) AS num_referrals';
+
+    unshift @extra_headers, 'Referrals';
+    unshift @extra_fields, 'num_referrals';
 
   }
 

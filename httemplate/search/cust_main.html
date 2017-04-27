@@ -27,7 +27,11 @@
                                                       $cgi->param('cust_fields')
                                                                    )
                                      ),
-                                     map '', @extra_fields
+                                     map  { $_ eq 'num_referrals'
+                                              ? $referral_link
+                                              : ''
+                                          }
+                                       @extra_fields
                                    ],
 &>
 <%init>
@@ -51,6 +55,7 @@ my @scalars = qw (
   all_tags
   all_pkg_classnums
   any_pkg_status
+  with_referrals
 );
 
 for my $param ( @scalars ) {
@@ -103,6 +108,8 @@ my @extra_headers = @{ delete($sql_query->{'extra_headers'}) };
 my @extra_fields  = @{ delete($sql_query->{'extra_fields'})  };
 
 my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $referral_link = [ "${p}search/cust_main.cgi?referral_custnum=", 'custnum' ];
 
 ###
 # email links
