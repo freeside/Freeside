@@ -1048,18 +1048,22 @@ sub cancel {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   return '' if $date; #no errors
 
-  my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
-  if ( !$options{'quiet'} && 
-        $conf->exists('emailcancel', $self->cust_main->agentnum) && 
-        @invoicing_list ) {
-    my $msgnum = $conf->config('cancel_msgnum', $self->cust_main->agentnum);
-    my $error = '';
+  my $cust_main = $self->cust_main;
+
+  my @invoicing_list = $cust_main->invoicing_list_emailonly;
+  if (    !$options{'quiet'}
+       && $conf->config_bool('emailcancel', $cust_main->agentnum)
+       && @invoicing_list
+     )
+  {
+    my $msgnum = $conf->config('cancel_msgnum', $cust_main->agentnum);
     if ( $msgnum ) {
       my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
-      $error = $msg_template->send( 'cust_main' => $self->cust_main,
-                                    'object'    => $self );
-    }
-    else {
+      my $error = $msg_template->send(
+        'cust_main' => $cust_main,
+        'object'    => $self,
+      );
+    } else {
       $error = send_email(
         'from'    => $conf->invoice_from_full( $self->cust_main->agentnum ),
         'to'      => \@invoicing_list,
@@ -1071,6 +1075,23 @@ sub cancel {
     }
     #should this do something on errors?
   }
+
+  my %pkg_class = map { $_=>1 }
+                    $conf->config('cancel_msgnum-referring_cust-pkg_class');
+  my $ref_msgnum = $conf->config('cancel_msgnum-referring_cust');
+  if (    !$options{'quiet'}
+       && $cust_main->referral_custnum
+       && $pkg_class{ $self->classnum } 
+       && $ref_msgnum
+     )
+  {
+    my $msg_template = qsearchs('msg_template', { msgnum => $ref_msgnum });
+    my $error = $msg_template->send( 
+      'cust_main' => $cust_main->referring_cust_main,
+      'object'    => $self,
+    );
+     #should this do something on errors?
+   }
 
   ''; #no errors
 
