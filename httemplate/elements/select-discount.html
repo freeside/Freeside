@@ -4,7 +4,7 @@
                  'order_by'     => 'ORDER BY discountnum', #XXX weight
                  'value'        => $discountnum,
                  'empty_label'  => '(none)',
-                 'hashref'      => { 'disabled' => '' },
+                 'hashref'      => $hashref,
                  'post_options' => $post_options,
                  %opt,
              )
@@ -19,10 +19,12 @@ $opt{'records'} = delete $opt{'discount'}
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-#make an opt if we need to turn this off
-my $post_options = $curuser->access_right('Custom discount customer package')
-  ? [ -1 => 'Custom discount' ]
-  : [];
+my $hashref = $opt{hashref} || { 'disabled' => '' };
+
+my $post_options = [];
+push @$post_options,  -1 => 'Custom discount'
+  if $curuser->access_right('Custom discount customer package')
+  && ! $opt{disable_custom_discount};
 
 </%init>
 
