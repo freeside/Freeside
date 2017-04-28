@@ -474,7 +474,10 @@ sub _export_unsuspend {
 sub check_lnp {
   my $self = shift;
 
-  my $in_svcpart = 'IN ('. join( ',', map $_->svcpart, $self->export_svc). ')';
+  my @export_svc = $self->export_svc;
+  return unless @export_svc;
+
+  my $in_svcpart = 'IN ('. join( ',', map $_->svcpart, @export_svc). ')';
 
   foreach my $svc_phone (
     qsearch({ 'table'     => 'svc_phone',
