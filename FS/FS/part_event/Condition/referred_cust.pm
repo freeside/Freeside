@@ -34,7 +34,7 @@ sub condition {
   if ( keys %$if_pkg_class ) {
     @referral_cust_main = grep {
       my $cust = $_;
-      grep $if_pkg_class{$_->part_pkg->classnum}, $cust->active_pkgs;
+      grep $if_pkg_class->{$_->part_pkg->classnum}, $cust->active_pkgs;
     } @referral_cust_main;
   }
 
