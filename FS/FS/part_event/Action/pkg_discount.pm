@@ -23,6 +23,10 @@ sub option_fields {
                        'extra_sql' => q(AND freq NOT LIKE '0%' AND freq NOT LIKE '%d' AND freq NOT LIKE '%h' AND freq NOT LIKE '%w'), 
                        'multiple' => 1,
                      },
+    'if_pkg_class'    => { label    => 'Only package class',
+                           type     => 'select-pkg_class',
+                           multiple => 1,
+                         },
     'discountnum' => { 'label'    => 'Discount',
                        'type'     => 'select-table', #we don't handle the select-discount create a discount case
                        'table'    => 'discount',
@@ -36,6 +40,10 @@ sub option_fields {
                                      },
                        'disable_custom_discount' => 1,
                      },
+    'once_percust' => { 'label' => 'Only discount one package per customer',
+                        'type'  => 'checkbox',
+                        'value' => 'Y',
+                      },
   );
 }
 
@@ -46,6 +54,8 @@ sub do_action {
 
   my $cust_main = $self->cust_main($object);
   my %if_pkgpart = map { $_=>1 } split(/\s*,\s*/, $self->option('if_pkgpart') );
+  my $if_pkg_class = $self->option('if_pkg_class') || {};
+
   my $allpkgs = (keys %if_pkgpart) ? 0 : 1;
 
   my @cust_pkg = ();
@@ -54,6 +64,9 @@ sub do_action {
     return 'Package is suspended' if $object->susp;
     return 'Package not selected'
       if ! $allpkgs && ! $if_pkgpart{ $object->pkgpart };
+    return 'Package not of selected class'
+      if keys %$if_pkg_class
+      && ! $if_pkg_class->{ $object->part_pkg->classnum };
     return 'Package frequency not monthly or a multiple'
       if $object->part_pkg->freq !~ /^\d+$/;
 
@@ -61,11 +74,15 @@ sub do_action {
 
   } else {
 
-    @cust_pkg = grep { ( $allpkgs || $if_pkgpart{ $_->pkgpart } ) 
-                         && $_->part_pkg->freq
-                         #remove after fixing discount bug with non-monthly pkgs
-                         && ( $_->part_pkg->freq =~ /^\d+$/) } 
-                     $cust_main->unsuspended_pkgs;
+    @cust_pkg = grep {
+         ( $allpkgs || $if_pkgpart{ $_->pkgpart } ) 
+      && ( ! keys %$if_pkg_class || $if_pkg_class->{ $_->part_pkg->classnum } )
+      && $_->part_pkg->freq
+      #remove after fixing discount bug with non-monthly pkgs
+      && ( $_->part_pkg->freq =~ /^\d+$/)
+    }
+      $cust_main->unsuspended_pkgs;
+
     return 'No qualifying packages' unless @cust_pkg;
 
   }
@@ -87,11 +104,19 @@ sub do_action {
       $gotit = 1;
 
       #it's already got this discount and discount never expires--great, move on
-      next unless $cust_pkg_discount[0]->discount->months;
+      unless ( $cust_pkg_discount[0]->discount->months ) {
+        if ( $self->option('once_percust') ) {
+          last;
+        } else {
+          next;
+        }
+      };
 	
       #reset the discount
       my $error = $cust_pkg_discount[0]->decrement_months_used( $cust_pkg_discount[0]->months_used );
       die "Error extending discount: $error\n" if $error;
+
+      last if $self->option('once_percust');
 
     } elsif ( @cust_pkg_discount ) {
 
@@ -109,6 +134,8 @@ sub do_action {
       };
       my $error = $cust_pkg_discount->insert;
       die "Error discounting package: $error\n" if $error;
+
+      last if $self->option('once_percust');
 
     }
   }
