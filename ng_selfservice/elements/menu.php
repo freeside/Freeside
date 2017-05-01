@@ -32,15 +32,15 @@ extract($skin_info);
 
   foreach ($menu_array AS $menu_item) {
     if ( preg_match('/^\s*$/', $menu_item) ) {
-      print_menu($submenu, $current_menu);
+      print_menu($submenu, $current_menu, $menu_disable);
       $submenu = array();
     } else {
       $submenu[] = $menu_item;
     }
   }
-  print_menu($submenu, $current_menu);
+  print_menu($submenu, $current_menu, $menu_disable);
 
-  function print_menu($submenu_array, $current_menu) {
+  function print_menu($submenu_array, $current_menu, $menu_disable) {
     if ( count($submenu_array) == 0 ) { return; }
 
     $links = array();
@@ -71,8 +71,10 @@ extract($skin_info);
       echo '<ul>';
       foreach ($links AS $link) {
         $label = array_shift($labels);
-        print_link($link, $label, $current_menu, array($link) );
-        echo '</a></li>';
+        if ( in_array($label, $menu_disable) == 0) {
+          print_link($link, $label, $current_menu, array($link) );
+          echo '</a></li>';
+        }
       }
       echo '</ul>';
     }
