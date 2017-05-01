@@ -17,6 +17,7 @@ extract($list_pkgs);
 ?>
 <TABLE BORDER=0 CELLSPACING=2 CELLPADDING=1>
 <TR>
+  <TH ALIGN="LEFT">&nbsp;</TH>
   <TH ALIGN="LEFT">Product</TH>
   <TH ALIGN="LEFT">Status</TH>
   <TH ALIGN="LEFT" COLSPAN=2>Service(s)</TH>
@@ -29,11 +30,17 @@ extract($list_pkgs);
     $rowspan = count($pkg['cust_svc']);
     if ( $rowspan == 0 ) { $rowspan = 1; }
     $td = '<TD ALIGN="LEFT" VALIGN="top" ROWSPAN="'. $rowspan. '">';
+
+    $change_link = '';
+    if ( in_array("Change packages", $menu_disable) == 0) {
+      $change_link = '<a href="packages_change.php?pkgnum=' . $pkg['pkgnum'] . '&pkg=' . $pkg['pkg_label'] . '">[change]</a>';
+    }
 ?>
   <TR>
     <TD COLSPAN=4 STYLE="border-top:1px solid #999999"></TD>
   </TR>
   <TR>
+    <? echo $td ?><? echo $change_link ?>&nbsp;&nbsp;</TD>
     <? echo $td ?><? echo $pkg['pkg_label']; ?></TD>
     <? echo $td ?>
       <FONT COLOR="#<? echo $pkg['statuscolor'] ?>"><B>
