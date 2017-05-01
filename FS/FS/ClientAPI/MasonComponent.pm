@@ -145,7 +145,7 @@ sub mason_comp {
     return { 'error' => 'Illegal component' };
   }
 
-  my @args = $packet->{'args'} ? @{ $packet->{'args'} } : ();
+  my @args = $packet->{'args'} ? $packet->{'args'} : ();
 
   if ( $session_comps{$comp} ) {
 
