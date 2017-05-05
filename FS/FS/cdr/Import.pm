@@ -22,10 +22,12 @@ FS::cdr::Import - CDR importing
     'dbd'         => 'mysql', #Pg, Sybase, etc.
     'table'       => 'TABLE_NAME',
     'primary_key' => 'BILLING_ID',
+    'status_table' = > 'STATUS_TABLE_NAME', # if using a table rather than field in main table
     'column_map'  => { #freeside => remote_db
       'freeside_column' => 'remote_db_column',
       'freeside_column' => sub { my $row = shift; $row->{remote_db_column}; },
     },
+    'batch_name' => 'batch_name', # cdr_batch name -import-date gets appended.
   );
 
 =head1 DESCRIPTION
@@ -48,9 +50,16 @@ sub dbi_import {
 
   $opt{D} ||= $args{database};
 
+  #do we want to add more types? or add as we go?
+  my %dbi_connect_types = {
+    'Sybase'  => ':server',
+    'Pg'      => ':host',
+  };
+
   my $dsn = 'dbi:'. $args{dbd};
-  #$dsn .= ":host=$opt{H}"; #if $opt{H};
-  $dsn .= ":server=$opt{H}"; #if $opt{H};
+
+  my $dbi_connect_type = $dbi_connect_types{$args{'dbd'}} ? $dbi_connect_types{$args{'dbd'}} : ':host';
+  $dsn .= $dbi_connect_type . "=$opt{H}";
   $dsn .= ";database=$opt{D}" if $opt{D};
 
   my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
@@ -93,7 +102,7 @@ sub dbi_import {
   #MySQL-specific print "Importing ".$sth->rows." records...\n";
 
   my $cdr_batch = new FS::cdr_batch({ 
-      'cdrbatch' => 'IVR-import-'. time2str('%Y/%m/%d-%T',time),
+      'cdrbatch' => $args{batch_name} . '-import-'. time2str('%Y/%m/%d-%T',time),
     });
   my $error = $cdr_batch->insert;
   die $error if $error;
