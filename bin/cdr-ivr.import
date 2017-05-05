@@ -68,6 +68,7 @@ FS::cdr::Import->dbi_import(
     #'' => 'GRACE_PERIOD', # SMALLINT Grace period associated with the call
     #'' => 'ACCOUNT_TYPE', # Account type from ACCOUNT_TYPES table
   },
+  'batch_name' => 'IVR',
 );
 
 1;
