@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch );
+
+my $user = shift or die &usage;
+
+my $email = shift or die &usage;
+
+adminsuidsetup $user;
+
+foreach my $cust_main_invoice (
+  qsearch('cust_main_invoice', { 'dest' => $email } )
+) {
+  my $error = $cust_main_invoice->delete;
+  die $error if $error;
+}
+
+sub usage {
+  "Usage: remove-cust_main_invoice username email\@address";
+}
