@@ -141,6 +141,10 @@ function areyousure_popup(message, action, actionlabel) {
 % $br=1;
   <A HREF="<% $p %>search/cust_event.html?custnum=<% $custnum %>"><% mt('View billing events for this customer') |h %></A>
 % }
+% if ( $curuser->access_right('Configuration') ) {
+  <% $br++ ? ' | ' : '' %>
+  <A HREF="<% $p %>misc/test-part_event.html?custnum=<% $custnum %>"><% mt('Test billing events for this customer') |h %></A>
+% }
 % 
 % my $email_link = ($cust_main->invoicing_list_emailonly) && 
 %   include('/elements/email-link.html',
