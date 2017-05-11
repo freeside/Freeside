@@ -129,11 +129,9 @@ sub batch_import {
   my $format    = $param->{'format'};
 
   my @fields;
-  my $payby;
   if ( $format eq 'simple' ) {
     @fields = qw( cust_pkg.setup dayphone first last
                   address1 address2 city state zip comments );
-    $payby = 'BILL';
   } elsif ( $format eq 'extended' ) {
     @fields = qw( agent_custid refnum
                   last first address1 address2 city state zip country
@@ -145,7 +143,6 @@ sub batch_import {
                   cust_pkg.pkgpart
                   svc_acct.username svc_acct._password 
                 );
-    $payby = 'BILL';
  } elsif ( $format eq 'extended-plus_options' ) {
     @fields = qw( agent_custid refnum
                   last first address1 address2 city state zip country
@@ -158,7 +155,6 @@ sub batch_import {
                   svc_acct.username svc_acct._password 
                   customer_options
                 );
-    $payby = 'BILL';
  } elsif ( $format eq 'extended-plus_company' ) {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -170,7 +166,6 @@ sub batch_import {
                   cust_pkg.pkgpart
                   svc_acct.username svc_acct._password 
                 );
-    $payby = 'BILL';
  } elsif ( $format eq 'extended-plus_company_and_options' ) {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -183,7 +178,6 @@ sub batch_import {
                   svc_acct.username svc_acct._password 
                   customer_options
                 );
-    $payby = 'BILL';
  } elsif ( $format =~ /^svc_broadband/ ) {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -195,7 +189,6 @@ sub batch_import {
                   cust_pkg.pkgpart cust_pkg.bill
                 );
     push @fields, map "svc_broadband.$_", qw( ip_addr mac_addr sectornum );
-    $payby = 'BILL';
  } elsif ( $format =~ /^svc_external/ ) {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -209,7 +202,6 @@ sub batch_import {
                 );
     push @fields, map "svc_phone.$_", qw( countrycode phonenum sip_password pin)
       if $format eq 'svc_external_svc_phone';
-    $payby = 'BILL';
   } elsif ( $format eq 'birthdates-acct_phone_hardware') {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -225,7 +217,6 @@ sub batch_import {
     push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
     push @fields, map "svc_hardware.$_", qw(typenum ip_addr hw_addr serial);
 
-    $payby = 'BILL';
   } elsif ( $format eq 'national_id-acct_phone') {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -240,7 +231,6 @@ sub batch_import {
                 );
     push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
 
-    $payby = 'BILL';
   } else {
     die "unknown format $format";
   }
@@ -328,7 +318,6 @@ sub batch_import {
       custbatch => $custbatch,
       agentnum  => $agentnum,
       refnum    => $refnum,
-      payby     => $payby, #default
       paydate   => '12/2037', #default
     );
     my $billtime = time;
