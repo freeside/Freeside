@@ -604,7 +604,7 @@ sub payment_results {
 
   my $payinfo = $cgi->param('payinfo');
   $payinfo =~ s/[^\dx]//g;
-  $payinfo =~ /^([\dx]{13,16}|[\dx]{8,9})$/
+  $payinfo =~ /^([\dx]{13,19}|[\dx]{8,9})$/
     #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
     or return { 'error' => "illegal card" }; #!!!
   $payinfo = $1;
