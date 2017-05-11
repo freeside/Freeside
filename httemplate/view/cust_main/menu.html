@@ -177,6 +177,11 @@ my @menu = (
                        'View customer billing events' ],
     },
     {
+      label       => 'Test billing events',
+      url         => "misc/test-part_event.html?custnum=$custnum",
+      acl         => 'Configuration',
+    },
+    {
       label       => 'Email a notice to this customer',
       url         => sub {
                       my $cust_main = shift;
