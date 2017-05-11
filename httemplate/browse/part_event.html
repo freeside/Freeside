@@ -10,7 +10,7 @@
                 'query'              => { 'select'    => 'part_event.*',
                                           'table'     => 'part_event',
                                           'addl_from' => $join_conditions,
-                                          'hashref'   => {},
+                                          'hashref'   => $hashref,
                                           'order_by'  => $order_conditions,
                                         },
                 'count_query'        => $count_query,
@@ -78,14 +78,39 @@ my $conditions_sub = sub {
   my $part_event = shift;
   my $addl = 0;
 
+
   [
     map {
            my $part_event_condition = $_;
            my %options = $part_event_condition->options;
 
+           my $desc = $part_event_condition->description;
+
+           if ( $cgi->param('test_eventtable_num') =~ /^(\d+)$/ ) {
+
+             my $tablenum = $1;
+
+             if ( $cgi->param('eventtable') =~ /^(cust_main|cust_pkg|cust_bill)$/ ) {
+               my $eventtable = "FS::$1";
+               my $object = $eventtable->by_key($tablenum);
+
+               my $cust_event = $part_event->new_cust_event($object);
+
+               my $test = $part_event_condition->condition(
+                            $object,
+                            'cust_event' => $cust_event,
+                          );
+                                                 
+               my $yesno = $test ? '(<FONT COLOR="#00ff00">yes</FONT>)'
+                                 : '(<FONT COLOR="#ff0000">no</FONT>)';
+
+               $desc .= " $yesno";
+             }
+           }
+
            [
              {
-               'data'       => $part_event_condition->description,
+               'data'       => $desc,
                'width'      => '100%',
                'align'      => 'center',
                'colspan'    => 2,
@@ -166,6 +191,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit billing events')
       || $FS::CurrentUser::CurrentUser->access_right('Edit global billing events');
 
+
 my $html_init =
   #XXX better description
   'Events are billing, collection or other actions triggered when certain '.
@@ -183,12 +209,24 @@ foreach my $part_event ( qsearch('part_event', {'disabled'=>''}) ) {
 
 $html_init .= '</SELECT><INPUT TYPE="submit" VALUE="Clone existing event">'.
               '</FORM><BR>';
-     
+
+my $hashref = {};
+
 my $count_query = 'SELECT COUNT(*) FROM part_event WHERE '.
                   $FS::CurrentUser::CurrentUser->agentnums_sql(
                     'null_right'    => 'Edit global billing events',
                     'viewall_right' => 'None',
                   );
+
+if ( $cgi->param('eventtable') =~ /^(\w+)$/ ) {
+  $hashref->{eventtable} = $1;
+  $count_query .= " AND eventtable = '$1' ";
+}
+
+my $tablenum = '';
+if ( $cgi->param('test_eventtable_num') =~ /^(\d+)$/ ) {
+  $tablenum = $1;
+}
 
 my $join_conditions  = FS::part_event_condition->join_conditions_sql('', 'time' => time);
 my $order_conditions = FS::part_event_condition->order_conditions_sql;

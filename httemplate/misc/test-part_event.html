@@ -1,0 +1,48 @@
+<& /elements/header.html, {
+     'title_noescape' => 'Test billing events for '. encode_entities($cust_main->name),
+   }
+&>
+
+<A HREF="<%$p%>browse/part_event.html?eventtable=cust_main;test_eventtable_num=<% $custnum %>">Customer events<A>
+<BR><BR>
+<FORM METHOD="GET" ACTION="<%$p%>browse/part_event.html">
+Package events for 
+<INPUT TYPE="hidden" NAME="eventtable" VALUE="cust_pkg">
+<& /elements/select-table.html,
+     'table'         => 'cust_pkg',
+     'name_col'      => 'pkg_label_long',
+     'hashref'       => { 'custnum' => $custnum, },
+     'order_by'      => 'ORDER BY pkgnum',
+     'element_name'  => 'test_eventtable_num',
+     'disable_empty' => 1,
+&>
+<INPUT TYPE="submit" VALUE="Test package">
+</FORM>
+<BR>
+<FORM METHOD="GET" ACTION="<%$p%>browse/part_event.html">
+Invoice events for
+<INPUT TYPE="hidden" NAME="eventtable" VALUE="cust_bill">
+<& /elements/select-table.html,
+     'table'         => 'cust_bill',
+     'name_col'      => 'invnum',
+     'hashref'       => { 'custnum' => $custnum, },
+     'order_by'      => 'ORDER BY invnum',
+     'element_name'  => 'test_eventtable_num',
+     'disable_empty' => 1,
+&>
+<INPUT TYPE="submit" VALUE="Test invoice">
+</FORM>
+<BR>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'unknown custnum';
+my $custnum = $1;
+
+my $cust_main = FS::cust_main->by_key($custnum);
+
+</%init>
