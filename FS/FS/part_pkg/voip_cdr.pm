@@ -65,7 +65,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
 ;
 
 %info = (
-  'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
+  'name' => 'VoIP rating by plan of CDR records',
   'shortname' => 'VoIP/telco CDR rating (standard)',
   'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => {
