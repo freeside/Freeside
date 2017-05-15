@@ -2,24 +2,23 @@
 
 Example:
 
-  include('/elements/tr-select-cust_location.html',
-            'cgi'       => $cgi,
+  <& /elements/tr-select-cust_location.html,
+         'cgi'           => $cgi,
 
-            'cust_main'     => $cust_main,
-            #or
-            'prospect_main' => $prospect_main,
+         'cust_main'     => $cust_main,
+         #or
+         'prospect_main' => $prospect_main,
 
-            #optional
-            'empty_label'   => '(default service address)',
-         )
+         #optional
+         'empty_label'   => '(default service address)',
+  &>
 
 </%doc>
 
-<% include('/elements/xmlhttp.html',
-              'url'  => $p.'misc/location.cgi',
-              'subs' => [ 'get_location' ],
-           )
-%>
+<& /elements/xmlhttp.html,
+     'url'  => $p.'misc/location.cgi',
+     'subs' => [ 'get_location' ],
+&>
 
 <SCRIPT TYPE="text/javascript">
 
@@ -194,17 +193,16 @@ Example:
   </TD>
 </TR>
 
-<% include('/elements/location.html',
-             'object'       => $cust_location,
-             #'onchange' ?  probably not
-             'disabled'     => $disabled,
-             'no_asterisks' => 1,
-             'no_bold'      => $opt{'no_bold'},
-             'alt_format'   => $opt{'alt_format'},
-             'enable_coords'=> 1,
-             'enable_censustract' => 1,
-          )
-%>
+<& /elements/location.html,
+     'object'             => $cust_location,
+     #'onchange' ?  probably not
+     'disabled'           => $disabled,
+     'no_asterisks'       => 1,
+     'no_bold'            => $opt{'no_bold'},
+     'alt_format'         => $opt{'alt_format'},
+     'enable_coords'      => 1,
+     'enable_censustract' => 1,
+&>
 
 % unless ( $prospect_main ) {
   <SCRIPT TYPE="text/javascript">
@@ -292,7 +290,7 @@ push @cust_location, $cust_location
 @cust_location = sort $location_sort grep !$_->disabled, @cust_location;
 
 $cust_location = $cust_location[0]
-  if ( $prospect_main )
+  if $prospect_main
   && !$opt{'is_optional'}
   && @cust_location;
 
