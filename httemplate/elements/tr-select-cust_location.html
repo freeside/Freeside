@@ -205,9 +205,13 @@ Example:
              'enable_censustract' => 1,
           )
 %>
-<SCRIPT TYPE="text/javascript">
-  locationnum_changed(document.getElementById('locationnum'));
-</SCRIPT>
+
+% unless ( $prospect_main ) {
+  <SCRIPT TYPE="text/javascript">
+    locationnum_changed(document.getElementById('locationnum'));
+  </SCRIPT>
+% }
+
 <%init>
 
 my $conf = new FS::Conf;
