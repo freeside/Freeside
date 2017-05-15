@@ -1,3 +1,13 @@
+% my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();
+% if (     ! @pre_options
+%       && ! $cust_main
+%       && ! $opt{is_optional}
+%       && ! @{ $opt{cust_location} }
+%       && $addnew
+% ) {
+    <INPUT NAME="locationnum" ID="locationnum" TYPE="hidden" VALUE="-1">
+% } else {
+
 <SELECT NAME     = "locationnum"
         ID       = "locationnum"
 %     if ( $opt{onchange} ) {
@@ -6,7 +16,6 @@
     >
 
 % #false laziness w/select-table.html
-% my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();
 % while ( @pre_options ) { 
 %   my $pre_opt   = shift(@pre_options);
 %   my $pre_label = shift(@pre_options);
@@ -48,6 +57,7 @@
 % }
 
 </SELECT>
+% }
 <%init>
 
 my $conf = new FS::Conf;
