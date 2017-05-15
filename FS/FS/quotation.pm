@@ -237,6 +237,11 @@ sub email_subject {
   eval qq("$subject");
 }
 
+sub pdf_filename {
+  my $self = shift;
+  'Quotation-'. $self->quotationnum. '.pdf';
+}
+
 =item cust_or_prosect
 
 =cut
