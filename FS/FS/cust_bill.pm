@@ -1143,6 +1143,11 @@ sub email_subject {
   eval qq("$subject");
 }
 
+sub pdf_filename {
+  my $self = shift;
+  'Invoice-'. $self->invnum. '.pdf';
+}
+
 =item lpr_data HASHREF
 
 Returns the postscript or plaintext for this invoice as an arrayref.

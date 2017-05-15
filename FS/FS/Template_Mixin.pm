@@ -2367,7 +2367,7 @@ sub generate_email {
 =item mimebuild_pdf
 
 Returns a list suitable for passing to MIME::Entity->build(), representing
-this invoice as PDF attachment.
+this quotation or invoice as PDF attachment.
 
 =cut
 
@@ -2378,7 +2378,7 @@ sub mimebuild_pdf {
     'Encoding'    => 'base64',
     'Data'        => [ $self->print_pdf(@_) ],
     'Disposition' => 'attachment',
-    'Filename'    => 'invoice-'. $self->invnum. '.pdf',
+    'Filename'    => $self->pdf_filename,
   );
 }
 
