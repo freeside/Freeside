@@ -127,9 +127,9 @@
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
     \begin{tabular}{ccc}
-    [@-- join(' & ', emt('Invoice date'), emt('Invoice #'), emt('Customer #') ) --@]\\
+    [@-- join(' & ', emt('Quotation date'), emt('Quotation #'), $custnum ? emt('Customer #') : emt('Prospect #') ) --@]\\
     \vspace{0.2cm}
-    \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]} \\\hline
+    \textbf{[@-- $date --@]} & \textbf{[@-- $quotationnum --@]} & \textbf{[@-- $custnum || $prospectnum --@]} \\\hline
     \rule{0pt}{5ex} &~~ \huge{\textsc{[@-- emt($notice_name) --@]}} & \\
     \vspace{-0.2cm}
      & & \\\hline
@@ -138,8 +138,8 @@
   { % ... pages
     \small{
       \begin{tabular}{lll}
-      [@-- join(' & ', emt('Invoice date'), emt('Invoice #'), emt('Customer #') ) --@]\\
-      \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]}\\
+      [@-- join(' & ', emt('Quotation date'), emt('Quotation #'), $custnum ? emt('Customer #') : emt('Prospect #') ) --@]\\
+      \textbf{[@-- $date --@]} & \textbf{[@-- $quotationnum --@]} & \textbf{[@-- $custnum || $prospectnum --@]}\\
       \end{tabular}
     }
   }
