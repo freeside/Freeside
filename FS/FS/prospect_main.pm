@@ -279,9 +279,44 @@ sub name {
   'Prospect #'. $self->prospectnum;
 }
 
+=item contact_firstlast
+
+If this prospect has a company, returns the empty string.  If not, returns the
+first contact's first and last name.
+
+Primarily intended for use in quotation substitutions, like the FS::cust_main
+method of the same name.
+
+=cut
+
+sub contact_firstlast {
+  my $self = shift;
+  return '' if $self->company;
+  my @contacts = $self->contact;
+  #return '' unless @contacts;
+  warn $contacts[0]->first;
+  warn $contacts[0]->get('last');
+  $contacts[0]->first. ' '. $contacts[0]->get('last');
+}
+
 =item contact
 
 Returns the contacts (see L<FS::contact>) associated with this prospect.
+
+=cut
+
+sub contact {
+  my $self = shift;
+  my $search = {
+    table       => 'contact',
+    addl_from   => ' JOIN prospect_contact USING (contactnum)',
+    extra_sql   => ' WHERE prospect_contact.prospectnum = '.$self->prospectnum,
+  };
+
+  #classnum argument like FS::cust_main->contact?
+
+  qsearch($search);
+}
 
 =item cust_location
 
