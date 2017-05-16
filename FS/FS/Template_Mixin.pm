@@ -603,6 +603,9 @@ sub print_generic {
     'total_pages'     => 1,
 
   );
+
+  #quotations have $name
+  $invoice_data{'name'} = $invoice_data{'payname'};
  
   #localization
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
