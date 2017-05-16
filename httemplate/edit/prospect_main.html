@@ -11,6 +11,11 @@
                             'taxstatusnum'=> 'Tax status',
                           },
      'fields'          => [
+       { 'field'    => 'residential_commercial',
+         'type'     => 'radio',
+         'options'  => [ 'Residential', 'Commercial', ],
+         'onchange' => 'rescom_changed',
+       },
        { 'field'       => 'agentnum',
          'type'        => 'select-agent',
          'empty_label' => 'Select agent',
@@ -21,25 +26,21 @@
          'empty_label' => 'Select advertising source',
          'colspan'     => 7,
        },
-       { 'field'    => 'residential_commercial',
-         'type'     => 'radio',
-         'options'  => [ 'Residential', 'Commercial', ],
-         'onchange' => 'rescom_changed',
-       },
        { 'field'    => 'company',
          'type'     => 'text',
          'size'     => 50,
          'colspan'  => 7,
        },
-       { 'field'             => 'contactnum',
-         'type'              => 'contact',
-         'colspan'           => 7,
-         'prospectnum'       => $prospectnum,
-         'm2m_method'        => 'prospect_contact',
-         'm2m_dstcol'        => 'contactnum',
-         'm2_label'          => 'Contact',
-         'm2_error_callback' => $m2_error_callback,
+       { 'field'                => 'contactnum',
+         'type'                 => 'contact',
+         'colspan'              => 7,
+         'prospectnum'          => $prospectnum,
+         'm2m_method'           => 'prospect_contact',
+         'm2m_dstcol'           => 'contactnum',
+         'm2_label'             => 'Contact',
+         'm2_error_callback'    => $m2_error_callback,
          'include_opt_callback' => sub { 'for_prospect' => 1 },
+         'js_spawn_test'        => 'document.edit_topform.residential_commercial_Commercial.checked',
        },
        { 'field'         => 'locationnum',
          'type'          => 'select-cust_location',
@@ -202,20 +203,20 @@ my $m2_error_callback = sub {
 
 #my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
 
-my $javascript = <<END;
+my $javascript = q|
   <SCRIPT TYPE="text/javascript">
     function rescom_changed() {
+
       var f = document.edit_topform;
-      var c = f.company;
       if        ( f.residential_commercial_Residential.checked ) {
-        c.disabled = true;
-        c.style.backgroundColor = '#dddddd';
+        $('#company_label').slideUp();
+        $('#company_input0').slideUp();
       } else if ( f.residential_commercial_Commercial.checked ) {
-        c.disabled = false;
-        c.style.backgroundColor = '#ffffff';
+        $('#company_label').slideDown();
+        $('#company_input0').slideDown();
       }
     }
   </SCRIPT>
-END
+|;
 
 </%init>

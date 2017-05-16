@@ -640,6 +640,15 @@ Example:
             return;
           }
 
+%         if ( exists( $f->{'js_spawn_test'} ) ) {
+            // XXX check a passed-in hook here and optionall return
+            if ( <% $f->{'js_spawn_test'} %> ) {
+              // then go ahead and spawn
+            } else {
+              return;
+            }
+%         }
+
           // change the label on the last entry & add a remove button
           var prev_label = document.getElementById('<% $field %>_label' + <%$field%>_fieldnum );
           prev_label.innerHTML = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this <% lc($f->{'m2_label'}) %>" onClick="remove_<% $field %>(' + <%$field%>_fieldnum + ');" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px" >&nbsp;<% $f->{'m2_label'} || $field %>';
