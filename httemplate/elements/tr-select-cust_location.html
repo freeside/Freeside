@@ -204,11 +204,20 @@ Example:
      'enable_censustract' => 1,
 &>
 
-% unless ( $prospect_main ) {
-  <SCRIPT TYPE="text/javascript">
+<SCRIPT TYPE="text/javascript">
+% if ( $prospect_main ) { # && ! $opt{is_optional} ) {
+
+    changeSelect(document.getElementById('country'), <% $cust_location->country || $countrydefault |js_string %>);
+
+    country_changed( document.getElementById('country'),
+                     fix_state_factory( <% $cust_location->state || $statedefault |js_string %>,
+                                        ''
+                                      )
+                   );
+% } else {
     locationnum_changed(document.getElementById('locationnum'));
-  </SCRIPT>
 % }
+</SCRIPT>
 
 <%init>
 
