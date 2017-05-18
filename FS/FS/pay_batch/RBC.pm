@@ -175,8 +175,13 @@ $name = 'RBC';
     }
 
     $i++;
+
+    ## set to D for debit by default, then override to what cust_pay_batch has as payments may not have paycode.
+    my $debitorcredit = 'D';
+    $debitorcredit = $cust_pay_batch->paycode unless !$cust_pay_batch->paycode;
+
     sprintf("%06u", $i).
-    'D'.
+    $debitorcredit.
     sprintf("%3s",$trans_code).
     sprintf("%10s",$client_num).
     ' '.

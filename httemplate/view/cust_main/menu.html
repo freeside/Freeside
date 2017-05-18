@@ -459,6 +459,13 @@ my @menu = (
         #  acl         => ['Post refund' ],
         ##  condition   => sub { $payby{MCHK} },
         #},
+        {
+           label       => 'Batch Electronic check refund',
+           popup       => "edit/cust_refund.cgi?popup=1;payby=CHEK;custnum=$custnum",
+           actionlabel => 'Enter electronic check refund',
+           width       => 440,
+           acl         => ['Post refund' ],
+        },
 
       ],
 

@@ -2705,6 +2705,7 @@ sub tables_hashref {
         'status',        'varchar', 'NULL', $char_d, '', '', 
         'failure_status','varchar', 'NULL',      16, '', '',
         'error_message', 'varchar', 'NULL', $char_d, '', '',
+        'paycode',       'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key'  => 'paybatchnum',
       'unique'       => [],

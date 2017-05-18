@@ -102,7 +102,28 @@
       <TD ALIGN="right">Check #</TD>
       <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
     </TR>
+% }
+%  elsif ($payby eq 'CHEK') {
+%
+% my @cust_payby = ();
+% if ( $payby eq 'CARD' ) {
+%   @cust_payby = $cust_main->cust_payby('CARD','DCRD');
+% } elsif ( $payby eq 'CHEK' ) {
+%   @cust_payby = $cust_main->cust_payby('CHEK','DCHK');
 % } else {
+%   die "unknown payby $payby";
+% }
+%
+% my $custpaybynum = length(scalar($cgi->param('custpaybynum')))
+%                      ? scalar($cgi->param('custpaybynum'))
+%                      : scalar(@cust_payby) && $cust_payby[0]->custpaybynum;
+<& /elements/tr-select-cust_payby.html,
+     'cust_payby' => \@cust_payby,
+     'curr_value' => $custpaybynum,
+     'onchange'   => 'cust_payby_changed(this)',
+&>
+    <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+%  } else {
     <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
 % }
 
@@ -156,6 +177,9 @@ if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   }
 }
 die "no custnum or paynum specified!" unless $custnum;
+
+my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
+die "unknown custnum $custnum" unless $cust_main;
 
 my $_date = time;
 
