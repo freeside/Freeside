@@ -107,8 +107,13 @@ $name = 'td_eft1464';
     $i++;
     # The 1464 byte format supports up to 5 payments per line,
     # but we're only going to send 1.
+
+    ## set to D for debit by default, then override to what cust_pay_batch has as payments may not have paycode.
+    my $debitorcredit = 'D';
+    $debitorcredit = $cust_pay_batch->paycode unless !$cust_pay_batch->paycode;
+
     my $control = join('',
-      'D',                  # for 'debit'
+      $debitorcredit,       # D for 'debit' or C for Credit
       sprintf("%09u", $i),  #record number
       $opt{'origid'},
       $opt{'fcn'},
