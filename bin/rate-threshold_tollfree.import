@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV;
+use FS::Misc::Getopt;
+use FS::Record qw( dbh );
+
+getopts('');
+
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $file = shift or usage();
+open my $in, '<', $file or die "$file: $!\n";
+my $csv = Text::CSV->new({ binary => 1, auto_diag => 2 });
+# set header row
+$csv->column_names($csv->getline($in));
+
+#my $error;
+
+my $rate = new FS::rate {
+  'ratename' => 'Toll-Free base rates',
+};
+my $r_error = $rate->insert;
+die $r_error if $r_error;
+my $ratenum = $rate->ratenum;
+
+my %rate_region = ();
+
+my $rp = 0;
+
+while (my $row = $csv->getline_hr($in)) {
+  print $csv->string;
+
+  my $rate_region = new FS::rate_region {
+    'regionname' => $row->{'Originating Location'},
+  };
+  my $rr_error = $rate_region->insert;
+  die $rr_error if $rr_error;
+
+  my $rate_detail = new FS::rate_detail {
+    'ratenum'         => $ratenum,
+    'dest_regionnum'  => $rate_region->regionnum,
+    'conn_charge'     => ( ( $row->{'minimum seconds'} / 60 ) * $row->{'Dedicated Carrier (in US)'} ),
+    'conn_sec'        => $row->{'minimum seconds'},
+    'min_charge'      => $row->{'Dedicated Carrier (in US)'},
+    'sec_granularity' => $row->{"add'l sec increment"},
+    'min_included'    => 0,
+  };
+  my $rd_error = $rate_detail->insert;
+  die $rd_error if $rd_error;
+
+  my $cc = $row->{'Country Code'};
+  my $npa = '';
+
+  if ( $row->{'World Zone'} eq '1' ) {
+    $npa = $cc;
+    $cc = '1';
+  }
+
+  my $rate_prefix = new FS::rate_prefix {
+    'regionnum'   => $rate_region->regionnum,
+    'countrycode' => $cc,
+    'npa'         => $npa,
+  };
+  my $rp_error = $rate_prefix->insert;
+  die $rp_error if $rp_error;
+  
+  $rp++;
+}
+
+dbh->commit;
+print "Inserted $rp regions\n";
+
+1;
+
+sub usage {
+  die "Usage: rate-threshold_tollfree.import <user> <file>.csv\n\n";
+}
+
