@@ -349,7 +349,7 @@
                  },
 
                  { label       => '-',
-                   condition   => sub { $part_pkg->freq ne '0' },
+                   #condition   => sub { $part_pkg->freq ne '0' },
                    content     => '-',
                  },
 
@@ -522,12 +522,13 @@
 
                  { label       => 'Cancel now',
                    acl         => 'Cancel customer package immediately',
-                   condition   => sub { $part_pkg->freq ne '0'
-                                          && ! $change_from
-                                          && ! $supplemental
-                                          && ! $cust_pkg->change_to_pkgnum
-                                          && ! $cust_pkg->get('cancel')
-                                      },
+                   condition   => sub {
+                     ( $part_pkg->freq ne '0' || ! $cust_pkg->get('setup') )
+                       && ! $change_from
+                       && ! $supplemental
+                       && ! $cust_pkg->change_to_pkgnum
+                       && ! $cust_pkg->get('cancel')
+                   },
                    popup       => "misc/cancel_pkg.html?method=cancel;$plink",
                    actionlabel => emt('Cancel now'),
                    color       => '#FF0000',
@@ -563,10 +564,11 @@
                  },
 
                  { label       => '-',
-                   condition   => sub { $part_pkg->freq ne '0'
-                                          && ! $change_from
-                                          && ! $cust_pkg->get('cancel')
-                                      },
+                   condition   => sub {
+                     ( $part_pkg->freq ne '0' || ! $cust_pkg->get('setup') )
+                       && ! $change_from
+                       && ! $cust_pkg->get('cancel')
+                   },
                    content     => '-',
                  },
 
