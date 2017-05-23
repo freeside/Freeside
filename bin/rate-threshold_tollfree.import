@@ -3,7 +3,10 @@
 use strict;
 use Text::CSV;
 use FS::Misc::Getopt;
-use FS::Record qw( dbh );
+use FS::Record qw( qsearch qsearchs dbh );
+use FS::rate;
+use FS::rate_region;
+use FS::rate_prefix;
 
 getopts('');
 
@@ -27,50 +30,97 @@ my $ratenum = $rate->ratenum;
 
 my %rate_region = ();
 
-my $rp = 0;
+my ($rd, $rp, $nr) = (0, 0, 0);
 
 while (my $row = $csv->getline_hr($in)) {
   print $csv->string;
 
-  my $rate_region = new FS::rate_region {
-    'regionname' => $row->{'Originating Location'},
-  };
-  my $rr_error = $rate_region->insert;
-  die $rr_error if $rr_error;
 
-  my $rate_detail = new FS::rate_detail {
-    'ratenum'         => $ratenum,
-    'dest_regionnum'  => $rate_region->regionnum,
-    'conn_charge'     => ( ( $row->{'minimum seconds'} / 60 ) * $row->{'Dedicated Carrier (in US)'} ),
-    'conn_sec'        => $row->{'minimum seconds'},
-    'min_charge'      => $row->{'Dedicated Carrier (in US)'},
-    'sec_granularity' => $row->{"add'l sec increment"},
-    'min_included'    => 0,
-  };
-  my $rd_error = $rate_detail->insert;
-  die $rd_error if $rd_error;
+  #no, this creates duplicate regions/prefixes
+  #my $rate_region = new FS::rate_region {
+  #  'regionname' => $row->{'Originating Location'},
+  #};
+  #my $rr_error = $rate_region->insert;
+  #die $rr_error if $rr_error;
 
   my $cc = $row->{'Country Code'};
   my $npa = '';
-
   if ( $row->{'World Zone'} eq '1' ) {
     $npa = $cc;
     $cc = '1';
   }
 
-  my $rate_prefix = new FS::rate_prefix {
-    'regionnum'   => $rate_region->regionnum,
-    'countrycode' => $cc,
-    'npa'         => $npa,
-  };
-  my $rp_error = $rate_prefix->insert;
-  die $rp_error if $rp_error;
+  my @rate_prefix = ();
+  if ( length($npa) ) {
+    push @rate_prefix, qsearchs('rate_prefix', { countrycode=>$cc, npa=>$npa } )
+      or do {
+              my $regionname = $row->{'Originating Location'};
+
+              warn "WARNING: previously unknown countrycode/npa $cc/$npa; ".
+                   "make sure to update previous rates for new '$regionname' ".
+                   "region\n";
+
+              my $rate_region = new FS::rate_region {
+                'regionname' => $row->{'Originating Location'},
+              };
+              my $rr_error = $rate_region->insert;
+              die $rr_error if $rr_error;
+
+              $nr++;
+
+              my $rate_prefix = new FS::rate_prefix {
+                'regionnum'   => $rate_region->regionnum,
+                'countrycode' => $cc,
+                'npa'         => $npa,
+              };
+              my $rp_error = $rate_prefix->insert;
+              die $rp_error if $rp_error;
+
+              push @rate_prefix, $rate_prefix;
+
+            };
+  } else {
+    push @rate_prefix, qsearch('rate_prefix', { countrycode=>$cc } )
+      or die "unknown countrycode/npa $cc/$npa\n";
+  }
+
+  my %saw = ();
+  my @regionnum = grep !$saw{$_}++, map $_->regionnum, @rate_prefix;
+
+  foreach my $regionnum (@regionnum) {
+
+    my $rate_detail = new FS::rate_detail {
+      'ratenum'         => $ratenum,
+      'dest_regionnum'  => $regionnum,
+      'conn_charge'     => ( ( $row->{'minimum seconds'} / 60 ) * $row->{'Dedicated Carrier (in US)'} ),
+      'conn_sec'        => $row->{'minimum seconds'},
+      'min_charge'      => $row->{'Dedicated Carrier (in US)'},
+      'sec_granularity' => $row->{"add'l sec increment"},
+      'min_included'    => 0,
+    };
+    my $rd_error = $rate_detail->insert;
+    die $rd_error if $rd_error;
+
+    $rd++;
+
+  }
+
+
+  #no, this creates duplicate regions/prefixes
+  #my $rate_prefix = new FS::rate_prefix {
+  #  'regionnum'   => $rate_region->regionnum,
+  #  'countrycode' => $cc,
+  #  'npa'         => $npa,
+  #};
+  #my $rp_error = $rate_prefix->insert;
+  #die $rp_error if $rp_error;
   
   $rp++;
 }
 
 dbh->commit;
-print "Inserted $rp regions\n";
+print "Inserted $rd rates for $rp regions\n";
+print "(Inserted $nr new regions)\n";
 
 1;
 
