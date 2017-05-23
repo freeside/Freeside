@@ -44,8 +44,8 @@ passing the exchange (or region) and
 
   function <% $opt{'prefix'} %><% $previous %>_changed(what, callback) {
 
-    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
-    what.form.<% $opt{'prefix'} %>phonenum.style.display = 'none';
+    $('#<% $opt{'prefix'} %>phonenum').prop('disabled', true);
+    $('#<% $opt{'prefix'} %>phonenum').css('display', 'none');
     var phonenumwait = document.getElementById('<% $opt{'prefix'} %>phonenumwait');
     phonenumwait.style.display = 'inline';
     var phonenumerror = document.getElementById('<% $opt{'prefix'} %>phonenumerror');
@@ -57,7 +57,7 @@ passing the exchange (or region) and
 
       var reply = JSON.parse(phonenums);
       // blank the current phonenum
-      $('#<% $opt{prefix} %>phonenum').empty;
+      $('#<% $opt{prefix} %>phonenum').empty();
 
 %     if ($opt{empty}) {
         if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ){
@@ -76,12 +76,12 @@ passing the exchange (or region) and
 
       //var phonenumFormLabel = document.getElementById('<% $opt{'prefix'} %>phonenumlabel');
 
-      what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
+    $('#<% $opt{'prefix'} %>phonenum').prop('disabled', false);
 
       phonenumwait.style.display = 'none';
       if ( phonenumArray.length >= 1 ) {
-        what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
-        what.form.<% $opt{'prefix'} %>phonenum.style.display = '';
+        $('#<% $opt{'prefix'} %>phonenum').prop('disabled', false);
+        $('#<% $opt{'prefix'} %>phonenum').css('display', '');
       } else {
         var phonenumerror = document.getElementById('<% $opt{'prefix'} %>phonenumerror');
         phonenumerror.style.display = 'inline';
@@ -129,7 +129,7 @@ passing the exchange (or region) and
 	what = document.getElementById('<% $opt{prefix} %>phonenum');
 
 	// blank the current phonenum
-        $('#<% $opt{prefix} %>phonenum').empty;
+        $('#<% $opt{prefix} %>phonenum').empty();
 
 %     if ($opt{empty}) {
         jopt($('#<% $opt{'prefix'} %>phonenum'), '', '<% $opt{empty} %>');
@@ -144,11 +144,11 @@ passing the exchange (or region) and
           jopt($('#<% $opt{'prefix'} %>phonenum'), phonenumArray[s], phonenumLabel);
       }
 
-      what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
+      $('#<% $opt{'prefix'} %>phonenum').prop('disabled', false);
 
       if ( phonenumArray.length >= 1 ) {
-        what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
-        what.form.<% $opt{'prefix'} %>phonenum.style.display = '';
+        $('#<% $opt{'prefix'} %>phonenum').prop('disabled', false);
+        $('#<% $opt{'prefix'} %>phonenum').css('display', '');
       } 
 
     }

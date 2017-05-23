@@ -21,7 +21,7 @@
     areacodeerror.style.display = 'none';
 
     what.form.<% $opt{'prefix'} %>exchange.disabled = 'disabled';
-    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
+    $('#<% $opt{'prefix'} %>phonenum').prop('disabled', true);
 
     var state = what.options[what.selectedIndex].value;
 
@@ -29,16 +29,16 @@
 
       var reply = JSON.parse(areacodes);
       // blank the current areacode
-      $('#<% $opt{prefix} %>areacode').empty;
+      $('#<% $opt{prefix} %>areacode').empty();
 
       // blank the current exchange too
-      $('#<% $opt{prefix} %>exchange').empty;
-      jopt( $('#<% $opt{prefix} %>exchnage'), '', 'Select city / exchange' );
+      $('#<% $opt{prefix} %>exchange').empty();
+      jopt( $('#<% $opt{prefix} %>exchange'), '', 'Select city / exchange' );
 
       // blank the current phonenum too
-      $('#<% $opt{prefix} %>phonenum').empty;
+      $('#<% $opt{prefix} %>phonenum').empty();
       if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ) {
-        jopt($('<% $opt{'prefix'} %>phonenum'), '', 'Select phone number');
+        jopt($('#<% $opt{'prefix'} %>phonenum'), '', 'Select phone number');
       }
 
 %     if ($opt{empty}) {
