@@ -1323,8 +1323,7 @@ sub check {
       $recref->{_password} = $1;
     } else {
       return gettext('illegal_password'). " $passwordmin-$passwordmax ".
-             FS::Msgcat::_gettext('illegal_password_characters').
-             ": ". $recref->{_password};
+             FS::Msgcat::_gettext('illegal_password_characters');
     }
 
     if ( $password_noampersand ) {
