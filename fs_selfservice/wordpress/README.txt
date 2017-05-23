@@ -29,6 +29,16 @@ Freeside services to turn on the daemon ("etc/init.d/freeside restart", or
 "service freeside restart")
 
 
+Freeside self-service:
+
+If you are using signup or additional package order with the API-provided
+package selection HTML (as in the services_new.php example), make sure the
+regular Freeside self-service is installed on the same server as the wordpress
+site.  Make sure the Freeside configuration setting
+"selfservice_server-base_url" is correct and matches the hostname used to
+access the site, including https:// if using (which you certainly should!).
+
+
 Firewall/network configuration:
 
 Allow the Wordpress machine to connect to port 8080 on the Freeside machine.
