@@ -20,7 +20,7 @@
     var exchangeerror = document.getElementById('<% $opt{'prefix'} %>exchangeerror');
     exchangeerror.style.display = 'none';
 
-    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
+    $('#<% $opt{'prefix'} %>phonenum').prop('disabled', true);
 
     areacode = what.options[what.selectedIndex].value;
 
@@ -28,10 +28,10 @@
 
       var reply = JSON.parse(exchanges);
       // blank the current exchange
-      $('#<% $opt{prefix} %>exchange').empty;
+      $('#<% $opt{prefix} %>exchange').empty();
 
       // blank the current phonenum too
-      $('#<% $opt{prefix} %>phonenum').empty;
+      $('#<% $opt{prefix} %>phonenum').empty();
       if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ) {
         jopt($('#<% $opt{'prefix'} %>phonenum'), '', 'Select phone number');
       }
