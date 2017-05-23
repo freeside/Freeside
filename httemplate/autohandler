@@ -12,7 +12,7 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
 
   my $profile = '';
 
-  if ( lc($r->content_type) =~ /^text\/html/
+  if ( $r && lc($r->content_type) =~ /^text\/html/
        && $FS::CurrentUser::CurrentUser->option('show_db_profile')
      )
   {
