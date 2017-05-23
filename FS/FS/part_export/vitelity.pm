@@ -4,6 +4,7 @@ use base qw( FS::part_export );
 use vars qw( %info );
 use Tie::IxHash;
 use Geo::StreetAddress::US;
+use Net::Vitelity;
 use FS::Record qw( qsearch dbh );
 use FS::phone_avail;
 use FS::svc_phone;
@@ -32,10 +33,6 @@ tie my %options, 'Tie::IxHash',
   'options'    => \%options,
   'no_machine' => 1,
   'notes'      => <<'END'
-Requires installation of
-<a href="http://search.cpan.org/dist/Net-Vitelity">Net::Vitelity</a>
-from CPAN.
-<br><br>
 routesip - optional Vitelity sub-account to which newly ordered DIDs will be routed
 <br>type - optional DID type (perminute, unlimited, or your-pri)
 END
@@ -60,7 +57,7 @@ sub get_dids {
     return [] if ( $tollfree[0] eq 'noneavailable' || $tollfree[0] eq 'none');
 
     foreach my $did ( @tollfree ) {
-        $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+        $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable toll-free did $did\n";
         push @ret, $did;
     }
 
@@ -100,7 +97,7 @@ sub get_dids {
     die "missingdata error running Vitelity API" if $dids[0] eq 'missingdata';
 
     foreach my $did ( @dids ) {
-      $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+      $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable (state and ratecenter) did $did\n";
       my($npa, $nxx, $station) = ($1, $2, $3);
 
       my $phone_avail = new FS::phone_avail {
@@ -210,7 +207,7 @@ sub get_dids {
       }
 
       foreach my $did ( @dids ) {
-        $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+        $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable (state) did $did\n";
         my($npa, $nxx, $station) = ($1, $2, $3);
         $npa{$npa}++;
 
@@ -248,9 +245,6 @@ sub get_dids {
 sub vitelity_command {
   my( $self, $command, @args ) = @_;
 
-  eval "use Net::Vitelity;";
-  die $@ if $@;
-
   my $vitelity = Net::Vitelity->new(
     'login' => $self->option('login'),
     'pass'  => $self->option('pass'),
@@ -263,9 +257,6 @@ sub vitelity_command {
 
 sub vitelity_lnp_command {
   my( $self, $command, @args ) = @_;
-
-  eval "use Net::Vitelity 0.04;";
-  die $@ if $@;
 
   my $vitelity = Net::Vitelity->new(
     'login'   => $self->option('login'),
