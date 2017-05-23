@@ -6,10 +6,9 @@
 
 <SCRIPT TYPE="text/javascript">
 
-  function opt(what,value,text) {
+  function jopt(what,value,text) {
     var optionName = new Option(text, value, false, false);
-    var length = what.length;
-    what.options[length] = optionName;
+    what.append(optionName);
   }
 
   function <% $opt{'state_prefix'} %>state_changed(what, callback) {
@@ -30,21 +29,20 @@
 
       var reply = JSON.parse(areacodes);
       // blank the current areacode
-      for ( var i = what.form.<% $opt{'prefix'} %>areacode.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>areacode.options[i] = null;
+      $('#<% $opt{prefix} %>areacode').empty;
+
       // blank the current exchange too
-      for ( var i = what.form.<% $opt{'prefix'} %>exchange.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>exchange.options[i] = null;
-      opt(what.form.<% $opt{'prefix'} %>exchange, '', 'Select city / exchange');
+      $('#<% $opt{prefix} %>exchange').empty;
+      jopt( $('#<% $opt{prefix} %>exchnage'), '', 'Select city / exchange' );
+
       // blank the current phonenum too
-      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+      $('#<% $opt{prefix} %>phonenum').empty;
       if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ) {
-        opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+        jopt($('<% $opt{'prefix'} %>phonenum'), '', 'Select phone number');
       }
 
 %     if ($opt{empty}) {
-        opt(what.form.<% $opt{'prefix'} %>areacode, '', '<% $opt{empty} %>');
+        jopt($('#<% $opt{'prefix'} %>areacode'), '', '<% $opt{empty} %>');
 %     }
 
       // add the new areacodes
@@ -53,7 +51,7 @@
           var areacodeLabel = areacodeArray[s];
           if ( areacodeLabel == "" )
               areacodeLabel = '(n/a)';
-          opt(what.form.<% $opt{'prefix'} %>areacode, areacodeArray[s], areacodeLabel);
+          jopt($('#<% $opt{'prefix'} %>areacode'), areacodeArray[s], areacodeLabel);
       }
 
       areacodewait.style.display = 'none';
@@ -86,7 +84,12 @@
 
 <DIV ID="areacodeerror" STYLE="display:none; font-weight: bold"><IMG SRC="<%$fsurl%>images/cross.png"></DIV>
 
-<SELECT NAME="<% $opt{'prefix'} %>areacode" onChange="<% $opt{'prefix'} %>areacode_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+<SELECT
+  ID       = "<% $opt{prefix} %>areacode"
+  NAME     = "<% $opt{prefix} %>areacode"
+  onChange = "<% $opt{prefix} %>areacode_changed(this); <% $opt{onchange} %>"
+  <% $opt{disabled} %>
+>
   <OPTION VALUE="">Select area code</OPTION>
 </SELECT>
 
