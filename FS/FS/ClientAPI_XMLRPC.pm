@@ -75,8 +75,10 @@ sub AUTOLOAD {
     #FS::ClientAPI->dispatch($autoload->{$call}, @_);
 
     my %hash = @_;
-    #XXX doesn't handle multi-level data structs
-    $hash{$_} = decode(utf8=>$hash{$_}) foreach keys %hash;
+    #XXX doesn't deep-fix multi-level data structs, but at least doesn't mangle
+    # them anymore
+    $hash{$_} = decode(utf8=>$hash{$_})
+      foreach grep !ref($hash{$_}), keys %hash;
 
     my $return = FS::ClientAPI->dispatch($autoload->{$call}, \%hash );
 
