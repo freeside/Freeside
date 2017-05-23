@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV;
+use FS::Misc::Getopt;
+use FS::Record qw( dbh );
+
+getopts('');
+
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $file = shift or usage();
+open my $in, '<', $file or die "$file: $!\n";
+my $csv = Text::CSV->new({ binary => 1, auto_diag => 2 });
+# set header row
+$csv->column_names($csv->getline($in));
+
+#my $error;
+
+my $rate = new FS::rate {
+  'ratename' => 'Discount Rate Plan',
+};
+my $r_error = $rate->insert;
+die $r_error if $r_error;
+my $ratenum = $rate->ratenum;
+
+my %rate_region = ();
+
+my( $rr, $rp ) = (0,0);
+
+while (my $row = $csv->getline_hr($in)) {
+  print $csv->string;
+
+  my $key = join('|', map $row->{$_}, 'Description', 'Rate' );
+
+  unless ( $rate_region{$key} ) {
+
+    my $rate_region = new FS::rate_region {
+      'regionname' => $row->{'Description'},
+    };
+    my $rr_error = $rate_region->insert;
+    die $rr_error if $rr_error;
+    $rate_region{$key} = $rate_region;
+
+    my $rate_detail = new FS::rate_detail {
+      'ratenum'         => $ratenum,
+      'dest_regionnum'  => $rate_region->regionnum,
+      'conn_charge'     => ( ( $row->{'Initial'} / 60 ) * $row->{'Rate'} ),
+      'conn_sec'        => $row->{'Initial'},
+      'min_charge'      => $row->{'Rate'},
+      'sec_granularity' => $row->{"Increment"},
+      'min_included'    => 0,
+    };
+    my $rd_error = $rate_detail->insert;
+    die $rd_error if $rd_error;
+
+    $rr++;
+
+  }
+
+  my($countrycode, $npa);
+  if ( $row->{Country} =~ /^(1|2[078]|3[0123469]|4[01356789]|5[12345678]|6[0123456]|7[67]|7|8[123469]|9[0123458])(\d*)$/ ) { #https://en.wikipedia.org/wiki/List_of_country_calling_codes
+    ( $countrycode, $npa ) = ( $1, $2 );
+  } elsif ( length($row->{Country}) <= 3 ) {
+    $countrycode = $row->{Country};
+    $npa = '';
+  } else {
+    $countrycode = substr($row->{Country}, 0, 3);
+    $npa = substr($row->{Country}, 3);
+  }
+
+  my $rate_prefix = new FS::rate_prefix {
+    'regionnum'   => $rate_region{$key}->regionnum,
+    'countrycode' => $countrycode,
+    'npa'         => $npa,
+  };
+  my $rp_error = $rate_prefix->insert;
+  die $rp_error if $rp_error;
+  
+  $rp++;
+}
+
+dbh->commit;
+print "Inserted $rp prefixes in $rr regions\n";
+
+1;
+
+sub usage {
+  die "Usage: rate-ntlightnet.import <user> <file>.csv\n\n";
+}
+
