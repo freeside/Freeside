@@ -6,10 +6,9 @@
 
 <SCRIPT TYPE="text/javascript">
 
-  function opt(what,value,text) {
+  function jopt(what,value,text) {
     var optionName = new Option(text, value, false, false);
-    var length = what.length;
-    what.options[length] = optionName;
+    what.append(optionName);
   }
 
   function <% $opt{'prefix'} %>areacode_changed(what, callback) {
@@ -29,17 +28,16 @@
 
       var reply = JSON.parse(exchanges);
       // blank the current exchange
-      for ( var i = what.form.<% $opt{'prefix'} %>exchange.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>exchange.options[i] = null;
+      $('#<% $opt{prefix} %>exchange').empty;
+
       // blank the current phonenum too
-      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+      $('#<% $opt{prefix} %>phonenum').empty;
       if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ) {
-        opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+        jopt($('#<% $opt{'prefix'} %>phonenum'), '', 'Select phone number');
       }
 
 %     if ($opt{empty}) {
-        opt(what.form.<% $opt{'prefix'} %>exchange, '', '<% $opt{empty} %>');
+        jopt($('#<% $opt{'prefix'} %>exchange'), '', '<% $opt{empty} %>');
 %     }
 
       // add the new exchanges
@@ -48,7 +46,7 @@
           var exchangeLabel = exchangeArray[s];
           if ( exchangeLabel == "" )
               exchangeLabel = '(n/a)';
-          opt(what.form.<% $opt{'prefix'} %>exchange, exchangeArray[s], exchangeLabel);
+          jopt($('#<% $opt{'prefix'} %>exchange'), exchangeArray[s], exchangeLabel);
       }
 
       exchangewait.style.display = 'none';
@@ -82,7 +80,12 @@
 
 <DIV ID="exchangeerror" STYLE="display:none; font-weight: bold"><IMG SRC="<%$fsurl%>images/cross.png"></DIV>
 
-<SELECT NAME="<% $opt{'prefix'} %>exchange" onChange="<% $opt{'prefix'} %>exchange_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+<SELECT
+  ID       = "<% $opt{prefix} %>exchange"
+  NAME     = "<% $opt{prefix} %>exchange"
+  onChange = "<% $opt{prefix} %>exchange_changed(this); <% $opt{onchange} %>"
+  <% $opt{disabled} %>
+>
   <OPTION VALUE="">Select city / exchange</OPTION>
 </SELECT>
 

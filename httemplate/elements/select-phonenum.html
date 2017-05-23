@@ -37,10 +37,9 @@ passing the exchange (or region) and
 
 <SCRIPT TYPE="text/javascript">
 
-  function opt(what,value,text) {
+  function jopt(what,value,text) {
     var optionName = new Option(text, value, false, false);
-    var length = what.length;
-    what.options[length] = optionName;
+    what.append(optionName);
   }
 
   function <% $opt{'prefix'} %><% $previous %>_changed(what, callback) {
@@ -58,12 +57,11 @@ passing the exchange (or region) and
 
       var reply = JSON.parse(phonenums);
       // blank the current phonenum
-      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+      $('#<% $opt{prefix} %>phonenum').empty;
 
 %     if ($opt{empty}) {
         if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ){
-          opt(what.form.<% $opt{'prefix'} %>phonenum, '', '<% $opt{empty} %>');
+          jopt($('#<% $opt{'prefix'} %>phonenum'), '', '<% $opt{empty} %>');
         }
 %     }
 
@@ -73,7 +71,7 @@ passing the exchange (or region) and
           var phonenumLabel = phonenumArray[s];
           if ( phonenumLabel == "" )
               phonenumLabel = '(n/a)';
-          opt(what.form.<% $opt{'prefix'} %>phonenum, phonenumArray[s], phonenumLabel);
+          jopt($('#<% $opt{'prefix'} %>phonenum'), phonenumArray[s], phonenumLabel);
       }
 
       //var phonenumFormLabel = document.getElementById('<% $opt{'prefix'} %>phonenumlabel');
@@ -131,11 +129,10 @@ passing the exchange (or region) and
 	what = document.getElementById('<% $opt{prefix} %>phonenum');
 
 	// blank the current phonenum
-      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
-          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+        $('#<% $opt{prefix} %>phonenum').empty;
 
 %     if ($opt{empty}) {
-        opt(what.form.<% $opt{'prefix'} %>phonenum, '', '<% $opt{empty} %>');
+        jopt($('#<% $opt{'prefix'} %>phonenum'), '', '<% $opt{empty} %>');
 %     }
 
       // add the new phonenums
@@ -144,7 +141,7 @@ passing the exchange (or region) and
           var phonenumLabel = phonenumArray[s];
           if ( phonenumLabel == "" )
               phonenumLabel = '(n/a)';
-          opt(what.form.<% $opt{'prefix'} %>phonenum, phonenumArray[s], phonenumLabel);
+          jopt($('#<% $opt{'prefix'} %>phonenum'), phonenumArray[s], phonenumLabel);
       }
 
       what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
