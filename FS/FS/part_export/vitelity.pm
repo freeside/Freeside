@@ -282,6 +282,20 @@ sub _export_insert {
   #porting a number in?  different code path
   if ( $svc_phone->lnp_status eq 'portingin' ) {
 
+    my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
+
+    return 'Customer company is required'
+      unless $cust_main->company;
+
+    return 'Customer day phone (for contact, not porting) is required'
+      unless $cust_main->daytime;
+
+    return 'LNP Other Provider is required'
+      unless $svc_phone->lnp_other_provider;
+
+    return 'LNP Other Provider Account # is required'
+      unless $svc_phone->lnp_other_provider_account;
+
     my %location = $svc_phone->location_hash;
     my $sa = Geo::StreetAddress::US->parse_location( $location{'address1'} );
 
@@ -290,7 +304,7 @@ sub _export_insert {
       'partial'       => 'no',
       'wireless'      => 'no',
       'carrier'       => $svc_phone->lnp_other_provider,
-      'company'       => $svc_phone->cust_svc->cust_pkg->cust_main->company,
+      'company'       => $cust_main->company,
       'accnumber'     => $svc_phone->lnp_other_provider_account,
       'name'          => $svc_phone->phone_name_or_cust,
       'streetnumber'  => $sa->{number},
@@ -305,7 +319,7 @@ sub _export_insert {
       'state'         => $location{'state'},
       'zip'           => $location{'zip'},
       'billnumber'    => $svc_phone->phonenum, #?? do we need a new field for this?
-      'contactnumber' => $svc_phone->cust_svc->cust_pkg->cust_main->daytime,
+      'contactnumber' => $cust_main->daytime,
     );
 
     if ( $result =~ /^ok:/i ) {
