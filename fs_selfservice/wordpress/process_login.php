@@ -15,7 +15,7 @@ if ( $response['custnum'] || $response['svcnum'] ) {
   get_header();
 ?>
 
-  <?php include('elements/error.php'); ?>
+  <?php include(dirname(__FILE__).'/elements/error.php'); ?>
 
   <FORM NAME="SelectCustomerForm" ACTION="process_select_cust.php" METHOD=POST>
   <INPUT TYPE="hidden" NAME="action" VALUE="switch_cust">
