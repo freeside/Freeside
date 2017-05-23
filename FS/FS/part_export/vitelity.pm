@@ -4,7 +4,7 @@ use base qw( FS::part_export );
 use vars qw( %info );
 use Tie::IxHash;
 use Geo::StreetAddress::US;
-use Net::Vitelity;
+use Net::Vitelity 0.05;
 use FS::Record qw( qsearch dbh );
 use FS::phone_avail;
 use FS::svc_phone;
@@ -24,6 +24,10 @@ tie my %options, 'Tie::IxHash',
                           },
   'disable_e911'       => { label => "Disable E911 provisioning",
                             type  => 'checkbox',
+                          },
+  'debug'              => { label  => 'Enable debugging',
+                             type  => 'checkbox',
+                             value => 1,
                           },
 ;
 
@@ -246,10 +250,10 @@ sub vitelity_command {
   my( $self, $command, @args ) = @_;
 
   my $vitelity = Net::Vitelity->new(
-    'login' => $self->option('login'),
-    'pass'  => $self->option('pass'),
-    'apitype' => $self->option('fax') ? 'fax' : 'api',
-    #'debug'    => $debug,
+    'login'    => $self->option('login'),
+    'pass'     => $self->option('pass'),
+    'apitype'  => $self->option('fax') ? 'fax' : 'api',
+    'debug'    => $self->option('debug'),
   );
 
   $vitelity->$command(@args);
@@ -259,10 +263,10 @@ sub vitelity_lnp_command {
   my( $self, $command, @args ) = @_;
 
   my $vitelity = Net::Vitelity->new(
-    'login'   => $self->option('login'),
-    'pass'    => $self->option('pass'),
-    'apitype' => 'lnp',
-    #'debug'   => $debug,
+    'login'    => $self->option('login'),
+    'pass'     => $self->option('pass'),
+    'apitype'  => 'lnp',
+    'debug'    => $self->option('debug'),
   );
 
   $vitelity->$command(@args);
