@@ -100,10 +100,7 @@ my %session_callbacks = (
       }
     }
 
-use Data::Dumper;
-warn Dumper $argsref;
     my %args = @$argsref;
-warn Dumper \%args;
     $args{part_pkg} = \@part_pkg;
     $args{first_svc} = \@first_svc;
     $args{no_comment} = 1;
@@ -140,8 +137,6 @@ my( $fs_interp, $rt_interp ) = mason_interps('standalone', 'outbuf'=>\$outbuf);
 
 sub mason_comp {
   my $packet = shift;
-use Data::Dumper;
-warn Dumper($packet);
 
   warn "$me mason_comp called on $packet\n" if $DEBUG;
 
