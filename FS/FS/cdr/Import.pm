@@ -45,7 +45,7 @@ sub dbi_import {
   my %args = @_; #args are specifed by the script using this sub
 
   my %opt; #opt is specified for each install / run of the script
-  getopts('H:U:P:D:T:c:L:', \%opt);
+  getopts('H:U:P:D:T:c:L:S:', \%opt);
   my $user = shift(@ARGV) or die $class->cli_usage;
 
   $opt{D} ||= $args{database};
@@ -91,9 +91,9 @@ sub dbi_import {
 
   #my @cols = values %{ $args{column_map} };
   my $sql = "SELECT $table.* FROM $table "; # join(',', @cols). " FROM $table ".
-  $sql .=  'LEFT JOIN '. $args{status_table}.
-           " ON ( $table.$pkey = ". $args{status_table}. ".$pkey )"
-    if $args{status_table};
+  $sql .=  'LEFT JOIN '. $opt{S}.
+           " ON ( $table.$pkey = ". $opt{S}. ".$pkey )"
+    if $opt{S};
   $sql .= ' WHERE freesidestatus IS NULL ';
 
   #$sql .= ' LIMIT '. $opt{L} if $opt{L};
@@ -141,10 +141,10 @@ sub dbi_import {
       $imported++;
 
       my $st_sql;
-      if ( $args{status_table} ) {
+      if ( $opt{S} ) {
 
         $st_sql = 
-          'INSERT INTO '. $args{status_table}. " ( $pkey, freesidestatus ) ".
+          'INSERT INTO '. $opt{S}. " ( $pkey, freesidestatus ) ".
             " VALUES ( ?, 'done' )";
 
       } else {
@@ -175,7 +175,7 @@ sub dbi_import {
 sub cli_usage {
   #"Usage: \n  $0\n\t[ -H hostname ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
   #"Usage: \n  $0\n\t-H hostname\n\t-D database\n\t-U user\n\t-P password\n\t[ -c cdrtypenum ]\n\tfreesideuser\n";
-  "Usage: \n  $0\n\t-H hostname\n\t[ -D database ]\n\t-U user\n\t-P password\n\t[ -c cdrtypenum ]\n\t[ -L num_cdrs_limit ]\n\tfreesideuser\n";
+  "Usage: \n  $0\n\t-H hostname\n\t[ -D database ]\n\t-U user\n\t-P password\n\t[ -c cdrtypenum ]\n\t[ -L num_cdrs_limit ]\n\t[ -T table ]\n\t[ -S status table ]\n\tfreesideuser\n";
 }
 
 =head1 BUGS
