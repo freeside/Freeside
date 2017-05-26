@@ -71,6 +71,7 @@ sub dbi_import {
 
   my $table = $opt{T} || $args{table};
   my $pkey = $args{primary_key};
+  my $status_table = $opt{S} || $args{status_table};
 
   #just doing this manually with IVR MSSQL databases for now
   #  # check for existence of freesidestatus
@@ -91,9 +92,9 @@ sub dbi_import {
 
   #my @cols = values %{ $args{column_map} };
   my $sql = "SELECT $table.* FROM $table "; # join(',', @cols). " FROM $table ".
-  $sql .=  'LEFT JOIN '. $opt{S}.
-           " ON ( $table.$pkey = ". $opt{S}. ".$pkey )"
-    if $opt{S};
+  $sql .=  'LEFT JOIN '. $status_table.
+           " ON ( $table.$pkey = ". $status_table. ".$pkey )"
+    if $status_table;
   $sql .= ' WHERE freesidestatus IS NULL ';
 
   #$sql .= ' LIMIT '. $opt{L} if $opt{L};
@@ -141,10 +142,10 @@ sub dbi_import {
       $imported++;
 
       my $st_sql;
-      if ( $opt{S} ) {
+      if ( $status_table ) {
 
         $st_sql = 
-          'INSERT INTO '. $opt{S}. " ( $pkey, freesidestatus ) ".
+          'INSERT INTO '. $status_table. " ( $pkey, freesidestatus ) ".
             " VALUES ( ?, 'done' )";
 
       } else {
