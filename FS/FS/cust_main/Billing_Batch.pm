@@ -89,7 +89,7 @@ sub batch_card {
   #this needs to handle mysql as well as Pg, like svc_acct.pm
   #(make it into a common function if folks need to do batching with mysql)
   $dbh->do("LOCK TABLE pay_batch IN SHARE ROW EXCLUSIVE MODE")
-    or return "Cannot lock pay_batch: " . $dbh->errstr;
+    or die "Cannot lock pay_batch: " . $dbh->errstr;
 
   my %pay_batch = (
     'status' => 'O',
@@ -157,7 +157,8 @@ sub batch_card {
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    die $error;
+    #die $error;
+    return $error; # e.g. "Illegal zip" ala RT#75998
   }
 
   my $unapplied =   $self->total_unapplied_credits
