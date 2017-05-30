@@ -3062,6 +3062,13 @@ sub ut_zip {
                 $self->getfield($field);
     $self->setfield($field, "$1 $2");
 
+  } elsif ( $country eq 'AU' ) {
+
+    $self->getfield($field) =~ /^\s*(\d{4})\s*$/
+      or return gettext('illegal_zip'). " $field for country $country: ".
+                $self->getfield($field);
+    $self->setfield($field, $1);
+
   } else {
 
     if ( $self->getfield($field) =~ /^\s*$/
