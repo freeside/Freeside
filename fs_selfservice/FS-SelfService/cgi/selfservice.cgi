@@ -128,7 +128,7 @@ unless ( $nologin_actions{$action} ) {
       $cgi->param('password') =~ /^(.{0,$form_max})$/;
       my $password = $1;
 
-      if ( $cgi->param('email') =~ /^\s*([a-z0-9_\-\.\@]{1,$form_max})\s*$/i ) {
+      if ( $cgi->param('email') =~ /^\s*([a-z0-9_\-\.\+\@]{1,$form_max})\s*$/i ) {
 
         my $email = $1;
         $login_rv = login(
