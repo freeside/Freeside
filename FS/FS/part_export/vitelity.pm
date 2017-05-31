@@ -3,6 +3,7 @@ use base qw( FS::part_export );
 
 use vars qw( %info );
 use Tie::IxHash;
+use Data::Dumper;
 use Geo::StreetAddress::US;
 use Net::Vitelity 0.05;
 use FS::Record qw( qsearch dbh );
@@ -321,6 +322,8 @@ sub _export_insert {
       'billnumber'    => $svc_phone->phonenum, #?? do we need a new field for this?
       'contactnumber' => $cust_main->daytime,
     );
+
+    warn Dumper($result) if $self->option('debug');
 
     if ( $result =~ /^ok:/i ) {
       my($ok, $portid, $sig, $bill) = split(':', $result);
