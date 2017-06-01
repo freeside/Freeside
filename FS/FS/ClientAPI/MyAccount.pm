@@ -2581,9 +2581,13 @@ sub change_pkg {
   my $err_or_cust_pkg = $cust_pkg->change( 'pkgpart'  => $p->{'pkgpart'},
                                            'quantity' => $p->{'quantity'} || 1,
                                          );
+  
+  my $new_pkg = qsearchs('part_pkg', { 'pkgpart' => $p->{pkgpart} } )
+    or return { 'error' => "unknown package $p->{pkgpart}" };
 
   return { error=>$err_or_cust_pkg, pkgnum=>$cust_pkg->pkgnum }
     unless ref($err_or_cust_pkg);
+
 
   if ( $conf->exists('signup_server-realtime') ) {
 
@@ -2600,7 +2604,7 @@ sub change_pkg {
     $err_or_cust_pkg->reexport;
   }
 
-  return { error => '', pkgnum => $cust_pkg->pkgnum };
+  return { error => '', pkg => $new_pkg->pkg, pkgnum => $err_or_cust_pkg->pkgnum };
 
 }
 
