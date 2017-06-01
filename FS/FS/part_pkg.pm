@@ -2431,7 +2431,8 @@ sub agent_pkgs_sql {
 
 sub _pkgs_sql {
   my( $class, @agentnums ) = @_;
-  my $agentnums = join(',', @agentnums);
+  my $dbh = dbh;
+  my $agentnums = join(',', map { $dbh->quote($_) } @agentnums);
 
   "
     (
