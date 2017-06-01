@@ -53,8 +53,6 @@ if ( ! $results['error'] ) {
 
   $results = $freeside->change_pkg($change_pkg);
 
-  echo $results;
-
 }
 
 #  if ( $results->{'error'} ) {
@@ -83,7 +81,7 @@ if ( isset($results['error']) && $results['error'] ) {
 ?>
 <? include('elements/error.php'); ?>
 
-<FONT SIZE=4>Package Changed Su for "<? echo $pkg; ?>"</FONT><BR><BR>
+<FONT SIZE=4>Package Successfully Changed To "<? echo $results['pkg']; ?>"</FONT><BR><BR>
 
 <? include('elements/menu_footer.php'); ?>
 <? include('elements/footer.php'); ?>
