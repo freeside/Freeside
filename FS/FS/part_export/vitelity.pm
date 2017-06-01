@@ -323,13 +323,14 @@ sub _export_insert {
       'contactnumber' => $cust_main->daytime,
     );
 
-    warn Dumper($result) if $self->option('debug');
+    warn "Vitelity reponse: $result" if $self->option('debug');
 
     if ( $result =~ /^ok:/i ) {
       my($ok, $portid, $sig, $bill) = split(':', $result);
       $svc_phone->lnp_portid($portid);
       $svc_phone->lnp_signature('Y') if $sig  =~ /y/i;
       $svc_phone->lnp_bill('Y')      if $bill =~ /y/i;
+      local($FS::svc_Common::noexport_hack) = 1;
       return $svc_phone->replace;
     } else {
       return "Error initiating Vitelity port: $result";
@@ -512,6 +513,7 @@ sub check_lnp {
         # properly
         warn "ERROR provisioning ported-in DID ". $svc_phone->phonenum. ": $error";
       } else {
+        local($FS::svc_Common::noexport_hack) = 1;
         $error = $svc_phone->replace; #to set the lnp_status
         #XXX log this using our internal log instead, so we can alert on it
         warn "ERROR setting lnp_status for DID ". $svc_phone->phonenum. ": $error" if $error;
@@ -519,6 +521,7 @@ sub check_lnp {
 
     } elsif ( $result ne $svc_phone->lnp_reject_reason ) {
       $svc_phone->lnp_reject_reason($result);
+      local($FS::svc_Common::noexport_hack) = 1;
       $error = $svc_phone->replace;
       #XXX log this using our internal log instead, so we can alert on it
       warn "ERROR setting lnp_reject_reason for DID ". $svc_phone->phonenum. ": $error" if $error;
