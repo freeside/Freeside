@@ -1509,6 +1509,14 @@ sub replace {
     $implicit_contact->set('emailaddress', $email);
     $implicit_contact->set('invoice_dest', 'Y');
     $implicit_contact->set('custnum', $self->custnum);
+    my $i_cust_contact =
+      qsearchs('cust_contact', {
+                                 contactnum  => $implicit_contact->contactnum,
+                                 custnum     => $self->custnum,
+                               }
+      );
+    $implicit_contact->set($_, $i_cust_contact->$_)
+      foreach qw( classnum selfservice_access comment );
 
     my $error;
     if ( $implicit_contact->contactnum ) {
