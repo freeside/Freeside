@@ -154,6 +154,10 @@ sub insert {
   my $dbh = dbh;
 
   my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  unless ( $cust_main ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Unknown custnum ". $self->custnum;
+  }
   my $old_balance = $cust_main->balance;
 
   if (!$self->reasonnum) {
