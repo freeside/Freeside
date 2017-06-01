@@ -565,7 +565,11 @@ sub sort_packages {
     return 0  if !scalar(@a_cust_svc) && !scalar(@b_cust_svc);
     return -1 if  scalar(@a_cust_svc) && !scalar(@b_cust_svc);
     return 1  if !scalar(@a_cust_svc) &&  scalar(@b_cust_svc);
-    $a_cust_svc[0]->svc_x->label cmp $b_cust_svc[0]->svc_x->label;
+
+    my $a_svc_x = $a_cust_svc[0]->svc_x || return 1; # these can be undef sometimes which
+    my $b_svc_x = $b_cust_svc[0]->svc_x || return -1;# causes the line below to server error
+
+    $a_svc_x->label cmp $b_svc_x->label;
   }
 
 }
