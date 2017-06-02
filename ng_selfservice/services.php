@@ -33,7 +33,7 @@ extract($list_pkgs);
 
     $change_link = '';
     if ( in_array("Change packages", $menu_disable) == 0) {
-      $change_link = '<a href="packages_change.php?pkgnum=' . $pkg['pkgnum'] . '&pkg=' . $pkg['pkg_label'] . '">[change]</a>';
+      $change_link = '<a href="packages_change.php?pkgnum=' . $pkg['pkgnum'] . '&pkg=' . $pkg['pkg_label'] . '&pkgpart=' . $pkg['pkgpart'] . '&classnum=' . $pkg['classnum'] . '">[change]</a>';
     }
 ?>
   <TR>

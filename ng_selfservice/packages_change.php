@@ -6,32 +6,20 @@ $customer_info = $freeside->customer_info_short( array(
   'session_id' => $_COOKIE['session_id'],
 ) );
 
-$list_pkgs = $freeside->list_pkgs( array(
-  'session_id' => $_COOKIE['session_id'],
-) );
-
-if ( isset($list_pkgs['error']) && $list_pkgs['error'] ) {
-  $error = $list_pkgs['error'];
-  header('Location:index.php?error='. urlencode($error));
-  die();
+foreach ( $cust_pkg AS $pkg ) {
+ $part_pkg .= $pkg[pkgpart];
+ $class_num .= $pkg[classnum];
 }
 
-extract($list_pkgs);
-
-$get_params = array( 'pkgnum', 'pkg' );
+$get_params = array( 'pkgnum', 'pkg', 'classnum', 'pkgpart' );
 foreach ( $get_params AS $param ) {
   $params[$param] = $_GET[$param];
 }
 
-$pkgnum = $_GET['pkgnum'];
-$pkg = $_GET['pkg'];
-
 $pkgselect = $freeside->mason_comp( array(
     'session_id' => $_COOKIE['session_id'],
     'comp'       => '/elements/select-part_pkg.html',
-    'args'       => array( 'custnum' => $customer_info['custnum'],
-                           'curr_value' => 'current_value',
-                    ),
+    'args'       => [ 'classnum', $params['classnum'], 'curr_value', $params['pkgpart'], ],
   )
 );
 
@@ -53,7 +41,7 @@ function enable_change_pkg () {
 }
 </SCRIPT>
 
-<FONT SIZE=4>Purchase replacement package for "<? echo $pkg; ?>"</FONT><BR><BR>
+<FONT SIZE=4>Purchase replacement package for "<? echo $params['pkg']; ?>"</FONT><BR><BR>
 
 <? include('elements/error.php'); ?>
 
