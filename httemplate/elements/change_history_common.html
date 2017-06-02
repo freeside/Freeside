@@ -44,6 +44,40 @@
 %   } else {
 %     $bgcolor = $bgcolor1;
 %   }
+%
+%   ## Create Description and check to see it is not empty, no need to display a record with no description, so skip it.
+%   my $description = '';
+%   if ( $item->table eq 'legacy_cust_history' ) {
+%     $description = $item->description;
+%   } elsif ( $item->table eq 'h_cust_tag' ) {
+%     $description = &{ $h_table_descripsub{$item->table} }( $item, $tables{'cust_tag'} )
+%        if $single_cust && $h_table_descripsub{$item->table};
+%   } else {
+%     $description = join(', ',
+%             map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
+%                                  ? 'N/A'
+%                                  : $item->get($_);
+%                    $value = time2str($cust_pkg_date_format, $value)
+%                     if $item->table eq 'h_cust_pkg'
+%                     && $cust_pkg_date_fields{$_}
+%                     && $value;
+%
+%                    $value = substr($value, 0, 77).'...' if length($value) > 80;
+%                    $value = encode_entities($value);
+%                    "<I>$_</I>:<B>$value</B>";
+%                  }
+%             grep { $history_other
+%                      ? ( $item->get($_) ne $history_other->get($_) )
+%                      : ( $item->get($_) =~ /\S/ )
+%                  }
+%             grep { ! /^(history|custnum$)/i }
+%                  $item->fields
+%     );
+%     if ( $single_cust && $h_table_descripsub{$item->table} ) {
+%        $description = &{ $h_table_descripsub{$item->table} }( $item );
+%     }
+%   } #else 
+%  if (!$description) { next; }
 
   <TR>
 
@@ -102,39 +136,7 @@
     </TD>
 
     <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $description = '';
-%     if ( $item->table eq 'legacy_cust_history' ) {
-        <% $item->description |h %>
-%     } elsif ( $item->table eq 'h_cust_tag' ) {
-%        $description = &{ $h_table_descripsub{$item->table} }( $item, $tables{'cust_tag'} )
-%         if $single_cust && $h_table_descripsub{$item->table};
-         <% $description %>
-%     } else {
-        <% join(', ',
-             map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
-                                  ? 'N/A'
-                                  : $item->get($_);
-                    $value = time2str($cust_pkg_date_format, $value)
-                     if $item->table eq 'h_cust_pkg'
-                     && $cust_pkg_date_fields{$_}
-                     && $value;
-
-                    $value = substr($value, 0, 77).'...' if length($value) > 80;
-                    $value = encode_entities($value);
-                    "<I>$_</I>:<B>$value</B>";
-                  }
-             grep { $history_other
-                      ? ( $item->get($_) ne $history_other->get($_) )
-                      : ( $item->get($_) =~ /\S/ )
-                  }
-             grep { ! /^(history|custnum$)/i }
-                  $item->fields
-           )
-        %>
-%       if ( $single_cust && $h_table_descripsub{$item->table} ) {
-          <% &{ $h_table_descripsub{$item->table} }( $item ) %>
-%       }
-%     }  
+      <% $description %>
     </TD>
 
   </TR>
