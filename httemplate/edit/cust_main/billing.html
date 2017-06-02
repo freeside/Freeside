@@ -179,10 +179,27 @@
     <TR>
       <TH ALIGN="right" WIDTH="200"><% mt('Invoice terms') |h %> </TD>
       <TD WIDTH="408">
-        <& /elements/select-terms.html,
-             'curr_value' => $cust_main->invoice_terms,
-             'agentnum'   => $cust_main->agentnum,
-        &>
+%       if ( $curuser->access_right('Edit customer invoice terms') ) {
+          <& /elements/select-terms.html,
+               'curr_value' => $cust_main->invoice_terms,
+               'agentnum'   => $cust_main->agentnum,
+          &>
+%       } else {
+%
+%         my $terms =
+%           $cust_main->invoice_terms
+%             || emt('Default').' ('.
+%                ( $conf->config('invoice_default_terms', $cust_main->agentnum)
+%                    || emt('Payable upon receipt')
+%                ).
+%                ')';
+          <% $terms |h %>
+
+          <& /elements/hidden.html, 
+               'field'      => 'invoice_terms',
+               'curr_value' => $cust_main->invoice_terms,
+          &>
+%       }
       </TD>
     </TR>
 
