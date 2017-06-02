@@ -377,6 +377,10 @@ sub insert {
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
     if $DEBUG;
 
+  return "You are not permitted to change customer invoicing terms."
+    if $self->invoice_terms #i.e. not the default
+    && ! $FS::CurrentUser::CurrentUser->access_right('Edit customer invoice terms');
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -1384,6 +1388,10 @@ sub replace {
     if $old->locale
     && ! $self->locale
     && $conf->exists('cust_main-require_locale');
+
+  return "You are not permitted to change customer invoicing terms."
+    if $old->invoice_terms ne $self->invoice_terms
+    && ! $curuser->access_right('Edit customer invoice terms');
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
