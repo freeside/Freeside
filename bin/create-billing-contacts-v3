@@ -39,7 +39,9 @@ print "Found email destinations: ".scalar(@invoice_dests)."\n";
 my %email_used;
   
 foreach my $invoice_dest (@invoice_dests) {
-  my $cust_main = $invoice_dest->cust_main;
+  my $cust_main = $invoice_dest->cust_main
+    or next; #cust_main_invoice.custnum points to non-existant customer?
+             #will need to be fixed before v4 upgrade, but this can still run..
   my $last = $cust_main->get('last');
   my $first = $cust_main->get('first');
   my $email = $invoice_dest->dest;
