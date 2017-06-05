@@ -356,10 +356,14 @@ sub smart_search {
 
       #still some false laziness w/search (was search/cust_main.cgi)
 
+      my $min_len =
+        $FS::CurrentUser::CurrentUser->access_right('List all customers')
+        ? 3 : 4;
+
       #substring
 
       my @company_hashrefs = ();
-      if ( length($value) >= 4 ) {
+      if ( length($value) >= $min_len ) {
         @company_hashrefs = (
           { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
           { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
@@ -375,7 +379,7 @@ sub smart_search {
           },
         );
 
-      } elsif ( length($value) >= 4 ) {
+      } elsif ( length($value) >= $min_len ) {
 
         @hashrefs = (
           { 'first'        => { op=>'ILIKE', value=>"%$value%" }, },
@@ -396,7 +400,7 @@ sub smart_search {
 
       }
 
-      if ( $conf->exists('address1-search') && length($value) >= 4 ) {
+      if ( $conf->exists('address1-search') && length($value) >= $min_len ) {
 
         push @cust_main, qsearch( {
           table     => 'cust_main',
