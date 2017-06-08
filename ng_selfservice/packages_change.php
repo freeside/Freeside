@@ -2,24 +2,39 @@
 <? $current_menu = 'services.php'; include('elements/menu.php'); ?>
 <?
 
+$get_params = array( 'pkgnum' );
+foreach ( $get_params AS $param ) {
+  $params[$param] = $_GET[$param];
+}
+
 $customer_info = $freeside->customer_info_short( array(
   'session_id' => $_COOKIE['session_id'],
 ) );
 
-foreach ( $cust_pkg AS $pkg ) {
- $part_pkg .= $pkg[pkgpart];
- $class_num .= $pkg[classnum];
+$list_pkgs = $freeside->list_pkgs( array(
+  'session_id' => $_COOKIE['session_id'],
+) );
+
+if ( isset($list_pkgs['error']) && $list_pkgs['error'] ) {
+  $error = $list_pkgs['error'];
+  header('Location:index.php?error='. urlencode($error));
+  die();
 }
 
-$get_params = array( 'pkgnum', 'pkg', 'classnum', 'pkgpart' );
-foreach ( $get_params AS $param ) {
-  $params[$param] = $_GET[$param];
+extract($list_pkgs);
+
+foreach ( $cust_pkg AS $pkg ) {
+  if ( $pkg['pkgnum'] == $params['pkgnum'] ) { 
+    $pkg_label = $pkg['pkg_label'];
+    $pkg_part = $pkg['pkgpart'];
+    $class_num = $pkg['classnum'];
+  }
 }
 
 $pkgselect = $freeside->mason_comp( array(
     'session_id' => $_COOKIE['session_id'],
     'comp'       => '/elements/select-part_pkg.html',
-    'args'       => [ 'classnum', $params['classnum'], 'curr_value', $params['pkgpart'], ],
+    'args'       => [ 'classnum', $class_num, 'curr_value', $pkg_part, ],
   )
 );
 
@@ -41,7 +56,7 @@ function enable_change_pkg () {
 }
 </SCRIPT>
 
-<FONT SIZE=4>Purchase replacement package for "<? echo $params['pkg']; ?>"</FONT><BR><BR>
+<FONT SIZE=4>Purchase replacement package for "<? echo htmlspecialchars($pkg_label); ?>"</FONT><BR><BR>
 
 <? include('elements/error.php'); ?>
 
