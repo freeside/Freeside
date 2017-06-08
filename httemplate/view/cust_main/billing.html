@@ -138,7 +138,7 @@ set_display_recurring(<% encode_json({'display_recurring' => [ $cust_main->displ
 % my $tax_location = $conf->exists('tax-ship_address')
 %                    ? $cust_main->ship_location
 %                    : $cust_main->bill_location;
-  <TD><% $tax_location->geocode('cch') %></TD>
+  <TD><% $tax_location && $tax_location->geocode %></TD>
 </TR>
 % }
 <TR>
