@@ -467,6 +467,13 @@ if ( $cgi->param('magic') ) {
 
     }
 
+    if ( $cgi->param('paymask') ) {
+      $cgi->param('paymask') =~ /^\s*(\d+)\s*$/
+        or die "illegal paymask ". $cgi->param('paymask');
+      my $regexp = regexp_sql();
+      push @search, "$table.paymask $regexp '$1\$'";
+    } 
+
     if ( $cgi->param('payinfo') ) {
       $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/
         or die "illegal payinfo ". $cgi->param('payinfo');
