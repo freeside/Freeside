@@ -36,6 +36,14 @@ Examples:
     size      => 18,
   &>
 
+% if (substr($conf->config('card_masking_method'), -5) eq 'last4' || !$conf->config('card_masking_method')) {
+  <TR>
+    <TD ALIGN="right"><% mt('Card Last 4 #:') |h %></TD>
+    <TD>
+      <INPUT TYPE="text" ID="paymask" NAME="paymask">
+    </TD>
+  </TR>
+% } 
   <TR>
     <TD ALIGN="right"><% mt('Check #:') |h %> </TD>
     <TD>
