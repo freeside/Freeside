@@ -51,7 +51,7 @@ L<FS::circuit_provider>.
 =item termnum - circuit termination type; foreign key to 
 L<FS::circuit_termination>
 
-=item circuit_id - circuit ID string defined by the provider
+=item circuit_id - provider circuit ID string defined by the provider
 
 =item desired_due_date - the requested date for completion of the circuit
 order
@@ -75,6 +75,8 @@ space or checked for uniqueness.
 
 =item endpoint_mac_addr - the MAC address of the endpoint.
 
+=item internal_circuit_id - internal circuit ID string defined by the provider
+
 =back
 
 =head1 METHODS
@@ -95,56 +97,57 @@ sub table_info {
               disabled_inventory => 1, disable_select => 1 );
 
   tie my %fields, 'Tie::IxHash', (
-    'svcnum'            => 'Service',
-    'providernum'       => {
+    'svcnum'              => 'Service',
+    'providernum'         => {
                               label         => 'Provider',
                               type          => 'select',
                               select_table  => 'circuit_provider',
                               select_key    => 'providernum',
                               select_label  => 'provider',
                               disable_inventory => 1,
-                           },
-    'typenum'           => {
+                             },
+    'typenum'             => {
                               label         => 'Circuit type',
                               type          => 'select',
                               select_table  => 'circuit_type',
                               select_key    => 'typenum',
                               select_label  => 'typename',
                               disable_inventory => 1,
-                           },
-    'termnum'           => {
+                             },
+    'termnum'             => {
                               label         => 'Termination type',
                               type          => 'select',
                               select_table  => 'circuit_termination',
                               select_key    => 'termnum',
                               select_label  => 'termination',
                               disable_inventory => 1,
-                           },
-    'circuit_id'        => { label => 'Circuit ID', %dis },
-    'desired_due_date'  => { label => 'Desired due date',
+                             },
+    'circuit_id'          => { label => 'Provider Circuit ID', %dis },
+    'desired_due_date'    => { label => 'Desired due date',
                              %dis
-                           },
-    'due_date'          => { label => 'Due date',
+                             },
+    'due_date'            => { label => 'Due date',
                              %dis
-                           },
-    'vendor_order_id'   => { label => 'Vendor order ID', %dis },
-    'vendor_qual_id'    => { label => 'Vendor qualification ID', %dis },
-    'vendor_order_type' => {
+                             },
+    'vendor_order_id'     => { label => 'Vendor order ID', %dis },
+    'vendor_qual_id'      => { label => 'Vendor qualification ID', %dis },
+    'vendor_order_type'   => {
                               label => 'Vendor order type',
                               disable_inventory => 1
-                           }, # should be a select?
+                             }, # should be a select?
     'vendor_order_status' => {
                               label => 'Vendor order status',
                               disable_inventory => 1
                              }, # should also be a select?
-    'endpoint_ip_addr'  => {
+    'endpoint_ip_addr'    => {
                               label => 'Endpoint IP address',
-                           },
-    'endpoint_mac_addr' => {
+                             },
+    'endpoint_mac_addr'   => {
                               label => 'Endpoint MAC address',
                               type => 'input-mac_addr',
                               disable_inventory => 1,
-                           },
+                             },
+    'internal_circuit_id' => { label => 'Internal Circuit ID', %dis },
   );
   return {
     'name'              => 'Circuit',

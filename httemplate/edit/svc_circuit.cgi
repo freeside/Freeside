@@ -45,6 +45,9 @@ my @fields = (
   { field         => 'endpoint_mac_addr',
     type          => 'input-mac_addr',
   },
+  { field         => 'internal_circuit_id',
+    size          => 40,
+  },
 );
 
 # needed: a new_callback to migrate vendor quals over to circuits

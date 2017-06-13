@@ -4791,6 +4791,7 @@ sub tables_hashref {
         'vendor_order_status',  'varchar', 'NULL', $char_d,  '', '',
         'endpoint_ip_addr',     'varchar', 'NULL', 40, '', '',
         'endpoint_mac_addr',    'varchar', 'NULL', 12, '', '',
+        'internal_circuit_id',  'varchar',     '', 64, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique'      => [],
