@@ -320,7 +320,7 @@ sub _export_insert {
   '';
 }
 
-sub e911send {
+sub e911_send {
   my($self, $svc_phone) = (shift, shift);
 
   return '' if $self->option('disable_e911');
