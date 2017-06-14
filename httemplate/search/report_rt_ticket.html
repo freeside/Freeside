@@ -22,7 +22,7 @@
       <SELECT NAME="svcnum">
         <OPTION VALUE="">(all)
 %       foreach my $svc_acct (@svc_acct) {
-          <OPTION VALUE="<% $svc_acct->svcnum %>"><% $svc_acct->username %></OPTION>
+          <OPTION VALUE="<% $svc_acct->svcnum %>"><% $svc_acct->email %></OPTION>
 %       }
       </SELECT>
     </TD>
