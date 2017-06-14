@@ -1523,8 +1523,10 @@ sub replace {
                                  custnum     => $self->custnum,
                                }
       );
-    $implicit_contact->set($_, $i_cust_contact->$_)
-      foreach qw( classnum selfservice_access comment );
+    if ( $i_cust_contact ) {
+      $implicit_contact->set($_, $i_cust_contact->$_)
+        foreach qw( classnum selfservice_access comment );
+    }
 
     my $error;
     if ( $implicit_contact->contactnum ) {
