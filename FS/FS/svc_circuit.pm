@@ -75,7 +75,7 @@ space or checked for uniqueness.
 
 =item endpoint_mac_addr - the MAC address of the endpoint.
 
-=item internal_circuit_id - internal circuit ID string defined by the provider
+=item internal_circuit_id - internal circuit ID string
 
 =back
 
