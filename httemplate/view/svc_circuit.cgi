@@ -58,11 +58,12 @@ my @fields = (
   { field     => 'due_date', type => 'date' },
   'endpoint_ip_addr',
   { field     => 'endpoint_mac_addr', type => 'mac_addr' },
+  'internal_circuit_id',
 );
 
 
 my %labels = (
-  circuit_id          => 'Circuit ID',
+  circuit_id          => 'Provider Circuit ID',
   providernum         => 'Provider',
   typenum             => 'Circuit type',
   termnum             => 'Termination',
@@ -74,6 +75,7 @@ my %labels = (
   due_date            => 'Due date',
   endpoint_ip_addr    => 'Endpoint IP address',
   endpoint_mac_addr   => 'MAC address',
+  internal_circuit_id => 'Internal Circuit Id',
 );
 
 my $self = $m->request_comp;
