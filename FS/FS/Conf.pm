@@ -2484,7 +2484,7 @@ and customer address. Include units.',
     'section'     => 'taxation',
     'description' => 'Tax data vendor you are using.',
     'type'        => 'select',
-    'select_enum' => [ '', 'cch', 'billsoft', 'avalara', 'suretax' ],
+    'select_enum' => [ '', 'cch', 'billsoft', 'avalara', 'suretax', 'compliance_solutions' ],
   },
 
   {
@@ -2550,6 +2550,20 @@ and customer address. Include units.',
     'per_agent'   => 1,
   },
 
+  {
+    'key'         => 'compliance_solutions-access_code',
+    'section'     => 'taxation',
+    'description' => 'Access code for <a href="http://csilongwood.com/">Compliance Solutions</a> tax rating service',
+    'type'        => 'text',
+  },
+  {
+    'key'         => 'compliance_solutions-regulatory_code',
+    'section'     => 'taxation',
+    'description' => 'Compliance Solutions regulatory status.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'ILEC', 'IXC', 'CLEC', 'VOIP', 'ISP', 'Wireless' ],
+    'per_agent'   => 1,
+  },
 
   {
     'key'         => 'welcome_msgnum',

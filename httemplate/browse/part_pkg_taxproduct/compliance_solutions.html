@@ -1,7 +1,7 @@
 <& /elements/header-popup.html, $title &>
 <& /browse/elements/browse.html,
   'name_singular'  => 'tax product',
-  'html_form'      => include('.form', $category_code),
+  #'html_form'      => include('.form', $category_code),
   'query'          => {
                         'table'     => 'part_pkg_taxproduct',
                         'hashref'   => $hashref,
@@ -16,44 +16,29 @@
   'nohtmlheader'   => 1,
   'disable_total'  => 1,
 &>
-<script src="<% $fsurl %>elements/jquery.js"></script>
 <script>
-var category_labels = <% encode_json(\%category_labels) %>;
 $().ready(function() {
   var new_taxproduct = $('#new_taxproduct');
-  var new_category_desc = $('#new_category_desc');
+  var new_taxproduct2 = $('#new_taxproduct2');
+//  var new_category_desc = $('#new_category_desc');
   var new_taxproduct_desc = $('#new_taxproduct_desc');
   var new_taxproduct_submit = $('#new_taxproduct_submit');
 
-  new_taxproduct.on('keyup', function() {
-    var curr_value = this.value || '';
-    var a = curr_value.match(/^\d{2}/);
-    var f = this.form;
-    if (a) { // there is a category code in the box
-      var category = a[0];
-      if (category_labels[category]) { // it matches an existing category
-        new_category_desc.val(category_labels[category]);
-        new_category_desc.prop('disabled', true);
-      } else {
-        new_category_desc.val('');
-        new_category_desc.prop('disabled', false);
-      }
-    } else {
-      new_category_desc.prop('disabled', true);
-    }
-    if (curr_value.match(/^\d{6}$/)) {
-      new_taxproduct_submit.prop('disabled', false);
-    } else {
-      new_taxproduct_submit.prop('disabled', true);
-    }
-  });
+//  new_taxproduct.on('keyup', function() {
+//    var curr_value = this.value || '';
+//    if (curr_value.match(/^\d{7}$/)) {
+//      new_taxproduct_submit.prop('disabled', false);
+//    } else {
+//      new_taxproduct_submit.prop('disabled', true);
+//    }
+//  });
 
   new_taxproduct_submit.on('click', function() {
     select_taxproduct( -1,
-                       new_taxproduct.val()
+                       new_taxproduct.val() + new_taxproduct2.val()
                           + ' '
-                          + new_category_desc.val()
-                          + ':'
+//                          + new_category_desc.val()
+//                          + ':'
                           + new_taxproduct_desc.val()
                      );
   });
@@ -67,6 +52,9 @@ function select_taxproduct(taxproductnum, description) {
   
 </script>  
 <BR>
+
+Please contact <a href="http://csilongwood.com/" target="_blank">Compliance Solutions</a> for a full list of your product and service codes.<BR><BR>
+
 <FORM NAME="myform">
   <FONT SIZE="+1"><B><% emt('Add tax product') %></B></FONT>
   <% ntable('#cccccc', 2) %>
@@ -74,60 +62,54 @@ function select_taxproduct(taxproductnum, description) {
       'label'     => emt('Product code'),
       'field'     => 'new_taxproduct',
       'id'        => 'new_taxproduct',
-      'size'      => 6,
-      'maxlength' => 6,
+      'size'      => 4,
+      'maxlength' => 4,
     &>
     <& /elements/tr-input-text.html,
-      'label'     => emt('Category'),
-      'field'     => 'new_category_desc',
-      'id'        => 'new_category_desc',
-      'disabled'  => 1
+      'label'     => emt('Service code'),
+      'field'     => 'new_taxproduct2',
+      'id'        => 'new_taxproduct2',
+      'size'      => 3,
+      'maxlength' => 3,
     &>
     <& /elements/tr-input-text.html,
-      'label'     => emt('Product'),
+      'label'     => emt('Product name'),
       'field'     => 'new_taxproduct_desc',
       'id'        => 'new_taxproduct_desc',
     &>
   </table>
-  <input type="button" id="new_taxproduct_submit" disabled=1 value="Add">
+%#  <input type="button" id="new_taxproduct_submit" disabled=1 value="Add">
+  <input type="button" id="new_taxproduct_submit" value="Add">
 </FORM>
+
 <& /elements/footer-popup.html &>
 <%shared>
 # populate dropdown
 
-# taxproduct is 6 digits: 2-digit category code + 4-digit detail code.
+#taxproduct is 7 digits: 4-digit (well, alpha) productcode + 3-digit servicecode
 # Description is also two parts, corresponding to those codes, separated with
 # a :.
 
-my (@category_codes, @taxproduct_codes, %category_labels, %taxproduct_labels);
+my (@productcodes, @servicecodes);
 foreach my $row ( qsearch({
   table   => 'part_pkg_taxproduct',
-  select  => 'DISTINCT substr(taxproduct, 1, 2) AS code, '.
-             "substring(description from '(.*):') AS label",
-  hashref => { data_vendor => 'suretax' },
+  select  => 'DISTINCT substr(taxproduct, 1, 4) AS productcode ',
+  hashref => { data_vendor => 'compliance_solutions' },
   }))
 {
-  $category_labels{$row->get('code')} = $row->get('label');
+  push @productcodes, $row->{productcode};
 }
 
-@category_codes = sort {$a <=> $b} keys %category_labels;
+foreach my $row ( qsearch({
+  table   => 'part_pkg_taxproduct',
+  select  => 'DISTINCT substr(taxproduct, 4, 3) AS servicecode ',
+  hashref => { data_vendor => 'compliance_solutions' },
+  }))
+{
+  push @servicecodes, $row->{servicecode};
+}
 
 </%shared>
-<%def .form>
-% my ($category_code) = @_;
-<FORM ACTION="<% $cgi->url %>" METHOD="GET">
-<& /elements/select.html,
-  field       => 'category_code',
-  options     => \@category_codes,
-  labels      => \%category_labels,
-  curr_value  => $category_code,
-  onchange    => 'this.form.submit()',
-&>
-<& /elements/hidden.html,
-  field       => 'id',
-  curr_value  => scalar($cgi->param('id')),
-&>
-</%def>
 <%init>
 
 die "access denied"
@@ -146,32 +128,33 @@ my $select_onclick = sub {
 my @menubar;
 my $title = 'Tax Products';
 
-my $hashref = { data_vendor => 'suretax' };
+my $hashref = { data_vendor => 'compliance_solutions' };
 
-my ($category_code, $taxproduct);
-if ( $cgi->param('category_code') =~ /^(\d+)$/ ) {
-  $category_code = $1;
-  $taxproduct = $category_code . '%';
-} else {
-  $taxproduct = '%';
-}
+#my ($category_code, $taxproduct);
+#if ( $cgi->param('category_code') =~ /^(\d+)$/ ) {
+#  $category_code = $1;
+#  $taxproduct = $category_code . '%';
+#} else {
+#  $taxproduct = '%';
+#}
+my $taxproduct = '%';
 
 $hashref->{taxproduct} = { op => 'LIKE', value => $taxproduct };
 
 my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct ".
-                  "WHERE data_vendor = 'suretax' AND ".
+                  "WHERE data_vendor = 'compliance_solutions' AND ".
                   "taxproduct LIKE '$taxproduct'";
 
 my @fields = (
   'taxproduct',
   'description',
-  'note'
+#  'note'
 );
 
 my @header = (
   'Code',
   'Description',
-  '',
+#  '',
 );
 
 my $align = 'lll';

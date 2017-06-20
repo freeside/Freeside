@@ -124,6 +124,8 @@ sub calculate_taxes {
   if ( !@raw_taxlines ) {
     return;
   } elsif ( !ref $raw_taxlines[0] ) { # error message
+    #this isn't actually handled by our caller... better for make_taxlines to 
+    # die, that'll be caught be the eval around us in cust_main/Billing.pm
     return $raw_taxlines[0];
   }
 
@@ -296,7 +298,10 @@ a string on failure.
 
 sub add_taxproduct {
   my $class = shift;
-  "$class does not allow manually adding taxproducts";
+  #my $classname = ref($class);
+  #my $vendor = (split('::',$classname))[2];
+  my $vendor = ref($class) || $class;
+  "$vendor does not allow manually adding taxproducts";
 }
 
 =item transfer_batch (batch-style only)
