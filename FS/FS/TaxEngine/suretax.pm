@@ -77,7 +77,7 @@ sub build_request {
   ($self->{bill_zip}, $self->{bill_plus4}) =
     split('-', $cust_main->bill_location->zip);
 
-  $self->{regcode} = $REGCODE{ $conf->config('suretax-regulatory_code') };
+  $self->{regcode} = $REGCODE{ $conf->config('suretax-regulatory_code', $agentnum) };
 
   %taxproduct_cache = ();
 
