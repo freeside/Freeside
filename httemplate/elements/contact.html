@@ -72,6 +72,22 @@
           <FONT SIZE="-1"><% $label{$field} %></FONT>
         </TD>
 %     }
+%     my $pwd_change_label = 'change password';
+%     $pwd_change_label = 'setup password' unless $contact->_password;
+%     if ($curr_value) {
+        <TD>
+          <span STYLE="white-space: nowrap">
+            <& /elements/change_password.html,
+              'contact_num' => $curr_value,
+              'custnum'     => $opt{'custnum'},
+              'curr_value'  => '',
+              'label'       => $pwd_change_label,
+            &>
+          </span>
+          <br>
+          <FONT SIZE="-1">Password</FONT>
+        </TD>
+%     }
     </TR>
   </TABLE>
 
