@@ -34,7 +34,7 @@
 %     }
 %
 %     use Date::Parse qw( str2time );
-%     my $starts = str2time( $ticket->{starts} ); #default format here sucks
+%     my $starts = str2time( $ticket->{starts}, 'UTC' ); #default format here sucks
 %     my $starts_pretty = '';
 %     $starts_pretty = time2str('%a %h %o %Y %l:%M%P', $starts)
 %       if $starts > 86400;
