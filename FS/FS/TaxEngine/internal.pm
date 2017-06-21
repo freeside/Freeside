@@ -100,8 +100,6 @@ sub taxline {
 
   foreach my $cust_bill_pkg (@$taxables) {
 
-    my $cust_pkg  = $cust_bill_pkg->cust_pkg;
-    my $part_pkg  = $cust_bill_pkg->part_pkg;
     my @new_exemptions;
     my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur
       or next; # don't create zero-amount exemptions
@@ -125,25 +123,28 @@ sub taxline {
       $taxable_charged = 0;
 
     }
+    
+    if ( my $part_pkg = $cust_bill_pkg->part_pkg ) {
 
-    if ( ($part_pkg->setuptax eq 'Y' or $tax_object->setuptax eq 'Y')
-        and $cust_bill_pkg->setup > 0 and $taxable_charged > 0 ) {
+      if ( ($part_pkg->setuptax eq 'Y' or $tax_object->setuptax eq 'Y')
+          and $cust_bill_pkg->setup > 0 and $taxable_charged > 0 ) {
 
-      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
-          amount => $cust_bill_pkg->setup,
-          exempt_setup => 'Y'
-      });
-      $taxable_charged -= $cust_bill_pkg->setup;
+        push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+            amount => $cust_bill_pkg->setup,
+            exempt_setup => 'Y'
+        });
+        $taxable_charged -= $cust_bill_pkg->setup;
+      }
 
-    }
-    if ( ($part_pkg->recurtax eq 'Y' or $tax_object->recurtax eq 'Y')
-        and $cust_bill_pkg->recur > 0 and $taxable_charged > 0 ) {
+      if ( ($part_pkg->recurtax eq 'Y' or $tax_object->recurtax eq 'Y')
+          and $cust_bill_pkg->recur > 0 and $taxable_charged > 0 ) {
 
-      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
-          amount => $cust_bill_pkg->recur,
-          exempt_recur => 'Y'
-      });
-       $taxable_charged -= $cust_bill_pkg->recur;
+        push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+            amount => $cust_bill_pkg->recur,
+            exempt_recur => 'Y'
+        });
+        $taxable_charged -= $cust_bill_pkg->recur;
+      }
 
     }
 
