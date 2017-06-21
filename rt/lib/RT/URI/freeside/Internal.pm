@@ -234,10 +234,6 @@ sub CustomerInfo {
   my $referral = qsearchs('part_referral', { refnum => $cust_main->refnum });
   my @part_tags = $cust_main->part_tag;
 
-  my @lf = $cust_main->location_fields;
-  my $bill_location = $cust_main->bill_location;
-  my $ship_location = $cust_main->ship_location;
-
   my $info = {
     %$rec,
 
@@ -254,12 +250,18 @@ sub CustomerInfo {
     BillingType   => FS::payby->longname($cust_main->payby),
   };
 
+  my @lf = $cust_main->location_fields;
+  my $bill_location = $cust_main->bill_location;
+  my $ship_location = $cust_main->ship_location;
+
   foreach my $field (@lf) {
-    $info->{"bill_$field"} = $bill_location->get($field);
-    $info->{"ship_$field"} = $ship_location->get($field);
+    $info->{"bill_$field"} = $bill_location->get($field) if $bill_location;
+    $info->{"ship_$field"} = $ship_location->get($field) if $ship_location;
   }
-  $info->{"bill_location"} = $bill_location->location_label(no_prefix => 1);
-  $info->{"ship_location"} = $ship_location->location_label(no_prefix => 1);
+  $info->{"bill_location"} = $bill_location->location_label(no_prefix => 1)
+    if $bill_location;
+  $info->{"ship_location"} = $ship_location->location_label(no_prefix => 1)
+    if $ship_location;
 
   return $self->{CustomerInfo} = $info;
 }
