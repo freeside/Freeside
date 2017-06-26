@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use strict;
+
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
+use Getopt::Long;
+use Cpanel::JSON::XS;
+use Net::HTTPS::Any qw(https_post https_get);
+use Time::Local;
+
+use FS::Record qw(qsearchs dbh);
+use FS::UID qw(adminsuidsetup);
+use FS::cdr;
+use FS::cdr_batch;
+
+my $host = "cdr.teleapi.net";
+
+my @now = localtime();
+my $now = timelocal($now[0],$now[1],$now[2],$now[3],$now[4],$now[5]); #most recent midnight
+
+sub usage {
+  "Usage:
+freeside-cdr-telapi-import -t type -p token -s startdate [-e enddate] freesideuser
+
+Downloads any existing CDR voip files or CDR SMS files (type) from the start date untill the enddate and 
+imports those records.";
+}
+
+my ($type,$token,$startdate,$enddate);
+GetOptions(
+  "type=s"      => \$type,
+  "token=s"     => \$token,
+  "startdate=s" => \$startdate,
+  "enddate=s"   => \$enddate,
+);
+
+my $fsuser = $ARGV[-1];
+
+die usage() unless $fsuser;
+
+adminsuidsetup($fsuser);
+
+my ( $page, $response, %reply_headers )= https_get(
+      'host' => $host,
+      'port' => '443',
+      'path' => '/'.$type.'/'.$startdate.'/'.$enddate.'?token='.$token,
+    );
+
+die "Bad response from telapi server: $response"
+  unless $response =~ /^200/;
+
+my $cdrbatch = "Telapi-import-" . $type . "-" . time2str('%Y/%m/%d-%T',$now);  
+
+my $dir = $FS::UID::cache_dir. "/cache.". $FS::UID::datasrc; 
+
+my $cfh = new File::Temp( TEMPLATE => 'telapi.XXXXXXXX',
+                          SUFFIX   => '.csv',
+                          DIR      => $dir,
+                         )
+    or die "can't open temporary file to save data: $!\n";
+
+#print returned data to file handle for temp file.
+print $cfh $page;
+
+seek($cfh,0,0);
+
+  print "Importing batch $cdrbatch\n";
+  my $error = FS::cdr::batch_import({
+    'batch_namevalue' => $cdrbatch,
+    'file'            => $cfh->filename,
+    'format'          => 'telapi_'.$type
+  });
+
+exit;
