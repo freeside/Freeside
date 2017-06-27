@@ -1,6 +1,7 @@
 package FS::part_export::vitelity;
 use base qw( FS::part_export );
 
+use strict;
 use vars qw( %info );
 use Tie::IxHash;
 use Data::Dumper;
@@ -310,7 +311,7 @@ sub _export_insert {
       'name'          => $svc_phone->phone_name_or_cust,
       'streetnumber'  => $sa->{number},
       'streetprefix'  => $sa->{prefix},
-      'streetname'    => $sa->{street}. ' '. $street{type},
+      'streetname'    => $sa->{street}. ' '. $sa->{type},
       'streetsuffix'  => $sa->{suffix},
       'unit'          => ( $sa->{sec_unit_num}
                              ? $sa->{sec_unit_type}. ' '. $sa->{sec_unit_num}
@@ -322,8 +323,7 @@ sub _export_insert {
       'billnumber'    => $svc_phone->phonenum, #?? do we need a new field for this?
       'contactnumber' => $cust_main->daytime,
     );
-
-    warn "Vitelity reponse: $result" if $self->option('debug');
+    warn "Vitelity response: $result" if $self->option('debug');
 
     if ( $result =~ /^ok:/i ) {
       my($ok, $portid, $sig, $bill) = split(':', $result);
@@ -363,6 +363,8 @@ sub _export_insert {
 
   if ( $result ne $success ) {
     return "Error running Vitelity $command: $result";
+  } elsif ( $self->option('debug') ) {
+    warn "Vitelity response: $result";
   }
 
   ###
@@ -375,6 +377,8 @@ sub _export_insert {
   if ( $result ne 'ok' ) {
     #we already provisioned the DID, so...
     warn "Vitelity error enabling CNAM for ". $svc_phone->phonenum. ": $result";
+  } elsif ( $self->option('debug') ) {
+    warn "Vitelity response: $result";
   }
 
   ###
@@ -415,35 +419,42 @@ sub e911_send {
 
   my $e911_result = $self->vitelity_command('e911send', %e911send);
 
-  return '' unless $result =~ /^(missingdata|invalid)/i;
+  unless ( $e911_result =~ /^(missingdata|invalid)/i ) {
+    warn "Vitelity response: $e911_result" if $self->option('debug');
+    return '';
+  }
 
   return "Vitelity error provisioning E911 for". $svc_phone->phonenum.
-           ": $result";
+           ": $e911_result";
 }
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
 
   # Call Forwarding
-  if( $old->forwarddst ne $new->forwarddst ) {
-      my $result = $self->vitelity_command('callfw',
-        'did'           => $old->phonenum,
-        'forward'        => $new->forwarddst ? $new->forwarddst : 'none',
-      );
-      if ( $result ne 'ok' ) {
-        return "Error running Vitelity callfw: $result";
-      }
+  if ( $old->forwarddst ne $new->forwarddst ) {
+    my $result = $self->vitelity_command('callfw',
+      'did'           => $old->phonenum,
+      'forward'        => $new->forwarddst ? $new->forwarddst : 'none',
+    );
+    if ( $result ne 'ok' ) {
+      return "Error running Vitelity callfw: $result";
+    } elsif ( $self->option('debug') ) {
+      warn "Vitelity response: $result";
+    }
   }
 
   # vfax forwarding emails
-  if( $old->email ne $new->email && $self->option('fax') ) {
-      my $result = $self->vitelity_command('changeemail',
-        'did'           => $old->phonenum,
-        'emails'        => $new->email ? $new->email : '',
-      );
-      if ( $result ne 'ok' ) {
-        return "Error running Vitelity changeemail: $result";
-      }
+  if ( $old->email ne $new->email && $self->option('fax') ) {
+    my $result = $self->vitelity_command('changeemail',
+      'did'           => $old->phonenum,
+      'emails'        => $new->email ? $new->email : '',
+    );
+    if ( $result ne 'ok' ) {
+      return "Error running Vitelity changeemail: $result";
+    } elsif ( $self->option('debug') ) {
+      warn "Vitelity response: $result";
+    }
   }
 
   $self->e911_send($new);
@@ -465,9 +476,9 @@ sub _export_delete {
 
   if ( $result ne 'success' ) {
     return "Error running Vitelity removedid: $result";
+  } elsif ( $self->option('debug') ) {
+    warn "Vitelity response: $result";
   }
-
-  return '' if $self->option('disable_e911');
 
   '';
 }
@@ -522,7 +533,7 @@ sub check_lnp {
     } elsif ( $result ne $svc_phone->lnp_reject_reason ) {
       $svc_phone->lnp_reject_reason($result);
       local($FS::svc_Common::noexport_hack) = 1;
-      $error = $svc_phone->replace;
+      my $error = $svc_phone->replace;
       #XXX log this using our internal log instead, so we can alert on it
       warn "ERROR setting lnp_reject_reason for DID ". $svc_phone->phonenum. ": $error" if $error;
 
