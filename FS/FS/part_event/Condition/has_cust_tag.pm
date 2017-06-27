@@ -10,9 +10,12 @@ sub description {
 }
 
 sub eventtable_hashref {
-    { 'cust_main' => 1,
-      'cust_bill' => 1,
-      'cust_pkg'  => 1,
+    { 'cust_main'      => 1,
+      'cust_bill'      => 1,
+      'cust_pkg'       => 1,
+      'cust_pay'       => 1,
+      'cust_pay_batch' => 1,
+      'cust_statement' => 1,
     };
 }
 
