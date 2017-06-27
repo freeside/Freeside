@@ -127,6 +127,10 @@ Examples:
     </TH>
   </TR>
 
+  <& /elements/tr-select-cust_tag.html,
+             'custnum' => $opt{'custnum'},
+  &>
+
   <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar($cgi->param('agentnum')),
                  'label'         => emt('Agent'),
