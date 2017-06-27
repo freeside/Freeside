@@ -616,6 +616,21 @@ if ( $cgi->param('magic') ) {
     }
   }
 
+  #check for customer tags
+  my $tagcount;
+  my $tags;
+  foreach my $p (keys $cgi->Vars) {
+    if ($p =~ /^tagnum(\d+)/ && $1) {
+      $tagcount++;
+      $addl_from .= " LEFT JOIN cust_tag ON (cust_tag.custnum = cust_pay.custnum)" unless $tagcount > 1;
+      $tags .= "$1,";
+    }
+  }
+  if ($tags) {
+    $tags =~ s/,$//;
+    push @search, "cust_tag.tagnum in ($tags)";
+  }
+
   if ( $cgi->param('tax_names') ) {
     if ( dbh->{Driver}->{Name} =~ /^Pg/i ) {
 
