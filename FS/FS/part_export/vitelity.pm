@@ -374,7 +374,7 @@ sub _export_insert {
   my $cnam_result = $self->vitelity_command('cnamenable',
                                               'did'=>$svc_phone->phonenum,
                                            );
-  if ( $result ne 'ok' ) {
+  if ( $result !~ /^(ok|success)/i ) {
     #we already provisioned the DID, so...
     warn "Vitelity error enabling CNAM for ". $svc_phone->phonenum. ": $result";
   } elsif ( $self->option('debug') ) {
