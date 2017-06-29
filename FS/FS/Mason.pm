@@ -118,6 +118,7 @@ if ( -e $addl_handler_use_file ) {
   #use FS::geocode_Mixin; #for its code2country
   use Locale::Currency;
   use Locale::Currency::Format;
+  use Number::Phone::Country qw( noexport );
   use Business::US::USPS::WebTools::AddressStandardization;
   use Geo::GoogleEarth::Pluggable;
   use LWP::UserAgent;
