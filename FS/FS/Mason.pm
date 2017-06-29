@@ -123,6 +123,7 @@ if ( -e $addl_handler_use_file ) {
   use HTML::Widgets::SelectLayers 0.07; #should go away in favor of
                                         #selectlayers.html
   use Locale::Country;
+  use Number::Phone::Country qw( noexport );
   use Business::US::USPS::WebTools::AddressStandardization;
   use Geo::GoogleEarth::Pluggable;
   use LWP::UserAgent;

@@ -74,10 +74,9 @@ my @links      = ( ($link) x 4 );
 my @align      = ( 'right', 'left', 'right', 'left' );
 my @xls_format = ( ({ locked=>1, bg_color=>22 }) x 4 );
 
-$cgi->param('dummy', 1);
 my $countrycode_filter_change =
   "window.location = '".
-  $cgi->self_url. ";countrycode=' + this.options[this.selectedIndex].value;";
+  $cgi->url. "?countrycode=' + this.options[this.selectedIndex].value;";
 
 my $countrycode = '';
 my $extra_sql = $group_sql;
@@ -128,13 +127,31 @@ if ( $cgi->param('show_rates') ) {
 
 }
 
+sub countrycode2country {
+  my $cc = shift;
+
+  #exceptions to the below
+  return 'North America (NANPA)'                     if $cc eq '1';
+  #return 'Algeria'                                   if $cc eq '214';
+  return 'Ascension Island'                          if $cc eq '247';
+  return 'Satellite / Maritime / Universal Personal' if $cc eq '87'; #? or 870..
+  return 'Inmarsat'                                  if $cc eq '870';
+  return 'Global Mobile Satellite System'            if $cc eq '881';
+  return 'International Networks'                    if $cc eq '882';
+  return 'International Networks'                    if $cc eq '883';
+
+  code2country(
+    Number::Phone::Country::phone2country("+$cc")
+  );
+}
+
 my $html_posttotal = 
   '(show country code: '.
   qq(<SELECT NAME="countrycode" onChange="$countrycode_filter_change">).
   qq(<OPTION VALUE="">(all)).
   join("\n", map { qq(<OPTION VALUE="$_").
                      ($_ eq $countrycode ? ' SELECTED' : '' ).
-                     ">$_",
+                     ">+$_ - ". encode_entities( countrycode2country($_) ),
                  }
                  FS::rate_prefix->all_countrycodes
       ).
