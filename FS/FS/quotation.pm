@@ -138,8 +138,9 @@ sub check {
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
-  return 'confidence must be an integer between 1 and 100'
-    if length($self->confidence) && (($self->confidence < 1) || ($self->confidence > 100));
+  return 'confidence percentage must be an integer between 1 and 100'
+    if length($self->confidence)
+    && ( ($self->confidence < 1) || ($self->confidence > 100) );
 
   return 'prospectnum or custnum must be specified'
     if ! $self->prospectnum
@@ -277,9 +278,10 @@ sub _items_sections {
   my %opt = @_;
   my $escape = $opt{escape}; # the only one we care about
 
+
   my %show; # package frequency => 1 if there's anything to display
   my %subtotals = (); # package frequency => subtotal
-  my $disable_total = 0;
+  my $prorate_total = 0;
   foreach my $pkg ($self->quotation_pkg) {
 
     my $part_pkg = $pkg->part_pkg;
@@ -293,13 +295,16 @@ sub _items_sections {
     #this is a shitty hack based on what's in part_pkg/ at the moment
     # but its good enough for the 99% common case of preventing totals from
     # displaying for prorate packages
-    $disable_total = 1
+    $prorate_total = 1
       if $part_pkg->plan =~ /^(prorate|torrus|agent$)/
       || $part_pkg->option('recur_method') eq 'prorate'
       || ( $part_pkg->option('sync_bill_date')
              && $self->custnum
              && $self->cust_main->billing_pkgs #num_billing_pkgs when we have it
          );
+
+    #possible improvement: keep track of flat vs. prorate totals to make the
+    # bottom range more accurate when mixing flat and prorate packages
 
   }
   my @pkg_freq_order = keys %{ FS::Misc->pkg_freqs };
@@ -335,15 +340,31 @@ sub _items_sections {
     };
   }
 
-  unless ( $disable_total || $no_recurring ) {
+  unless ( $no_recurring ) {
     my $total = 0;
     $total += $_ for values %subtotals;
-    push @sections, {
-      'description' => 'First payment',
+    my %total = (
       'sort_weight' => 0,
-      'category'   => 'Total category', #required but what's it used for?
-      'subtotal'    => sprintf('%.2f',$total)
-    };
+      'category'    => 'Total category', #required but what's it used for?
+    );
+
+    if ( $prorate_total ) {
+
+      push @sections, {
+        %total,
+        'description' => 'First payment (depending on day of month)',
+        'subtotal'    => [ $subtotals{0}, $total ],
+      };
+
+    } else {
+
+      push @sections, {
+        %total,
+        'description' => 'First payment',
+        'subtotal'    => $total,
+      };
+    }
+
   }
 
   return \@sections, [];
