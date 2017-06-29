@@ -1156,14 +1156,27 @@ sub print_generic {
       if ( $invoice_data{finance_section} &&
            $section->{'description'} eq $invoice_data{finance_section} );
 
-    $section->{'subtotal'} = $other_money_char.
-                             sprintf('%.2f', $section->{'subtotal'})
-      if $multisection;
+    if ( $multisection ) {
 
-    # continue some normalization
-    $section->{'amount'}   = $section->{'subtotal'}
-      if $multisection;
+      if ( ref($section->{'subtotal'}) ) {
 
+        $section->{'subtotal'} =
+          sprintf("$other_money_char%.2f to $other_money_char%.2f",
+                    $section->{'subtotal'}[0],
+                    $section->{'subtotal'}[1]
+                 );
+
+      } else {
+
+        $section->{'subtotal'} = $other_money_char.
+                                 sprintf('%.2f', $section->{'subtotal'})
+
+      }
+
+      # continue some normalization
+      $section->{'amount'}   = $section->{'subtotal'}
+
+    }
 
     if ( $section->{'description'} ) {
       push @buf, ( [ &$escape_function($section->{'description'}), '' ],

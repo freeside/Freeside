@@ -133,8 +133,9 @@ sub check {
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
-  return 'confidence must be an integer between 1 and 100'
-    if length($self->confidence) && (($self->confidence < 1) || ($self->confidence > 100));
+  return 'confidence percentage must be an integer between 1 and 100'
+    if length($self->confidence)
+    && ( ($self->confidence < 1) || ($self->confidence > 100) );
 
   return 'prospectnum or custnum must be specified'
     if ! $self->prospectnum
@@ -364,9 +365,8 @@ sub _items_total {
       'total_amount' => sprintf('%.2f',$total_recur),
       'break_after'  => 1,
     };
-    # show 'first payment' line (setup + recur) if there are no prorated 
-    # packages included
-    my $disable_total = 0;
+
+    my $prorate_total = 0;
     foreach my $quotation_pkg ($self->quotation_pkg) {
       my $part_pkg = $quotation_pkg->part_pkg;
       if (    $part_pkg->plan =~ /^(prorate|torrus|agent$)/
@@ -376,17 +376,27 @@ sub _items_total {
                   && $self->cust_main->billing_pkgs #num_billing_pkgs when we have it
               )
       ) {
-        $disable_total = 1;
+        $prorate_total = 1;
         last;
       }
     }
-    if (!$disable_total) {
+
+    if ( $prorate_total ) {
+      push @items, {
+        'total_item'   => $self->mt('First payment (depending on day of month)'),
+        'total_amount' => [ sprintf('%.2f', $total_setup),
+                            sprintf('%.2f', $total_setup + $total_recur)
+                          ],
+        'break_after'  => 1,
+      };
+    } else {
       push @items, {
         'total_item'   => $self->mt('First payment'),
         'total_amount' => sprintf('%.2f', $total_setup + $total_recur),
         'break_after'  => 1,
       };
     }
+
   }
 
   return @items;
