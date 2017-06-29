@@ -85,18 +85,20 @@
           <FONT SIZE="-1"><% $label{$field} %></FONT>
         </TD>
 %     }
-%     my $pwd_change_label = 'change password';
-%     $pwd_change_label = 'setup password' unless $contact->_password;
+%     my $pwd_change_label = 'change';
+%     $pwd_change_label = 'setup' unless $contact->_password;
+%     my $action = $fsurl . "edit/cust_main-contacts-password.html?custnum=" . $opt{'custnum'} . "&contactnum=" . $curr_value . "&label=" . $pwd_change_label . "&popup=1";
 %     if ($curr_value) {
         <TD>
-          <span STYLE="white-space: nowrap">
-            <& /elements/change_password.html,
-              'contact_num' => $curr_value,
-              'custnum'     => $opt{'custnum'},
-              'curr_value'  => '',
-              'label'       => $pwd_change_label,
-            &>
-          </span>
+          <% include('/elements/popup_link.html',
+                         'action'      => $action,
+                         'width'       => '763',
+                         'height'      => '408',
+                         'actionlabel' => "$pwd_change_label password",
+                         'html_label'  => "$pwd_change_label password",
+
+                    )
+          %>
           <br>
           <FONT SIZE="-1">Password</FONT>
         </TD>
@@ -110,6 +112,10 @@
 my( %opt ) = @_;
 
 my $conf = new FS::Conf;
+
+use Data::Dumper;
+print Dumper($conf->config);
+
 my $self_base_url = $conf->config('selfservice_server-base_url');
 
 my $name = $opt{'element_name'} || $opt{'field'} || 'contactnum';
