@@ -1161,14 +1161,27 @@ sub print_generic {
       if ( $invoice_data{finance_section} &&
            $section->{'description'} eq $invoice_data{finance_section} );
 
-    $section->{'subtotal'} = $other_money_char.
-                             sprintf('%.2f', $section->{'subtotal'})
-      if $multisection;
+    if ( $multisection ) {
 
-    # continue some normalization
-    $section->{'amount'}   = $section->{'subtotal'}
-      if $multisection;
+      if ( ref($section->{'subtotal'}) ) {
 
+        $section->{'subtotal'} =
+          sprintf("$other_money_char%.2f to $other_money_char%.2f",
+                    $section->{'subtotal'}[0],
+                    $section->{'subtotal'}[1]
+                 );
+
+      } else {
+
+        $section->{'subtotal'} = $other_money_char.
+                                 sprintf('%.2f', $section->{'subtotal'})
+
+      }
+
+      # continue some normalization
+      $section->{'amount'}   = $section->{'subtotal'}
+
+    }
 
     if ( $section->{'description'} ) {
       push @buf, ( [ &$escape_function($section->{'description'}), '' ],
@@ -1367,7 +1380,16 @@ sub print_generic {
     foreach ( @new_total_items ) {
       my ($item, $amount) = ($_->{'total_item'}, $_->{'total_amount'});
       $_->{'total_item'}   = &$embolden_function( $item );
-      $_->{'total_amount'} = &$embolden_function( $other_money_char.$amount );
+
+      if ( ref($amount) ) {
+        $_->{'total_amount'} = &$embolden_function(
+                                 $other_money_char.$amount->[0]. ' to '.
+                                 $other_money_char.$amount->[1]
+                               );
+      } else {
+        $_->{'total_amount'} = &$embolden_function( $other_money_char.$amount );
+      }
+
       # but if it's multisection, don't append to @total_items. the adjust
       # section has all this stuff
       push @total_items, $_ if !$multisection;
