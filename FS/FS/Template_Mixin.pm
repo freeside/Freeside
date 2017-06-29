@@ -1380,7 +1380,16 @@ sub print_generic {
     foreach ( @new_total_items ) {
       my ($item, $amount) = ($_->{'total_item'}, $_->{'total_amount'});
       $_->{'total_item'}   = &$embolden_function( $item );
+
+      if ( ref($amount) ) {
+        $_->{'total_amount'} = &$embolden_function(
+                                 $other_money_char.$amount->[0]. ' to '.
+                                 $other_money_char.$amount->[1]
+                               );
+      } else {
       $_->{'total_amount'} = &$embolden_function( $other_money_char.$amount );
+      }
+
       # but if it's multisection, don't append to @total_items. the adjust
       # section has all this stuff
       push @total_items, $_ if !$multisection;
