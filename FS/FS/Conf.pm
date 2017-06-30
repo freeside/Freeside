@@ -10,6 +10,7 @@ use IO::File;
 use File::Basename;
 use MIME::Base64;
 use Locale::Currency;
+use Email::Address;
 use FS::ConfItem;
 use FS::ConfDefaults;
 use FS::Locales;
@@ -542,10 +543,11 @@ defined, company_name), appropriately combined based on their current values.
 sub invoice_from_full {
   my ($self, $agentnum) = @_;
 
-  (    $self->config('invoice_from_name', $agentnum)
-    || $self->config('company_name', $agentnum)
-  ).
-  ' <'. $self->config('invoice_from', $agentnum ). '>';
+  my $name =  $self->config('invoice_from_name', $agentnum)
+           || $self->config('company_name', $agentnum);
+
+  Email::Address->new( $name => $self->config('invoice_from', $agentnum ) )
+    ->format;
 }
 
 =back
