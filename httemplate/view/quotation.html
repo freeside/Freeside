@@ -1,10 +1,3 @@
-% if ( $quotation->custnum ) {
-<h2>Quotation #<% $quotationnum %>
-% if ($quotation->quotation_description) {
-(<% $quotation->quotation_description %>)  
-% } 
-</h2>
-% } else { #eventually, header-prospect_main.html
 <& /elements/header.html, mt('Quotation View'), $menubar &>
 <& /elements/init_overlib.html &>
 
@@ -15,7 +8,13 @@ function areyousure(href, message) {
 }
 </SCRIPT>
 
-% }
+% if ( $quotation->custnum ) {
+  <h2>Quotation #<% $quotationnum %>
+%   if ($quotation->quotation_description) {
+      (<% $quotation->quotation_description %>)  
+%   } 
+  </h2>
+% } 
 
 % unless ( $quotation->disabled eq 'Y' ) {
 
