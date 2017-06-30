@@ -126,6 +126,13 @@ sub realtime_collect {
   $options{amount} = $self->balance unless exists( $options{amount} );
   return '' unless $options{amount} > 0;
 
+  #huh, in v4, realtime_bop no longer will just process a card without passing
+  # payinfo or cust_payby...
+  if ( ! $options{'payinfo'} && ! $options{'cust_payby'} && $self->has_cust_payby_auto ) {
+    my @cust_payby = $self->cust_payby;
+    $options{'cust_payby'} = $cust_payby[0];
+  }
+
   return $self->realtime_bop({%options});
 
 }
