@@ -5231,7 +5231,7 @@ sub tables_hashref {
         'ocn',         'char',    'NULL',       4, '', '', 
       ],
       'primary_key'  => 'prefixnum',
-      'unique'       => [],
+      'unique'       => [ [ 'countrycode', 'npa', 'nxx' ] ],
       'index'        => [ [ 'countrycode' ], [ 'npa' ], [ 'regionnum' ] ],
       'foreign_keys' => [
                           { columns    => [ 'regionnum' ],
