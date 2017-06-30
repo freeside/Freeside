@@ -24,7 +24,8 @@ my $addl_from = '';
 
 my $email_sub = sub {
   my $contact = shift;
-  my @contact_email = $contact->contact_email;
+  #can't because contactnum is in the wrong field #my @contact_email = $contact->contact_email;
+  my @contact_email = qsearch('contact_email', { 'contactnum' => $contact->contact_contactnum } );
   join(', ', map $_->emailaddress, @contact_email);
 };
 
