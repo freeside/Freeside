@@ -794,8 +794,8 @@ sub new_customer {
          depend_jobnum => $placeholder->jobnum,
          selfservice   => 1,
       );
-      #warn "$me error collecting from new customer: $bill_error"
-      #  if $bill_error;
+      warn "$me error collecting from new customer: $bill_error"
+        if $bill_error && !ref($bill_error);
     }
 
     if ($bill_error && ref($bill_error) eq 'HASH') {
