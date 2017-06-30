@@ -1162,7 +1162,7 @@ are extending RT.
 
 =cut
 
-Set($WebNoAuthRegex, qr{^ /rt (?:/+NoAuth/ | /+REST/\d+\.\d+/NoAuth/) }x );
+Set($WebNoAuthRegex, qr{^ (?:/+NoAuth/ | /+REST/\d+\.\d+/NoAuth/) }x );
 
 =item C<$SelfServiceRegex>
 
