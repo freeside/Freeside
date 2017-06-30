@@ -11,7 +11,7 @@ function areyousure(href, message) {
 % if ( $quotation->custnum ) {
   <h2>Quotation #<% $quotationnum %>
 %   if ($quotation->quotation_description) {
-      (<% $quotation->quotation_description %>)  
+      (<% $quotation->quotation_description |h %>)  
 %   } 
   </h2>
 % } 
