@@ -2,39 +2,28 @@
 <? $current_menu = 'services.php'; include('elements/menu.php'); ?>
 <?
 
-$get_params = array( 'pkgnum' );
-foreach ( $get_params AS $param ) {
-  $params[$param] = $_GET[$param];
-}
-
 $customer_info = $freeside->customer_info_short( array(
   'session_id' => $_COOKIE['session_id'],
 ) );
 
-$list_pkgs = $freeside->list_pkgs( array(
-  'session_id' => $_COOKIE['session_id'],
-) );
+if ( preg_match( '/^(\d+)$/', $_GET['pkgnum'] ) ) {
+ $cust_pkg = $freeside->pkg_info( array(
+   'session_id' => $_COOKIE['session_id'],
+   'pkgnum' => $_GET['pkgnum'],
+ ) );
+}
+else { $cust_pkg['error'] = 'Bad Package Number'; }
 
-if ( isset($list_pkgs['error']) && $list_pkgs['error'] ) {
-  $error = $list_pkgs['error'];
+if ( isset($cust_pkg['error']) && $cust_pkg['error'] ) {
+  $error = $cust_pkg['error'];
   header('Location:index.php?error='. urlencode($error));
   die();
-}
-
-extract($list_pkgs);
-
-foreach ( $cust_pkg AS $pkg ) {
-  if ( $pkg['pkgnum'] == $params['pkgnum'] ) { 
-    $pkg_label = $pkg['pkg_label'];
-    $pkg_part = $pkg['pkgpart'];
-    $class_num = $pkg['classnum'];
-  }
 }
 
 $pkgselect = $freeside->mason_comp( array(
     'session_id' => $_COOKIE['session_id'],
     'comp'       => '/elements/select-part_pkg.html',
-    'args'       => [ 'classnum', $class_num, 'curr_value', $pkg_part, ],
+    'args'       => [ 'classnum', $cust_pkg['classnum'], 'curr_value', $cust_pkg['pkgpart'], ],
   )
 );
 
@@ -56,7 +45,7 @@ function enable_change_pkg () {
 }
 </SCRIPT>
 
-<FONT SIZE=4>Purchase replacement package for "<? echo htmlspecialchars($pkg_label); ?>"</FONT><BR><BR>
+<FONT SIZE=4>Purchase replacement package for "<? echo htmlspecialchars($cust_pkg['pkg_label']); ?>"</FONT><BR><BR>
 
 <? include('elements/error.php'); ?>
 
@@ -73,8 +62,7 @@ function enable_change_pkg () {
 </TABLE>
 <BR>
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<? echo $customer_info['custnum'] ?>">
-<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<? echo $params['pkgnum'] ?>">
-<INPUT TYPE="hidden" NAME="pkg" VALUE="<? echo $params['pkg'] ?>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<? echo htmlspecialchars($_GET['pkgnum']) ?>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_change_pkg">
 <INPUT NAME="submit" TYPE="submit" VALUE="Change Package">
 </FORM>

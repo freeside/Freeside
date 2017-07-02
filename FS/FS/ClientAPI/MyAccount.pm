@@ -1655,6 +1655,30 @@ sub cancel {
 
 }
 
+sub pkg_info {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $pkg = qsearchs({
+    'table'     => 'cust_pkg',
+    'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
+    'hashref'   => {
+                      'custnum' => $custnum,
+                      'pkgnum'  => $p->{'pkgnum'},
+                   },
+  })
+    or return {'error' => 'unknown pkg num $pkgnum'};
+
+  return {
+        pkg_label => $pkg->pkg,
+        pkgpart   => $pkg->pkgpart,
+        classnum  => $pkg->classnum,
+  };
+
+}
+
 sub list_pkgs {
   my $p = shift;
 
