@@ -150,6 +150,7 @@ sub ss2clientapi {
   'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
   'realtime_collect'          => 'MyAccount/realtime_collect',
   'list_pkgs'                 => 'MyAccount/list_pkgs',     #add to ss (added?)
+  'pkg_info'                  => 'MyAccount/pkg_info',
   'list_svcs'                 => 'MyAccount/list_svcs',     #add to ss (added?)
   'list_svc_usage'            => 'MyAccount/list_svc_usage',   
   'svc_status_html'           => 'MyAccount/svc_status_html',

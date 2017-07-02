@@ -81,7 +81,7 @@ if ( isset($results['error']) && $results['error'] ) {
 ?>
 <? include('elements/error.php'); ?>
 
-<FONT SIZE=4>Package Successfully Changed To "<? echo $results['pkg']; ?>"</FONT><BR><BR>
+<FONT SIZE=4>Package Successfully Changed To "<? echo htmlspecialchars($results['pkg']); ?>"</FONT><BR><BR>
 
 <? include('elements/menu_footer.php'); ?>
 <? include('elements/footer.php'); ?>
