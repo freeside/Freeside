@@ -106,7 +106,7 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  if ( $self->selfservice_access eq 'R' ) {
+  if ( $self->selfservice_access eq 'R' || $self->selfservice_access eq 'P') {
     $self->selfservice_access('Y');
     $self->_resend('Y');
   }
