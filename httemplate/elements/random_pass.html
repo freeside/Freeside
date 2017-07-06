@@ -1,6 +1,6 @@
-<INPUT TYPE="button" VALUE="<% emt($label) %>" onclick="randomPass()">
+<INPUT TYPE="button" VALUE="<% emt($label) %>" onclick="<% $id %>randomPass()">
 <SCRIPT TYPE="text/javascript">
-function randomPass() {
+function <% $id %>randomPass() {
   var pw_set = <% $pw_set |js_string %>;
   var lower = <% $lower |js_string %>;
   var upper = <% $upper |js_string %>;
@@ -19,11 +19,15 @@ function randomPass() {
   for(var j, x, i = pass.length; i; j = Math.floor(Math.random() * i), x = pass[--i], pass[i] = pass[j], pass[j] = x);
   pass = pass.join('');
   document.getElementById('<% $id %>').value = pass;
+% if ($submitid) {
+    document.getElementById('<% $submitid %>').disabled = false;
+% }
 }
 </SCRIPT>
 <%init>
 my $id = shift;
 my $label = shift || 'Generate';
+my $submitid = shift;
 my $pw_set = join('', FS::Password_Mixin->pw_set);
 my $lower = join('', $pw_set =~ /[[:lower:]]/g);
 my $upper = join('', $pw_set =~ /[[:upper:]]/g);

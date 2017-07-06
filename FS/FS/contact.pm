@@ -577,6 +577,15 @@ sub replace {
     }
   }
 
+  if ( $self->get('password') ) {
+    my $error = $self->is_password_allowed($self->get('password'))
+          ||  $self->change_password($self->get('password'));
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -663,7 +672,7 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  if ( $self->selfservice_access eq 'R' ) {
+  if ( $self->selfservice_access eq 'R' || $self->selfservice_access eq 'P' ) {
     $self->selfservice_access('Y');
     $self->_resend('Y');
   }
@@ -945,7 +954,7 @@ sub cgi_contact_fields {
 
   my @contact_fields = qw(
     classnum first last title comment emailaddress selfservice_access
-    invoice_dest
+    invoice_dest password
   );
 
   push @contact_fields, 'phonetypenum'. $_->phonetypenum
