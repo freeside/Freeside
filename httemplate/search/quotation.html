@@ -17,6 +17,7 @@
                                            emt('Customer'),
                                            emt('Confidence'),
                                            emt('Close date'),
+                                           emt('Description')
                                          ],
                  'fields'             => [
                    'quotationnum',
@@ -35,6 +36,7 @@
                    sub { my $quotation = shift;
                          $quotation->close_date ? time2str('%b %d %Y', $quotation->close_date) : '';
                        },
+                   'quotation_description',
                    #\&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields'        => [
