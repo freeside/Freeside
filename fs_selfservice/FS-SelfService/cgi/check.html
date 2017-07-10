@@ -1,54 +1,97 @@
 <TR>
   <TD ALIGN="right">Account&nbsp;type</TD>
-  <TD>
-    <SELECT NAME="paytype">
-      <%= foreach ( @paytypes ) {
-            $selected = $paytype eq $_ ? ' SELECTED' : '';
-            $OUT .= qq(<OPTION$selected VALUE="$_">$_\n);
-      } %>
-    </SELECT>
+  <TD <%= ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') %> >
+  <%=
+    if ($ach_read_only) {
+      $OUT = $paytype . '<INPUT TYPE="hidden" NAME="paytype" VALUE="' . $paytype . '">';
+    } else {
+      $OUT .= '<SELECT NAME="paytype">';
+      foreach ( @paytypes ) {
+        $selected = $paytype eq $_ ? ' SELECTED' : '';
+        $OUT .= qq(<OPTION$selected VALUE="$_">$_\n);
+      }
+      $OUT .= '</SELECT>';
+    }
+  %>
   </TD>
-</TD><TR>
+</TR><TR>
   <TD ALIGN="right">Account&nbsp;number</TD>
-  <TD><INPUT TYPE="text" NAME="payinfo1" SIZE=10 MAXLENGTH=20 VALUE="<%=$payinfo1%>"></TD>
-</TD><TR>
+  <TD <%= ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') %> >
+  <%= if ($ach_read_only) {
+      $OUT = qq! $payinfo1 <INPUT TYPE="hidden" NAME="payinfo1" VALUE="$payinfo1"> !;
+    } else {
+      $OUT = qq! <INPUT TYPE="text" NAME="payinfo1" SIZE=10 MAXLENGTH=20 VALUE="$payinfo1"> !;
+    }
+  %>
+  </TD>
+</TR><TR>
   <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
-  <TD><INPUT TYPE="text" NAME="payinfo2" SIZE=10 MAXLENGTH=9 VALUE="<%=$payinfo2%>"></TD>
+  <TD <%= ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') %> >
+  <%=
+    if ($ach_read_only) {
+      $OUT = qq! $payinfo2 <INPUT TYPE="hidden" NAME="payinfo2" VALUE="$payinfo2"> !;
+    } else {
+      $OUT = qq! <INPUT TYPE="text" NAME="payinfo2" SIZE=10 MAXLENGTH=20 VALUE="$payinfo2"> !;
+    }
+  %>
+  </TD>
 </TR><TR>
   <TD ALIGN="right">Bank&nbsp;name</TD>
-  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
-</TR><TR>
+  <TD <%= ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') %> >
+  <%=
+    if ($ach_read_only) {
+      $OUT = qq! $payname <INPUT TYPE="hidden" NAME="payname" VALUE="$payname"> !;
+    } else {
+      $OUT = qq! <INPUT TYPE="text" NAME="payname" SIZE=10 MAXLENGTH=20 VALUE="$payname"> !;
+    }
+  %>
+  </TD>
+</TR>
   <%=
     $OUT = '';
     if ($show_paystate) {
-      $OUT .= qq!<TD ALIGN="right">Bank state</TD><TD><SELECT NAME="paystate">!;
-      for ( @states ) {
-        $OUT .= '<OPTION'. ($_ eq $paystate ? ' SELECTED' : '' ). ">$_\n";
+      $OUT .= '<TR><TD ALIGN="right">Bank state</TD><TD' . ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') . '>';
+      if ($ach_read_only) {
+        $OUT .= qq! $paystate <INPUT TYPE="hidden" NAME="paystate" VALUE="$paystate"> !;
+      } else {
+        $OUT .= '<SELECT NAME="paystate">';
+        for ( @states ) {
+          $OUT .= '<OPTION'. ($_ eq $paystate ? ' SELECTED' : '' ). ">$_\n";
+        }
+        $OUT .= '</SELECT>';
       }
-      $OUT .= '</SELECT></TD></TR><TR>';
+      $OUT .= '</TD></TR>';
     }
   %>
   <%=
     $OUT = '';
     if ($show_ss) {
-      $OUT .= '<TD ALIGN="right">Account&nbsp;holder<BR>Social&nbsp;';
-      $OUT .= 'security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#</TD><TD>';
-      $OUT .= qq!<INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="ss" VALUE="$ss">!;
-      $OUT .= '</TD></TR><TR>';
+      $OUT .= '<TR><TD ALIGN="right">Account&nbsp;holder<BR>Social&nbsp;';
+      $OUT .= 'security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#</TD><TD' . ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') . '>';
+      if ($ach_read_only) {
+        $OUT .= qq! $ss <INPUT TYPE="hidden" NAME="ss" VALUE="$ss">!;
+      } else {
+        $OUT .= qq!<INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="ss" VALUE="$ss">!;
+      }
+      $OUT .= '</TD></TR>';
     }
   %>
   <%=
     $OUT = '';
     if ($show_stateid) {
-      $OUT .= '<TD ALIGN="right">';
-      $OUT .= qq!Account&nbsp;holder<BR>$stateid_label</TD><TD>!;
-      $OUT .= qq!<INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="stateid" VALUE="$stateid"></TD>!;
-      $OUT .= qq!<TD ALIGN="right">$stateid_state_label</TD>!;
-      $OUT .= '<TD><SELECT NAME="stateid_state">';
-      for ( @states ) {
-        $OUT .= '<OPTION'. ($_ eq $stateid_state ? ' SELECTED' : '' ). ">$_\n";
+      $OUT .= qq!<TR><TD ALIGN="right">Account&nbsp;holder<BR>$stateid_label</TD>!;
+      $OUT .= '<TD' . ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') . '>';
+      if ($ach_read_only) {
+        $OUT .= qq! $stateid <INPUT TYPE="hidden" NAME="stateid" VALUE="$stateid">!;
+      } else {
+        $OUT .= qq!<INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="stateid" VALUE="$stateid"></TD>!;
+        $OUT .= qq!<TD ALIGN="right">$stateid_state_label</TD>!;
+        $OUT .= '<TD><SELECT NAME="stateid_state">';
+        for ( @states ) {
+          $OUT .= '<OPTION'. ($_ eq $stateid_state ? ' SELECTED' : '' ). ">$_\n";
+        }
+        $OUT .='</SELECT>';
       }
-      $OUT .='</SELECT></TD></TR><TR>';
+      $OUT .='</TD></TR>';
     }
   %>
-</TR>

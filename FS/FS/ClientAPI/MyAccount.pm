@@ -867,6 +867,7 @@ sub payment_info {
       'show_paystate' => $conf->exists('show_bankstate'),
 
       'save_unchecked' => $conf->exists('selfservice-save_unchecked'),
+      'ach_read_only' => $conf->exists('selfservice-ACH_info_readonly'),
 
     };
 

@@ -53,7 +53,7 @@ if ( $receipt_html ) { ?>
 
   $error = $payment_error;
 
-  ?>
+?>
 
   <? include('elements/error.php'); ?>
 
@@ -81,6 +81,12 @@ if ( $receipt_html ) { ?>
 
   <? include('elements/check.php') ?>
 
+  <? if ($ach_read_only) { ?>
+    <? if ( $payby == 'CARD' ) { ?>
+      <INPUT TYPE="hidden" NAME="auto" VALUE="1">
+    <? } ?>
+    </TD></TR>
+  <? } else { ?>
   <TR>
     <TD COLSPAN=2>
       <INPUT TYPE="checkbox" <? if ( ! $save_unchecked ) { echo 'CHECKED'; } ?> NAME="save" VALUE="1">
@@ -92,6 +98,8 @@ if ( $receipt_html ) { ?>
       Charge future payments to this account automatically
     </TD>
   </TR>
+  <? } ?>
+
   </TABLE>
   <BR>
   <INPUT TYPE="hidden" NAME="paybatch" VALUE="<? echo $paybatch; ?>">
