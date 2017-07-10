@@ -20,24 +20,28 @@ EOF
 <TR>
   <TD ALIGN="right">Payment&nbsp;amount</TD>
   <TD>
-    <TABLE><TR><TD BGCOLOR="#ffffff">
+    <TABLE><TR><TD>
       <%= $money_char %><INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%= ($balance > 0) ? $balance : '' %>">
     </TD></TR></TABLE>
   </TD>
 </TR>
 <%= include('discount_term') %>
 <%= include('check') %>
-<TR>
-  <TD COLSPAN=2>
-    <INPUT TYPE="checkbox" <%= $save_unchecked ? '' : 'CHECKED' %> NAME="save" VALUE="1">
-    Remember this information
-  </TD>
-</TR><TR>
-  <TD COLSPAN=2>
-    <INPUT TYPE="checkbox"<%= $payby eq 'CHEK' ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
-    Charge future payments to this account automatically
-  </TD>
-</TR>
+
+<%=
+  $OUT = '';
+  if ($ach_read_only) {
+    if ($payby == 'CHEK') {
+      $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="hidden" NAME="auto" VALUE="1"></TD></TR>';
+    }
+  } else {
+    $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="checkbox"' . ($save_unchecked ? '' : 'CHECKED ') . 'NAME="save" VALUE="1">';
+    $OUT .= 'Remember this information</TD></TR>';
+    $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="checkbox"' . ($payby eq 'CHEK' ? ' CHECKED' : '') . 'NAME="auto" VALUE="1"  onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">';
+    $OUT .= 'Charge future payments to this account automatically</TD></TR>';
+  }
+%>
+
 </TABLE>
 <BR>
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<%=$paybatch%>">

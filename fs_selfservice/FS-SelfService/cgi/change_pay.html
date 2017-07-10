@@ -37,6 +37,11 @@
                       'PREP'   => qq/Prepaid Card/,
                       'PREPAY' => qq/Prepaid Card/,
                     );
+
+  ## Don't show CHEK or DCHK option if ACH is read only
+  delete( $payby_index{'CHEK'} ) unless !$ach_read_only;
+  delete( $payby_index{'DCHK'} ) unless !$ach_read_only;
+
   tie my %options, 'Tie::IxHash', ();
   foreach my $payby_option ( grep { exists( $payby_index{$_} ) } @paybys ) {
     $options{$payby_option} = $payby_index{$payby_option};
@@ -54,6 +59,9 @@
   delete( $options{ $paybyremove{$payby} } );
   delete $options{'DCRD'} unless $payby eq 'DCRD' || ! exists $options{'CARD'};
   delete $options{'DCHK'} unless $payby eq 'DCHK' || ! exists $options{'CHEK'};
+
+  ## setting payby to default to layer if only one.  should we always display first layer?
+  if (keys %options == 1) { @p = keys %options; $payby = $p[0]; }
 
   HTML::Widgets::SelectLayers->new(
     options => \%options,

@@ -5773,6 +5773,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-ACH_info_readonly',
+    'section'     => 'self-service',
+    'description' => 'make ACH on self service portal read only',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'selfservice-announcement',
     'section'     => 'self-service',
     'description' => 'HTML announcement to display to all authenticated users on account overview page',
