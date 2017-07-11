@@ -101,10 +101,19 @@
 %
 %     }
 %
-%
+
+% ### use name sent to function else use target table and key.
+% my $checkbox_name;
+% if ($opt{'field'}) { $checkbox_name = $opt{'field'}; } else { $checkbox_name = "$target_pkey$targetnum"; }
+
+% ### use values sent to function rather than values in table to determine CHECKED if values are sent.
+% my $values;
+% if (ref $opt{'value'} eq ref {} ) { $values = $opt{'value'}; }
+% else { foreach my $value ( split(/\,/, $opt{'value'}) ) { $values->{$value} = $value; } }
+% if ($values->{$targetnum}) { $checked = "CHECKED"; }
 
 % my $color_col = $opt{'color_col'};
-  <INPUT TYPE="checkbox" NAME="<% $target_pkey. $targetnum %>" <% $checked %> VALUE="ON"><DIV STYLE="display:inline; background-color: #<% $color_col ? $target_obj->$color_col : '' %>">
+  <INPUT TYPE="checkbox" NAME="<% $checkbox_name %>" <% $checked %> VALUE="<% $targetnum %>"><DIV STYLE="display:inline; background-color: #<% $color_col ? $target_obj->$color_col : '' %>">
 % if ( $opt{'target_link'} ) { 
     <A HREF="<% $opt{'target_link'} %><% $targetnum %>">
 %  }
