@@ -16,9 +16,9 @@
                    { field=>'prospectnum',           type=>'fixed-prospect_main' },
                    { field=>'custnum',               type=>'fixed-cust_main' },
                    { field=>'_date',                 type=>'fixed-date' },
+                   { field=>'quotation_description', type=>'text', size=>50 },
                    { field=>'close_date',            type=>'input-date-field' },
                    { field=>'confidence',            type=>'text', size=>3, postfix=>'%' },
-                   { field=>'quotation_description', type=>'text', size=>50 },
                    ($can_disable ? { field=>'disabled', type=>'checkbox', value=>'Y'} : ()),
                               ],
                  #XXX some way to disable the "view all"

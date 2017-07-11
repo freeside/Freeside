@@ -10,10 +10,12 @@
 %     my $bgcolor = '';
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc">#</TH>
-        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Setup') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Recurring') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Description') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Close date') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Confidence') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       </TR>
 %     foreach my $quotation (@quotations) {
@@ -26,10 +28,12 @@
 %               $quotation->quotationnum. '">';
         <TR>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->quotationnum %></A></TD>
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% time2str($date_format, $quotation->_date) |h %></A></TD>
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->total_setup |h %></A></TD>
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->total_recur |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN=right><% $a %><% $money_char.$quotation->total_setup |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN=right><% $a %><% $money_char.$quotation->total_recur |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% time2str('%b %d %Y', $quotation->_date) |h %></A></TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->quotation_description |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->close_date ? time2str('%b %d %Y', $quotation->close_date) : '' |h %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN=right><% $a %><% length($quotation->confidence) ? $quotation->confidence . '%' : '' |h %></A></TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<%$p%>edit/process/quotation_convert.html?quotationnum=<% $quotation->quotationnum %>"><% $opt{convert_label} || 'Convert to customer' %></A></TD>
         </TR>
 %     }
@@ -46,6 +50,8 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 #  unless $curuser->access_right('Generate quotation');
 
 my $conf = new FS::Conf;
+
+my $money_char = $conf->config('money_char') || '$';
 
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
