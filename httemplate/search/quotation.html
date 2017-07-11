@@ -13,30 +13,30 @@
                                            emt('Setup'),
                                            emt('Recurring'),
                                            emt('Date'),
+                                           emt('Description'),
+                                           emt('Close date'),
+                                           emt('Confidence'),
                                            emt('Prospect'),
                                            emt('Customer'),
-                                           emt('Confidence'),
-                                           emt('Close date'),
-                                           emt('Description')
                                          ],
                  'fields'             => [
                    'quotationnum',
                    sub { $money_char. shift->total_setup },
                    sub { $money_char. shift->total_recur },
                    sub { time2str('%b %d %Y', shift->_date ) },
+                   'quotation_description',
+                   sub { my $quotation = shift;
+                         $quotation->close_date ? time2str('%b %d %Y', $quotation->close_date) : '';
+                       },
+                   sub { my $quotation = shift;
+                         length($quotation->confidence) ? $quotation->confidence . '%' : '';
+                       },
                    sub { my $prospect_main = shift->prospect_main;
                          $prospect_main ? $prospect_main->name : '';
                        },
                    sub { my $cust_main = shift->cust_main;
                          $cust_main ? encode_entities($cust_main->name) : '';
                        },
-                   sub { my $quotation = shift;
-                         length($quotation->confidence) ? $quotation->confidence . '%' : '';
-                       },
-                   sub { my $quotation = shift;
-                         $quotation->close_date ? time2str('%b %d %Y', $quotation->close_date) : '';
-                       },
-                   'quotation_description',
                    #\&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields'        => [
@@ -44,23 +44,23 @@
                    '', #FS::quotation->total_setup_sql,
                    '', #FS::quotation->total_recur_sql,
                    '_date',
-                   '',
-                   '',
-                   'confidence',
+                   'quotation_description',
                    'close_date',
-                   'quotation_description'
+                   'confidence',
+                   '',
+                   '',
                  ],
-                 'align' => 'rrrrllrr', #.FS::UI::Web::cust_aligns(),
+                 'align' => 'rrrrlrrll', #.FS::UI::Web::cust_aligns(),
                  'links' => [
+                   $link,
+                   $link,
+                   $link,
                    $link,
                    $link,
                    $link,
                    $link,
                    $prospect_link,
                    $cust_link,
-                   $link,
-                   $link,
-                   $link,
                    #( map { $_ ne 'Cust. Status' ? $cust_link : '' }
                    #      FS::UI::Web::cust_header()
                    #),
