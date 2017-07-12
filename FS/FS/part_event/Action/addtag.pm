@@ -42,9 +42,7 @@ sub do_action {
       my $cust_tag = new FS::cust_tag { 'tagnum'  => $tagnum,
                                         'custnum' => $object->custnum, };
       my $error = $cust_tag->insert;
-      if ( $error ) {
-        return $error;
-      }
+      die $error if $error;
     }
   }
   '';
