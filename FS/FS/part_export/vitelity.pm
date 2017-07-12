@@ -309,7 +309,13 @@ sub _export_insert {
 
   my $e911_error = $self->e911_send($svc_phone);
 
-  if ( $e911_error =~ /^(missingdata|invalid)/i ) {
+  if ( $e911_error =~ /status=(missingdata|invalid)/i ) {
+
+    my $status = $1;
+    if ( $e911_error =~ /error=(.*)/ ) {
+      $e911_error = "status=$status, error=$1";
+    }
+
     #but we already provisioned the DID, so:
     $self->vitelity_command('removedid', 'did'=> $svc_phone->phonenum,);
     #and check the results?  if it failed, then what?
