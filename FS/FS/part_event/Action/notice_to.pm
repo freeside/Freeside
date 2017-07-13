@@ -7,12 +7,17 @@ use FS::msg_template;
 
 sub description { 'Email a notice to a specific address'; }
 
-#sub eventtable_hashref {
-#    { 'cust_main' => 1,
-#      'cust_bill' => 1,
-#      'cust_pkg'  => 1,
-#    };
-#}
+sub eventtable_hashref {
+    {
+      'cust_main'      => 1,
+      'cust_bill'      => 1,
+      'cust_pkg'       => 1,
+      'cust_pay'       => 1,
+      'cust_pay_batch' => 1,
+      'cust_statement' => 1,
+      'svc_acct'       => 1,
+    };
+}
 
 sub option_fields {
   (
