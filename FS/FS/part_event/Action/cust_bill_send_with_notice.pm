@@ -8,7 +8,15 @@ use MIME::Entity;
 sub description { 'Email a notice to the customer with invoice attached'; }
 
 sub eventtable_hashref {
-  { 'cust_bill' => 1 };
+    {
+      'cust_main'      => 1,
+      'cust_bill'      => 1,
+      'cust_pkg'       => 1,
+      'cust_pay'       => 1,
+      'cust_pay_batch' => 1,
+      'cust_statement' => 1,
+      'svc_acct'       => 1,
+    };
 }
 
 sub option_fields {
