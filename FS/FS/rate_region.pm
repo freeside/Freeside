@@ -304,6 +304,36 @@ sub prefixes_short {
   $out;
 }
 
+sub prefixes_short_sql {
+  my $self = shift;
+
+  my $countrycode = '';
+  my $out = '';
+
+  foreach my $prefix (sort split(',', $self->prefixes)) {
+    my($cc, $npa) = split(' ', $prefix);
+
+    if ( $countrycode ne $cc ) {
+      $out =~ s/, $//;
+      $countrycode = $cc;
+      $out.= " +$countrycode ";
+    }
+    if ( $countrycode eq '1' ) {
+      #$out .= '('. substr( $npa, 0, 3 ). ')';
+      $out .= substr( $npa, 0, 3 );
+      $out .= ' '. substr( $npa, 3 ) if length($npa) > 3;
+    } else {
+      $out .= $npa;
+    }
+#XXX have to implement this here too if we ever actually used the nxx field
+#    $out .= '-'. $rate_prefix->nxx if $rate_prefix->nxx;
+    $out .= ', ';
+  }
+  $out =~ s/, $//;
+
+  $out;
+}
+
 =back
 
 =head1 BUGS
