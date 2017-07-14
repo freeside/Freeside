@@ -33,9 +33,9 @@ with row headers showing the region name and prefixes.
 %   $col = 0;
 %   if ( !$opt{'regionnum'} ) {
 %     $region = $r;
-%     foreach ($r->regionname, $r->prefixes_short) {
+%     foreach ($r->regionname, $r->prefixes_short_sql) {
   <TD>
-    <A HREF="<% $p.'edit/rate_region.cgi?regionnum='.$r->regionnum %>"><% $_ %></A>
+    <A HREF="<% $p.'edit/rate_region.cgi?regionnum='.$r->regionnum %>"><% $_ |h %></A>
   </TD>
 %     }
 %   }
@@ -252,29 +252,46 @@ my @rtns = ( map( { $_->ratetimenum } @rate_time ), '' );
 
 my @details;
 my @rows;
+
+my %rate_region = (
+  'select'    => 'rate_region.*, '.
+                 "STRING_AGG(countrycode || ' ' || npa, ',') AS prefixes",
+  'table'     => 'rate_region',
+  'addl_from' => 'LEFT JOIN rate_prefix USING ( regionnum ) ',
+  'extra_sql' => 'GROUP BY ( rate_region.regionnum )',
+  'order_by'  => 'ORDER BY ( regionname )',
+);
+
 if ( $ratenum ) {
+
   if ( $regionnum ) {
-    @rows = qsearch('rate_region', 
-                      { ratenum => $ratenum, regionnum => $regionnum });
-  }
-  else {
-    my $where = '';
+
+    @rows = qsearch({
+      %rate_region,
+      'hashref' => { ratenum => $ratenum, regionnum => $regionnum },
+    });
+
+  } else {
+
     if ( $opt{'countrycode'} ) {
-      $where = "WHERE 0 < ( 
+      $rate_region{extra_sql} = 
+               "WHERE 0 < ( 
                     SELECT COUNT(*) FROM rate_prefix
                     WHERE rate_prefix.regionnum = rate_region.regionnum
                     AND countrycode = '$opt{countrycode}' 
-                )";
+                ) ".
+               $rate_region{extra_sql};
     }
-    @rows = qsearch({ table     => 'rate_region',
+    @rows = qsearch({ %rate_region,
                       hashref   => {},
-                      extra_sql => $where,
-                    });
+                   });
     #die "no region found" if !@rows;
 
     unshift @header, 'Region', 'Prefix(es)';
     unshift @hlinks, '', '';
+
   }
+
   foreach my $region (@rows) {
      push @details, [ map { qsearchs('rate_detail', 
                                       { 'ratenum'        => $ratenum,
@@ -284,8 +301,9 @@ if ( $ratenum ) {
                           } @rtns
                     ];
   }
-}
-elsif ( $regionnum ) {
+
+} elsif ( $regionnum ) {
+
   @rows = qsearch('rate', {}) or die "no rate plans found";
   unshift @header, 'Rate plan';
   unshift @hlinks, '';
@@ -298,8 +316,8 @@ elsif ( $regionnum ) {
                          } @rtns
                    ];
   }
-}
-else {
+
+} else {
   die "no ratenum or regionnum specified";
 }
 
