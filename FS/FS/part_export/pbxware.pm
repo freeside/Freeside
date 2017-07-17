@@ -19,7 +19,9 @@ our $DEBUG = 0;
 tie my %options, 'Tie::IxHash',
   'apikey'  => { label => 'API key' },
   'debug'   => { label => 'Enable debugging', type => 'checkbox', value => 1 },
-; # best. API. ever.
+  'ext'     => { label => 'PBXware "ext" field in CDR download request', },
+  'cdrtype' => { label => 'PBXware "cdrtype" field in CDR download request', },
+;
 
 our %info = (
   'svc'         => [qw(svc_phone)],
@@ -28,7 +30,7 @@ our %info = (
   'notes' => <<'END'
 <P>Export to <a href="www.bicomsystems.com/pbxware-3-8">Bicom PBXware</a> 
 softswitch.</P>
-<P><I>This export does not provision services.</I> Currently you will need
+<P><I>This export does not yet provision services.</I> Currently you will need
 to provision trunks and extensions through PBXware. The export only downloads 
 CDRs.</P>
 <P>Set the export machine to the name or IP address of your PBXware server,
@@ -96,6 +98,10 @@ sub import_cdrs {
     end       => $ed->strftime('%b-%d-%Y'),
     endtime   => $ed->strftime('%H:%M:%S'),
   );
+
+  $opt{$_} = $self->option($_)
+    for grep length( $self->option($_) ), qw( ext cdrtype );
+
   # unlike Certain Other VoIP providers, this one does proper pagination if
   # the result set is too big to fit in a single chunk.
   my $page = 1;
