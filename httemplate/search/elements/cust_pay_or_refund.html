@@ -464,7 +464,7 @@ if ( $cgi->param('magic') ) {
 
   #check for customer tags
   my @tags;
-  foreach my $p (keys $cgi->Vars) {
+  foreach my $p ($cgi->param) {
     if ($p =~ /^tagnum(\d+)/ && $1) {
       $addl_from .= " LEFT JOIN cust_tag ON (cust_tag.custnum = cust_pay.custnum)" unless @tags;
       push @tags, $1;
@@ -497,6 +497,113 @@ if ( $cgi->param('magic') ) {
 
     }
   }
+
+  #customer location... total false laziness w/cust_main/Search.pm
+
+  my $current = '';
+  unless ( $cgi->param('location_history') ) {
+    $current = '
+      AND (    cust_location.locationnum IN ( cust_main.bill_locationnum,
+                                              cust_main.ship_locationnum
+                                            )
+            OR cust_location.locationnum IN (
+                 SELECT locationnum FROM cust_pkg
+                  WHERE cust_pkg.custnum = cust_main.custnum
+                    AND locationnum IS NOT NULL
+                    AND '. FS::cust_pkg->ncancelled_recurring_sql.'
+               )
+          )';
+  }
+
+
+  ##
+  # address
+  ##
+  if ( $cgi->param('address') ) {
+    my @values = $cgi->param('address');
+    my @orwhere;
+    foreach (grep /\S/, @values) {
+      my $address = dbh->quote('%'. lc($_). '%');
+      push @orwhere,
+        "LOWER(cust_location.address1) LIKE $address",
+        "LOWER(cust_location.address2) LIKE $address";
+    }
+    if (@orwhere) {
+      push @search, "EXISTS(
+        SELECT 1 FROM cust_location 
+        WHERE cust_location.custnum = cust_main.custnum
+          AND (".join(' OR ',@orwhere).")
+          $current
+        )";
+    }
+  }
+
+  ##
+  # city
+  ##
+  if ( $cgi->param('city') =~ /\S/ ) {
+    my $city = dbh->quote($cgi->param('city'));
+    push @search, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.city = $city
+        $current
+    )";
+  }
+
+  ##
+  # county
+  ##
+  if ( $cgi->param('county') =~ /\S/ ) {
+    my $county = dbh->quote($cgi->param('county'));
+    push @search, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.county = $county
+        $current
+    )";
+  }
+
+  ##
+  # state
+  ##
+  if ( $cgi->param('state') =~ /\S/ ) {
+    my $state = dbh->quote($cgi->param('state'));
+    push @search, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.state = $state
+        $current
+    )";
+  }
+
+  ##
+  # zipcode
+  ##
+  if ( $cgi->param('zip') =~ /\S/ ) {
+    my $zip = dbh->quote($cgi->param('zip') . '%');
+    push @search, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.zip LIKE $zip
+        $current
+    )";
+  }
+
+  ##
+  # country
+  ##
+  if ( $cgi->param('country') =~ /^(\w\w)$/ ) {
+    my $country = uc($1);
+    push @search, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.country = '$country'
+        $current
+    )";
+  }
+
+  #end of false laziness w/cust_main/Search.pm
 
   my $search = ' WHERE '. join(' AND ', @search);
 
