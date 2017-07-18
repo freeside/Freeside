@@ -1,0 +1,58 @@
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Address') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('City') |h %></TH>
+      <TD>
+        <& /elements/city.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+             disable_text  => 1,
+        &>
+      </TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('County') |h %></TH>
+      <TD>
+        <& /elements/select-county.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+    
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('State') |h %></TH>
+      <TD>
+        <& /elements/select-state.html,
+             disable_empty => 0,
+             empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+    
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="zip" SIZE=12></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Country') |h %></TH>
+      <TD>
+        <& /elements/select-country.html,
+             disable_empty       => 0,
+             state_disable_empty => 0,
+             state_empty_label   => '(all)',
+        &>
+      </TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Search historical addresses') %></TH>
+      <TD><INPUT TYPE="checkbox" NAME="location_history" VALUE="1"></TD>
+
+
