@@ -37,7 +37,7 @@ my %exists = map {$_->cdrbatch => 1} @previous;
 my $tempdir = tempdir( CLEANUP => !$opt_v );
 
 my $format = 'voip_innovations';
-my $hostname = 'cdrs.globalpopsvoip.com';
+my $hostname = 'customercdr.voipinnovations.com';
 
 my $ftp = Net::FTP->new($hostname, Debug => $opt_d)
   or die "Can't connect to $hostname: $@\n";
