@@ -1,5 +1,5 @@
 <TR>
-  <TD ALIGN="right"><% $opt{'paybatch'} || 'Payment entry batch: ' %></TD>
+  <TH ALIGN="right"><% $opt{'paybatch'} || 'Payment entry batch: ' %></TH>
   <TD>
     <% include( '/elements/select-paybatch.html', 'curr_value' => $selected_paybatch, %opt ) %>
   </TD>

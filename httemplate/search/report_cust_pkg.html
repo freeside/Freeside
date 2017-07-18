@@ -6,9 +6,8 @@
 
 % unless ( $custnum ) {
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <& /elements/tr-title.html, value => mt('Customer search options') &>
+  <FONT CLASS="fsinnerbox-title"><% emt('Customer search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
     <& /elements/tr-select-agent.html,
                    'curr_value'    => scalar( $cgi->param('agentnum') ),
@@ -50,9 +49,8 @@
 
 % }
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <& /elements/tr-title.html, value => mt('Package search options') &>
+<FONT CLASS="fsinnerbox-title"><% emt('Package search options') %></FONT>
+<TABLE CLASS="fsinnerbox">
 
     <& /elements/tr-select-sales.html,
                   'label'         => 'Package sales person',
@@ -233,7 +231,11 @@
 
     <& /elements/tr-selectmultiple-part_pkg.html &> 
 
-    <& /elements/tr-title.html, value => mt('Location search options') &>
+</TABLE>
+<BR>
+
+<FONT CLASS="fsinnerbox-title"><% emt('Location search options') %></FONT>
+<TABLE CLASS="fsinnerbox">
 
 %   my @location_options = qw(cust nocust census nocensus);
 %   if ( $conf->config('tax_data_vendor') eq 'cch' ) {
@@ -253,7 +255,11 @@
                 'value'   => { map { $_ => 0 } @location_options },
     &>
 
-    <& /elements/tr-title.html, value => mt('Display options') &>
+</TABLE>
+<BR>
+
+<FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+<TABLE CLASS="fsinnerbox">
 
     <& /elements/tr-select-cust-fields.html &>
     

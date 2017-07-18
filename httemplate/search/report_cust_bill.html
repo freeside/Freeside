@@ -6,13 +6,8 @@
 
 % unless ( $custnum ) {
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left">
-        <FONT SIZE="+1">Customer search options</FONT>
-      </TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Customer search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar( $cgi->param('agentnum') ),
@@ -37,13 +32,8 @@
 
 % }
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left">
-        <FONT SIZE="+1">Invoice search options</FONT>
-      </TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Invoice search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-input-beginning_ending.html &>
 
@@ -76,30 +66,24 @@
 </TABLE>
 <BR>
 
-<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+<FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
-    <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1">Display options</FONT>
-    </TH>
-  </TR>
-
-
-<TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD><% mt('Show only open invoices') |h %></TD>
-</TR>
+  </TR>
 
-<TR>
+  <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="invoiced" VALUE="1"></TD>
     <TD><% emt('Exclude discounts from gross amount billed'), %></TD>
-</TR>
+  </TR>
 
 % unless ( $custnum ) {
-  <TR>
-    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
-    <TD><% mt('Show only the single most recent invoice per-customer') |h %></TD>
-  </TR>
+    <TR>
+      <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
+      <TD><% mt('Show only the single most recent invoice per-customer') |h %></TD>
+    </TR>
 % }
 
 </TABLE>

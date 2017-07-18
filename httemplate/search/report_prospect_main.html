@@ -2,11 +2,8 @@
 
 <FORM ACTION="prospect_main.html" METHOD="GET">
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
     <& /elements/tr-select-agent.html,
          'curr_value'    => scalar($cgi->param('agentnum')),

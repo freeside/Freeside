@@ -19,13 +19,8 @@ Examples:
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 <INPUT TYPE="hidden" NAME="unapplied" VALUE="<% $unapplied %>">
 
-<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-  <TR>
-    <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1"><% mt('[_1] search options', ucfirst($name_singular)) |h %></FONT>
-    </TH>
-  </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('[_1] search options', ucfirst($name_singular)) %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-select.html,
     label     => ucfirst(PL($name_singular)) . ' of type:',
@@ -38,20 +33,20 @@ Examples:
 
 % if (substr($conf->config('card_masking_method'), -5) eq 'last4' || !$conf->config('card_masking_method')) {
   <TR>
-    <TD ALIGN="right"><% mt('Card Last 4 #:') |h %></TD>
+    <TH ALIGN="right"><% mt('Card Last 4 #:') |h %></TH>
     <TD>
       <INPUT TYPE="text" ID="paymask" NAME="paymask">
     </TD>
   </TR>
 % } 
   <TR>
-    <TD ALIGN="right"><% mt('Check #:') |h %> </TD>
+    <TH ALIGN="right"><% mt('Check #:') |h %> </TH>
     <TD>
       <INPUT TYPE="text" ID="payinfo" NAME="payinfo">
     </TD>
   </TR>
   <TR>
-    <TD ALIGN="right"><% mt('Transaction #:') |h %> </TD>
+    <TH ALIGN="right"><% mt('Transaction #:') |h %> </TH>
     <TD>
       <INPUT TYPE="text" ID="ccpay" NAME="ccpay">
     </TD>
@@ -74,7 +69,7 @@ Examples:
 % }
 
   <TR>
-    <TD ALIGN="right" VALIGN="center"><% mt(ucfirst($name_singular). ' date') |h %></TD>
+    <TH ALIGN="right" VALIGN="center"><% mt(ucfirst($name_singular). ' date') |h %></TH>
     <TD>
       <TABLE>
         <& /elements/tr-input-beginning_ending.html,
@@ -87,7 +82,7 @@ Examples:
 
 % if ( $void ) {
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Voided') |h %></TD>
+      <TH ALIGN="right" VALIGN="center"><% mt('Voided') |h %></TH>
       <TD>
         <TABLE>
           <& /elements/tr-input-beginning_ending.html,
@@ -119,13 +114,8 @@ Examples:
 <BR>
 
 
-<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-  <TR>
-    <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1"><% mt('Customer search options') |h %></FONT>
-    </TH>
-  </TR>
+<FONT CLASS="fsinnerbox-title"><% emt('Customer search options') %></FONT>
+<TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-select-cust_tag.html,
              'custnum' => $opt{'custnum'},
@@ -149,13 +139,9 @@ Examples:
 % if ( $table eq 'cust_pay' ) { 
 
   <BR>
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-  <TR>
-    <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1"><% mt('Display options') |h %></FONT>
-    </TH>
-  </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-checkbox.html,
                 'label' => emt('Include tax names'),
