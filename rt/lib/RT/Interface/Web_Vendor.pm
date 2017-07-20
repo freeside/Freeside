@@ -164,6 +164,33 @@ sub ProcessTicketCustomers {
         push @results, $msg;
         warn "$me: linking requestor to custnum $custnum: $msg\n"
           if $Debug > 1;
+
+        ## check if FS contact email exists, if not create it.
+        if ( !qsearchs( {
+            'table'     => 'contact_email',
+            'hashref'   => { 'emailaddress' => $Requestor->{'values'}->{'emailaddress'}, },
+           } ) ) {
+             use FS::contact;
+
+             my $lname = $Requestor->{'values'}->{'realname'} ?
+                (split (/ /, $Requestor->{'values'}->{'realname'}))[-1] :
+                'Requestor';
+
+            my $fname = $Requestor->{'values'}->{'realname'} ?
+                (split (/ /, $Requestor->{'values'}->{'realname'}))[0] :
+                'RT';
+
+             my $contact = new FS::contact {
+                'custnum'       => $custnum,
+                'first'         => $fname,
+                'last'          => $lname,
+                'emailaddress'  => $Requestor->{'values'}->{'emailaddress'},
+                'comment'       => 'Auto created from RT requestor',
+             };
+             my $error = $contact->insert;
+             push @results, 'Created Freeside contact for requestor ' . $Requestor->{'values'}->{'emailaddress'}
+             unless $error;
+        }
       }
 
     }
