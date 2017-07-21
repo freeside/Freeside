@@ -62,6 +62,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'process_prepay'            => 'MyAccount/process_prepay',
   'realtime_collect'          => 'MyAccount/realtime_collect',
   'list_pkgs'                 => 'MyAccount/list_pkgs',     #add to ss (added?)
+  'pkg_info'                  => 'MyAccount/pkg_info',
   'list_svcs'                 => 'MyAccount/list_svcs',     #add to ss (added?)
   'list_svc_usage'            => 'MyAccount/list_svc_usage',   
   'svc_status_html'           => 'MyAccount/svc_status_html',
@@ -873,6 +874,46 @@ Customer package (see L<FS::cust_pkg>)
 =item overlimit
 
 Blank if the service is not over limit, or the date the service exceeded its usage limit (as a UNIX timestamp).
+
+=back
+
+=back
+
+=item pkg_info
+
+Returns package information for package.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=item pkgnum
+
+Package Number
+
+=back
+
+Returns a hash reference containing customer package information.  The hash reference contains the following keys:
+
+=pkg_label
+
+Name of this package
+
+=pkgpart
+
+Part package primary key
+
+=classnum
+
+Package class number
+
+=error
+
+error message if errror.
 
 =back
 
