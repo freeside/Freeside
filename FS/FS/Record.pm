@@ -6,6 +6,7 @@ use charnames ':full';
 use vars qw( $AUTOLOAD
              %virtual_fields_cache %fk_method_cache $fk_table_cache
              $money_char $lat_lower $lon_upper
+             $use_placeholders
            );
 use Carp qw(carp cluck croak confess);
 use Scalar::Util qw( blessed );
@@ -40,6 +41,8 @@ our @EXPORT_OK = qw(
 
 our $DEBUG = 0;
 our $me = '[FS::Record]';
+
+$use_placeholders = 0;
 
 our $nowarn_identical = 0;
 our $nowarn_classload = 0;
@@ -1348,21 +1351,44 @@ sub insert {
     grep { defined($self->getfield($_)) && $self->getfield($_) ne "" }
     real_fields($table)
   ;
-  my @values = map { _quote( $self->getfield($_), $table, $_) } @real_fields;
-  #eslaf
 
   my $statement = "INSERT INTO $table ";
-  if ( @real_fields ) {
-    $statement .=
-      "( ".
-        join( ', ', @real_fields ).
-      ") VALUES (".
-        join( ', ', @values ).
-       ")"
-    ;
-  } else {
+  my @bind_values = ();
+
+  if ( ! @real_fields ) {
+
     $statement .= 'DEFAULT VALUES';
+
+  } else {
+  
+    if ( $use_placeholders ) {
+
+      @bind_values = map $self->getfield($_), @real_fields;
+
+      $statement .=
+        "( ".
+          join( ', ', @real_fields ).
+        ") VALUES (".
+          join( ', ', map '?', @real_fields ). # @bind_values ).
+         ")"
+      ;
+
+    } else {
+
+      my @values = map { _quote( $self->getfield($_), $table, $_) } @real_fields;
+
+      $statement .=
+        "( ".
+          join( ', ', @real_fields ).
+        ") VALUES (".
+          join( ', ', @values ).
+         ")"
+      ;
+
+   }
+
   }
+
   warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
@@ -1373,7 +1399,7 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  $sth->execute or return $sth->errstr;
+  $sth->execute(@bind_values) or return $sth->errstr;
 
   # get inserted id from the database, if applicable & needed
   if ( $db_seq && ! $self->getfield($primary_key) ) {
