@@ -170,16 +170,25 @@ sub ProcessTicketCustomers {
             'table'     => 'contact_email',
             'hashref'   => { 'emailaddress' => $Requestor->{'values'}->{'emailaddress'}, },
            } ) ) {
+
+            ## get first and last name for contact.
+             my ($fname, $lname) = (
+                split (/\@/, substr($Requestor->{'values'}->{'emailaddress'}, 0, index($Requestor->{'values'}->{'emailaddress'}, ".")))
+             );
+
+             use Lingua::EN::NameParse;
+             my $name = Lingua::EN::NameParse->new();
+
+             my $error = $name->parse($Requestor->{'values'}->{'realname'})
+             unless !$Requestor->{'values'}->{'realname'};
+
+             my %name_comps = $name->components unless !$Requestor->{'values'}->{'realname'} || $error;
+
+             $fname = $name_comps{given_name_1} || $name_comps{initials_1} unless !$name_comps{given_name_1} && !$name_comps{initials_1};
+             $lname = $name_comps{surname_1} unless !$name_comps{surname_1};
+
+             ## create the contact.
              use FS::contact;
-
-             my $lname = $Requestor->{'values'}->{'realname'} ?
-                (split (/ /, $Requestor->{'values'}->{'realname'}))[-1] :
-                'Requestor';
-
-            my $fname = $Requestor->{'values'}->{'realname'} ?
-                (split (/ /, $Requestor->{'values'}->{'realname'}))[0] :
-                'RT';
-
              my $contact = new FS::contact {
                 'custnum'       => $custnum,
                 'first'         => $fname,
