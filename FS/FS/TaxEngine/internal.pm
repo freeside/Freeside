@@ -295,12 +295,21 @@ sub taxline {
       $this_tax_cents = int($this_tax_cents);
     }
 
+    my $locationnum;
+    if ( my $cust_pkg = $cust_bill_pkg->cust_pkg ) {
+      $locationnum = $cust_pkg->tax_locationnum;
+    } elsif ( $conf->exists('tax-ship_address') ) {
+      $locationnum = $cust_main->ship_locationnum;
+    } else {
+      $locationnum = $cust_main->bill_locationnum;
+    }
+
     my $location = FS::cust_bill_pkg_tax_location->new({
-        'taxnum'      => $tax_object->taxnum,
-        'taxtype'     => ref($tax_object),
-        'cents'       => $this_tax_cents,
-        'pkgnum'      => $cust_bill_pkg->pkgnum,
-        'locationnum' => $cust_bill_pkg->cust_pkg->tax_locationnum,
+        'taxnum'                => $tax_object->taxnum,
+        'taxtype'               => ref($tax_object),
+        'cents'                 => $this_tax_cents,
+        'pkgnum'                => $cust_bill_pkg->pkgnum,
+        'locationnum'           => $locationnum,
         'taxable_cust_bill_pkg' => $cust_bill_pkg,
     });
     push @tax_links, $location;
