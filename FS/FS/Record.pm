@@ -3342,11 +3342,7 @@ sub _quote {
            && driver_name eq 'Pg'
           )
   {
-    no strict 'subs';
-#    dbh->quote($value, { pg_type => PG_BYTEA() }); # doesn't work right
-    # Pg binary string quoting: convert each character to 3-digit octal prefixed with \\, 
-    # single-quote the whole mess, and put an "E" in front.
-    return ("E'" . join('', map { sprintf('\\\\%03o', ord($_)) } split(//, $value) ) . "'");
+    dbh->quote($value, { pg_type => PG_BYTEA() });
   } else {
     dbh->quote($value);
   }
