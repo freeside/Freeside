@@ -537,6 +537,41 @@ sub customer_info {
   $cust_main->API_getinfo;
 }
 
+=item customer_list_svcs OPTION => VALUE, ...
+
+Returns customer service information.  Takes a list of keys and values as
+parameters with the following keys: custnum, secret
+
+=cut
+
+sub customer_list_svcs {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
+    or return { 'error' => 'Unknown custnum' };
+
+  #$cust_main->API_list_svcs;
+
+  #false laziness w/ClientAPI/list_svcs
+
+  my @cust_svc = ();
+  #my @cust_pkg_usage = ();
+  #foreach my $cust_pkg ( $p->{'ncancelled'} 
+  #                       ? $cust_main->ncancelled_pkgs
+  #                       : $cust_main->unsuspended_pkgs ) {
+  foreach my $cust_pkg ( $cust_main->all_pkgs ) {
+    #next if $pkgnum && $cust_pkg->pkgnum != $pkgnum;
+    push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
+    #push @cust_pkg_usage, $cust_pkg->cust_pkg_usage;
+  }
+
+  return {
+    'cust_svc' => [ map $_->API_getinfo, @cust_svc ],
+  };
+
+}
+
 =item location_info
 
 Returns location specific information for the customer. Takes a list of keys
