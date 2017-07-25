@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+
+use strict;
+use Frontier::Client;
+use Data::Dumper;
+
+my $uri = new URI 'http://localhost:8008/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $result = $server->call(
+  'FS.API.customer_list_svcs',
+    'secret'  => 'sharingiscaring',
+    'custnum' => 181318,
+);
+
+#die $result->{'error'} if $result->{'error'};
+
+#print Dumper($result);
+
+foreach my $cust_svc ( @{ $result->{'cust_svc'} } ) {
+  #print $cust_svc->{mac_addr}."\n" if exists $cust_svc->{mac_addr};
+  print $cust_svc->{circuit_id}."\n" if exists $cust_svc->{circuit_id};
+}
+
+1;
