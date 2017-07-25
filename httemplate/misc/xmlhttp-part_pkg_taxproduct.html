@@ -1,4 +1,4 @@
-<% encode_json({ part_pkg_taxproduct => [ map { $_->taxproduct => $_->description } @part_pkg_taxproduct ] }) %>\
+<% encode_json({ part_pkg_taxproduct => \@part_pkg_taxproduct }) %>\
 <%init>
 
 #compliance solutions specific for now, since they asked for a multi-level
@@ -8,24 +8,33 @@
 
 my( %args ) = $cgi->multi_param('arg');
 
-my $hashref = { 'data_vendor' => $args{'data_vendor'} };
+my @qsearch = (
+  table   => 'part_pkg_taxproduct',
+  hashref => { 'data_vendor' => $args{'data_vendor'} },
+);
 
 my @part_pkg_taxproduct;
 if ( $args{category} =~ /^(\w)$/ ) {
+
   my $category = $1;
-  @part_pkg_taxproduct = qsearch({
-    table     => 'part_pkg_taxproduct',
-    hashref   => $hashref,
-    extra_sql => " AND taxproduct LIKE '$category%' AND length(taxproduct) = 4 ",
-  });
+
+  @part_pkg_taxproduct =
+    map { $_->taxproduct => $_->description }
+      qsearch({ @qsearch,
+        extra_sql => " AND taxproduct LIKE '$category%' ".
+                     " AND length(taxproduct) = 4 ",
+      });
 
 } elsif ( $args{product_code} =~ /^([A-Z]\d+)$/ ) {
+
   my $product_code = $1;
-  @part_pkg_taxproduct = qsearch({
-    table     => 'part_pkg_taxproduct',
-    hashref   => $hashref,
-    extra_sql => " AND taxproduct LIKE '$product_code%' AND length(taxproduct) > 4 ",
-  });
+
+  @part_pkg_taxproduct =
+    map { $_->taxproductnum. ' '. $_->taxproduct => $_->description }
+      qsearch({ @qsearch,
+        extra_sql => " AND taxproduct LIKE '$product_code%'".
+                     " AND length(taxproduct) > 4 ",
+      });
 
 } else {
   die 'neither category nor product_code specified';
