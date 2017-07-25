@@ -8,10 +8,12 @@
 
 $().ready(function() {
 
+
   $('#taxproduct_submit').on('click', function() {
+    var service_code = $('#service_code').val().split(' ');
     select_taxproduct(
-      $('#service_code').val(),
-      $('#service_code').val() + ' ' + $('#service_code :selected').text()
+      service_code[0],
+      service_code[1] + ' ' + $('#service_code :selected').text()
     );
   });
 });
