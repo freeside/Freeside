@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::UID qw( adminsuidsetup );
+use Spreadsheet::ParseXLSX;
+use FS::part_pkg_taxproduct;
+
+my $user = shift or die &usage;
+my $filename = shift or die &usage;
+
+my $dbh = adminsuidsetup($user);
+$FS::UID::AutoCommit = 0;
+$FS::UID::AutoCommit = 0;
+
+my $parser = Spreadsheet::ParseXLSX->new;
+my $workbook = $parser->parse($filename);
+
+###
+# Import Product Codes
+###
+
+my %category = (
+  'C' => 'COMPUTER',
+  'G' => 'GENERAL MERCHANDISE',
+  'N' => 'NON-TAXABLE AND EXEMPT',
+  'S' => 'SATELLITE',
+  'T' => 'TELECOM',
+  'V' => 'VOIP',
+  'W' => 'WIRELESS',
+);
+
+my $num_prodcode = 0;
+my %prodcode2desc = ();
+
+my $product_sheet = $workbook->worksheet('Product Codes');
+my( $prod_min, $prod_max ) = $product_sheet->row_range();
+
+foreach my $prod_rownum ( $prod_min+1 .. $prod_max ) {
+  my $product_code = $product_sheet->get_cell($prod_rownum, 0)->value;
+  my $product_desc = $product_sheet->get_cell($prod_rownum, 1)->value;
+
+  #print "$product_code: $product_desc\n";
+
+  my $part_pkg_taxproduct = new FS::part_pkg_taxproduct {
+    data_vendor => 'compliance_solutions',
+    taxproduct  => $product_code,
+    description => join(' : ', $category{ substr($product_code,0,1) },
+                               $product_desc,
+                       ),
+  };
+  my $error = $part_pkg_taxproduct->insert;
+  if ( $error ) {
+    $dbh->rollback;# or die dbh->errstr;
+    die $error;
+  }
+
+  $prodcode2desc{ $product_code } = $part_pkg_taxproduct->description;
+
+  $num_prodcode++;
+
+}
+
+###
+# Import Service Codes
+###
+
+my $num_servcode = 0;
+
+my $service_sheet = $workbook->worksheet('Service Codes');
+my( $serv_min, $serv_max ) = $service_sheet->row_range();
+
+foreach my $serv_rownum ( $serv_min+1 .. $serv_max ) {
+  my $product_code = $service_sheet->get_cell($serv_rownum, 0)->value;
+  my $service_code = $service_sheet->get_cell($serv_rownum, 1)->value;
+  my $service_desc = $service_sheet->get_cell($serv_rownum, 2)->value;
+
+  my $part_pkg_taxproduct = new FS::part_pkg_taxproduct {
+    data_vendor => 'compliance_solutions',
+    taxproduct  => $product_code. sprintf('%03d', $service_code),
+    description => join(' : ', $prodcode2desc{ $product_code },
+                               $service_desc,
+                       ),
+  };
+  my $error = $part_pkg_taxproduct->insert;
+  if ( $error ) {
+    $dbh->rollback;# or die dbh->errstr;
+    die $error;
+  }
+  $num_servcode++;
+
+}
+
+print "Imported $num_prodcode product codes and $num_servcode service codes\n";
+
+$dbh->commit;
+
+sub usage {
+  "Usage: \n  freeside-compliance_solutions-import username \"products and services.xlsx\"\n"
+}
+
+1;

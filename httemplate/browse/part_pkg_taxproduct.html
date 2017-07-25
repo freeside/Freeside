@@ -1,0 +1,48 @@
+<& elements/browse.html,
+  'name_singular'  => 'tax product',
+  #'html_form'      => include('.form', $category_code),
+  'query'          => {
+                        'table'     => 'part_pkg_taxproduct',
+                        'hashref'   => $hashref,
+                        'order_by'  => 'ORDER BY taxproduct',
+                      },
+  'count_query'    => $count_query,
+  'header'         => \@header,
+  'fields'         => \@fields,
+  'align'          => $align,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $hashref = {};
+
+my $taxproduct = '%';
+
+$hashref->{taxproduct} = { op => 'LIKE', value => $taxproduct };
+
+my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct ".
+                  "WHERE data_vendor = 'compliance_solutions' AND ".
+                  "taxproduct LIKE '$taxproduct'";
+
+my @fields = (
+  'data_vendor',
+  'taxproduct',
+  'description',
+#  'note'
+);
+
+my @header = (
+  'Vendor',
+  'Code',
+  'Description',
+#  '',
+);
+
+my $align = 'lll';
+
+
+
+</%init>
+
