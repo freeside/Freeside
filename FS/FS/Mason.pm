@@ -45,7 +45,7 @@ if ( -e $addl_handler_use_file ) {
 
   use strict;
   use vars qw( %session );
-  use CGI 3.39 qw(-private_tempfiles); #3.39 for cpan#37365
+  use CGI 4.08 qw(-private_tempfiles); #4.08 for multi_param
 
   #use CGI::Carp qw(fatalsToBrowser);
   use CGI::Cookie;

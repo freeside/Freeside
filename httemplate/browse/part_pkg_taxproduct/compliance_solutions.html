@@ -1,115 +1,153 @@
-<& /elements/header-popup.html, $title &>
-<& /browse/elements/browse.html,
-  'name_singular'  => 'tax product',
-  #'html_form'      => include('.form', $category_code),
-  'query'          => {
-                        'table'     => 'part_pkg_taxproduct',
-                        'hashref'   => $hashref,
-                        'order_by'  => 'ORDER BY taxproduct',
-                      },
-  'count_query'    => $count_query,
-  'header'         => \@header,
-  'fields'         => \@fields,
-  'align'          => $align,
-  'links'          => [],
-  'link_onclicks'  => \@link_onclicks,
-  'nohtmlheader'   => 1,
-  'disable_total'  => 1,
-&>
+<& /elements/header-popup.html, 'Select tax product' &>
+
+<& '/elements/xmlhttp.html',
+     'url'  => $fsurl.'misc/xmlhttp-part_pkg_taxproduct.html',
+     'subs' => [ 'get_part_pkg_taxproduct'] &>
+
 <script>
+
 $().ready(function() {
-  var new_taxproduct = $('#new_taxproduct');
-  var new_taxproduct2 = $('#new_taxproduct2');
-//  var new_category_desc = $('#new_category_desc');
-  var new_taxproduct_desc = $('#new_taxproduct_desc');
-  var new_taxproduct_submit = $('#new_taxproduct_submit');
 
-//  new_taxproduct.on('keyup', function() {
-//    var curr_value = this.value || '';
-//    if (curr_value.match(/^\d{7}$/)) {
-//      new_taxproduct_submit.prop('disabled', false);
-//    } else {
-//      new_taxproduct_submit.prop('disabled', true);
-//    }
-//  });
-
-  new_taxproduct_submit.on('click', function() {
-    select_taxproduct( -1,
-                       new_taxproduct.val() + new_taxproduct2.val()
-                          + ' '
-//                          + new_category_desc.val()
-//                          + ':'
-                          + new_taxproduct_desc.val()
-                     );
+  $('#taxproduct_submit').on('click', function() {
+    select_taxproduct(
+      $('#service_code').val(),
+      $('#service_code').val() + ' ' + $('#service_code :selected').text()
+    );
   });
 });
+
 // post the values back to the parent form
 function select_taxproduct(taxproductnum, description) {
   parent.document.getElementById('<% $id %>').value = taxproductnum;
   parent.document.getElementById('<% $id %>_description').value = description;
   parent.cClick();
 }
-  
+
+function jopt(what,value,text) {
+  var optionName = new Option(text, value, false, false);
+  what.append(optionName);
+}
+
+function category_changed(what) {
+  var category = what.options[what.selectedIndex].value;
+
+  if ( category.length == 0 ) {
+    $('#product_code').empty();
+    $('#service_code').empty();
+    $('#taxproduct_submit').prop('disabled', true);
+    return;
+  }
+
+  get_part_pkg_taxproduct(
+    'data_vendor', 'compliance_solutions', 'category', category,
+    function (data) {
+
+      $('#product_code').empty();
+      $('#service_code').empty();
+      $('#taxproduct_submit').prop('disabled', true);
+
+      var reply = JSON.parse(data);
+
+      jopt( $('#product_code'), '', 'Select product code' );
+
+      var part_pkg_taxproduct = reply.part_pkg_taxproduct;
+      for ( var s = 0; s < part_pkg_taxproduct.length; s=s+2 ) {
+        var product_code = part_pkg_taxproduct[s];
+        var description = part_pkg_taxproduct[s+1];
+        jopt( $('#product_code'), product_code, description );
+      }
+
+    },
+  );
+
+}
+
+function product_code_changed(what) {
+  var product_code = what.options[what.selectedIndex].value;
+
+  if ( product_code.length == 0 ) {
+    $('#service_code').empty();
+    $('#taxproduct_submit').prop('disabled', true);
+    return;
+  }
+
+  get_part_pkg_taxproduct(
+    'data_vendor', 'compliance_solutions', 'product_code', product_code,
+    function (data) {
+
+      $('#service_code').empty();
+      $('#taxproduct_submit').prop('disabled', true);
+
+      jopt( $('#service_code'), '', 'Select service code' );
+
+      var reply = JSON.parse(data);
+
+      var part_pkg_taxproduct = reply.part_pkg_taxproduct;
+      for ( var s = 0; s < part_pkg_taxproduct.length; s=s+2 ) {
+        var product_service_code = part_pkg_taxproduct[s];
+        var description = part_pkg_taxproduct[s+1];
+        jopt( $('#service_code'), product_service_code, description );
+      }
+
+    },
+  );
+
+}
+
+function service_code_changed(what) {
+  var service_code = what.options[what.selectedIndex].value;
+
+  if ( service_code.length > 0 ) {
+    $('#taxproduct_submit').prop('disabled', false);
+  } else {
+    $('#taxproduct_submit').prop('disabled', true);
+  }
+}
+
 </script>  
-<BR>
 
-Please contact <a href="http://csilongwood.com/" target="_blank">Compliance Solutions</a> for a full list of your product and service codes.<BR><BR>
-
-<FORM NAME="myform">
-  <FONT SIZE="+1"><B><% emt('Add tax product') %></B></FONT>
+<FORM>
   <% ntable('#cccccc', 2) %>
-    <& /elements/tr-input-text.html,
-      'label'     => emt('Product code'),
-      'field'     => 'new_taxproduct',
-      'id'        => 'new_taxproduct',
-      'size'      => 4,
-      'maxlength' => 4,
+
+    <& /elements/tr-select.html,
+         label   => emt('Category'),
+         field   => 'category',
+         id      => 'category',
+         options => [ '', qw( C G N S T V W )],
+         labels  => {
+                      ''  => 'Select category',
+                      'C' => 'COMPUTER',
+                      'G' => 'GENERAL MERCHANDISE',
+                      'N' => 'NON-TAXABLE AND EXEMPT',
+                      'S' => 'SATELLITE',
+                      'T' => 'TELECOM',
+                      'V' => 'VOIP',
+                      'W' => 'WIRELESS',
+                    },
+        onchange => 'category_changed(what);',
     &>
-    <& /elements/tr-input-text.html,
-      'label'     => emt('Service code'),
-      'field'     => 'new_taxproduct2',
-      'id'        => 'new_taxproduct2',
-      'size'      => 3,
-      'maxlength' => 3,
+
+    <& /elements/tr-select.html,
+        label    => emt('Product code'),
+        field    => 'product_code',
+        id       => 'product_code',
+        onchange => 'product_code_changed(what);',
     &>
-    <& /elements/tr-input-text.html,
-      'label'     => emt('Product name'),
-      'field'     => 'new_taxproduct_desc',
-      'id'        => 'new_taxproduct_desc',
+
+    <& /elements/tr-select.html,
+        label    => emt('Service code'),
+        field    => 'service_code',
+        id       => 'service_code',
+        onchange => 'service_code_changed(what);',
     &>
+
   </table>
-%#  <input type="button" id="new_taxproduct_submit" disabled=1 value="Add">
-  <input type="button" id="new_taxproduct_submit" value="Add">
+  <BR>
+
+  <input type="button" id="taxproduct_submit" value="Select Product" DISABLED>
 </FORM>
 
 <& /elements/footer-popup.html &>
-<%shared>
-# populate dropdown
-
-#taxproduct is 7 digits: 4-digit (well, alpha) productcode + 3-digit servicecode
-# Description is also two parts, corresponding to those codes, separated with
-# a :.
-
-my (@productcodes, @servicecodes);
-foreach my $row ( qsearch({
-  table   => 'part_pkg_taxproduct',
-  select  => 'DISTINCT substr(taxproduct, 1, 4) AS productcode ',
-  hashref => { data_vendor => 'compliance_solutions' },
-  }))
-{
-  push @productcodes, $row->{productcode};
-}
-
-foreach my $row ( qsearch({
-  table   => 'part_pkg_taxproduct',
-  select  => 'DISTINCT substr(taxproduct, 4, 3) AS servicecode ',
-  hashref => { data_vendor => 'compliance_solutions' },
-  }))
-{
-  push @servicecodes, $row->{servicecode};
-}
-
-</%shared>
 <%init>
 
 die "access denied"
@@ -118,46 +156,6 @@ die "access denied"
 $cgi->param('id') =~ /^\w+$/ or die "missing id parameter";
 my $id = $cgi->param('id');
 
-my $select_onclick = sub {
-  my $row = shift;
-  my $taxnum = $row->taxproductnum;
-  my $desc = $row->taxproduct . ' ' . $row->description;
-  "select_taxproduct('$taxnum', '$desc')";
-};
-
-my @menubar;
-my $title = 'Tax Products';
-
 my $hashref = { data_vendor => 'compliance_solutions' };
-
-#my ($category_code, $taxproduct);
-#if ( $cgi->param('category_code') =~ /^(\d+)$/ ) {
-#  $category_code = $1;
-#  $taxproduct = $category_code . '%';
-#} else {
-#  $taxproduct = '%';
-#}
-my $taxproduct = '%';
-
-$hashref->{taxproduct} = { op => 'LIKE', value => $taxproduct };
-
-my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct ".
-                  "WHERE data_vendor = 'compliance_solutions' AND ".
-                  "taxproduct LIKE '$taxproduct'";
-
-my @fields = (
-  'taxproduct',
-  'description',
-#  'note'
-);
-
-my @header = (
-  'Code',
-  'Description',
-#  '',
-);
-
-my $align = 'lll';
-my @link_onclicks = ( $select_onclick, $select_onclick );
 
 </%init>
