@@ -6,8 +6,6 @@
 
 #my $sub = $cgi->param('sub');
 
-warn join(', ', $cgi->param);
-
 my( %args ) = $cgi->multi_param('arg');
 
 my $hashref = { 'data_vendor' => $args{'data_vendor'} };
