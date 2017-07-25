@@ -1674,7 +1674,7 @@ their preferences.
 
 =cut
 
-Set($MaxInlineBody, 12000);
+Set($MaxInlineBody, 120000);
 
 =item C<$ShowTransactionImages>
 
