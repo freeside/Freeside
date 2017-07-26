@@ -3,12 +3,6 @@
 # run dbdef-create first!
 
 use strict;
-use DBI;
-use DBIx::DBSchema 0.26;
-use DBIx::DBSchema::Table;
-use DBIx::DBSchema::Column;
-use DBIx::DBSchema::ColGroup::Unique;
-use DBIx::DBSchema::ColGroup::Index;
 use FS::UID qw(adminsuidsetup driver_name);
 use FS::Record qw(dbdef);
 
@@ -20,8 +14,10 @@ my $schema = dbdef();
 #false laziness w/fs-setup
 my @tables = scalar(@ARGV)
                ? @ARGV
-               : grep { ! /^h_/ } $schema->tables;
+               #: grep { ! /^h_/ } $schema->tables;
+               : $schema->tables;
 foreach my $table ( @tables ) {
+
   my $tableobj = $schema->table($table)
     or die "unknown table $table (did you run dbdef-create?)\n";
 
@@ -30,21 +26,30 @@ foreach my $table ( @tables ) {
 
   my $col = $tableobj->column($primary_key);
 
+#warn $col->type;
+my $default = ref($col->default) ? ${ $col->default } : $col->default;
+#use Data::Dumper;
+#warn Dumper $col;
 
   next unless uc($col->type) eq 'SERIAL'
               || ( driver_name eq 'Pg'
-                     && defined($col->default)
-                     && $col->default =~ /^nextval\(/i
+                     && defined($default)
+                     && $default =~ /^nextval\(/i
                  )
               || ( driver_name eq 'mysql'
                      && defined($col->local)
                      && $col->local =~ /AUTO_INCREMENT/i
                  );
 
-  my $seq = "${table}_${primary_key}_seq";
+  my $suffix = '_seq';
+  if ( $table =~ /^(objectcustomfields|objectcustomfieldvalues)$/ ) {
+    $suffix = '_s';
+  }
+
+  my $seq = "${table}_${primary_key}$suffix";
   if ( driver_name eq 'Pg'
-       && defined($col->default) 
-       && $col->default =~ /^nextval\('"(public\.)?(\w+_seq)"'::text\)$/
+       && defined($default) 
+       && $default =~ /^nextval\('"(public\.)?(\w+_seq)"'::(text|regclass)\)$/
      ) {
     $seq = $2;
   }
