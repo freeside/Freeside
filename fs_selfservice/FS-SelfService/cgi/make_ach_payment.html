@@ -31,7 +31,7 @@ EOF
 <%=
   $OUT = '';
   if ($ach_read_only) {
-    if ($payby == 'CHEK') {
+    if ($payby eq 'CHEK') {
       $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="hidden" NAME="auto" VALUE="1"></TD></TR>';
     }
   } else {
