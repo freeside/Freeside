@@ -742,6 +742,11 @@ sub edit_info {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
+  my $conf = new FS::Conf;
+  if (($p->{payby} eq "CHEK" || $p->{payby} eq "DCHEK") && $conf->exists('selfservice-ACH_info_readonly')) {
+    return { 'error' => "You do not have authority to add a bank account" };
+  }
+
   my $new = new FS::cust_main { $cust_main->hash };
 
   $new->set( $_ => $p->{$_} )
@@ -768,8 +773,6 @@ sub edit_info {
   }
   # but if it hasn't been passed in at all, leave ship_location alone--
   # DON'T change it to match bill_location.
-
-  my $conf = new FS::Conf;
 
   my @invoicing_list;
   if ( exists $p->{'invoicing_list'} || exists $p->{'postal_invoicing'} ) {
@@ -987,11 +990,17 @@ sub validate_payment {
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
 
+    my $achonfile = 0;
     foreach my $cust_payby ($cust_main->cust_payby('CHEK','DCHK')) {
       if ( $cust_payby->paymask eq $payinfo ) {
         $payinfo = $cust_payby->payinfo;
+        $achonfile = 1;
         last;
       }
+    }
+
+    if ($conf->exists('selfservice-ACH_info_readonly') && !$achonfile) {
+      return { 'error' => "You are not allowed to change your payment information." };
     }
    
   } elsif ( $payby eq 'CARD' || $payby eq 'DCRD' ) {
