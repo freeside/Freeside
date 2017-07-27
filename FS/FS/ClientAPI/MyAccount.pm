@@ -1748,8 +1748,13 @@ sub delete_payby {
                            })
     or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
 
-  return { 'error' => $cust_payby->delete };
-
+  my $conf = new FS::Conf;
+  if (($cust_payby->payby eq "DCHK" || $cust_payby->payby eq "CHEK") && $conf->exists('selfservice-ACH_info_readonly')) {
+    return { 'error' => "Sorry you do not have permission to delete bank information." };
+  }
+  else {
+    return { 'error' => $cust_payby->delete };
+  }
 }
 
 sub cancel {
