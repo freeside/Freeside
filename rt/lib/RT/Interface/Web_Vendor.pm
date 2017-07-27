@@ -196,7 +196,7 @@ sub ProcessTicketCustomers {
                 'emailaddress'  => $Requestor->{'values'}->{'emailaddress'},
                 'comment'       => 'Auto created from RT requestor',
              };
-             my $error = $contact->insert;
+             $error = $contact->insert;
              push @results, 'Created Freeside contact for requestor ' . $Requestor->{'values'}->{'emailaddress'}
              unless $error;
         }
