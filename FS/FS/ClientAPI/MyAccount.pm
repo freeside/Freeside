@@ -1654,6 +1654,128 @@ sub payment_receipt {
          };
 }
 
+sub list_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  return {
+    'payby' => [ map {
+                       my $cust_payby = $_;
+                       +{
+                          map { $_ => $cust_payby->$_ }
+                            qw( custpaybynum weight payby paymask paydate
+                                payname paystate paytype
+                              )
+                        };
+                     }
+                   $cust_main->cust_payby
+               ],
+  };
+}
+
+sub insert_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #XXX payinfo1 + payinfo2 for CHEK?
+  #or take the opportunity to use separate, more well- named fields?
+  # my $payinfo;
+  # $p->{'payinfo1'} =~ /^([\dx]+)$/
+  #   or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+  # my $payinfo1 = $1;
+  #  $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
+  #   or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+  # my $payinfo2 = $1;
+  # $payinfo = $payinfo1. '@'. $payinfo2;
+
+  my $cust_payby = new FS::cust_payby {
+    'custnum' => $custnum,
+    map { $_ => $p->{$_} } qw( weight payby payinfo paycvv paydate payname
+                               paystate paytype payip 
+                             ),
+  };
+
+  my $error = $cust_payby->insert;
+  if ( $error ) {
+    return { 'error' => $error };
+  } else {
+    return { 'custpaybynum' => $cust_payby->custpaybynum };
+  }
+  
+}
+
+sub update_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_payby = qsearchs('cust_payby', {
+                              'custnum'      => $custnum,
+                              'custpaybynum' => $p->{'custpaybynum'},
+                           })
+    or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  foreach my $field (
+    qw( weight payby payinfo paycvv paydate payname paystate paytype payip )
+  ) {
+    next unless exists($p->{$field});
+    $cust_payby->set($field,$p->{$field});
+  }
+
+  my $error = $cust_payby->replace;
+  if ( $error ) {
+    return { 'error' => $error };
+  } else {
+    return { 'custpaybynum' => $cust_payby->custpaybynum };
+  }
+  
+}
+
+sub verify_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_payby = qsearchs('cust_payby', {
+                              'custnum'      => $custnum,
+                              'custpaybynum' => $p->{'custpaybynum'},
+                           })
+    or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  return { 'error' => $cust_payby->verify };
+  
+}
+
+sub delete_payby {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_payby = qsearchs('cust_payby', {
+                              'custnum'      => $custnum,
+                              'custpaybynum' => $p->{'custpaybynum'},
+                           })
+    or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  my $conf = new FS::Conf;
+  if (($cust_payby->payby eq "DCHK" || $cust_payby->payby eq "CHEK") && $conf->exists('selfservice-ACH_info_readonly')) {
+    return { 'error' => "Sorry you do not have permission to delete bank information." };
+  }
+  else {
+    return { 'error' => $cust_payby->delete };
+  }
+}
+
 sub cancel {
   my $p = shift;
   my $session = _cache->get($p->{'session_id'})
