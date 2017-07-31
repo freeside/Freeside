@@ -13,8 +13,12 @@
 <%init>
 use Class::Load 'load_class';
 
+use FS::Conf;
+my $conf = new FS::Conf;
+
 my $enabled = $FS::TicketSystem::system eq 'RT_Internal';
 $enabled = 0 if $FS::CurrentUser::CurrentUser->option('hide_notify_tickets');
+$enabled = 0 if $conf->exists('rt-hide_activity_notification');
 my $UnrepliedTickets;
 if ($enabled) {
   my $class = 'RT::Search::UnrepliedTickets';
