@@ -53,7 +53,7 @@
             >
               <OPTION VALUE="">Disabled
 %             if ( $value || $self_base_url ) {
-                <OPTION VALUE="E" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
+                <OPTION VALUE="<% $value eq 'Y' ? 'Y' : 'E' %>" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
 %               if ( $value eq 'Y' && $self_base_url ) {
                   <OPTION VALUE="R">Re-email
                   <OPTION VALUE="P"><% $pwd_change_label %>
