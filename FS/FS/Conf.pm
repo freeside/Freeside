@@ -5340,13 +5340,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'rt-hide_activity_notification',
-    'section'     => 'ticketing',
-    'description' => 'Hide the notification box when there is activity on tickets',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'pkg-balances',
     'section'     => 'packages',
     'description' => 'Enable per-package balances.',
