@@ -14,7 +14,7 @@ sub disable_quotation {
             "UPDATE quotation SET disabled = 'Y' WHERE _date < ?"
         ) or die dbh->errstr;
         $sth->execute( time - ( $days * 86400 ) ) or die $sth->errstr;
-        dbh->commit or die dbh->errstr if $FS::UID::AutoCommit;
+        dbh->commit or die dbh->errstr;
     }
 }
 

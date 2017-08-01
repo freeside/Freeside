@@ -1647,7 +1647,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'quotation_disable_after_days',
-    'section'     => 'quotations',
+    'section'     => '',
     'description' => 'The number of days, if set, after which a non-converted quotation will be automatically disabled.',
     'type'        => 'text'
   },
