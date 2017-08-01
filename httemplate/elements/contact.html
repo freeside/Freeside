@@ -53,7 +53,7 @@
             >
               <OPTION VALUE="">Disabled
 %             if ( $value || $self_base_url ) {
-                <OPTION VALUE="Y" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
+                <OPTION VALUE="E" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
 %               if ( $value eq 'Y' && $self_base_url ) {
                   <OPTION VALUE="R">Re-email
                   <OPTION VALUE="P"><% $pwd_change_label %>
@@ -70,7 +70,7 @@
                   &>
             <SCRIPT TYPE="text/javascript">
                     document.getElementById("<%$id%>_<%$field%>").onchange = function() {
-                      if (this.value == "P") { changepw<%$id%>_toggle(true); }
+                      if (this.value == "P" || this.value == "E") { changepw<%$id%>_toggle(true); }
                       return false
                     }
             </SCRIPT>
