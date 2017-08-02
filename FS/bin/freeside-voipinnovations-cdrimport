@@ -4,7 +4,8 @@ use strict;
 use Getopt::Std;
 use Date::Format;
 use File::Temp 'tempdir';
-use Net::FTP;
+use Net::SSLGlue::FTP; #at least until the Deb 9 transition is done, then
+                       # regular Net::FTP has SSL support
 use FS::UID qw(adminsuidsetup datasrc dbh);
 use FS::cdr;
 use FS::cdr_batch;
@@ -42,8 +43,11 @@ my $hostname = 'customercdr.voipinnovations.com';
 my $ftp = Net::FTP->new($hostname, Debug => $opt_d)
   or die "Can't connect to $hostname: $@\n";
 
+$ftp->starttls()
+  or die "TLS initialization failed: ". $ftp->message. "\n";
+
 $ftp->login($login, $password)
-  or die "Login failed: ".$ftp->message."\n";
+  or die "Login failed: ". $ftp->message. "\n";
 
 ###
 # get the file list
