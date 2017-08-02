@@ -152,7 +152,6 @@ sub skin_info {
 
                  personal.php Profile
                  personal.php Personal Information
-                 payment_accounts.php Payment Accounts
                  password.php Change Password
 
                  payment.php Payments
