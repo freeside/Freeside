@@ -363,7 +363,7 @@ tie my %rights, 'Tie::IxHash',
   #]
 
   #'RT preference rights' => [
-    { rightname=>'not an RT' },
+    { rightname=>'RT activity notification' },
   #]
 
   ],

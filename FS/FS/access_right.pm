@@ -252,6 +252,7 @@ sub _upgrade_data { # class method
     'Unvoid credit' => 'Unvoid credit',
     'Add on-the-fly void credit reason' => 'Add on-the-fly void credit reason',
     '_ALL' => 'Employee preference telephony integration',
+    '_ALL' => 'RT activity notification',
     'Add on-the-fly credit reason' => 'Add on-the-fly refund reason',
     'Resend invoices' => 'Print and mail invoices',
     'List customers' => 'Customers: Customer churn report',
