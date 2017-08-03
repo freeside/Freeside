@@ -137,7 +137,7 @@ sub import_cdrs {
       # page's IDs or something.
       my $uniqueid = md5_hex(join(',',@$row));
       if ( FS::cdr->row_exists('uniqueid = ?', $uniqueid) ) {
-        warn "skipped duplicate row in page $page\n" if $DEBUG > 1;
+        warn "skipped duplicate row in page $page\n" if $DEBUG;
         next CDR;
       }
 
@@ -186,7 +186,7 @@ local $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
     ]
   );
   warn "$me $method\n" if $DEBUG;
-  warn $request->as_string."\n" if $DEBUG > 1;
+  warn $request->as_string."\n" if $DEBUG;
 
   my $ua = LWP::UserAgent->new;
   my $response = $ua->request($request);
