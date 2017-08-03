@@ -723,7 +723,7 @@ sub edit_info {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $conf = new FS::Conf;
-  if (($p->{payby} eq "CHEK" || $p->{payby} eq "DCHEK") && $conf->exists('selfservice-ACH_info_readonly')) {
+  if (($p->{payby} eq "CHEK" || $p->{payby} eq "DCHK") && $conf->exists('selfservice-ACH_info_readonly')) {
     return { 'error' => "You do not have authority to add a bank account" };
   }
 
@@ -1016,13 +1016,10 @@ sub validate_payment {
       if $cust_main->paymask eq $payinfo;
 
     my $achonfile = 0;
-    foreach my $cust_payby ($cust_main->cust_payby('CHEK','DCHK')) {
-      if ( $cust_payby->paymask eq $payinfo ) {
-        $payinfo = $cust_payby->payinfo;
+      if ( $cust_main->paymask eq $payinfo ) {
+        $payinfo = $cust_main->payinfo;
         $achonfile = 1;
-        last;
       }
-    }
 
     if ($conf->exists('selfservice-ACH_info_readonly') && !$achonfile) {
       return { 'error' => "You are not allowed to change your payment information." };
