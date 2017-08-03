@@ -248,6 +248,17 @@ sub cust_statuscolor {
     : '000000';
 }
 
+=item agent_name
+
+=cut
+
+sub agent_name {
+  my $self = shift;
+  $self->cust_linked
+    ? $self->cust_main->agent_name
+    : $self->cust_unlinked_msg;
+}
+
 =item prospect_sql
 
 =item active_sql
