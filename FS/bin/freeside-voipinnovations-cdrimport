@@ -55,7 +55,7 @@ $ftp->login($login, $password)
 
 warn "Retrieving directory listing\n" if $opt_v;
 
-$ftp->cwd('/');
+#$ftp->cwd('/');
 my @dirs = $ftp->ls();
 warn scalar(@dirs)." directories found.\n" if $opt_v;
 # apply date range
