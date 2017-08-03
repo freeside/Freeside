@@ -296,8 +296,13 @@ if ( $cgi->param('error') ) {
 
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
+
+  my @agentnums = $curuser->agentnums;
+  $cust_main->agentnum( $agentnums[0] )
+    if scalar(@agentnums) == 1;
   $cust_main->agentnum( $conf->config('default_agentnum') )
     if $conf->exists('default_agentnum');
+
   $cust_main->referral_custnum( $cgi->param('referral_custnum') );
   $cust_main->set('postal_invoice', 'Y')
     unless $conf->exists('disablepostalinvoicedefault');
