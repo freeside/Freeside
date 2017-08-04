@@ -5,6 +5,7 @@ use vars qw( $conf $DEBUG $me );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Data::Dumper;
 use Business::CreditCard 0.35;
+use Business::OnlinePayment;
 use FS::UID qw( dbh myconnect );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
