@@ -28,7 +28,7 @@ my $cust_location = qsearchs({
 });
 die "unknown locationnum $locationnum" unless $cust_location;
 
-$cust_location->set('censustract', $cgi->param('censustract'));
+$cust_location->set('censustract', $cgi->param('enter_censustract'));
 my $error = $cust_location->replace;
 
 </%init>
