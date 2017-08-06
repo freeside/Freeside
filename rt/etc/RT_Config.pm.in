@@ -623,6 +623,23 @@ Precedence header, it will be preserved.
 
 Set($DefaultMailPrecedence, "bulk");
 
+=item C<$OverrideMailPrecedence>
+
+C<$OverrideMailPrecedence> is used for overwriting the C<$DefaultMailPrecedence>
+value for a queue.
+
+The option is a hash reference of queue id/name to precedence. If you set the
+precedence to C<undef>, a Precedence header will not be added to the mail.
+
+This option only works if C<$DefaultMailPrecedence> is enabled.
+
+=cut
+
+Set($OverrideMailPrecedence, {
+#    'Queue 1' => "list",
+#    'Queue 2' => undef,
+});
+
 =item C<$DefaultErrorMailPrecedence>
 
 C<$DefaultErrorMailPrecedence> is used to control the default
@@ -1135,7 +1152,7 @@ This can also be configured via the web UI.
 
 =cut
 
-Set($LogoURL, RT->Config->Get('WebImagesURL') . "bpslogo.png");
+Set($LogoURL, RT->Config->Get('WebImagesURL') . "request-tracker-logo.png");
 
 =item C<$LogoLinkURL>
 
@@ -1152,7 +1169,7 @@ will be passed through C<loc> for localization.
 
 =cut
 
-Set($LogoAltText, "Best Practical Solutions, LLC corporate logo");
+Set($LogoAltText, "Request Tracker logo");
 
 =item C<$WebNoAuthRegex>
 
@@ -1252,10 +1269,23 @@ search results on the front page.
 
 Set($DefaultSummaryRows, 10);
 
+=item C<@RefreshIntervals>
+
+This setting defines the possible homepage and search result refresh
+options. Each value is a number of seconds. You should not include a value
+of C<0>, as that is always provided as an option.
+
+See also L</HomePageRefreshInterval> and L</SearchResultsRefreshInterval>.
+
+=cut
+
+Set(@RefreshIntervals, qw(120 300 600 1200 3600 7200));
+
 =item C<$HomePageRefreshInterval>
 
 C<$HomePageRefreshInterval> is default number of seconds to refresh
-the RT home page. Choose from [0, 120, 300, 600, 1200, 3600, 7200].
+the RT home page. Choose from any value in L</@RefreshIntervals>,
+or the default of C<0> for no automatic refresh.
 
 =cut
 
@@ -1313,9 +1343,9 @@ Set($TicketsItemMapSize, 1000);
 
 =item C<$SearchResultsRefreshInterval>
 
-C<$SearchResultsRefreshInterval> is default number of seconds to
-refresh search results in RT. Choose from [0, 120, 300, 600, 1200,
-3600, 7200].
+C<$SearchResultsRefreshInterval> is default number of seconds to refresh
+search results in RT. Choose from any value in L</@RefreshIntervals>, or
+the default of C<0> for no automatic refresh.
 
 =cut
 
@@ -1687,6 +1717,15 @@ you will have no access to Articles.
 =cut
 
 Set($HideArticleSearchOnReplyCreate, 0);
+
+=item C<$LinkArticlesOnInclude>
+
+Set this to 0 to suppress the default behavior of automatically linking
+to Articles when they are included in a message.
+
+=cut
+
+Set($LinkArticlesOnInclude, 1);
 
 =back
 
@@ -2134,7 +2173,7 @@ higher numbers denoting greater effort.
 
 =cut
 
-Set($BcryptCost, 11);
+Set($BcryptCost, 12);
 
 =back
 

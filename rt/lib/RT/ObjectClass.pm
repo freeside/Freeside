@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -229,6 +229,18 @@ sub FindDependencies {
     $deps->Add( out => $obj );
 }
 
+sub Serialize {
+    my $self = shift;
+    my %args = (@_);
+    my %store = $self->SUPER::Serialize(@_);
+
+    if ($store{ObjectId}) {
+        my $obj = $self->ObjectType->new( RT->SystemUser );
+        $obj->Load( $store{ObjectId} );
+        $store{ObjectId} = \($obj->UID);
+    }
+    return %store;
+}
 
 RT::Base->_ImportOverlays();
 
