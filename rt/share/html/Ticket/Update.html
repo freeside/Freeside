@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -325,6 +325,9 @@ if ( $ARGS{'SubmitTicket'} ) {
         $ARGS{ $field } = join ', ', map $_->format, grep defined, @emails;
     }
 }
+
+# $skip_update is provided below by reference to allow a final check to stop
+# the update and print a message for the user to fix something.
 my $skip_update = 0;
 $m->callback( CallbackName => 'BeforeUpdate', ARGSRef => \%ARGS, skip_update => \$skip_update,
               checks_failure => $checks_failure, results => \@results, TicketObj => $TicketObj );

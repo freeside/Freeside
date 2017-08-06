@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -183,6 +183,14 @@ sub Probe {
             \undef,
             \$buf, \$err
         ) };
+
+        if ($err && $err =~ /Invalid command/) {
+            ($buf, $err) = ('', '');
+            safe_run_child { run3( [$bin, "list", "-commands"],
+                \undef,
+                \$buf, \$err
+            ) };
+        }
 
         if ($? or $err) {
             $RT::Logger->warning(

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -1436,7 +1436,7 @@ sub IsCompCSRFWhitelisted {
     # golden.  This acts on the presumption that external forms may
     # hardcode a username and password -- if a malicious attacker knew
     # both already, CSRF is the least of your problems.
-    my $AllowLoginCSRF = not RT->Config->Get('RestrictReferrerLogin');
+    my $AllowLoginCSRF = not RT->Config->Get('RestrictLoginReferrer');
     if ($AllowLoginCSRF and defined($args{user}) and defined($args{pass})) {
         my $user_obj = RT::CurrentUser->new();
         $user_obj->Load($args{user});
@@ -1653,7 +1653,7 @@ sub MaybeShowInterstitialCSRFPage {
     my $token = StoreRequestToken($ARGS);
     $HTML::Mason::Commands::m->comp(
         '/Elements/CSRF',
-        OriginalURL => RT->Config->Get('WebPath') . $HTML::Mason::Commands::r->path_info,
+        OriginalURL => RT->Config->Get('WebBaseURL') . RT->Config->Get('WebPath') . $HTML::Mason::Commands::r->path_info,
         Reason => HTML::Mason::Commands::loc( $msg, @loc ),
         Token => $token,
     );
@@ -3099,6 +3099,9 @@ sub ProcessObjectCustomFieldUpdates {
             $Object = $class->new( $session{'CurrentUser'} )
                 unless $Object && ref $Object eq $class;
 
+            # skip if we have no object to update
+            next unless $id || $Object->id;
+
             $Object->Load($id) unless ( $Object->id || 0 ) == $id;
             unless ( $Object->id ) {
                 $RT::Logger->warning("Couldn't load object $class #$id");
@@ -3150,14 +3153,21 @@ sub ProcessObjectCustomFieldUpdates {
 
 sub _ParseObjectCustomFieldArgs {
     my $ARGSRef = shift || {};
+    my %args = (
+        IncludeBulkUpdate => 0,
+        @_,
+    );
     my %custom_fields_to_mod;
 
     foreach my $arg ( keys %$ARGSRef ) {
 
         # format: Object-<object class>-<object id>-CustomField[:<grouping>]-<CF id>-<commands>
-        # or: Bulk-<Add or Delete>-CustomField[:<grouping>]-<CF id>-<commands>
         # you can use GetCustomFieldInputName to generate the complement input name
-        next unless $arg =~ /^(?:Bulk-(?:Add|Delete)|Object-([\w:]+)-(\d*))-CustomField(?::(\w+))?-(\d+)-(.*)$/;
+        # or if IncludeBulkUpdate: Bulk-<Add or Delete>-CustomField[:<grouping>]-<CF id>-<commands>
+        next unless $arg =~ /^Object-([\w:]+)-(\d*)-CustomField(?::(\w+))?-(\d+)-(.*)$/
+                 || ($args{IncludeBulkUpdate} && $arg =~ /^Bulk-(?:Add|Delete)-()()CustomField(?::(\w+))?-(\d+)-(.*)$/);
+        # need two empty groups because we must consume $1 and $2 with empty
+        # class and ID
 
         next if $1 eq 'RT::Transaction';# don't try to update transaction fields
 

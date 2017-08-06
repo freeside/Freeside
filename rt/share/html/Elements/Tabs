@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -497,7 +497,9 @@ my $build_main_nav = sub {
         if ( $status ) {
             push @dashboards, $dash;
         } else {
-            $RT::Logger->warning( "Failed to load dashboard $id: $msg" );
+            $RT::Logger->debug( "Failed to load dashboard $id: $msg, removing from menu" );
+            $home->RemoveDashboardMenuItem( DashboardId => $id, CurrentUser => $session{CurrentUser}->UserObj );
+            @{$session{'dashboards_in_menu'}} = grep { $_ != $id } @{$session{'dashboards_in_menu'}};
         }
     }
 
@@ -768,6 +770,9 @@ my $build_main_nav = sub {
         }
     }
 
+    # Scope here so we can share in the Privileged callback
+    my $args      = '';
+    my $has_query = '';
     if (
         (
                $request_path =~ m{^/(?:Ticket|Search)/}
@@ -778,8 +783,6 @@ my $build_main_nav = sub {
       )
     {
         my $search = Menu()->child('search')->child('tickets');
-        my $args      = '';
-        my $has_query = '';
         my $current_search = $session{"CurrentSearchHash"} || {};
         my $search_id = $DECODED_ARGS->{'SavedSearchLoad'} || $DECODED_ARGS->{'SavedSearchId'} || $current_search->{'SearchId'} || '';
         my $chart_id = $DECODED_ARGS->{'SavedChartSearchId'} || $current_search->{SavedChartSearchId};
@@ -955,7 +958,7 @@ my $build_main_nav = sub {
         PageMenu()->child( edit => title => loc('Edit'), path => '/Prefs/MyRT.html' );
     }
 
-    $m->callback( CallbackName => 'Privileged', Path => $request_path );
+    $m->callback( CallbackName => 'Privileged', Path => $request_path, Search_Args => $args, Has_Query => $has_query );
 };
 
 my $build_selfservice_nav = sub {
