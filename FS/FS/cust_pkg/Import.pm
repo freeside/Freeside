@@ -286,9 +286,6 @@ sub batch_import {
     };
   }
 
-  #probably can delete below - moved to line 292
-  #my $formatfields = _formatfields();
-
   my @formats = split /-/, $format;
   foreach my $f (@formats){
 
