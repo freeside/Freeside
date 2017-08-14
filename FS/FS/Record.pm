@@ -2429,7 +2429,7 @@ sub ut_moneyn {
 =item ut_text COLUMN
 
 Check/untaint text.  Alphanumerics, spaces, and the following punctuation
-symbols are currently permitted: ! @ # $ % & ( ) - + ; : ' " , . ? / = [ ] < >
+symbols are currently permitted: ! @ # $ % & ( ) - + ; : ' " , . ? / = [ ] < > ~
 May not be null.  If there is an error, returns the error, otherwise returns
 false.
 
@@ -2443,7 +2443,7 @@ sub ut_text {
   # \p{Word} = alphanumerics, marks (diacritics), and connectors
   # see perldoc perluniprops
   $self->getfield($field)
-    =~ /^([\p{Word} \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>$money_char]+)$/
+    =~ /^([\p{Word} \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>\~$money_char]+)$/
       or return gettext('illegal_or_empty_text'). " $field: ".
                  $self->getfield($field);
   $self->setfield($field,$1);
