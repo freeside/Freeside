@@ -1,0 +1,39 @@
+<& /elements/header-popup.html, {
+     'title'         => 'Database size details',
+   }
+&>
+
+<& /search/elements/search.html, 
+     'name_singular' => 'table',
+     'header'        => [ 'Table', 'Size' ],
+     'query'         => $query,
+     'count_query'   => $count_query,
+     'nohtmlheader'  => 1,
+&>
+
+<& /elements/footer-popup.html &>
+<%init>
+
+my $query = q{
+
+  SELECT table_name, pg_size_pretty(total_bytes) AS total 
+    FROM (
+    SELECT * FROM (
+        SELECT relname AS TABLE_NAME,
+               pg_total_relation_size(c.oid) AS total_bytes
+            FROM pg_class c
+            LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE relkind = 'r'
+              AND nspname = 'public'
+    ) a
+  ) a order by total_bytes desc
+};
+
+my $count_query = q{
+  SELECT count(*) FROM pg_class c
+    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE relkind = 'r'
+              AND nspname = 'public'
+};
+
+</%init>
