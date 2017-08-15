@@ -40,7 +40,7 @@ my $tempdir = tempdir( CLEANUP => !$opt_v );
 my $format = 'voip_innovations';
 my $hostname = 'customercdr.voipinnovations.com';
 
-my $ftp = Net::FTP->new($hostname, Debug => $opt_d)
+my $ftp = Net::FTP->new($hostname, Passive => 1, Debug => $opt_d)
   or die "Can't connect to $hostname: $@\n";
 
 $ftp->starttls()
