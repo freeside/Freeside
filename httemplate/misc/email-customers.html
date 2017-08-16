@@ -58,7 +58,7 @@ from/subject/body cgi params
     <FONT SIZE="+2">Preview notice</FONT>
     <& /elements/progress-init.html,
                  'OneTrueForm',
-                 [ qw( search table msgnum to_contact_classnum ) ],
+                 [ qw( search table msgnum to_contact_classnum emailtovoice_contact custnum ) ],
                  $process_url,
                  $pdest,
     &>
@@ -69,6 +69,8 @@ from/subject/body cgi params
 %   # of the template, but should be sticky during draft editing
     <INPUT TYPE="hidden" NAME="from_name" VALUE="<% scalar($cgi->param('from_name')) |h %>">
     <INPUT TYPE="hidden" NAME="from_addr" VALUE="<% scalar($cgi->param('from_addr')) |h %>">
+    <INPUT TYPE="hidden" NAME="emailtovoice_contact" VALUE="<% scalar($cgi->param('emailtovoice_contact')) |h %>">
+    <INPUT TYPE="hidden" NAME="custnum" VALUE="<% scalar($cgi->param('custnum')) |h %>">
 
 %   if ( !$msg_template->disabled ) {
       <& /elements/tr-td-label.html, 'label' => 'Template:' &>
@@ -164,7 +166,11 @@ Template:
     <BR>
 % }
 % # select destination contact classes
-Send to contacts:
+<TABLE CELLSPACING=0 id="send_to_contacts_table">
+<TR>
+ <TD>Send to contacts:</TD>
+ <TD>
+   <div id="contactclassesdiv">
   <& /elements/checkboxes.html,
     'style'               => 'display: inline; vertical-align: top',
     'disable_links'       => 1,
@@ -175,6 +181,24 @@ Send to contacts:
       $name eq 'invoice' #others default to unchecked
     },
   &>
+   </div>
+% if ($send_to_domain) {
+   <div>
+     <INPUT TYPE="checkbox" NAME="emailtovoice"  ID="emailtovoice" VALUE="ON" onclick="toggleDiv(this)">Email to voice
+   </div>
+   <div id="emailtovoicediv" style="display:none";>
+
+      <& /elements/select-cust_phone.html,
+               'cust_num'     => $cgi->param('custnum'),
+               'field_name'   => 'emailtovoice_contact',
+               'format'       => 'xxxxxxxxxx',
+               'phone_types'  => [ 'daytime', 'night', 'fax', 'mobile' ],
+      &>@<% $send_to_domain |h %>
+   </div>
+% }
+ </TD>
+</TR>
+</TABLE>
 <BR>
 % # if sending a one-off message, show a form to edit it
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%" id="table_no_template">
@@ -213,11 +237,24 @@ Send to contacts:
 
   </TABLE>
 
+  <INPUT TYPE="hidden" NAME="custnum" VALUE="<% scalar($cgi->param('custnum')) |h %>">
   <INPUT TYPE="submit" NAME="preview" VALUE="Preview notice">
 
 % } #end not action or alternate form
 
 </FORM>
+
+<SCRIPT TYPE="text/javascript">
+function toggleDiv(obj) {
+  var box_contactclasses = document.getElementById('contactclassesdiv');
+  var box_emailtovoice = document.getElementById('emailtovoicediv');
+
+  box_emailtovoice.style.display = (box_emailtovoice.style.display == 'none') ? 'block' : 'none';
+  document.getElementById('emailtovoice_contact').options[0].selected=true;
+
+  box_contactclasses.style.display = (box_contactclasses.style.display == 'none') ? 'block' : 'none';
+}
+</SCRIPT>
 
 <& /elements/footer.html &>
 
@@ -227,11 +264,15 @@ my %opt = @_;
 
 $opt{'acl'} ||= 'Bulk send customer notices';
 
+my $email_to;
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right($opt{'acl'});
 
 my $conf = FS::Conf->new;
 my @no_search_fields = qw( table from subject html_body text_body popup url );
+
+my $send_to_domain = $conf->config('send-to-domain');
 
 my $form_action = $opt{'form_action'} || 'email-customers.html';
 my $process_url = $opt{'process_url'} || 'process/email-customers.html';
@@ -341,12 +382,14 @@ if ( !$cgi->param('preview') ) {
   # unless creating the msg_template failed, we now have one, so construct a
   # preview message from the first customer/whatever in the search results
 
+  my $cust;
+
   if ( $msg_template ) { 
     $sql_query->{'extra_sql'} .= ' LIMIT 1';
     $sql_query->{'select'} = "$table.*";
     $sql_query->{'order_by'} = '';
     my $object = qsearchs($sql_query);
-    my $cust = $object->cust_main;
+    $cust = $object->cust_main;
     my %msgopts = (
       'cust_main' => $cust,
       'object' => $object,
@@ -367,14 +410,22 @@ if ( !$cgi->param('preview') ) {
   # contact_class_X params
   #we can't switch to multi_param until we're done supporting deb 7
   local($CGI::LIST_CONTEXT_WARN) = 0;
-  foreach my $param ( $cgi->param ) {
-    if ( $param =~ /^contact_class_(\w+)$/ ) {
-      push @contact_classnum, $1;
-      if ( $1 eq 'invoice' ) {
-        push @contact_classname, 'Invoice recipients';
-      } else {
-        my $contact_class = FS::contact_class->by_key($1);
-        push @contact_classname, encode_entities($contact_class->classname);
+
+  if ($cgi->param('emailtovoice_contact')) {
+    $email_to = $cgi->param('emailtovoice_contact') . '@' . $send_to_domain;
+    push @contact_classnum, 'emailtovoice';
+    push @contact_classname, $email_to;
+  }
+  else {
+    foreach my $param ( $cgi->param ) {
+      if ( $param =~ /^contact_class_(\w+)$/ ) {
+        push @contact_classnum, $1;
+        if ( $1 eq 'invoice' ) {
+          push @contact_classname, 'Invoice recipients';
+        } else {
+          my $contact_class = FS::contact_class->by_key($1);
+          push @contact_classname, encode_entities($contact_class->classname);
+        }
       }
     }
   }
@@ -383,10 +434,12 @@ if ( !$cgi->param('preview') ) {
 my @contact_checkboxes = (
   [ 'invoice' => { label => 'Invoice recipients' } ]
 );
+
 foreach my $class (qsearch('contact_class', { disabled => '' })) {
   push @contact_checkboxes, [
     $class->classnum,
     { label => $class->classname }
   ];
 }
+
 </%init>
