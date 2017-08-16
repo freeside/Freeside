@@ -39,6 +39,26 @@ from FS::Record.  The following fields are currently supported:
 
 primary key
 
+=item providernum
+
+Provider (see L<FS::cable_provider>)
+
+=item ordernum
+
+Provider order number
+
+=item modelnum
+
+Cable device model (see L<FS::cable_model>)
+
+=item serialnum
+
+Cable device serial number
+
+=item mac_addr
+
+Cable device MAC address
+
 =back
 
 =head1 METHODS
