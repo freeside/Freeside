@@ -405,13 +405,20 @@ use Digest::SHA qw(sha1); # for duplicate checking
 sub email_search_result {
   my($class, $param) = @_;
 
+  my $conf = FS::Conf->new;
+  my $send_to_domain = $conf->config('send-to-domain');
+
   my $msgnum = $param->{msgnum};
   my $from = delete $param->{from};
   my $subject = delete $param->{subject};
   my $html_body = delete $param->{html_body};
   my $text_body = delete $param->{text_body};
   my $to_contact_classnum = delete $param->{to_contact_classnum};
+  my $emailtovoice_name = delete $param->{emailtovoice_contact};
+
   my $error = '';
+
+  my $to = $emailtovoice_name . '@' . $send_to_domain unless !$emailtovoice_name;
 
   my $job = delete $param->{'job'}
     or die "email_search_result must run from the job queue.\n";
@@ -458,12 +465,16 @@ sub email_search_result {
       next; # unlinked object; nothing else we can do
     }
 
+    my %to = {};
+    if ($to) { $to{'to'} = $to; }
+
     if ( $msg_template ) {
       # Now supports other context objects.
       %message = $msg_template->prepare(
         'cust_main' => $cust_main,
         'object'    => $obj,
         'to_contact_classnum' => $to_contact_classnum,
+        %to
       );
 
     } else {
@@ -490,7 +501,7 @@ sub email_search_result {
     } #if $msg_template
 
     # For non-cust_main searches, we avoid duplicates based on message
-    # body text.  
+    # body text.
     my $unique = $cust_main->custnum;
     $unique .= sha1($message{'text_body'}) if $class ne 'FS::cust_main';
     if( $sent_to{$unique} ) {
