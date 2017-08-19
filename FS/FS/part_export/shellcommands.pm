@@ -4,6 +4,7 @@ use vars qw(@ISA %info);
 use Tie::IxHash;
 use Date::Format;
 use String::ShellQuote;
+use Net::OpenSSH;
 use FS::part_export;
 use FS::Record qw( qsearch qsearchs );
 
@@ -296,7 +297,7 @@ sub _export_command_or_super {
   } else {
     $self->_export_command($action, @_);
   }
-};
+}
 
 sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
@@ -304,6 +305,41 @@ sub _export_command {
 
   return '' if $command =~ /^\s*$/;
   my $stdin = $self->option($action."_stdin");
+
+  my( $command_string, $stdin_string ) =
+    $self->_export_subvars( $svc_acct, $command, $stdin );
+
+  $self->ssh_or_queue( $svc_acct, $command_string, $stdin_string );
+}
+
+sub ssh_or_queue {
+  my( $self, $svc_acct, $command_string, $stdin_string ) = @_;
+
+  my @ssh_cmd_args = (
+    user          => $self->option('user') || 'root',
+    host          => $self->svc_machine($svc_acct),
+    command       => $command_string,
+    stdin_string  => $stdin_string,
+    ignored_errors    => $self->option('ignored_errors') || '',
+    ignore_all_errors => $self->option('ignore_all_errors'),
+    fail_on_output    => $self->option('fail_on_output'),
+ );
+
+  if ( $self->option($action. '_no_queue') ) {
+    # discard return value just like freeside-queued.
+    eval { ssh_cmd(@ssh_cmd_args) };
+    $error = $@;
+    $error = $error->full_message if ref $error; # Exception::Class::Base
+    return $error.
+             ' ('. $self->exporttype. ' to '. $self->svc_machine($svc_acct). ')'
+      if $error;
+  } else {
+    $self->shellcommands_queue( $svc_acct->svcnum, @ssh_cmd_args );
+  }
+}
+
+sub _export_subvars {
+  my( $self, $svc_acct, $command, $stdin ) = @_;
 
   no strict 'vars';
   {
@@ -412,27 +448,7 @@ sub _export_command {
   my $command_string = eval(qq("$command"));
   return "error filling in command: $@" if $@;
 
-  my @ssh_cmd_args = (
-    user          => $self->option('user') || 'root',
-    host          => $self->svc_machine($svc_acct),
-    command       => $command_string,
-    stdin_string  => $stdin_string,
-    ignored_errors    => $self->option('ignored_errors') || '',
-    ignore_all_errors => $self->option('ignore_all_errors'),
-    fail_on_output    => $self->option('fail_on_output'),
- );
-
-  if ( $self->option($action. '_no_queue') ) {
-    # discard return value just like freeside-queued.
-    eval { ssh_cmd(@ssh_cmd_args) };
-    $error = $@;
-    $error = $error->full_message if ref $error; # Exception::Class::Base
-    return $error.
-             ' ('. $self->exporttype. ' to '. $self->svc_machine($svc_acct). ')'
-      if $error;
-  } else {
-    $self->shellcommands_queue( $svc_acct->svcnum, @ssh_cmd_args );
-  }
+  ( $command_string, $stdin_string );
 }
 
 sub _export_replace {
@@ -440,6 +456,16 @@ sub _export_replace {
   my $command = $self->option('usermod');
   return '' if $command =~ /^\s*$/;
   my $stdin = $self->option('usermod_stdin');
+
+  my( $command_string, $stdin_string ) =
+    $self->_export_subvars_replace( $new, $old, $command, $stdin );
+
+  $self->ssh_or_queue( $new, $command_string, $stdin_string );
+}
+  
+sub _export_subvars_replace {
+  my( $self, $new, $old, $command, $stdin ) = @_;
+
   no strict 'vars';
   {
     no strict 'refs';
@@ -511,27 +537,7 @@ sub _export_replace {
 
   my $command_string = eval(qq("$command"));
 
-  my @ssh_cmd_args = (
-    user          => $self->option('user') || 'root',
-    host          => $self->svc_machine($new),
-    command       => $command_string,
-    stdin_string  => $stdin_string,
-    ignored_errors    => $self->option('ignored_errors') || '',
-    ignore_all_errors => $self->option('ignore_all_errors'),
-    fail_on_output    => $self->option('fail_on_output'),
-  );
-
-  if($self->option('usermod_no_queue')) {
-    # discard return value just like freeside-queued.
-    eval { ssh_cmd(@ssh_cmd_args) };
-    $error = $@;
-    $error = $error->full_message if ref $error; # Exception::Class::Base
-    return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($new). ')'
-      if $error;
-  }
-  else {
-    $self->shellcommands_queue( $new->svcnum, @ssh_cmd_args );
-  }
+  ( $command_string, $stdin_string );
 }
 
 #a good idea to queue anything that could fail or take any time
@@ -545,7 +551,6 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  use Net::OpenSSH;
   my $opt = { @_ };
   open my $def_in, '<', '/dev/null' or die "unable to open /dev/null\n";
   my $ssh = Net::OpenSSH->new(
