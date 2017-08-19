@@ -197,25 +197,27 @@ my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
 
 my $part_pkg = $cust_pkg->part_pkg;
 
-my @unprovision_warning;
-{
-    my @services_w_export;
-    for ( $cust_pkg->cust_svc ) {
-        push( @services_w_export, ($_->label)[0] . ': ' . ($_->label)[1], )
-          if $_->part_svc->export_svc;
+my @unprovision_warning = ();
+unless ( $method =~ /^(resume|uncancel)$/ ) {
+  my @services_w_export = map { my @l = $_->label; $l[0]. ': '. $l[1]; }
+                            grep $_->part_svc->export_svc,
+                              $cust_pkg->cust_svc;
+  if ( @services_w_export ) {
+
+    my $actioned = ($method =~ /^(suspend|adjourn)$/) ? 'suspended'
+                                                      : 'unprovisioned';
+    push @unprovision_warning,
+      'NOTE: This package has '. @services_w_export. ' '.
+      PL( 'service', @services_w_export ). " that will be $actioned";
+
+    if ( @services_w_export < 10 ) {
+      $unprovision_warning[0] .= ':';
+      push @unprovision_warning, @services_w_export;
+    } else {
+      $unprovision_warning[0] .= '.';
     }
-    if ( @services_w_export ) {
-        push( @unprovision_warning, 'NOTE: This package has '
-          . @services_w_export . ' ' . PL( "service", @services_w_export )
-          . ' that will be unprovisioned', );
-        if ( @services_w_export < 10 ) {
-            $unprovision_warning[0] .= ':';
-            push( @unprovision_warning, @services_w_export, );
-        }
-        else {
-            $unprovision_warning[0] .= '.';
-        }
-    }
+
+  }
 }
 
 $date ||= $cust_pkg->get($method);
