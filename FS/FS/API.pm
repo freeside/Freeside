@@ -908,6 +908,34 @@ sub bill_now {
 
 #next.. Delete Advertising sources?
 
+=item list_advertising_sources OPTION => VALUE, ...
+
+Lists all advertising sources.
+
+=over
+
+=item secret
+
+API Secret
+
+=back
+
+Example:
+
+  my $result = FS::API->list_advertising_sources(
+    'secret'  => 'sharingiscaring',
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # list advertising sources returns an array of hashes for sources.
+    print Dumper($result->{'sources'});
+  }
+
+=cut
+
+#list_advertising_sources
 sub list_advertising_sources {
   my( $class, %opt ) = @_;
   return _shared_secret_error() unless _check_shared_secret($opt{secret});
@@ -922,6 +950,56 @@ sub list_advertising_sources {
   $return;
 }
 
+=item add_advertising_source OPTION => VALUE, ...
+
+Add a new advertising source.
+
+=over
+
+=item secret
+
+API Secret
+
+=item referral
+
+Referral name
+
+=item disabled
+
+Referral disabled, Y for disabled or nothing for enabled
+
+=item agentnum
+
+Agent ID number
+
+=item title
+
+External referral ID
+
+=back
+
+Example:
+
+  my $result = FS::API->add_advertising_source(
+    'secret'     => 'sharingiscaring',
+    'referral'   => 'test referral',
+
+    #optional
+    'disabled'   => 'Y',
+    'agentnum'   => '2', #agent id number
+    'title'      => 'test title',
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # add_advertising_source returns new source upon success.
+    print Dumper($result);
+  }
+
+=cut
+
+#add_advertising_source
 sub add_advertising_source {
   my( $class, %opt ) = @_;
   return _shared_secret_error() unless _check_shared_secret($opt{secret});
@@ -940,6 +1018,70 @@ sub add_advertising_source {
   $return;
 }
 
+=item edit_advertising_source OPTION => VALUE, ...
+
+Edit a advertising source.
+
+=over
+
+=item secret
+
+API Secret
+
+=item refnum
+
+Referral number to edit
+
+=item source
+
+hash of edited source fields.
+
+=over
+
+=item referral
+
+Referral name
+
+=item disabled
+
+Referral disabled, Y for disabled or nothing for enabled
+
+=item agentnum
+
+Agent ID number
+
+=item title
+
+External referral ID
+
+=back
+
+=back
+
+Example:
+
+  my $result = FS::API->edit_advertising_source(
+    'secret'     => 'sharingiscaring',
+    'refnum'     => '4', # referral number to edit
+    'source'     => {
+       #optional
+       'referral'   => 'test referral',
+       'disabled'   => 'Y',
+       'agentnum'   => '2', #agent id number
+       'title'      => 'test title',
+    }
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # edit_advertising_source returns updated source upon success.
+    print Dumper($result);
+  }
+
+=cut
+
+#edit_advertising_source
 sub edit_advertising_source {
   my( $class, %opt ) = @_;
   return _shared_secret_error() unless _check_shared_secret($opt{secret});
