@@ -719,7 +719,63 @@ sub bill_now {
 }
 
 
-#next.. Advertising sources?
+#next.. Delete Advertising sources?
+
+sub list_advertising_sources {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my @sources = qsearch('part_referral', {}, '', "")
+    or return { 'error' => 'No referrals' };
+
+  my $return = {
+    'sources'       => [ map $_->hashref, @sources ],
+  };
+
+  $return;
+}
+
+sub add_advertising_source {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  use FS::part_referral;
+
+  my $new_source = $opt{source};
+
+  my $source = new FS::part_referral $new_source;
+
+  my $error = $source->insert;
+
+  my $return = {$source->hash};
+  $return = { 'error' => $error, } if $error;
+
+  $return;
+}
+
+sub edit_advertising_source {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  use FS::part_referral;
+
+  my $refnum = $opt{refnum};
+  my $source = $opt{source};
+
+  my $old = FS::Record::qsearchs('part_referral', {'refnum' => $refnum,});
+  my $new = new FS::part_referral { $old->hash };
+
+  foreach my $key (keys %$source) {
+    $new->$key($source->{$key});
+  }
+
+  my $error = $new->replace;
+
+  my $return = {$new->hash};
+  $return = { 'error' => $error, } if $error;
+
+  $return;
+}
 
 
 ##
