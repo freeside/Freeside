@@ -398,7 +398,7 @@ sub email_search_result {
   my($class, $param) = @_;
 
   my $conf = FS::Conf->new;
-  my $send_to_domain = $conf->config('send-to-domain');
+  my $send_to_domain = $conf->config('email-to-voice_domain');
 
   my $msgnum = $param->{msgnum};
   my $from = delete $param->{from};

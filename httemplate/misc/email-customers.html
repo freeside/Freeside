@@ -272,7 +272,7 @@ die "access denied"
 my $conf = FS::Conf->new;
 my @no_search_fields = qw( table from subject html_body text_body popup url );
 
-my $send_to_domain = $conf->config('send-to-domain');
+my $send_to_domain = $conf->config('email-to-voice_domain');
 
 my $form_action = $opt{'form_action'} || 'email-customers.html';
 my $process_url = $opt{'process_url'} || 'process/email-customers.html';
