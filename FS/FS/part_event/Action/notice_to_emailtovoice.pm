@@ -23,7 +23,7 @@ sub eventtable_hashref {
 sub option_fields {
 
   #my $conf = new FS::Conf;
-  #my $to_domain = $conf->config('send-to-domain');
+  #my $to_domain = $conf->config('email-to-voice_domain');
 
 (
     'to_name'   => { 'label'            => 'Address To',
@@ -33,7 +33,7 @@ sub option_fields {
                                              'fax'     => 'Fax #',
                                              'daytime' => 'Day Time #',
                                            },
-                     'post_field_label' => "@" , #. $to_domain ,
+                     'post_field_label' => "@", # . $to_domain ,
                    },
 
     'msgnum'    => { 'label'    => 'Template',
@@ -53,7 +53,7 @@ sub do_action {
   my( $self, $object ) = @_;
 
   my $conf = new FS::Conf;
-  my $to_domain = $conf->config('send-to-domain')
+  my $to_domain = $conf->config('email-to-voice_domain')
     or die "Can't send notice with out send-to-domain, being set in global config \n";
 
   my $cust_main = $self->cust_main($object);
