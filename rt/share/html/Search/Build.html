@@ -67,7 +67,6 @@
 %#
 <& /Elements/Header, Title => $title &>
 <& /Elements/Tabs, %TabArgs &>
-
 <form method="post" action="Build.html" name="BuildQuery" id="BuildQuery">
 <input type="hidden" class="hidden" name="SavedSearchId" value="<% $saved_search{'Id'} %>" />
 <input type="hidden" class="hidden" name="SavedChartSearchId" value="<% $ARGS{'SavedChartSearchId'} %>" />
@@ -200,7 +199,7 @@ my $cf_field_names =
 
 # Try to find if we're adding a clause
 foreach my $arg ( keys %ARGS ) {
-    next unless $arg =~ m/^ValueOf(\w+|($cf_field_names).\{.*?\})$/
+    next unless $arg =~ m/^ValueOf([\w\.]+|($cf_field_names).\{.*?\})$/
                 && ( ref $ARGS{$arg} eq "ARRAY"
                      ? grep $_ ne '', @{ $ARGS{$arg} }
                      : $ARGS{$arg} ne '' );
