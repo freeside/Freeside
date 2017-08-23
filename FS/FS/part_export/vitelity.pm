@@ -425,7 +425,7 @@ sub e911_send {
 
   my $e911_result = $self->vitelity_command('e911send', %e911send);
 
-  unless ( $e911_result =~ /^(missingdata|invalid)/i ) {
+  unless ( $e911_result =~ /status=(missingdata|invalid)/i ) {
     warn "Vitelity response: $e911_result" if $self->option('debug');
     return '';
   }
