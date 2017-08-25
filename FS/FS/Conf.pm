@@ -5788,8 +5788,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'logout-timeout',
-    'section'     => 'UI',
-    'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated.  Used to automatically log users out of the backoffice after this many minutes.  Set session timeouts in employee groups instead.',
     'type'       => 'text',
   },
   
