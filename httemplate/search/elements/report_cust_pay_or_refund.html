@@ -174,7 +174,7 @@ my $table = 'cust_'.$opt{'thing'};
 my $name_singular = $opt{'name_singular'};
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+  unless $FS::CurrentUser::CurrentUser->access_right('Basic payment and refund reports');
 
 my $conf = new FS::Conf;
 

@@ -87,7 +87,7 @@ my $conf = FS::Conf->new;
 my $money = ($conf->config('money_char') || '$') . '%.2f';
 
 die "access denied"
-  unless $curuser->access_right('Financial reports');
+  unless $curuser->access_right('Basic payment and refund reports');
 
 my $table = $opt{'table'} || 'cust_'.$opt{'thing'};
 
