@@ -23,7 +23,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Employees: Audit Report');
+  unless $FS::CurrentUser::CurrentUser->access_right('Employee Reports');
 
 my %tables = (
     cust_pay        => 'Payments',

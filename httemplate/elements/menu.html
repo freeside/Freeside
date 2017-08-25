@@ -428,14 +428,18 @@ $report_logs{'Billing events'} =  [ $fsurl.'search/report_cust_event.html', 'Sea
   if $curuser->access_right('Billing event reports');
 $report_logs{'Credit limit incidents'} = [ $fsurl.'search/report_cust_main_credit_limit.html', '' ]
   if $curuser->access_right('List rating data');
-$report_logs{'Employee activity'} = [ $fsurl.'search/report_employee_audit.html', '' ]
-  if $curuser->access_right('Employees: Audit Report');
 $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
   if $curuser->access_right('View system logs')
   || $curuser->access_right('Configuration');
 $report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ]
   if $curuser->access_right('View email logs')
   || $curuser->access_right('Configuration');
+
+tie my %report_employee, 'Tie::IxHash',
+  'Employee activity' => [ $fsurl.'search/report_employee_audit.html', '' ],
+  'Employee sessions' => [ $fsurl.'search/report_access_user_session_log.html', '' ],
+  'Access log statistics' => [ $fsurl.'search/report_access_user_log.html?group_by=path', '' ],
+;
 
 tie my %report_menu, 'Tie::IxHash';
 $report_menu{'Saved searches'} = [ \%report_saved_searches, 'My saved searches' ]
@@ -475,6 +479,8 @@ $report_menu{'Financial (Receivables)'} = [ \%report_financial, 'Financial repor
 $report_menu{'Financial (Payables)'} = [ \%report_payable, 'Financial reports (Payables)' ]
   if $curuser->access_right('Financial reports');
 
+$report_menu{'Employees'}      = [ \%report_employee, 'Employee reports' ]
+  if $curuser->access_right('Employee Reports');
 $report_menu{'Logs'}           = [ \%report_logs, 'System and email logs' ]
   if (keys %report_logs); # empty if the user has no rights to it
 $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
@@ -554,8 +560,6 @@ $tools_system{'Status'} = [ $fsurl.'view/Status.html', 'System status' ]
   if $curuser->access_right('Configuration'); # 'View system status');
 $tools_system{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
-$tools_system{'Access log statistics'} = [ $fsurl.'search/report_access_user_log.html?group_by=path', '' ]
-  if $curuser->access_right('Configuration'); # 'View profiling data');
 
 tie my %tools_menu, 'Tie::IxHash', ();
 $tools_menu{'Customers'} = [ \%tools_customers, 'Customer tools' ]

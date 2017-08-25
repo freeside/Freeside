@@ -27,7 +27,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Employee Reports');
 
 my $group_by = '';
 if ( $cgi->param('group_by') =~ /^(\w+)$/ ) {
