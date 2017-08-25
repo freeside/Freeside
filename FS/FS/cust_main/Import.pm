@@ -410,6 +410,8 @@ sub batch_import {
 
       if ( $cust_main{'payinfo'} =~ /^\s*(\d+\@[\d\.]+)\s*$/ ) {
 
+        delete $cust_main{'payinfo'};
+
         $cust_payby = new FS::cust_payby {
           'payby'   => 'CHEK',
           'payinfo' => $1,
@@ -417,9 +419,14 @@ sub batch_import {
 
       } elsif ($cust_main{'payinfo'} =~ /^\s*([AD]?)(.*)\s*$/) {
 
+        delete $cust_main{'payinfo'};
+
         $cust_payby = new FS::cust_payby {
           'payby'   => ($1 eq 'D') ? 'DCRD' : 'CARD',
           'payinfo' => $2,
+          'paycvv'  => delete $cust_main{'paycvv'},
+          'paydate' => delete $cust_main{'paydate'},
+          'payname' => $cust_main{'first'}. ' '. $cust_main{'last'},
         };
 
       }
