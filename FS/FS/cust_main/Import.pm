@@ -504,7 +504,7 @@ sub batch_import {
     }
 
     my %options = ('invoicing_list' => $invoicing_list);
-    $options{'cust_payby'} = $cust_payby if $cust_payby;
+    $options{'cust_payby'} = [ $cust_payby ] if $cust_payby;
 
     my $error = $cust_main->insert( \%hash, %options );
 
