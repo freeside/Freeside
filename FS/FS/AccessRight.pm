@@ -362,6 +362,10 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Employee preference telephony integration' },
   #]
 
+  #'RT preference rights' => [
+    { rightname=>'RT activity notification' },
+  #]
+
   ],
   
   ###

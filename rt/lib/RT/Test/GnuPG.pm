@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,9 +64,9 @@ sub import {
     my %args  = @_;
     my $t     = $class->builder;
 
-    $t->plan( skip_all => 'GnuPG required.' )
+    RT::Test::plan( skip_all => 'GnuPG required.' )
       unless GnuPG::Interface->require;
-    $t->plan( skip_all => 'gpg executable is required.' )
+    RT::Test::plan( skip_all => 'gpg executable is required.' )
       unless RT::Test->find_executable('gpg');
 
     $class->SUPER::import(%args);
@@ -204,13 +204,17 @@ sub check_text_emails {
 
             my $content = $type eq 'email'
                         ? "Some content"
-                        : "Attachment content";
+                        : $args{Attachment};
 
             if ( $args{'Encrypt'} ) {
-                unlike $mail, qr/$content/, "outgoing $type was encrypted";
+                unlike $mail, qr/$content/, "outgoing $type is not in plaintext";
+                my $entity = RT::Test::parse_mail($mail);
+                my @res = RT::Crypt->VerifyDecrypt(Entity => $entity);
+                like $res[0]{'status'}, qr/DECRYPTION_OKAY/, "Decrypts OK";
+                like $entity->as_string, qr/$content/, "outgoing decrypts to contain $type content";
             } else {
                 like $mail, qr/$content/, "outgoing $type was not encrypted";
-            } 
+            }
 
             next unless $type eq 'email';
 

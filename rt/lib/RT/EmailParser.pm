@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -123,7 +123,8 @@ sub SmartParseMIMEEntityFromScalar {
             if ( -f $temp_file ) {
 
                 my $entity = $self->ParseMIMEEntityFromFile( $temp_file, $args{'Decode'}, $args{'Exact'} );
-                unlink($temp_file);
+                unlink($temp_file)
+                    or RT->Logger->error("Unable to delete temp file $temp_file, error: $!");
                 return $entity;
             }
         }

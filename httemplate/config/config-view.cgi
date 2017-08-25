@@ -435,7 +435,7 @@ my @sections = (qw(
     important
     billing payments payment_batching credit_cards e-checks taxation
     packages suspension cancellation
-    printing print_services
+    printing print_services email_to_voice_services
       invoicing invoice_email invoice_balances invoice_templates quotations 
     notification UI addresses customer_number customer_fields reporting
     localization scalability backup

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -81,6 +81,10 @@ use vars qw($BasePath
  $MasonDataDir
  $MasonSessionDir);
 
+# Set Email::Address module var before anything else loads.
+# This avoids an algorithmic complexity denial of service vulnerability.
+# See T#157608 and CVE-2015-7686 for more information.
+$Email::Address::COMMENT_NEST_LEVEL = 1;
 
 RT->LoadGeneratedData();
 
@@ -765,6 +769,7 @@ sub InstallMode {
 sub LoadGeneratedData {
     my $class = shift;
     my $pm_path = ( File::Spec->splitpath( $INC{'RT.pm'} ) )[1];
+    $pm_path = File::Spec->rel2abs( $pm_path );
 
     require "$pm_path/RT/Generated.pm" || die "Couldn't load RT::Generated: $@";
     $class->CanonicalizeGeneratedPaths();
@@ -964,7 +969,9 @@ sub Deprecated {
 Please report them to rt-bugs@bestpractical.com, if you know what's
 broken and have at least some idea of what needs to be fixed.
 
-If you're not sure what's going on, report them rt-devel@lists.bestpractical.com.
+If you're not sure what's going on, start a discussion in the RT Developers
+category on the community forum at L<https://forum.bestpractical.com> or
+send email to sales@bestpractical.com for professional assistance.
 
 =head1 SEE ALSO
 

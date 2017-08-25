@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -92,6 +92,10 @@
 <&|/l&>Language</&>:
 </td><td>
 <& /Elements/SelectLang, Name => 'Lang', Default => $UserObj->Lang//$ARGS{Lang} &>
+</td></tr>
+<tr><td align="right"><&|/l&>Timezone</&>:
+</td><td>
+<& /Elements/SelectTimezone, Name => 'Timezone', Default => $UserObj->Timezone &>
 </td></tr>
 <tr><td align="right">
 <&|/l&>Extra info</&>:
@@ -251,7 +255,7 @@ my @fields = qw(Name Comments Signature EmailAddress FreeformContactInfo
                 Organization RealName NickName Lang EmailEncoding WebEncoding
                 ExternalContactInfoId ContactInfoSystem Gecos ExternalAuthId
                 AuthSystem HomePhone WorkPhone MobilePhone PagerPhone Address1
-                Address2 City State Zip Country
+                Address2 City State Zip Country Timezone
                );
 
 if ($Create) {

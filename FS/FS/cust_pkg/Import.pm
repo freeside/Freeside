@@ -283,17 +283,20 @@ sub batch_import {
     };
   }
 
-  my $formatfields = _formatfields();
+  my @formats = split /-/, $format;
+  foreach my $f (@formats){
 
-  die "unknown format $format" unless $formatfields->{$format};
+    my $formatfields = _formatfields();
+    die "unknown format $format" unless $formatfields->{$f};
 
-  foreach my $field ( @{ $formatfields->{$format} } ) {
+    foreach my $field ( @{ $formatfields->{$f} } ) {
 
-    push @fields, sub {
-      my( $self, $value, $conf, $param ) = @_;
-      $param->{"$format.$field"} = $value;
-    };
+      push @fields, sub {
+        my( $self, $value, $conf, $param ) = @_;
+        $param->{"$f.$field"} = $value;
+      };
 
+    }
   }
 
   $opt->{'fields'} = \@fields;

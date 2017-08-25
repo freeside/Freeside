@@ -898,6 +898,14 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'email-to-voice_domain',
+    'section'     => 'email_to_voice_services',
+    'description' => 'The Domain to send email to voice to',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'next-bill-ignore-time',
     'section'     => 'billing',
     'description' => 'Ignore the time portion of next bill dates when billing, matching anything from 00:00:00 to 23:59:59 on the billing day.',

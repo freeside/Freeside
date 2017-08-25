@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -1316,7 +1316,43 @@ sub _FormatUser {
         } else {
             return ("Reminder completed"); #loc()
         }
-    }
+    },
+    AddMember => sub {
+        my $self = shift;
+        my $principal = RT::Principal->new($self->CurrentUser);
+        $principal->Load($self->Field);
+
+        if ($principal->IsUser) {
+            return ("Added user '[_1]'", $principal->Object->Name); #loc()
+        }
+        else {
+            return ("Added group '[_1]'", $principal->Object->Name); #loc()
+        }
+    },
+    DeleteMember => sub {
+        my $self = shift;
+        my $principal = RT::Principal->new($self->CurrentUser);
+        $principal->Load($self->Field);
+
+        if ($principal->IsUser) {
+            return ("Removed user '[_1]'", $principal->Object->Name); #loc()
+        }
+        else {
+            return ("Removed group '[_1]'", $principal->Object->Name); #loc()
+        }
+    },
+    AddMembership => sub {
+        my $self = shift;
+        my $principal = RT::Principal->new($self->CurrentUser);
+        $principal->Load($self->Field);
+        return ("Added to group '[_1]'", $principal->Object->Name); #loc()
+    },
+    DeleteMembership => sub {
+        my $self = shift;
+        my $principal = RT::Principal->new($self->CurrentUser);
+        $principal->Load($self->Field);
+        return ("Removed from group '[_1]'", $principal->Object->Name); #loc()
+    },
 );
 
 
@@ -2047,6 +2083,9 @@ sub Serialize {
         my $cf = RT::CustomField->new( RT->SystemUser );
         $cf->Load( $store{Field} );
         $store{Field} = \($cf->UID);
+
+        $store{OldReference} = \($self->OldReferenceObject->UID) if $self->OldReference;
+        $store{NewReference} = \($self->NewReferenceObject->UID) if $self->NewReference;
     } elsif ($type =~ /^(Take|Untake|Force|Steal|Give)$/) {
         for my $field (qw/OldValue NewValue/) {
             my $user = RT::User->new( RT->SystemUser );
@@ -2065,19 +2104,45 @@ sub Serialize {
         if ($store{OldValue}) {
             my $base = RT::URI->new( $self->CurrentUser );
             $base->FromURI( $store{OldValue} );
-            $store{OldValue} = \($base->Object->UID) if $base->Resolver and $base->Object;
+            if ($base->Resolver && (my $object = $base->Object)) {
+                if ($args{serializer}->Observe(object => $object)) {
+                    $store{OldValue} = \($object->UID);
+                }
+                elsif ($args{serializer}{HyperlinkUnmigrated}) {
+                    $store{OldValue} = $base->AsHREF;
+                }
+                else {
+                    $store{OldValue} = "(not migrated)";
+                }
+            }
         }
     } elsif ($type eq "AddLink") {
         if ($store{NewValue}) {
             my $base = RT::URI->new( $self->CurrentUser );
             $base->FromURI( $store{NewValue} );
-            $store{NewValue} = \($base->Object->UID) if $base->Resolver and $base->Object;
+            if ($base->Resolver && (my $object = $base->Object)) {
+                if ($args{serializer}->Observe(object => $object)) {
+                    $store{NewValue} = \($object->UID);
+                }
+                elsif ($args{serializer}{HyperlinkUnmigrated}) {
+                    $store{NewValue} = $base->AsHREF;
+                }
+                else {
+                    $store{NewValue} = "(not migrated)";
+                }
+            }
         }
     } elsif ($type eq "Set" and $store{Field} eq "Queue") {
         for my $field (qw/OldValue NewValue/) {
             my $queue = RT::Queue->new( RT->SystemUser );
             $queue->Load( $store{$field} );
-            $store{$field} = \($queue->UID);
+            if ($args{serializer}->Observe(object => $queue)) {
+                $store{$field} = \($queue->UID);
+            }
+            else {
+                $store{$field} = "$RT::Organization: " . $queue->Name . " (not migrated)";
+
+            }
         }
     } elsif ($type =~ /^(Add|Open|Resolve)Reminder$/) {
         my $ticket = RT::Ticket->new( RT->SystemUser );

@@ -14,7 +14,7 @@
 use Class::Load 'load_class';
 
 my $enabled = $FS::TicketSystem::system eq 'RT_Internal';
-$enabled = 0 if $FS::CurrentUser::CurrentUser->option('hide_notify_tickets');
+$enabled = 0 unless $FS::CurrentUser::CurrentUser->access_right('RT activity notification');
 my $UnrepliedTickets;
 if ($enabled) {
   my $class = 'RT::Search::UnrepliedTickets';

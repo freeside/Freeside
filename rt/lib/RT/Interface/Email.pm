@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2016 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -352,6 +352,32 @@ sub WillSignEncrypt {
     return wantarray ? %args : ($args{Sign} || $args{Encrypt});
 }
 
+sub _OutgoingMailFrom {
+    my $TicketObj = shift;
+
+    my $MailFrom = RT->Config->Get('SetOutgoingMailFrom');
+    my $OutgoingMailAddress = $MailFrom =~ /\@/ ? $MailFrom : undef;
+    my $Overrides = RT->Config->Get('OverrideOutgoingMailFrom') || {};
+
+    if ($TicketObj) {
+        my $Queue = $TicketObj->QueueObj;
+        my $QueueAddressOverride = $Overrides->{$Queue->id}
+            || $Overrides->{$Queue->Name};
+
+        if ($QueueAddressOverride) {
+            $OutgoingMailAddress = $QueueAddressOverride;
+        } else {
+            $OutgoingMailAddress ||= $Queue->CorrespondAddress
+                || RT->Config->Get('CorrespondAddress');
+        }
+    }
+    elsif ($Overrides->{'Default'}) {
+        $OutgoingMailAddress = $Overrides->{'Default'};
+    }
+
+    return $OutgoingMailAddress;
+}
+
 sub SendEmail {
     my (%args) = (
         Entity => undef,
@@ -389,7 +415,18 @@ sub SendEmail {
     if (my $precedence = RT->Config->Get('DefaultMailPrecedence')
         and !$args{'Entity'}->head->get("Precedence")
     ) {
-        $args{'Entity'}->head->replace( 'Precedence', Encode::encode("UTF-8",$precedence) );
+        if ($TicketObj) {
+            my $Overrides = RT->Config->Get('OverrideMailPrecedence') || {};
+            my $Queue = $TicketObj->QueueObj;
+
+            $precedence = $Overrides->{$Queue->id}
+                if exists $Overrides->{$Queue->id};
+            $precedence = $Overrides->{$Queue->Name}
+                if exists $Overrides->{$Queue->Name};
+        }
+
+        $args{'Entity'}->head->replace( 'Precedence', Encode::encode("UTF-8",$precedence) )
+            if $precedence;
     }
 
     if ( $TransactionObj && !$TicketObj
@@ -437,25 +474,8 @@ sub SendEmail {
         # SetOutgoingMailFrom and bounces conflict, since they both want -f
         if ( $args{'Bounce'} ) {
             push @args, shellwords(RT->Config->Get('SendmailBounceArguments'));
-        } elsif ( my $MailFrom = RT->Config->Get('SetOutgoingMailFrom') ) {
-            my $OutgoingMailAddress = $MailFrom =~ /\@/ ? $MailFrom : undef;
-            my $Overrides = RT->Config->Get('OverrideOutgoingMailFrom') || {};
-
-            if ($TicketObj) {
-                my $Queue = $TicketObj->QueueObj;
-                my $QueueAddressOverride = $Overrides->{$Queue->id}
-                    || $Overrides->{$Queue->Name};
-
-                if ($QueueAddressOverride) {
-                    $OutgoingMailAddress = $QueueAddressOverride;
-                } else {
-                    $OutgoingMailAddress ||= $Queue->CorrespondAddress
-                        || RT->Config->Get('CorrespondAddress');
-                }
-            }
-            elsif ($Overrides->{'Default'}) {
-                $OutgoingMailAddress = $Overrides->{'Default'};
-            }
+        } elsif ( RT->Config->Get('SetOutgoingMailFrom') ) {
+            my $OutgoingMailAddress = _OutgoingMailFrom($TicketObj);
 
             push @args, "-f", $OutgoingMailAddress
                 if $OutgoingMailAddress;
@@ -523,7 +543,8 @@ sub SendEmail {
         }
         my $content = $args{Entity}->stringify;
         $content =~ s/^(>*From )/>$1/mg;
-        print $fh "From $ENV{USER}\@localhost  ".localtime()."\n";
+        my $user = $ENV{USER} || getpwuid($<);
+        print $fh "From $user\@localhost  ".localtime()."\n";
         print $fh $content, "\n";
         close $fh;
     } else {
