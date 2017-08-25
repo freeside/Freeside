@@ -345,20 +345,25 @@ $report_employees{'Employee Audit Report'} = [ $fsurl.'search/report_employee_au
   if $curuser->access_right('Employees: Audit Report');
 ;
 
-tie my %report_payments, 'Tie::IxHash',
-  'Payments' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
-  'Payment application detail' => [ $fsurl.'search/report_cust_bill_pay_pkg.html', 'Line item application detail' ],
-;
+tie my %report_payments, 'Tie::IxHash';
+$report_payments{'Payments'} = [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ]
+  if $curuser->access_right('Basic payment and refund reports');
+$report_payments{'Payment application detail'} = [ $fsurl.'search/report_cust_bill_pay_pkg.html', 'Line item application detail' ]
+  if $curuser->access_right('Financial reports');
 $report_payments{'Pending Payments'} = [ $fsurl.'search/cust_pay_pending.html?magic=_date;statusNOT=done', 'Pending real-time payments' ]
   if $curuser->access_right('View customer pending payments');
-$report_payments{'Unapplied Payments'} = [ $fsurl.'search/report_cust_pay.html?unapplied=1', 'Unapplied payment report (by type and/or date range)' ];
+$report_payments{'Unapplied Payments'} = [ $fsurl.'search/report_cust_pay.html?unapplied=1', 'Unapplied payment report (by type and/or date range)' ]
+  if $curuser->access_right('Financial reports'); #not enforced
 $report_payments{'Voided Payments'} = [ $fsurl.'search/report_cust_pay.html?void=1', 'Voided payment report (by type and/or date range)' ]
-  if $curuser->access_right('View customer pending payments');
+  if $curuser->access_right('Financial reports'); #not enforced
 $report_payments{'Payment Batches'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
-  if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
-$report_payments{'Unapplied Payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
+  if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
+  && $curuser->access_right('Financial reports');
+$report_payments{'Unapplied Payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ]
+  if $curuser->access_right('Financial reports');
 $report_payments{'Deleted Payments / Payment history table'} = [ $fsurl.'search/report_h_cust_pay.html', 'Deleted payments / payment history table' ]
-  if $conf->exists('payment-history-report');
+  if $conf->exists('payment-history-report')
+  && $curuser->access_right('Financial reports');
 
 tie my %report_credits, 'Tie::IxHash',
   'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
@@ -450,7 +455,7 @@ $report_menu{'Invoices'}       =  [ \%report_invoices,  'Invoice reports'   ]
 $report_menu{'Discounts'}      =  [ \%report_discounts, 'Discount reports'  ]
   if $curuser->access_right('Financial reports');
 $report_menu{'Payments'}       =  [ \%report_payments,  'Payment reports'   ]
-  if $curuser->access_right('Financial reports');
+  if keys %report_payments;
 $report_menu{'Packages'}       =  [ \%report_packages,  'Package reports'   ]
   if $curuser->access_right('List packages');
 $report_menu{'Services'}       =  [ \%report_services,  'Services reports'  ]
