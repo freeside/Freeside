@@ -4330,6 +4330,7 @@ and customer address. Include units.',
                        ''       => 'Numeric only',
                        '\d{7}'  => 'Numeric only, exactly 7 digits',
                        'ww?d+'  => 'Numeric with one or two letter prefix',
+                       'd+-w'   => 'Numeric with a dash and one letter suffix',
                      ],
   },
 
