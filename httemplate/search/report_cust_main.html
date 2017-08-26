@@ -344,6 +344,13 @@
       <TH ALIGN="right" VALIGN="center"><% mt('Search historical addresses') %></TH>
       <TD><INPUT TYPE="checkbox" NAME="location_history" VALUE="1"></TD>
 
+      <& /elements/tr-input-text.html,
+           label     => emt('At least this many referrals'),
+           field     => 'with_referrals',
+           size      => 4,
+           maxlength => 4,
+      &>
+
   </TABLE>
 
 <BR>

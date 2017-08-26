@@ -884,10 +884,10 @@ sub search {
   ##
   # with referrals
   ##
-  if ( $params->{'with_referrals'} ) {
+  if ( $params->{'with_referrals'} =~ /^\s*(\d+)\s*$/ ) {
     push @where,
-      ' EXISTS ( SELECT 1 FROM cust_main AS referred_cust_main
-                   WHERE cust_main.custnum = referred_cust_main.referral_custnum )';
+      " $1 <= ( SELECT COUNT(*) FROM cust_main AS referred_cust_main
+                  WHERE cust_main.custnum = referred_cust_main.referral_custnum )";
   }
 
   ##
