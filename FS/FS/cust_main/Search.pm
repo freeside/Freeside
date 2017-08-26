@@ -161,20 +161,23 @@ sub smart_search {
 
   # custnum search (also try agent_custid), with some tweaking options if your
   # legacy cust "numbers" have letters
-  } elsif ( $search =~ /^\s*(\d+)\s*$/
-         || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
-              && $search =~ /^\s*(\w\w?\d+)\s*$/
-            )
-         || ( $conf->config('cust_main-custnum-display_special')
-           # it's not currently possible for special prefixes to contain
-           # digits, so just strip off any alphabetic prefix and match 
-           # the rest to custnum
-              && $search =~ /^\s*[[:alpha:]]*(\d+)\s*$/
-            )
-         || ( $conf->exists('address1-search' )
-              && $search =~ /^\s*(\d+\-?\w*)\s*$/ #i.e. 1234A or 9432-D
-            )
-     )
+  } elsif (    $search =~ /^\s*(\d+)\s*$/
+            or ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
+                 && $search =~ /^\s*(\w\w?\d+)\s*$/
+               )
+            or ( $conf->config('cust_main-agent_custid-format') eq 'd+-w'
+                 && $search =~ /^\s*(\d+-\w)\s*$/
+               )
+            or ( $conf->config('cust_main-custnum-display_special')
+                 # it's not currently possible for special prefixes to contain
+                 # digits, so just strip off any alphabetic prefix and match 
+                 # the rest to custnum
+                 && $search =~ /^\s*[[:alpha:]]*(\d+)\s*$/
+               )
+            or ( $conf->exists('address1-search' )
+                 && $search =~ /^\s*(\d+\-?\w*)\s*$/ #i.e. 1234A or 9432-D
+               )
+          )
   {
 
     my $num = $1;
