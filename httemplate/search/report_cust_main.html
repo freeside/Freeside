@@ -113,6 +113,25 @@
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
     </TR>
     <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Referral search options') |h %></FONT></TH>
+    </TR>
+
+      <& /elements/tr-input-text.html,
+           label     => emt('At least this many'),
+           field     => 'with_referrals',
+           size      => 4,
+           maxlength => 4,
+      &>
+
+      <& /elements/tr-select-cust_main-status.html,
+           label => emt('Referral status'),
+           field => 'referral_status',
+      &>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+    </TR>
+    <TR>
       <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Package search options') |h %></FONT></TH>
     </TR>
 
@@ -343,13 +362,6 @@
     <TR>
       <TH ALIGN="right" VALIGN="center"><% mt('Search historical addresses') %></TH>
       <TD><INPUT TYPE="checkbox" NAME="location_history" VALUE="1"></TD>
-
-      <& /elements/tr-input-text.html,
-           label     => emt('At least this many referrals'),
-           field     => 'with_referrals',
-           size      => 4,
-           maxlength => 4,
-      &>
 
   </TABLE>
 

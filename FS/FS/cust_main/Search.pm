@@ -884,10 +884,24 @@ sub search {
   ##
   # with referrals
   ##
-  if ( $params->{'with_referrals'} =~ /^\s*(\d+)\s*$/ ) {
+  if ( $params->{with_referrals} =~ /^\s*(\d+)\s*$/ ) {
+
+    my $n = $1;
+  
+    # referral status
+    my $and_status = '';
+    if ( grep { $params->{referral_status} eq $_ } FS::cust_main->statuses() ) {
+      my $method = $params->{referral_status}. '_sql';
+      $and_status = ' AND '. FS::cust_main->$method();
+      $and_status =~ s/ cust_main\./ referred_cust_main./g;
+    }
+
     push @where,
-      " $1 <= ( SELECT COUNT(*) FROM cust_main AS referred_cust_main
-                  WHERE cust_main.custnum = referred_cust_main.referral_custnum )";
+      " $n <= ( SELECT COUNT(*) FROM cust_main AS referred_cust_main
+                  WHERE cust_main.custnum = referred_cust_main.referral_custnum
+                    $and_status
+              )";
+
   }
 
   ##
