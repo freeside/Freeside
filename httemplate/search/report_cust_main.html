@@ -107,11 +107,22 @@
         </TD>
       </TR>
 
+  </TABLE>
+  <BR>
+
+  <FONT CLASS="fsinnerbox-title"><% emt('Referral search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
+
       <& /elements/tr-input-text.html,
-           label     => emt('At least this many referrals'),
+           label     => emt('At least this many'),
            field     => 'with_referrals',
            size      => 4,
            maxlength => 4,
+      &>
+
+      <& /elements/tr-select-cust_main-status.html,
+           label => emt('Referral status'),
+           field => 'referral_status',
       &>
 
   </TABLE>
