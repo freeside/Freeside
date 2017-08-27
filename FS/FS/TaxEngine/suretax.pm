@@ -347,7 +347,10 @@ sub make_taxlines {
     'Accept'        => 'application/json',
   );
 
-  warn "received SureTax response\n" if $DEBUG;
+  warn 'received SureTax response: '. $http_response->status_line. "\n"
+    if $DEBUG;
+  die $http_response->status_line. "\n" unless $http_response->is_success;
+
   my $raw_response = $http_response->content;
   warn $raw_response if $DEBUG > 2;
   my $response;
@@ -360,7 +363,7 @@ sub make_taxlines {
 
   warn "decoding SureTax response\n" if $DEBUG;
   $response = eval { $json->decode($raw_response) }
-    or die "$raw_response\n";
+    or die "Can't JSON-decode response: $raw_response\n";
 
   # documentation implies this might be necessary
   $response = $response->{'d'} if exists $response->{'d'};
