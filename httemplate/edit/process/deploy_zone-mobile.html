@@ -21,6 +21,10 @@ my $precheck_callback = sub {
       $i++;
     }
   }
+  if ( length $cgi->param('active_date') ) {
+    my $date = parse_datetime( $cgi->param('active_date') );
+    $cgi->param('active_date', $date);
+  }
   '';
 };
 </%init>
