@@ -4831,6 +4831,8 @@ PAYBYLOOP:
         next if grep(/^$field$/, qw( custpaybynum payby weight ) );
         next if grep(/^$field$/, @preserve );
         next PAYBYLOOP unless $new->get($field) eq $cust_payby->get($field);
+        # check if paymask exists,  if so stop and don't save, no need for a duplicate.
+        return '' if $new->get('paymask') eq $cust_payby->get('paymask');
       }
       # now check fields that can replace if one value is blank
       my $replace = 0;

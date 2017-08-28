@@ -980,6 +980,7 @@ sub validate_payment {
   #false laziness w/process/payment.cgi
   my $payinfo;
   my $paycvv = '';
+  my $replace_cust_payby;
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
   
     $p->{'payinfo1'} =~ /^([\dx]+)$/
@@ -994,6 +995,7 @@ sub validate_payment {
     foreach my $cust_payby ($cust_main->cust_payby('CHEK','DCHK')) {
       if ( $cust_payby->paymask eq $payinfo ) {
         $payinfo = $cust_payby->payinfo;
+        $replace_cust_payby = $cust_payby;
         $achonfile = 1;
         last;
       }
@@ -1014,6 +1016,7 @@ sub validate_payment {
     foreach my $cust_payby ($cust_main->cust_payby('CARD','DCRD')) {
       if ( $cust_payby->paymask eq $payinfo ) {
         $payinfo = $cust_payby->payinfo;
+        $replace_cust_payby = $cust_payby;
         $onfile = 1;
         last;
       }
@@ -1055,6 +1058,8 @@ sub validate_payment {
     'CHEK' => [ qw( ss paytype paystate stateid stateid_state payip ) ],
   );
 
+  my %replace = ( 'replace' => $replace_cust_payby, );
+
   my $card_type = '';
   $card_type = cardtype($payinfo) if $payby eq 'CARD';
 
@@ -1063,7 +1068,7 @@ sub validate_payment {
     'amount'         => sprintf('%.2f', $amount),
     'payby'          => $payby,
     'payinfo'        => $payinfo,
-    'paymask'        => $cust_main->mask_payinfo( $payby, $payinfo ),
+    'paymask'        => FS::payinfo_Mixin->mask_payinfo( $payby, $payinfo ),
     'card_type'      => $card_type,
     'paydate'        => $p->{'year'}. '-'. $p->{'month'}. '-01',
     'paydate_pretty' => $p->{'month'}. ' / '. $p->{'year'},
@@ -1076,6 +1081,7 @@ sub validate_payment {
     'payname'        => $payname,
     'discount_term'  => $discount_term,
     'pkgnum'         => $session->{'pkgnum'},
+    %replace,
     map { $_ => $p->{$_} } ( @{ $payby2fields{$payby} },
                              qw( save auto ),
                            )
@@ -1158,6 +1164,7 @@ sub do_process_payment {
 
     my $error = $cust_main->save_cust_payby(
       'payment_payby' => $payby,
+      'replace'       => $validate->{'replace'}, # cust_payby object to replace
       %saveopt
     );
 
