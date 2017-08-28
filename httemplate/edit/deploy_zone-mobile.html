@@ -23,8 +23,11 @@
         },
         'description',
         { field         => 'active_date',
-          type          => 'fixed-date',
-          value         => time,
+          type          => 'input-date-field',
+          curr_value_callback => sub {
+            my ($cgi, $object) = @_;
+            $cgi->param('active_date') || $object->active_date || time;
+          },
         },
         { field         => 'agentnum',
           type          => 'select-agent',
