@@ -900,7 +900,7 @@ my $validate_email = sub { $_[0] =~
   {
     'key'         => 'email-to-voice_domain',
     'section'     => 'email_to_voice_services',
-    'description' => 'The Domain to send email to voice to',
+    'description' => 'The domain name used to send emails to a 3rd party email to voice service.  You will be able to select a phone number to append to this domain on the email customer page or when using the email to voice billing event action.',
     'type'        => 'text',
     'per_agent'   => 1,
   },

@@ -33,7 +33,7 @@ sub option_fields {
                                              'fax'     => 'Fax #',
                                              'daytime' => 'Day Time #',
                                            },
-                     'post_field_label' => "@", # . $to_domain ,
+                     'post_field_label' => ' <font color="red">Make sure you have setup your email-to-voice_domain config option in your Configuration settings.</font>',
                    },
 
     'msgnum'    => { 'label'    => 'Template',
