@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::UID qw( adminsuidsetup );
+use FS::Setup;
+
+adminsuidsetup(shift) or die "usage: add-usps-af username\n";
+
+  my %addl = (
+    'US' => {
+#      'FM' => 'Federated States of Micronesia',
+#      'MH' => 'Marshall Islands',
+#      'PW' => 'Palau',
+      'AA' => "Armed Forces Americas (except Canada)",
+      'AE' => "Armed Forces Europe / Canada / Middle East / Africa",
+      'AP' => "Armed Forces Pacific",
+    },
+  );
+
+  foreach my $country ( keys %addl ) {
+    foreach my $state ( keys %{ $addl{$country} } ) {
+      # $longname = $addl{$country}{$state};
+      FS::Setup::_add_locale( 'country'=>$country, 'state'=>$state);
+    }
+  }
+
+1;
+
