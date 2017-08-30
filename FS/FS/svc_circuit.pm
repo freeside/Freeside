@@ -201,6 +201,7 @@ sub check {
     || $self->ut_textn('vendor_order_status')
     || $self->ut_ipn('endpoint_ip_addr')
     || $self->ut_textn('endpoint_mac_addr')
+    || $self->ut_textn('internal_circuit_id')
   ;
 
   # no canonical values yet for vendor_order_status or _type
