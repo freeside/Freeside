@@ -53,6 +53,9 @@ function category_changed(what) {
       jopt( $('#product_code'), '', 'Select product code' );
 
       var part_pkg_taxproduct = reply.part_pkg_taxproduct;
+      if ( part_pkg_taxproduct.length == 0 ) {
+        alert('No compliance solutions product codes found; did you run freeside-compliance_solutions-import?');
+      }
       for ( var s = 0; s < part_pkg_taxproduct.length; s=s+2 ) {
         var product_code = part_pkg_taxproduct[s];
         var description = part_pkg_taxproduct[s+1];
