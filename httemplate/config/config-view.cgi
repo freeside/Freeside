@@ -212,11 +212,15 @@ invoice language options:
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
-<font size="-2"><pre><% encode_entities(join("\n",
-     map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
-         $conf->config($i->key, $agentnum)
-   ) )
-%></pre></font>
+
+% my $escaped = eval { encode_entities(join("\n",
+%                        map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
+%                          $conf->config($i->key, $agentnum)
+%                      ) );
+%                    };
+% $escaped = $@ ? '('.encode_entities($@).')' : $escaped;
+<font size="-2"><pre><% $escaped %></pre></font>
+
               </td>
             </tr>
 
