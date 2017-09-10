@@ -1,0 +1,14 @@
+<% $return %>\
+<%init>
+
+my $DEBUG = 0;
+
+my $conf = new FS::Conf;
+
+my $return = {};
+my $url = "http://data.fcc.gov/api/block/find?format=json&censusYear=" . $cgi->param('census_year') . "&latitude=" . $cgi->param('lat') . "&longitude=" . $cgi->param('lon');
+
+use LWP::Simple;
+my $return = get $url;
+
+</%init>
