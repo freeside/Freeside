@@ -19,10 +19,11 @@ Confirm census tract
 % my $querystring = "census_year=$year&latitude=".$cache->get('latitude').'&longitude='.$cache->get('longitude');
 <A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
    TARGET="_blank">Map service module location</A><BR>
-% $querystring = "census_year=$year&zip_code=".$cache->get('zip');
-<A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
+% $querystring = "census_year=$year&pre=$pre&zip_code=" . $cache->get('zip');
+<A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
    TARGET="_blank">Map zip code center</A><BR>
 <BR>
+<input type="hidden" id="new_tract" name="new_tract" value="<%$new_tract%>">
 <TABLE>
   <TR>
     <TH style="width:50%">Entered census tract</TH>
@@ -31,9 +32,9 @@ Confirm census tract
   <TR>
     <TD><% $old_tract %></TD>
 % if ( $error ) {
-    <TD><FONT COLOR="#ff0000"><% $error %></FONT></TD>
+    <TD><div id='newcensustract'><FONT COLOR="#ff0000"><% $error %></FONT></div></TD>
 % } else {
-    <TD><% $new_tract %></TD>
+    <TD><div id='newcensustract'><% $new_tract %></div></TD>
 % }
   </TR>
   <TR>
@@ -43,30 +44,43 @@ Confirm census tract
       <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract
       </BUTTON>
     </TD>
-%   if ( !$error ) {
     <TD ALIGN="center">
-      <BUTTON TYPE="button"
-              onclick="set_censustract('<% $new_tract %>', '<% $year %>', '<% $pre %>')">
+     <div id="setnewtractdiv"
+% if ( $error ) { ## do not display this block if error finding track.
+      style="display:none"
+% }
+     >
+      <BUTTON TYPE="button" id="setnewtract"
+              onclick="set_censustract(getElementById('new_tract').value, '<% $year %>', '<% $pre %>')">
       <IMG SRC="<%$p%>images/tick.png" ALT=""> Use calculated census tract
       </BUTTON>
+     </div>
+     <div id='cancelsubmissiontop'
+% if ( !$error ) { ## do not display this block if there is no error finding a track.
+      style="display:none"
+% }
+     >
+      <BUTTON TYPE="button" onclick="submit_abort()">
+        <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+      </BUTTON>
+     </div>
     </TD>
   </TR>
   <TR>
     <TD COLSPAN=2 ALIGN="center">
+     <div id='cancelsubmissionbottom'
+% if ( $error ) { ## do not display this block if error finding track.
+      style="display:none"
+% }
+     >
       <BUTTON TYPE="button" onclick="submit_abort()">
-      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+        <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
       </BUTTON>
+     </div>
     </TD>
   </TR>
-%   } else { # don't show a button to use the calculated value
-    <TD COLSPAN=1 ALIGN="center">
-      <BUTTON TYPE="button" onclick="submit_abort()">
-      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
-      </BUTTON>
-    </TD>
-  </TR>
-%   }
 </TABLE></CENTER>
+
 <%init>
 
 local $SIG{__DIE__}; #disable Mason error trap
