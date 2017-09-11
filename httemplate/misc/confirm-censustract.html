@@ -16,8 +16,8 @@ Confirm census tract
 <% $location{address1} |h %> <% $location{address2} |h %><BR>
 <% $location{city} |h %>, <% $location{state} |h %> <% $location{zip} |h %><BR>
 <BR>
-% my $querystring = "census_year=$year&latitude=".$cache->get('latitude').'&longitude='.$cache->get('longitude');
-<A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
+% my $querystring = "census_year=$year&address=$location{address1}, $location{address2}, $location{city}, $location{state}, $location{zip}";
+<A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
    TARGET="_blank">Map service module location</A><BR>
 % $querystring = "census_year=$year&pre=$pre&zip_code=" . $cache->get('zip');
 <A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
