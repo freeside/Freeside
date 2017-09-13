@@ -59,14 +59,21 @@ tie %options, 'Tie::IxHash',
 
 %info = (
   'svc'     => 'svc_domain',
-  'desc'    => 'Send an HTTP or HTTPS GET or POST request',
+  'desc'    => 'Send an HTTP or HTTPS GET or POST request, for domains1',
   'options' => \%options,
   'no_machine' => 1,
   'notes'   => <<'END'
-Send an HTTP or HTTPS GET or POST to the specified URL.  For HTTPS support,
-<a href="http://search.cpan.org/dist/Crypt-SSLeay">Crypt::SSLeay</a>
-or <a href="http://search.cpan.org/dist/IO-Socket-SSL">IO::Socket::SSL</a>
-is required.
+Send an HTTP or HTTPS GET or POST to the specified URL on domain addition,
+modification and deletion.
+<p>Each "Data" option takes a list of <i>name value</i> pairs on successive 
+lines.
+<ul><li><i>name</i> is an unquoted, literal string without whitespace.</li>
+<li><i>value</i> is a Perl expression that will be evaluated.  If it's a 
+literal string, it must be quoted.  This expression has access to the
+svc_domain object as '$svc_x' (or '$new' and '$old' in "Replace Data") 
+and the customer record as '$cust_main'.</li></ul>
+If "Success Regexp" is specified, the response from the server will be
+tested against it to determine if the export succeeded.</p>
 END
 );
 
