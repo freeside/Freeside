@@ -58,15 +58,12 @@ tie %options, 'Tie::IxHash',
 
 %info = (
   'svc'     => 'svc_broadband',
-  'desc'    => 'Send an HTTP or HTTPS GET or POST request, for accounts.',
+  'desc'    => 'Send an HTTP or HTTPS GET or POST request, for wireless broadband services.',
   'options' => \%options,
   'no_machine' => 1,
   'notes'   => <<'END'
-<p>Send an HTTP or HTTPS GET or POST to the specified URL on account addition,
-modification and deletion.  For HTTPS support,
-<a href="http://search.cpan.org/dist/Crypt-SSLeay">Crypt::SSLeay</a>
-or <a href="http://search.cpan.org/dist/IO-Socket-SSL">IO::Socket::SSL</a>
-is required.</p>
+<p>Send an HTTP or HTTPS GET or POST to the specified URL on wireless broadband service addition,
+modification and deletion.
 <p>Each "Data" option takes a list of <i>name value</i> pairs on successive 
 lines.
 <ul><li><i>name</i> is an unquoted, literal string without whitespace.</li>
