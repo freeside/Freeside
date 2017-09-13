@@ -45,8 +45,10 @@ pdebuild --pbuilderroot sudo --debbuildopts "-b -rfakeroot -uc -us" --buildresul
 cd $DIR && rm -f freeside_*
 cd $TARGET && rm -f *.gz
 
-apt-ftparchive -qq packages ./ | gzip >Packages.gz
-apt-ftparchive -qq sources ./ | gzip >Sources.gz
-apt-ftparchive -qq packages ./ | bzip2 >Packages.bz2
-apt-ftparchive -qq sources ./ | bzip2 >Sources.bz2
+apt-ftparchive -qq packages ./ >Packages
+gzip -c Packages >Packages.gz
+bzip2 -c Packages >Packagez.bz2
+apt-ftparchive -qq sources ./ >Sources
+gzip -c Sources >Sources.gz
+bzip2 -c Sources >Sources.bz2
 apt-ftparchive -qq release ./ >Release
