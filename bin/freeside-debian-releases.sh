@@ -47,8 +47,9 @@ cd $TARGET && rm -f *.gz
 
 apt-ftparchive -qq packages ./ >Packages
 gzip -c Packages >Packages.gz
-bzip2 -c Packages >Packagez.bz2
+#bzip2 -c Packages >Packagez.bz2
 apt-ftparchive -qq sources ./ >Sources
 gzip -c Sources >Sources.gz
-bzip2 -c Sources >Sources.bz2
+#bzip2 -c Sources >Sources.bz2
+rm *bz2
 apt-ftparchive -qq release ./ >Release
