@@ -16,7 +16,20 @@ FS::API - Freeside backend API
 
 =head1 SYNOPSIS
 
-  use FS::API;
+  use Frontier::Client;
+  use Data::Dumper;
+
+  my $url = new URI 'http://localhost:8008/'; #or if accessing remotely, secure
+                                              # the traffic
+
+  my $xmlrpc = new Frontier::Client url=>$url;
+
+  my $result = $xmlrpc->call( 'FS.API.customer_info',
+                                'secret'  => 'sharingiscaring',
+                                'custnum' => 181318,
+                            );
+
+  print Dumper($result);
 
 =head1 DESCRIPTION
 
@@ -525,6 +538,23 @@ sub update_customer {
 Returns general customer information. Takes a list of keys and values as
 parameters with the following keys: custnum, secret 
 
+Example:
+
+  use Frontier::Client;
+  use Data::Dumper;
+
+  my $url = new URI 'http://localhost:8008/'; #or if accessing remotely, secure
+                                              # the traffic
+
+  my $xmlrpc = new Frontier::Client url=>$url;
+
+  my $result = $xmlrpc->call( 'FS.API.customer_info',
+                                'secret'  => 'sharingiscaring',
+                                'custnum' => 181318,
+                            );
+
+  print Dumper($result);
+
 =cut
 
 sub customer_info {
@@ -541,6 +571,28 @@ sub customer_info {
 
 Returns customer service information.  Takes a list of keys and values as
 parameters with the following keys: custnum, secret
+
+Example:
+
+  use Frontier::Client;
+  use Data::Dumper;
+
+  my $url = new URI 'http://localhost:8008/'; #or if accessing remotely, secure
+                                              # the traffic
+
+  my $xmlrpc = new Frontier::Client url=>$url;
+
+  my $result = $xmlrpc->call( 'FS.API.customer_list_svcs',
+                                'secret'  => 'sharingiscaring',
+                                'custnum' => 181318,
+                            );
+
+  print Dumper($result);
+
+  foreach my $cust_svc ( @{ $result->{'cust_svc'} } ) {
+    #print $cust_svc->{mac_addr}."\n" if exists $cust_svc->{mac_addr};
+    print $cust_svc->{circuit_id}."\n" if exists $cust_svc->{circuit_id};
+  }
 
 =cut
 
