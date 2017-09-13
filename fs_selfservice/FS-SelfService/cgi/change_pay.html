@@ -60,8 +60,8 @@
   delete $options{'DCRD'} unless $payby eq 'DCRD' || ! exists $options{'CARD'};
   delete $options{'DCHK'} unless $payby eq 'DCHK' || ! exists $options{'CHEK'};
 
-  ## setting payby to default to layer if only one.  should we always display first layer?
-  if (keys %options == 1) { @p = keys %options; $payby = $p[0]; }
+  ## set default layer to first payby.
+  @p = keys %options; $payby = $p[0];
 
   HTML::Widgets::SelectLayers->new(
     options => \%options,
