@@ -31,13 +31,6 @@ git checkout -- debian/changelog
 git pull
 #STATUS=`git pull`
 
-#Assign the proper config files for freeside-ng-selfservice
-if [ $DISTRO = "wheezy" ]; then
-	ln -s $DIR/freeside/debian/freeside-ng-selfservice.deb7 $DIR/freeside/debian/freeside-ng-selfservice.conffiles
-else
-	ln -s $DIR/freeside/debian/freeside-ng-selfservice.deb8 $DIR/freeside/debian/freeside-ng-selfservice.conffiles
-fi
-
 # Add the build information to changelog
 if [ $FS_REPO != "stable" ]; then
 	dch -b --newversion $GIT_VERSION-$DATE "Auto-Build"
