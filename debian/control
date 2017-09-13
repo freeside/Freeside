@@ -2,7 +2,6 @@ Source: freeside
 Section: misc
 Priority: extra
 Maintainer: Ivan Kohler <ivan-debian@420.am>
-Uploaders: Jeremy Davis <jeremyd@freeside.biz>
 Standards-Version: 3.7.2
 Homepage: http://www.freeside.biz/freeside
 Build-Depends: debhelper (>=5), perl (>=5.8),
