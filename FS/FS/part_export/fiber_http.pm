@@ -1,12 +1,9 @@
-package FS::part_export::acct_http;
+package FS::part_export::fiber_http;
+use base qw( FS::part_export::http );
 
-use vars qw( @ISA %info );
-use FS::part_export::http;
 use Tie::IxHash;
 
-@ISA = qw( FS::part_export::http );
-
-tie %options, 'Tie::IxHash',
+tie our %options, 'Tie::IxHash',
   'method' => { label   =>'Method',
                 type    =>'select',
                 #options =>[qw(POST GET)],
@@ -20,28 +17,18 @@ tie %options, 'Tie::IxHash',
     label   => 'Insert data',
     type    => 'textarea',
     default => join("\n",
-      "action 'add'",
-      "username \$svc_x->username",
-      "password \$svc_x->_password",
-      "prismid \$cust_main->agent_custid ? \$cust_main->agent_custid : \$cust_main->custnum ",
-      "name \$cust_main->first.' '.\$cust_main->last",
     ),
   },
   'delete_data' => {
     label   => 'Delete data',
     type    => 'textarea',
     default => join("\n",
-      "action  'remove'",
-      "username \$svc_x->username",
     ),
   },
   'replace_data' => {
     label   => 'Replace data',
     type    => 'textarea',
     default => join("\n",
-      "action  'update'",
-      "username \$old->username",
-      "password \$new->_password",
     ),
   },
   'suspend_data' => {
@@ -63,8 +50,8 @@ tie %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'     => 'svc_acct',
-  'desc'    => 'Send an HTTP or HTTPS GET or POST request, for accounts.',
+  'svc'     => 'svc_fiber',
+  'desc'    => 'Send an HTTP or HTTPS GET or POST request, for FTTx services.',
   'options' => \%options,
   'no_machine' => 1,
   'notes'   => <<'END'
@@ -75,7 +62,7 @@ lines.
 <ul><li><i>name</i> is an unquoted, literal string without whitespace.</li>
 <li><i>value</i> is a Perl expression that will be evaluated.  If it's a 
 literal string, it must be quoted.  This expression has access to the
-svc_acct object as '$svc_x' (or '$new' and '$old' in "Replace Data") 
+svc_fiber object as '$svc_x' (or '$new' and '$old' in "Replace Data") 
 and the customer record as '$cust_main'.</li></ul>
 If "Success Regexp" is specified, the response from the server will be
 tested against it to determine if the export succeeded.</p>
@@ -83,3 +70,4 @@ END
 );
 
 1;
+
