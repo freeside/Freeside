@@ -12,7 +12,7 @@ fi
 
 DATE=`date +"%Y%m%d"`
 DIR="/home/autobuild/packages/staging/freeside$FS_VERSION/$FS_REPO"
-TARGET="/home/jeremyd/public_html/freeside$FS_VERSION-$DISTRO-$FS_REPO"
+TARGET="/home/autobuild/public_html/freeside$FS_VERSION-$DISTRO-$FS_REPO"
 
 if [ ! -d "$DIR" -a -d $TARGET ]; then
 
@@ -42,7 +42,11 @@ pdebuild --pbuilderroot sudo --debbuildopts "-b -rfakeroot -uc -us" --buildresul
 
 #--buildresult gets the file where it needs to be, may need to clean up DIR
 
-cd $DIR; rm -f freeside_*
-cd $TARGET; rm -f *.gz
+cd $DIR && rm -f freeside_*
+cd $TARGET && rm -f *.gz
 
-$TARGET/APT
+apt-ftparchive -qq packages ./ | gzip >Packages.gz
+apt-ftparchive -qq sources ./ | gzip >Sources.gz
+apt-ftparchive -qq packages ./ | bzip2 >Packages.bz2
+apt-ftparchive -qq sources ./ | bzip2 >Sources.bz2
+apt-ftparchive -qq release ./ >Release
