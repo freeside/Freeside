@@ -102,6 +102,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libgeo-streetaddress-us-perl, libbusiness-onlinepayment-perl,
  libnet-vitelity-perl (>= 0.05), libnet-sslglue-perl, libexpect-perl,
  libspreadsheet-parsexlsx-perl
+Conflicts: libparams-classify-perl (>= 0.013-6)
 Replaces: freeside (<<4)
 Breaks: freeside (<<4)
 Description: Libraries for Freeside billing and trouble ticketing
