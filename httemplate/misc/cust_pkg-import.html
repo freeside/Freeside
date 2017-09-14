@@ -48,9 +48,9 @@ Import a file containing customer packages.
         <OPTION VALUE="location">Location
         <OPTION VALUE="location-agent_custid">Location with agent_custid
         <OPTION VALUE="location-agent_custid-agent_pkgid">Location with agent_custid and agent_pkgid
-        <OPTION VALUE="location-svc_phone">Location with phone service
-        <OPTION VALUE="location-svc_phone-agent_custid">Location with phone service and agent_custid
-        <OPTION VALUE="location-svc_phone-agent_custid-agent_pkgid">Location with phone service and agent_custid and agent_pkgid
+        <OPTION VALUE="location-quan_price-svc_phone">Location, quantity and price customizations with phone service
+        <OPTION VALUE="location-quan_price-svc_phone-agent_custid">Location, quantity and price customizations with phone service and agent_custid
+        <OPTION VALUE="location-quan_price-svc_phone-agent_custid-agent_pkgid">Location, quantity and price customizations with phone service and agent_custid and agent_pkgid
       </SELECT>
     </TD>
   </TR>
@@ -153,28 +153,31 @@ address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$
 </i>
 <BR><BR>
 
-<b>Location with phone service</b> format has the following field order: <i>custnum<%$req%>,
+<b>Location, quantity and price customizations with phone service</b> format has the following field order: <i>custnum<%$req%>,
 pkgpart<%$req%>, discountnum,
 start_date, setup, bill, last_bill, susp, adjourn, cancel, expire,
+quantity, setup_fee, recur_fee,
 address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$req%>, countrycode, phonenum, sip_password, pin
 </i>
 <BR><BR>
 
-<b>Location with phone service and agent_custid</b> format has the following field order: <i>agent_custid<%$req%>,
+<b>Location, quantity and price customizations with phone service and agent_custid</b> format has the following field order: <i>agent_custid<%$req%>,
 pkgpart<%$req%>, discountnum,
 start_date, setup, bill, last_bill, susp, adjourn, cancel, expire,
+quantity, setup_fee, recur_fee,
 address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$req%>, countrycode, phonenum, sip_password, pin
 </i>
 <BR><BR>
 
-<b>Location with phone service and agent_custid and agent_pkgid</b> format has the following field order: <i>agent_custid<%$req%>, agent_pkgid,
+<b>Location, quantity and price customizations with phone service and agent_custid and agent_pkgid</b> format has the following field order: <i>agent_custid<%$req%>, agent_pkgid,
 pkgpart<%$req%>, discountnum,
 start_date, setup, bill, last_bill, susp, adjourn, cancel, expire,
+quantity, setup_fee, recur_fee,
 address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country<%$req%>, countrycode, phonenum, sip_password, pin
 </i>
 <BR><BR>
 
-<%$req%> Required fields
+<%$req%> Required fields (for address fields, required if an address is specified)
 <BR><BR>
 
 Field information:

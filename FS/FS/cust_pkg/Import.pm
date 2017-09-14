@@ -105,6 +105,7 @@ my %formatfields = (
   'svc_phone'    => [qw( countrycode phonenum sip_password pin )],
   'svc_external' => [qw( id title )],
   'location'     => [qw( address1 address2 city state zip country )],
+  'quan_price'   => [qw( quantity setup_fee recur_fee )],
 );
 
 sub _formatfields {
@@ -116,8 +117,11 @@ my %import_options = (
 
   'preinsert_callback'  => sub {
     my($record, $param) = @_;
-    my @location_params = grep /^location\./, keys %$param;
+
+    my @location_params = grep { /^location\./ && length($param->{$_}) }
+                            keys %$param;
     if (@location_params) {
+warn join('-', @location_params);
       my $cust_location = FS::cust_location->new({
           'custnum' => $record->custnum,
       });
@@ -130,6 +134,28 @@ my %import_options = (
       return "error creating location: $error" if $error;
       $record->set('locationnum', $cust_location->locationnum);
     }
+
+    $record->quantity( $param->{'quan_price.quantity'} )
+      if $param->{'quan_price.quantity'} > 0;
+    
+    my $s = $param->{'quan_price.setup_fee'};
+    my $r = $param->{'quan_price.recur_fee'};
+    my $part_pkg = $record->part_pkg;
+    if (    ( $s && $s != $part_pkg->option('setup_fee') )
+         or ( $r && $r != $part_pkg->option('recur_fee') )
+       )
+    {
+      my $custom_part_pkg = $part_pkg->clone;
+      $custom_part_pkg->disabled('Y');
+      my %options = $part_pkg->options;
+      $options{'setup_fee'} = $s if $s;
+      $options{'recur_fee'} = $r if $r;
+      my $error = $custom_part_pkg->insert( options=>\%options );
+      return "error customizing package: $error" if $error;
+      $record->pkgpart( $custom_part_pkg->pkgpart );
+    }
+
+
     '';
   },
 
