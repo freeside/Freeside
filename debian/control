@@ -8,7 +8,7 @@ Build-Depends: debhelper (>=5), perl (>=5.8),
  rrdtool,librrds-perl, libxml-libxml-perl, libberkeleydb-perl,
  libtemplate-perl, libproc-daemon-perl, libnet-snmp-perl,
  libapache-session-perl, libjson-perl, libdbix-abstract-perl,
- libdbix-sequence-perl, librrds-perl, apache2, texlive-binaries,
+ libdbix-sequence-perl, apache2, texlive-binaries,
  autotools-dev, liburi-perl, db-util, libtimedate-perl, libcgi-fast-perl
 
 Package: freeside
