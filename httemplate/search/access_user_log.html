@@ -27,14 +27,37 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @extra_sql, "_date >= $beginning" if $beginning;
 push @extra_sql, "_date <= $ending"    if $ending;
 
-$hashref{usernum} = $cgi->param('usernum') if $cgi->param('usernum') =~ /^\d+$/;
+my $count_hr = '';
+if ( $cgi->param('usernum') =~ /^\d+$/ ) {
+  $hashref{usernum} = $cgi->param('usernum');
+  $count_hr = "WHERE usernum = ".$hashref{usernum}; 
+}
+
+if ( $cgi->param('skip_components') ) {
+  push @extra_sql, "path NOT IN ( '". join("','", 
+                                        map "/var/www/html/freeside/$_", qw(
+                                          view/REAL_logo.cgi
+                                          misc/jsrsServer.html
+                                          misc/xmlhttp-reason-hint.html
+                                          config/config-image.cgi
+                                          misc/xmlhttp-part_pkg_taxproduct.html
+                                          misc/progress-popup.html
+                                          misc/file-upload.html
+                                          misc/confirm-censustract.html
+                                          misc/xmlhttp-address_standardize.html
+                                          misc/confirm-address_standardize.html
+                                          misc/xmlhttp-part_pkg_usageprice.html
+                                        )
+                                      ).
+                             "' )";
+}
 
 my $extra_sql = '';
 $extra_sql .=  (keys(%hashref) ? ' AND ' : ' WHERE ' ). join(' AND ', @extra_sql)
   if @extra_sql;
+my $count_extra = $extra_sql;
 $extra_sql .= ' GROUP BY pretty_path '
   if $cgi->param('group_by') eq 'path';
-#warn $extra_sql;
 
 my $query = {
   'select'    => join(' , ',
@@ -48,7 +71,6 @@ my $query = {
   'extra_sql' => $extra_sql,
 };
 
-#uuh, no, need dates and usernum too, but whatever for now
-my $count_query = 'SELECT COUNT(DISTINCT path) FROM access_user_log';
+my $count_query = "SELECT COUNT(DISTINCT path) FROM access_user_log $count_hr $count_extra";
 
 </%init>
