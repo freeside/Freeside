@@ -93,7 +93,7 @@ sub smart_search {
     my $phonenum = "$1$2$3";
     #my $extension = $4;
 
-    #cust_main phone numbers
+    #cust_main phone numbers and contact phone number
     push @cust_main, qsearch( {
       'table'   => 'cust_main',
       'hashref' => { %options },
@@ -102,19 +102,11 @@ sub smart_search {
                          join(' OR ', map "$_ = '$phonen'",
                                           qw( daytime night mobile fax )
                              ).
+                          " OR phonenum = '$phonenum' ".
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
+      'addl_from' => ' left join cust_contact using (custnum) left join contact_phone using (contactnum) ',
     } );
-
-    #contact phone numbers
-    push @cust_main,
-      grep $agentnums_href->{$_->agentnum}, #agent virt
-        grep $_, #skip contacts that don't have cust_main records
-          map $_->contact->cust_main,
-            qsearch({
-                      'table'   => 'contact_phone',
-                      'hashref' => { 'phonenum' => $phonenum },
-                   });
 
     unless ( @cust_main || $phonen =~ /x\d+$/ ) { #no exact match
       #try looking for matches with extensions unless one was specified
@@ -136,28 +128,20 @@ sub smart_search {
   } 
   
   
-  if ( $search =~ /@/ ) { #email address
+  if ( $search =~ /@/ ) { #email address from cust_main_invoice and contact_email
 
-      # invoicing email address
-      push @cust_main,
-        grep $agentnums_href->{$_->agentnum}, #agent virt
-	  map $_->cust_main,
-	      qsearch( {
-			 'table'     => 'cust_main_invoice',
-			 'hashref'   => { 'dest' => $search },
-		       }
-		     );
-
-      # contact email address
-      push @cust_main,
-        grep $agentnums_href->{$_->agentnum}, #agent virt
-          grep $_, #skip contacts that don't have cust_main records
-	    map $_->contact->cust_main,
-	      qsearch( {
-			 'table'     => 'contact_email',
-			 'hashref'   => { 'emailaddress' => $search },
-		       }
-		     );
+    push @cust_main, qsearch( {
+      'table'   => 'cust_main',
+      'hashref' => { %options },
+      'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
+                     ' ( '.
+                         join(' OR ', map "$_ = '$search'",
+                                          qw( dest emailaddress )
+                             ).
+                     ' ) '.
+                     " AND $agentnums_sql", #agent virtualization
+      'addl_from' => ' left join cust_main_invoice using (custnum) left join cust_contact using (custnum) left join contact_email using (contactnum) ',
+    } );
 
   # custnum search (also try agent_custid), with some tweaking options if your
   # legacy cust "numbers" have letters
@@ -281,8 +265,8 @@ sub smart_search {
     } elsif ( ! $NameParse->parse($value) ) {
 
       my %name = $NameParse->components;
-      $first = $name{'given_name_1'} || $name{'initials_1'}; #wtf NameParse, Ed?
-      $last  = $name{'surname_1'};
+      $first = lc($name{'given_name_1'}) || $name{'initials_1'}; #wtf NameParse, Ed?
+      $last  = lc($name{'surname_1'});
 
     }
 
@@ -292,27 +276,17 @@ sub smart_search {
 
       #exact
       my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
-      $sql .= "( LOWER(cust_main.last) = $q_last AND LOWER(cust_main.first) = $q_first )";
+      $sql .= "( (LOWER(cust_main.last) = $q_last AND LOWER(cust_main.first) = $q_first)
+                 OR (LOWER(contact.last) = $q_last AND LOWER(contact.first) = $q_first) )";
 
-      #cust_main
+      #cust_main and contacts
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
-        'hashref'   => \%options,
+        'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+        'hashref'   => { %options },
         'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
+        'addl_from' => ' left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
       } );
-
-      #contacts
-      push @cust_main,
-        grep $agentnums_href->{$_->agentnum}, #agent virt
-          grep $_, #skip contacts that don't have cust_main records
-	    map $_->cust_main,
-	      qsearch( {
-			 'table'     => 'contact',
-			 'hashref'   => { 'first' => $first,
-                                          'last'  => $last,
-                                        }, 
-		       }
-		     );
 
       # or it just be something that was typed in... (try that in a sec)
 
@@ -326,7 +300,9 @@ sub smart_search {
                 OR LOWER(cust_main.last)          = $q_value
                 OR LOWER(cust_main.company)       = $q_value
                 OR LOWER(cust_main.ship_company)  = $q_value
-            ";
+                OR LOWER(contact.first)           = $q_value
+                OR LOWER(contact.last)            = $q_value
+            )";
 
     #address1 (yes, it's a kludge)
     $sql .= "   OR EXISTS ( 
@@ -336,20 +312,12 @@ sub smart_search {
                           )"
       if $conf->exists('address1-search');
 
-    #contacts (look, another kludge)
-    $sql .= "   OR EXISTS ( SELECT 1 FROM contact
-                              WHERE (    LOWER(contact.first) = $q_value
-                                      OR LOWER(contact.last)  = $q_value
-                                    )
-                                AND contact.custnum IS NOT NULL
-                                AND contact.custnum = cust_main.custnum
-                          )
-              ) ";
-
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
-      'hashref'   => \%options,
+      'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+      'hashref'   => { %options },
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
+      'addl_from' => 'left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
     } );
 
     #no exact match, trying substring/fuzzy
