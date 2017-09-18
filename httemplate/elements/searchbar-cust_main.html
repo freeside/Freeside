@@ -26,7 +26,7 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 my $menu_position = $curuser->option('menu_position') || 'top';
 
 my $cust_width = 246;
-my $cust_label = '(cust #, name, company';
+my $cust_label = '(cust #, name, company, email';
 if ( $conf->exists('address1-search') ) {
   $cust_label .= ', address';
   $cust_width += 56;
