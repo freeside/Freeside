@@ -67,6 +67,8 @@ L<FS::cust_main::Search> - Customer searching
 
 L<FS::cust_main::Import> - Batch customer importing
 
+L<FS::contact::Import> - Batch contact importing
+
 =head2 Database record classes
 
 L<FS::Record> - Database record base class
