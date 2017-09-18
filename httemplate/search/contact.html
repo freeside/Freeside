@@ -29,6 +29,27 @@ my $email_sub = sub {
   join(', ', map $_->emailaddress, @contact_email);
 };
 
+my $work_phone_sub = sub {
+  my $contact = shift;
+  #can't because contactnum is in the wrong field
+  my @contact_workphone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => '1' } );
+  join(', ', map $_->phonenum, @contact_workphone);
+};
+
+my $mobile_phone_sub = sub {
+  my $contact = shift;
+  #can't because contactnum is in the wrong field
+  my @contact_mobilephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => '3' } );
+  join(', ', map $_->phonenum, @contact_mobilephone);
+};
+
+my $home_phone_sub = sub {
+  my $contact = shift;
+  #can't because contactnum is in the wrong field
+  my @contact_homephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => '2' } );
+  join(', ', map $_->phonenum, @contact_homephone);
+};
+
 my $link; #for closure in this sub, we'll define it later
 my $contact_classname_sub = sub {
   my $contact = shift;
@@ -44,9 +65,9 @@ my $contact_classname_sub = sub {
   $X_contact->contact_classname;
 };
 
-my @header = ( 'First', 'Last', 'Title', 'Email', 'Type' );
-my @fields = ( 'first', 'last', 'title', $email_sub, $contact_classname_sub );
-my @links = ( '', '', '', '', '', );
+my @header = ( 'First', 'Last', 'Title', 'Email', 'Work Phone', 'Mobile Phone', 'Home Phone', 'Type' );
+my @fields = ( 'first', 'last', 'title', $email_sub, $work_phone_sub, $mobile_phone_sub, $home_phone_sub, $contact_classname_sub );
+my @links = ( '', '', '', '', '', '', '', '', );
 
 my $company_link = '';
 
