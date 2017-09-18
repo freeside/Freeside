@@ -2627,9 +2627,9 @@ sub change {
     foreach my $old_discount ($self->cust_pkg_discount_active) {
       # don't remove the old discount, we may still need to bill that package.
       my $new_discount = new FS::cust_pkg_discount {
-        'pkgnum'      => $cust_pkg->pkgnum,
-        'discountnum' => $old_discount->discountnum,
-        'months_used' => $old_discount->months_used,
+        'pkgnum' => $cust_pkg->pkgnum,
+        map { $_ => $old_discount->$_() }
+          qw( discountnum months_used end_date usernum setuprecur ),
       };
       $error = $new_discount->insert;
       if ( $error ) {
