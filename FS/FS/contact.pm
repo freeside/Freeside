@@ -12,6 +12,7 @@ use FS::contact_class;
 use FS::cust_location;
 use FS::contact_phone;
 use FS::contact_email;
+use FS::contact::Import;
 use FS::queue;
 use FS::cust_pkg;
 use FS::phone_type; #for cgi_contact_fields
