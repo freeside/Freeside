@@ -8,7 +8,7 @@
 
 
 <FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
     <TH ALIGN="right"><% mt('Current package') |h %></TH>
@@ -45,7 +45,7 @@
 &>
 
 <FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
 
   <SCRIPT TYPE="text/javascript">
     function delay_changed() {
@@ -86,7 +86,7 @@
 
 
 <FONT CLASS="fsinnerbox-title"><% mt('Location') |h %></FONT>
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-select-cust_location.html,
                'cgi'       => $cgi,
