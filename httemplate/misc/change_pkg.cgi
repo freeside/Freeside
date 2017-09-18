@@ -8,7 +8,7 @@
 
 
 <FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
 
   <TR>
     <TH ALIGN="right"><% mt('Current package') |h %></TH>
@@ -45,7 +45,7 @@
 &>
 
 <FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
 
   <SCRIPT TYPE="text/javascript">
     function delay_changed() {
@@ -89,14 +89,14 @@
 %
 % if ( $discount_cust_pkg || $waive_setup_fee ) {
   <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
-  <% ntable("#cccccc") %>
+  <TABLE CLASS="fsinnerbox">
     <& /elements/tr-select-pkg-discount.html, disable_recur => 1, &>
   </TABLE><BR>
 
 % }
 
 <FONT CLASS="fsinnerbox-title"><% mt('Location') |h %></FONT>
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-select-cust_location.html,
                'cgi'       => $cgi,
