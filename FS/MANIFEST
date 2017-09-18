@@ -510,6 +510,7 @@ t/class_Common.t
 FS/category_Common.pm
 t/category_Common.t
 FS/contact.pm
+FS/contact/Import.pm
 t/contact.t
 FS/contact_phone.pm
 t/contact_phone.t
