@@ -51,5 +51,5 @@ gzip -c Packages >Packages.gz
 apt-ftparchive -qq sources ./ >Sources
 gzip -c Sources >Sources.gz
 #bzip2 -c Sources >Sources.bz2
-rm *bz2
+rm *bz2 || true
 apt-ftparchive -qq release ./ >Release
