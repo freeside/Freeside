@@ -332,6 +332,7 @@ sub e911_send {
   return '' if $self->option('disable_e911');
 
   my %location = $svc_phone->location_hash;
+  $location{'zip'} =~ s/\-\d{4}$//;
   my %e911send = (
     'did'     => $svc_phone->phonenum,
     'address' => $location{'address1'},
