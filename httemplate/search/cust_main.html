@@ -72,6 +72,11 @@ for my $param (qw( classnum refnum payby tagnum pkg_classnum )) {
   $search_hash{$param} = [ $cgi->param($param) ];
 }
 
+#contacts
+$search_hash{'contacts'} = {
+  map { $_ => $cgi->param($_), } grep { /^(contacts_*)/ && $cgi->param($_) } keys $cgi->Vars
+};
+
 ###
 # parse dates
 ###
