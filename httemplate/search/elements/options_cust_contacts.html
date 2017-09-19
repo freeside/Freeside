@@ -1,0 +1,36 @@
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('First name') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>firstname" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Last name') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>lastname" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Email') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>email" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Home Phone') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>homephone" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Work Phone') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>workphone" SIZE=54></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right" VALIGN="center"><% mt('Mobile Phone') |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>mobilephone" SIZE=54></TD>
+    </TR>
+
+<%init>
+
+my %opt = @_;
+my $field_prefix = $opt{'pre_fix'} ? $opt{'pre_fix'} : '';
+
+</%init>
