@@ -118,10 +118,14 @@ sub check {
   ;
   return $error if $error;
 
+  my @unique = qw( data_vendor geocode );
+  push @unique, qw( state country )
+    if $self->data_vendor eq 'compliance_solutions';
+
   my $t;
   $t = qsearchs( 'tax_rate_location',
                  { disabled => '',
-                   ( map { $_ => $self->$_ } qw( data_vendor geocode ) ),
+                   ( map { $_ => $self->$_ } @unique ),
                  },
                )
     unless $self->disabled;
@@ -390,6 +394,16 @@ sub batch_import {
 
   ''; #no error
 
+}
+
+sub _upgrade_data {
+  my $class = shift;
+
+  my $sql = "UPDATE tax_rate_location SET data_vendor = 'compliance_solutions' WHERE data_vendor = 'compliance solutions'";
+
+  my $sth = dbh->prepare($sql) or die $DBI::errstr;
+  $sth->execute() or die $sth->errstr;
+  
 }
 
 =head1 BUGS

@@ -503,6 +503,10 @@ sub upgrade_data {
     #mark certain taxes as system-maintained,
     # and fix whitespace
     'cust_main_county' => [],
+
+    #'compliance solutions' -> 'compliance_solutions'
+    'tax_rate' => [],
+    'tax_rate_location' => [],
   ;
 
   \%hash;
