@@ -2335,7 +2335,15 @@ EOF
 
 }
 
+sub _upgrade_data {
+  my $class = shift;
 
+  my $sql = "UPDATE tax_rate SET data_vendor = 'compliance_solutions' WHERE data_vendor = 'compliance solutions'";
+
+  my $sth = dbh->prepare($sql) or die $DBI::errstr;
+  $sth->execute() or die $sth->errstr;
+  
+}
 
 =back
 
