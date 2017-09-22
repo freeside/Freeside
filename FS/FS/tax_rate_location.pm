@@ -111,6 +111,7 @@ sub check {
     $self->ut_numbern('taxratelocationnum')
     || $self->ut_textn('data_vendor')
     || $self->ut_alpha('geocode')
+    || $self->ut_textn('district')
     || $self->ut_textn('city')
     || $self->ut_textn('county')
     || $self->ut_textn('state')
@@ -171,13 +172,9 @@ sub find_or_insert {
 sub existing_search {
   my $self = shift;
 
-  my @unique = qw( data_vendor geocode );
-  push @unique, qw( state country )
-    if $self->data_vendor eq 'compliance_solutions';
-
   qsearchs( 'tax_rate_location',
             { disabled => '',
-              map { $_ => $self->$_ } @unique
+              map { $_ => $self->$_ } qw( data_vendor geocode )
             }
           );
 }
@@ -399,13 +396,14 @@ sub batch_import {
 }
 
 sub _upgrade_data {
-  my $class = shift;
-
-  my $sql = "UPDATE tax_rate_location SET data_vendor = 'compliance_solutions' WHERE data_vendor = 'compliance solutions'";
-
-  my $sth = dbh->prepare($sql) or die $DBI::errstr;
-  $sth->execute() or die $sth->errstr;
-  
+#actually no, we want to leave those records behind now that they're giving us
+# geo_state etc.
+#  my $class = shift;
+#
+#  my $sql = "UPDATE tax_rate_location SET data_vendor = 'compliance_solutions' WHERE data_vendor = 'compliance solutions'";
+#
+#  my $sth = dbh->prepare($sql) or die $DBI::errstr;
+#  $sth->execute() or die $sth->errstr;
 }
 
 =head1 BUGS
