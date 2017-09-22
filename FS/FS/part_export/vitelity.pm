@@ -286,8 +286,8 @@ sub _export_insert {
 
     my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
 
-    return 'Customer company is required'
-      unless $cust_main->company;
+    #return 'Customer company is required'
+    #  unless $cust_main->company;
 
     return 'Customer day phone (for contact, not porting) is required'
       unless $cust_main->daytime;
@@ -306,7 +306,7 @@ sub _export_insert {
       'partial'       => 'no',
       'wireless'      => 'no',
       'carrier'       => $svc_phone->lnp_other_provider,
-      'company'       => $cust_main->company,
+      'company'       => $cust_main->company || $cust_main->contact,
       'accnumber'     => $svc_phone->lnp_other_provider_account,
       'name'          => $svc_phone->phone_name_or_cust,
       'streetnumber'  => $sa->{number},
