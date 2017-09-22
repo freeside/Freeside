@@ -118,20 +118,12 @@ sub check {
   ;
   return $error if $error;
 
-  my @unique = qw( data_vendor geocode );
-  push @unique, qw( state country )
-    if $self->data_vendor eq 'compliance_solutions';
-
-  my $t;
-  $t = qsearchs( 'tax_rate_location',
-                 { disabled => '',
-                   ( map { $_ => $self->$_ } @unique ),
-                 },
-               )
+  my $t = '';
+  $t = $self->existing_search
     unless $self->disabled;
 
   $t = $self->by_key( $self->taxratelocationnum )
-    if ( !$t && $self->taxratelocationnum );
+    if !$t && $self->taxratelocationnum;
 
   return "geocode ". $self->geocode. " already in use for this vendor"
     if ( $t && $t->taxratelocationnum != $self->taxratelocationnum );
@@ -157,11 +149,7 @@ record.
 
 sub find_or_insert {
   my $self = shift;
-  my $existing = qsearchs('tax_rate_location', {
-      disabled    => '',
-      data_vendor => $self->data_vendor,
-      geocode     => $self->geocode
-  });
+  my $existing = $self->existing_search;
   if ($existing) {
     my $update = 0;
     foreach (qw(city county state country)) {
@@ -178,6 +166,20 @@ sub find_or_insert {
   } else {
     return $self->insert;
   }
+}
+
+sub existing_search {
+  my $self = shift;
+
+  my @unique = qw( data_vendor geocode );
+  push @unique, qw( state country )
+    if $self->data_vendor eq 'compliance_solutions';
+
+  qsearchs( 'tax_rate_location',
+            { disabled => '',
+              map { $_ => $self->$_ } @unique
+            }
+          );
 }
 
 =back
