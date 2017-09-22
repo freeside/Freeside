@@ -279,8 +279,10 @@ sub make_taxlines {
     my $tax_rate_location = FS::tax_rate_location->new({
         data_vendor => 'compliance_solutions',
         geocode     => $tax_data->{'geocode'},
-        state       => $tax_data->{'state'},
-        country     => $tax_data->{'country'},
+        district    => $tax_data->{'geo_district'},
+        state       => $tax_data->{'geo_state'},
+        county      => $tax_data->{'geo_county'},
+        country     => 'US',
     });
     $error = $tax_rate_location->find_or_insert;
     die 'error inserting tax_rate_location record for '.  $tax_data->{state}.

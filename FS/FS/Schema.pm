@@ -2335,6 +2335,7 @@ sub tables_hashref {
         'taxratelocationnum', 'serial',  '',     '', '', '', 
         'data_vendor',        'varchar', 'NULL', $char_d, '', '',
         'geocode',            'varchar', '',     20,      '', '', 
+        'district',           'varchar', 'NULL', $char_d, '', '',
         'city',               'varchar', 'NULL', $char_d, '', '',
         'county',             'varchar', 'NULL', $char_d, '', '',
         'state',              'char',    'NULL',       2, '', '', 
@@ -5796,6 +5797,25 @@ sub tables_hashref {
                         ],
     },
 
+    'access_user_session_log' => {
+      'columns' => [
+        'sessionlognum', 'serial', '',      '', '', '',
+        'usernum',          'int', '',      '', '', '',
+        'start_date',  @date_type,              '', '',
+        'last_date',   @date_type,              '', '',
+        'logout_date', @date_type,              '', '',
+        'logout_type',  'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'sessionlognum',
+      'unique'       => [],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'usernum' ],
+                            table      => 'access_user',
+                          },
+                        ],
+    },
+
     'access_user' => {
       'columns' => [
         'usernum',             'serial',     '',      '', '', '',
@@ -5843,8 +5863,9 @@ sub tables_hashref {
 
     'access_group' => {
       'columns' => [
-        'groupnum',   'serial', '',      '', '', '',
-        'groupname', 'varchar', '', $char_d, '', '',
+        'groupnum',        'serial',     '',      '', '', '',
+        'groupname',      'varchar',     '', $char_d, '', '',
+        'session_timeout',    'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'groupnum',
       'unique' => [ [ 'groupname' ] ],
