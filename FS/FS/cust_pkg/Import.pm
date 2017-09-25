@@ -105,7 +105,7 @@ my %formatfields = (
   'svc_phone'    => [qw( countrycode phonenum sip_password pin )],
   'svc_external' => [qw( id title )],
   'location'     => [qw( address1 address2 city state zip country )],
-  'quan_price'   => [qw( quantity setup_fee recur_fee )],
+  'quan_price'   => [qw( quantity setup_fee recur_fee invoice_details )],
 );
 
 sub _formatfields {
@@ -161,6 +161,25 @@ warn join('-', @location_params);
 
   'postinsert_callback' => sub {
     my( $record, $param ) = @_;
+
+    if ( $param->{'quan_price.invoice_details'} ) {
+
+      my $weight = 0;
+      foreach my $detail (split(/\|/, $param->{'quan_price.invoice_details'})) {
+
+        my $cust_pkg_detail = new FS::cust_pkg_detail {
+          'pkgnum'     => $record->pkgnum,
+          'detail'     => $detail,
+          'detailtype' => 'I',
+          'weight'     => $weight++,
+        };
+
+        my $error = $cust_pkg_detail->insert;
+        return "error inserting invoice detail: $error" if $error;
+
+      }
+
+    }
 
     my $formatfields = _formatfields;
     foreach my $svc_x ( grep /^svc/, keys %$formatfields ) {
