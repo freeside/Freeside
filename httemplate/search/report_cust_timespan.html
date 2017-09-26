@@ -1,0 +1,42 @@
+<& /elements/header.html, mt($title) &>
+
+<FORM ACTION="cust_timespan.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => emt('Contacts for agent: '),
+                 'disable_empty' => 0,
+  &>
+
+  <& /elements/tr-select.html,
+       'label'      => 'Customer status',
+       'field'      => 'cust_status',
+       'options'    => [ 'cancelled', 'suspended'],
+       'labels'     => { 'cancelled'     => 'Cancelled Customers',
+                         'suspended'     => 'Suspended Customers',
+                       },
+       'curr_value' => scalar( $cgi->param('cust_status') ),
+  &>
+
+</FORM>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
+
+my $conf = new FS::Conf;
+
+my $title = 'Customer Timespan Report';
+
+</%init>

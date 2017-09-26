@@ -147,6 +147,7 @@ if ( $curuser->access_right('List contacts') ) {
   $report_customers{'separator'} = '';
   $report_customers{'Customer contacts'} = [ $fsurl. 'search/report_contact.html?link=cust_main' ];
   $report_customers{'Customer stored payment information'} = [ $fsurl. 'search/report_cust_payby.html' ];
+  $report_customers{'Customer timespan'} = [ $fsurl. 'search/report_cust_timespan.html' ];
 }
 
 tie my %report_invoices_open, 'Tie::IxHash',
