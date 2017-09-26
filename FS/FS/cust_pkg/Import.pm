@@ -141,15 +141,15 @@ warn join('-', @location_params);
     my $s = $param->{'quan_price.setup_fee'};
     my $r = $param->{'quan_price.recur_fee'};
     my $part_pkg = $record->part_pkg;
-    if (    ( $s && $s != $part_pkg->option('setup_fee') )
-         or ( $r && $r != $part_pkg->option('recur_fee') )
+    if (    ( length($s) && $s != $part_pkg->option('setup_fee') )
+         or ( length($r) && $r != $part_pkg->option('recur_fee') )
        )
     {
       my $custom_part_pkg = $part_pkg->clone;
       $custom_part_pkg->disabled('Y');
       my %options = $part_pkg->options;
-      $options{'setup_fee'} = $s if $s;
-      $options{'recur_fee'} = $r if $r;
+      $options{'setup_fee'} = $s if length($s);
+      $options{'recur_fee'} = $r if length($r);
       my $error = $custom_part_pkg->insert( options=>\%options );
       return "error customizing package: $error" if $error;
       $record->pkgpart( $custom_part_pkg->pkgpart );
