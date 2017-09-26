@@ -31,22 +31,25 @@ my $email_sub = sub {
 
 my $work_phone_sub = sub {
   my $contact = shift;
+  my $phone_type = qsearchs('phone_type', { 'typename' => 'Work' });
   #can't because contactnum is in the wrong field
-  my @contact_workphone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => '1' } );
+  my @contact_workphone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => $phone_type->phonetypenum } );
   join(', ', map $_->phonenum, @contact_workphone);
 };
 
 my $mobile_phone_sub = sub {
   my $contact = shift;
+  my $phone_type = qsearchs('phone_type', { 'typename' => 'Mobile' });
   #can't because contactnum is in the wrong field
-  my @contact_mobilephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => '3' } );
+  my @contact_mobilephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => $phone_type->phonetypenum } );
   join(', ', map $_->phonenum, @contact_mobilephone);
 };
 
 my $home_phone_sub = sub {
   my $contact = shift;
+  my $phone_type = qsearchs('phone_type', { 'typename' => 'Home' });
   #can't because contactnum is in the wrong field
-  my @contact_homephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => '2' } );
+  my @contact_homephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => $phone_type->phonetypenum } );
   join(', ', map $_->phonenum, @contact_homephone);
 };
 
