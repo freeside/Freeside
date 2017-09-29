@@ -1,6 +1,7 @@
 package FS::API;
 
 use strict;
+use Date::Parse;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
@@ -649,10 +650,128 @@ sub location_info {
   return \%return;
 }
 
+=item order_package OPTION => VALUE, ...
+
+Orders a new customer package.  Takes a list of keys and values as paramaters
+with the following keys:
+
+=over 4
+
+=item secret
+
+API Secret
+
+=item custnum
+
+=item pkgpart
+
+=item quantity
+
+=item start_date
+
+=item contract_end
+
+=item address1
+
+=item address2
+
+=item city
+
+=item county
+
+=item state
+
+=item zip
+
+=item country
+
+=item setup_fee
+
+Including this implements per-customer custom pricing for this package, overriding package definition pricing
+
+=item recur_fee
+
+Including this implements per-customer custom pricing for this package, overriding package definition pricing
+
+=item invoice_details
+
+A single string for just one detail line, or an array reference of one or more
+lines of detail
+
+=cut
+
+sub order_package {
+  my( $class, %opt ) = @_;
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
+    or return { 'error' => 'Unknown custnum' };
+
+  #some conceptual false laziness w/cust_pkg/Import.pm
+
+  my $cust_pkg = new FS::cust_pkg {
+    'pkgpart'    => $opt{'pkgpart'},
+    'quantity'   => $opt{'quantity'} || 1,
+  };
+
+  #start_date and contract_end
+  foreach my $date_field (qw( start_date contract_end )) {
+    if ( $opt{$date_field} =~ /^(\d+)$/ ) {
+      $cust_pkg->$date_field( $opt{$date_field} );
+    } elsif ( $opt{$date_field} ) {
+      $cust_pkg->$date_field( str2time( $opt{$date_field} ) );
+    }
+  }
+
+  #especially this part for custom pkg price
+  # (false laziness w/cust_pkg/Import.pm)
+  my $s = $opt{'setup_fee'};
+  my $r = $opt{'recur_fee'};
+  my $part_pkg = $cust_pkg->part_pkg;
+  if (    ( length($s) && $s != $part_pkg->option('setup_fee') )
+       or ( length($r) && $r != $part_pkg->option('recur_fee') )
+     )
+  {
+    my $custom_part_pkg = $part_pkg->clone;
+    $custom_part_pkg->disabled('Y');
+    my %options = $part_pkg->options;
+    $options{'setup_fee'} = $s if length($s);
+    $options{'recur_fee'} = $r if length($r);
+    my $error = $custom_part_pkg->insert( options=>\%options );
+    return ( 'error' => "error customizing package: $error" ) if $error;
+    $cust_pkg->pkgpart( $custom_part_pkg->pkgpart );
+  }
+
+  my %order_pkg = ( 'cust_pkg' => $cust_pkg );
+
+  my @loc_fields = qw( address1 address2 city county state zip country );
+  if ( grep length($opt{$_}), @loc_fields ) {
+     $order_pkg{'cust_location'} = new FS::cust_location {
+       map { $_ => $opt{$_} } @loc_fields, 'custnum'
+     };
+  }
+
+  $order_pkg{'invoice_details'} = $opt{'invoice_details'}
+    if $opt{'invoice_details'};
+
+  my $error = $cust_main->order_pkg( %order_pkg );
+
+  #if ( $error ) {
+    return { 'error'  => $error,
+             #'pkgnum' => '',
+           };
+  #} else {
+  #  return { 'error'  => '',
+  #           #cust_main->order_pkg doesn't actually have a way to return pkgnum
+  #           #'pkgnum' => $pkgnum,
+  #         };
+  #}
+
+}
+
 =item change_package_location
 
 Updates package location. Takes a list of keys and values 
-as paramters with the following keys: 
+as parameters with the following keys: 
 
 pkgnum
 
