@@ -63,6 +63,10 @@
 
 \LTchunksize=40
 
+
+\begin{document}
+
+
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{1pt}
 
@@ -268,7 +272,6 @@
   \\
 }
 
-\begin{document}
 %	Headers and footers defined for the first page
 \addressinset \rule{0.5cm}{0cm} 
 \makebox{
