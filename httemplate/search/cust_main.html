@@ -13,10 +13,10 @@
                     \&FS::UI::Web::cust_fields,
                     @extra_fields,
                   ],
-                  #'sort_fields' => [
-                  #  FS::UI::Web::cust_sort_fields(),
-                  #  @extra_sort_fields,
-                  #],
+                  'sort_fields' => [
+                    FS::UI::Web::cust_sort_fields(),
+                    @extra_sort_fields,
+                  ],
                   'color'       => [ FS::UI::Web::cust_colors(),
                                      map '', @extra_fields
                                    ],
