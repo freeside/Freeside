@@ -68,16 +68,20 @@ for my $param (qw( classnum refnum pkg_classnum )) {
   $search_hash{$param} = [ $cgi->param($param) ];
 }
 
+my $params = $cgi->Vars;
+
 #contacts
 $search_hash{'contacts'} = {
-  map { $_ => $cgi->param($_), } grep { /^(contacts_*)/ && $cgi->param($_) } keys $cgi->Vars
+  map { $_ => $cgi->param($_), }
+    grep { /^(contacts_*)/ && $cgi->param($_) }
+      keys %$params
 };
 
 #tags
-my $params = $cgi->Vars;
 $search_hash{'tagnum'} = [
   map { /^tagnum(\d+)/ && $1 }
-    grep { /^tagnum(\d+)/ && $cgi->param($_) } keys %$params
+    grep { /^tagnum(\d+)/ && $cgi->param($_) }
+      keys %$params
 ];
 
 ###
