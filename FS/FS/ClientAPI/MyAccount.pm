@@ -882,6 +882,7 @@ sub payment_info {
     if ($cust_payby) {
       $return{payname} = $cust_payby->payname
                          || ( $cust_main->first. ' '. $cust_main->get('last') );
+      $return{custpaybynum} = $cust_payby->custpaybynum;
 
       if ( $cust_payby->payby =~ /^(CARD|DCRD)$/ ) {
         $return{card_type} = cardtype($cust_payby->payinfo);

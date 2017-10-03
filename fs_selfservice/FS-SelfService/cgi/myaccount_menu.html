@@ -93,9 +93,10 @@ push @menu,
 
 unless ( $access_pkgnum ) {
   push @menu,
-    { title=>'Change billing address',      url=>'change_bill',     indent=>2 },
-    { title=>'Change service address',      url=>'change_ship',     indent=>2 },
-    { title=>'Change payment information',  url=>'change_pay',      indent=>2 },
+    { title=>'Change billing address',          url=>'change_bill',           indent=>2 },
+    { title=>'Change service address',          url=>'change_ship',           indent=>2 },
+    { title=>'Change credit card information',  url=>'change_creditcard_pay', indent=>2 },
+    { title=>'Change check information',        url=>'change_check_pay',      indent=>2 },
   ;
 }
 
