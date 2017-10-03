@@ -510,6 +510,7 @@ t/class_Common.t
 FS/category_Common.pm
 t/category_Common.t
 FS/contact.pm
+FS/contact/Import.pm
 t/contact.t
 FS/contact_phone.pm
 t/contact_phone.t
@@ -872,3 +873,7 @@ FS/saved_search.pm
 t/saved_search.t
 FS/sector_coverage.pm
 t/sector_coverage.t
+FS/access_user_session_log.pm
+t/access_user_session_log.t
+FS/access_user_session_log.pm
+t/access_user_session_log.t

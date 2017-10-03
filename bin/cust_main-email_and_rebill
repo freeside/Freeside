@@ -1,0 +1,73 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Date::Parse;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearchs );
+use FS::cust_pkg;
+use FS::msg_template;
+
+adminsuidsetup shift or die 'Usage: cust_main-email_and_rebill username\n';
+
+my $DRY_RUN = 1;
+my $msgnum = 17;
+
+my $sep1 = str2time('9/1/2017');
+my $aug15 = str2time('8/15/2017') + 1802;
+
+my $msg_template = qsearchs('msg_template', { 'msgnum' => $msgnum } )
+  or die "unknown msg_template $msgnum\n";
+
+while (<>) {
+  chomp;
+  my $pkgnum = $_;
+
+  #find the package
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum'=>$pkgnum } )
+    or die "pkgnum $pkgnum not found\n";
+
+  #reset its next bill date back to sep 1
+  $cust_pkg->set('bill', $sep1);
+  unless ( $DRY_RUN ) {
+    warn "updating cust_pkg $pkgnum bill to $sep1\n";
+    my $error = $cust_pkg->replace;
+    die $error if $error;
+  } else {
+    warn "DRY RUN: would update cust_pkg $pkgnum bill to $sep1\n";
+  }
+
+  #customer
+  my $cust_main = $cust_pkg->cust_main;
+  my $custnum = $cust_main->custnum;
+
+  #send the custoemr a notice
+  unless ( $DRY_RUN ) {
+    warn "emailing msg_template $msgnum to customer $custnum\n";
+    $msg_template->send( 'cust_main' => $cust_main,
+                         'object'    => $cust_main,
+                       );
+  } else {
+    warn "DRY RUN: emailing msg_template $msgnum to customer $custnum\n";
+  }
+
+  #bill the package
+  unless ( $DRY_RUN ) {
+    warn "billing customer $custnum for package $pkgnum as of $sep1\n";
+    $cust_main->bill( 'time'         => $sep1,
+                      'invoice_time' => $aug15,
+                      'pkg_list'     => [ $cust_pkg ],
+                    );
+  } else {
+    warn "DRY RUN: billing customer $custnum for package $pkgnum as of $sep1\n";
+  }
+
+  #something about removing their pending batch payment??
+  #hmm, there doesn't appear to be anything in a batch
+  #dating the invoices aug 15th will ensure payments for them are batched
+
+  #events will take care of the rest...
+
+}
+
+1;

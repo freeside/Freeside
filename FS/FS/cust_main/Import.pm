@@ -325,6 +325,7 @@ sub batch_import {
     my %svc_x = ();
     my %bill_location = ();
     my %ship_location = ();
+    my $cust_payby = '';
     foreach my $field ( @fields ) {
 
       if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|adjourn|expire|cancel)$/ ) {
@@ -409,17 +410,24 @@ sub batch_import {
 
       if ( $cust_main{'payinfo'} =~ /^\s*(\d+\@[\d\.]+)\s*$/ ) {
 
-        $cust_main{'payby'}   = 'CHEK';
-        $cust_main{'payinfo'} = $1;
+        delete $cust_main{'payinfo'};
 
-      } else {
+        $cust_payby = new FS::cust_payby {
+          'payby'   => 'CHEK',
+          'payinfo' => $1,
+        };
 
-        $cust_main{'payby'} = 'CARD';
+      } elsif ($cust_main{'payinfo'} =~ /^\s*([AD]?)(.*)\s*$/) {
 
-        if ($cust_main{'payinfo'} =~ /^\s*([AD]?)(.*)\s*$/) {
-          $cust_main{'payby'} = 'DCRD' if $1 eq 'D';
-          $cust_main{'payinfo'} = $2;
-        }
+        delete $cust_main{'payinfo'};
+
+        $cust_payby = new FS::cust_payby {
+          'payby'   => ($1 eq 'D') ? 'DCRD' : 'CARD',
+          'payinfo' => $2,
+          'paycvv'  => delete $cust_main{'paycvv'},
+          'paydate' => delete $cust_main{'paydate'},
+          'payname' => $cust_main{'first'}. ' '. $cust_main{'last'},
+        };
 
       }
 
@@ -502,7 +510,10 @@ sub batch_import {
       $hash{$cust_pkg} = \@svc_x;
     }
 
-    my $error = $cust_main->insert( \%hash, $invoicing_list );
+    my %options = ('invoicing_list' => $invoicing_list);
+    $options{'cust_payby'} = [ $cust_payby ] if $cust_payby;
+
+    my $error = $cust_main->insert( \%hash, %options );
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;

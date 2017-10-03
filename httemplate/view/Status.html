@@ -1,4 +1,7 @@
 <& /elements/header.html, 'System Status' &>
+
+<& /elements/init_overlib.html &>
+
 % foreach my $section ( keys %status ) {
 <FONT CLASS="fsinnerbox-title"><% mt($section) |h %></FONT>
 <TABLE CLASS="fsinnerbox">
@@ -11,6 +14,7 @@
 </TABLE>
 <BR><BR>
 % }
+
 <& /elements/footer.html &>
 <%init>
 
@@ -40,8 +44,13 @@ if ( $db eq 'PostgreSQL' && $db_ver =~ /^\s*PostgreSQL\s+([\w\.]+)\s+on\s+/ ) {
 my $db_size = 'Unknown';
 if ( $db eq 'PostgreSQL' ) {
   $db_size = FS::Record->scalar_sql(qq(
-    SELECT pg_size_pretty(pg_database_size('freeside'))
-  ));
+               SELECT pg_size_pretty(pg_database_size('freeside'))
+             )). ' '.
+             include('/elements/popup_link.html',
+                       'action'      => 'Status-db_size_detail.html',
+                       'label'       => '(details)',
+                       'actionlabel' => 'Database size details',
+             );
 }
 
 tie my %status, 'Tie::IxHash',

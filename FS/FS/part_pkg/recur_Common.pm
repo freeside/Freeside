@@ -43,12 +43,17 @@ sub cutoff_day {
   my $recur_method = $self->option('recur_method',1) || 'anniversary';
   my $cust_main = $cust_pkg->cust_main;
 
-  if ( $cust_main->force_prorate_day and $cust_main->prorate_day ) {
-     return ( $cust_main->prorate_day );
-  } elsif ($recur_method eq 'prorate' || $recur_method eq 'subscription') {
+  return ( $cust_main->prorate_day )
+    if $cust_main->prorate_day and (    $cust_main->force_prorate_day
+                                     || $recur_method eq 'prorate'
+                                     || $recur_method eq 'subscription'
+                                   );
 
-    return split(/\s*,\s*/, $self->option('cutoff_day', 1) || '1');
-  }
+  return split(/\s*,\s*/, $self->option('cutoff_day', 1) || '1')
+    if $recur_method eq 'prorate'
+    || $recur_method eq 'subscription';
+
+  return ();
 }
 
 sub calc_recur_Common {

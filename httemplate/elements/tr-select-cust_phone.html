@@ -1,0 +1,12 @@
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Customer Phones' %></TD>
+    <TD>
+      <% include( '/elements/select-cust_phone.html', %opt ) %>
+    </TD>
+  </TR>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

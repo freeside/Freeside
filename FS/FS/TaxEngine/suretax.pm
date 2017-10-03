@@ -14,7 +14,7 @@ our $DEBUG = 1; # prints progress messages
 #   $DEBUG = 2; # prints decoded request and response (noisy, be careful)
 #   $DEBUG = 3; # prints raw response from the API, ridiculously unreadable
 
-our $json = Cpanel::JSON::XS->new->pretty(1);
+our $json = Cpanel::JSON::XS->new->pretty(0)->shrink(1);
 
 our %taxproduct_cache;
 
@@ -328,13 +328,14 @@ sub make_taxlines {
     return;
   }
 
-  warn "sending SureTax request\n" if $DEBUG;
+  warn "encoding SureTax request\n" if $DEBUG;
   my $request_json = $json->encode($request);
   warn $request_json if $DEBUG > 1;
 
   my $host = $conf->config('suretax-hostname');
   $host ||= 'testapi.taxrating.net';
 
+  warn "sending SureTax request\n" if $DEBUG;
   # We are targeting the "V05" interface:
   # - accepts both telecom and general sales transactions
   # - produces results broken down by "invoice" (Freeside line item)
@@ -346,8 +347,11 @@ sub make_taxlines {
     'Accept'        => 'application/json',
   );
 
+  warn 'received SureTax response: '. $http_response->status_line. "\n"
+    if $DEBUG;
+  die $http_response->status_line. "\n" unless $http_response->is_success;
+
   my $raw_response = $http_response->content;
-  warn "received response\n" if $DEBUG;
   warn $raw_response if $DEBUG > 2;
   my $response;
   if ( $raw_response =~ /^<\?xml/ ) {
@@ -356,8 +360,10 @@ sub make_taxlines {
     $response = XMLin( $raw_response );
     $raw_response = $response->{content};
   }
+
+  warn "decoding SureTax response\n" if $DEBUG;
   $response = eval { $json->decode($raw_response) }
-    or die "$raw_response\n";
+    or die "Can't JSON-decode response: $raw_response\n";
 
   # documentation implies this might be necessary
   $response = $response->{'d'} if exists $response->{'d'};
@@ -375,6 +381,7 @@ sub make_taxlines {
   }
 
   return if !$response->{GroupList};
+  warn "creating FS objects from SureTax data\n" if $DEBUG;
   foreach my $taxable ( @{ $response->{GroupList} } ) {
     # each member of this array here corresponds to what SureTax calls an
     # "invoice" and we call a "line item". The invoice number is 
@@ -420,6 +427,7 @@ sub make_taxlines {
       });
     }
   }
+  warn "TaxEngine/suretax.pm make_taxlines done; returning FS objects\n" if $DEBUG;
   return @elements;
 }
 

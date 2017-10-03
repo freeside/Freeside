@@ -12,7 +12,7 @@ fi
 
 DATE=`date +"%Y%m%d"`
 DIR="/home/autobuild/packages/staging/freeside$FS_VERSION/$FS_REPO"
-TARGET="/home/jeremyd/public_html/freeside$FS_VERSION-$DISTRO-$FS_REPO"
+TARGET="/home/autobuild/public_html/freeside$FS_VERSION-$DISTRO-$FS_REPO"
 
 if [ ! -d "$DIR" -a -d $TARGET ]; then
 
@@ -31,13 +31,6 @@ git checkout -- debian/changelog
 git pull
 #STATUS=`git pull`
 
-#Assign the proper config files for freeside-ng-selfservice
-if [ $DISTRO = "wheezy" ]; then
-	ln -s $DIR/freeside/debian/freeside-ng-selfservice.deb7 $DIR/freeside/debian/freeside-ng-selfservice.conffiles
-else
-	ln -s $DIR/freeside/debian/freeside-ng-selfservice.deb8 $DIR/freeside/debian/freeside-ng-selfservice.conffiles
-fi
-
 # Add the build information to changelog
 if [ $FS_REPO != "stable" ]; then
 	dch -b --newversion $GIT_VERSION-$DATE "Auto-Build"
@@ -49,7 +42,14 @@ pdebuild --pbuilderroot sudo --debbuildopts "-b -rfakeroot -uc -us" --buildresul
 
 #--buildresult gets the file where it needs to be, may need to clean up DIR
 
-cd $DIR; rm -f freeside_*
-cd $TARGET; rm -f *.gz
+cd $DIR && rm -f freeside_*
+cd $TARGET && rm -f *.gz
 
-$TARGET/APT
+apt-ftparchive -qq packages ./ >Packages
+gzip -c Packages >Packages.gz
+#bzip2 -c Packages >Packagez.bz2
+apt-ftparchive -qq sources ./ >Sources
+gzip -c Sources >Sources.gz
+#bzip2 -c Sources >Sources.bz2
+rm *bz2 || true
+apt-ftparchive -qq release ./ >Release

@@ -1,0 +1,88 @@
+<html>
+<head>
+  <title>Find Census Tract Map</title>
+  <link rel="stylesheet" href="elements/leaflet/leaflet.css"/>
+  <script src="elements/leaflet/leaflet.js"></script>
+</head>
+<body>
+  <h1>Please select your location on the map</h1>
+  <table>
+   <tr>
+   <td valign=top>
+     <input type="button" value="Use below census track" onclick="changeMainDiv()">
+     <P>
+     Census Tract: <div id="mycensustract"></div>
+     <input type=hidden id="censustract" value="">
+   </td>
+   <td>
+     <div id="mapid" style="width: 600px; height: 600px;"></div>
+   </td>
+  </tr>
+ </table>
+
+  <script>
+    var mymap = L.map('mapid').setView(getLatLong('<%$loc%>'), 15);
+    var popup = L.popup();
+    var mainLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    	 maxZoom: 19,
+	 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(mymap);
+    var markersLayer = new L.LayerGroup();
+    mymap.addLayer(markersLayer);
+
+    function onMapClick(e) {
+      markersLayer.clearLayers();
+      var marker = L.marker([e.latlng.lat, e.latlng.lng]);
+      marker.bindPopup("You selected (" + e.latlng.lat + " , " + e.latlng.lng + ")").openPopup();
+      markersLayer.addLayer(marker);
+      getCensusTract(e.latlng.lat, e.latlng.lng);
+    }
+
+    mymap.on('click', onMapClick);
+
+    function Get(yourUrl){
+      var Httpreq = new XMLHttpRequest(); // a new request
+      Httpreq.open("GET",yourUrl,false);
+      Httpreq.send();
+      return Httpreq.responseText;          
+    }
+
+    function getLatLong(loc) {
+    	 var url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + loc;
+    	 var json_obj = JSON.parse(Get(url));
+    	 return [json_obj[0].lat, json_obj[0].lon];
+    }
+
+    function getCensusTract(lat, lon) {
+    	 var url = 'xmlhttp-censustract.html?lat=' + lat + '&lon=' + lon + '&census_year=<%$census_year%>';
+    	 var json_obj = JSON.parse(Get(url));
+    	 var tract = (json_obj.Block.FIPS.substr(0, 11) / 100).toFixed(2);
+    	 document.getElementById("mycensustract").innerHTML = tract;
+    }
+
+    function changeMainDiv(lat,lng) {
+          window.opener.document.getElementById("newcensustract").innerHTML = document.getElementById("mycensustract").innerHTML;
+          window.opener.document.getElementById("new_tract").value = document.getElementById("mycensustract").innerHTML;
+          window.opener.document.getElementById("setnewtractdiv").style.display = "block";
+          window.opener.document.getElementById("cancelsubmissiontop").style.display = "none";
+          window.opener.document.getElementById("cancelsubmissionbottom").style.display = "block";
+          window.close();
+    }
+
+  </script>
+</body>
+</html>
+
+<%init>
+
+local $SIG{__DIE__}; #disable Mason error trap
+
+my $DEBUG = 0;
+
+my $census_year = $cgi->param('census_year');
+my $pre         = $cgi->param('pre');
+my $zip_code    = $cgi->param('zip_code');
+my $address     = $cgi->param('address');
+my $loc = $zip_code ? $zip_code : $address;
+
+</%init>

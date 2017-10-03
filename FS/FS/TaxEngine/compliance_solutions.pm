@@ -263,7 +263,7 @@ sub make_taxlines {
     # create a tax rate location if there isn't one yet
     my $taxname = $tax_data->{descript};
     my $tax_rate = FS::tax_rate->new({
-        data_vendor   => 'compliance solutions',
+        data_vendor   => 'compliance_solutions',
         taxname       => $taxname,
         taxclassnum   => '',
         taxauth       => $tax_data->{'taxauthtype'}, # federal / state / city / district
@@ -277,13 +277,16 @@ sub make_taxlines {
     $tax_rate = $tax_rate->replace_old;
 
     my $tax_rate_location = FS::tax_rate_location->new({
-        data_vendor => 'compliance solutions',
-        state       => $tax_data->{'state'},
-        country     => $tax_data->{'country'},
+        data_vendor => 'compliance_solutions',
         geocode     => $tax_data->{'geocode'},
+        district    => $tax_data->{'geo_district'},
+        state       => $tax_data->{'geo_state'},
+        county      => $tax_data->{'geo_county'},
+        country     => 'US',
     });
     $error = $tax_rate_location->find_or_insert;
-    die "error inserting tax_rate_location record: $error\n"
+    die 'error inserting tax_rate_location record for '.  $tax_data->{state}.
+        '/'. $tax_data->{country}. ' ('. $tax_data->{'geocode'}. "): $error\n"
       if $error;
     $tax_rate_location = $tax_rate_location->replace_old;
 

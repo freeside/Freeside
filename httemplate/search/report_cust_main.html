@@ -110,6 +110,24 @@
   </TABLE>
   <BR>
 
+  <FONT CLASS="fsinnerbox-title"><% emt('Referral search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
+
+      <& /elements/tr-input-text.html,
+           label     => emt('At least this many'),
+           field     => 'with_referrals',
+           size      => 4,
+           maxlength => 4,
+      &>
+
+      <& /elements/tr-select-cust_main-status.html,
+           label => emt('Referral status'),
+           field => 'referral_status',
+      &>
+
+  </TABLE>
+  <BR>
+
   <FONT CLASS="fsinnerbox-title"><% emt('Package search options') %></FONT>
   <TABLE CLASS="fsinnerbox">
 
@@ -145,6 +163,14 @@
   <FONT CLASS="fsinnerbox-title"><% emt('Location search options') %></FONT>
   <TABLE CLASS="fsinnerbox">
     <& elements/options_cust_location.html &>
+  </TABLE>
+  <BR>
+
+  <FONT CLASS="fsinnerbox-title"><% emt('Contacts search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
+    <& elements/options_cust_contacts.html,
+        'pre_fix'   => 'contacts_',
+    &>
   </TABLE>
   <BR>
 

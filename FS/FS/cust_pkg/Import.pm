@@ -105,6 +105,7 @@ my %formatfields = (
   'svc_phone'    => [qw( countrycode phonenum sip_password pin )],
   'svc_external' => [qw( id title )],
   'location'     => [qw( address1 address2 city state zip country )],
+  'quan_price'   => [qw( quantity setup_fee recur_fee invoice_details )],
 );
 
 sub _formatfields {
@@ -116,8 +117,11 @@ my %import_options = (
 
   'preinsert_callback'  => sub {
     my($record, $param) = @_;
-    my @location_params = grep /^location\./, keys %$param;
+
+    my @location_params = grep { /^location\./ && length($param->{$_}) }
+                            keys %$param;
     if (@location_params) {
+warn join('-', @location_params);
       my $cust_location = FS::cust_location->new({
           'custnum' => $record->custnum,
       });
@@ -130,11 +134,52 @@ my %import_options = (
       return "error creating location: $error" if $error;
       $record->set('locationnum', $cust_location->locationnum);
     }
+
+    $record->quantity( $param->{'quan_price.quantity'} )
+      if $param->{'quan_price.quantity'} > 0;
+    
+    my $s = $param->{'quan_price.setup_fee'};
+    my $r = $param->{'quan_price.recur_fee'};
+    my $part_pkg = $record->part_pkg;
+    if (    ( length($s) && $s != $part_pkg->option('setup_fee') )
+         or ( length($r) && $r != $part_pkg->option('recur_fee') )
+       )
+    {
+      my $custom_part_pkg = $part_pkg->clone;
+      $custom_part_pkg->disabled('Y');
+      my %options = $part_pkg->options;
+      $options{'setup_fee'} = $s if length($s);
+      $options{'recur_fee'} = $r if length($r);
+      my $error = $custom_part_pkg->insert( options=>\%options );
+      return "error customizing package: $error" if $error;
+      $record->pkgpart( $custom_part_pkg->pkgpart );
+    }
+
+
     '';
   },
 
   'postinsert_callback' => sub {
     my( $record, $param ) = @_;
+
+    if ( $param->{'quan_price.invoice_details'} ) {
+
+      my $weight = 0;
+      foreach my $detail (split(/\|/, $param->{'quan_price.invoice_details'})) {
+
+        my $cust_pkg_detail = new FS::cust_pkg_detail {
+          'pkgnum'     => $record->pkgnum,
+          'detail'     => $detail,
+          'detailtype' => 'I',
+          'weight'     => $weight++,
+        };
+
+        my $error = $cust_pkg_detail->insert;
+        return "error inserting invoice detail: $error" if $error;
+
+      }
+
+    }
 
     my $formatfields = _formatfields;
     foreach my $svc_x ( grep /^svc/, keys %$formatfields ) {
@@ -283,17 +328,20 @@ sub batch_import {
     };
   }
 
-  my $formatfields = _formatfields();
+  my @formats = split /-/, $format;
+  foreach my $f (@formats){
 
-  die "unknown format $format" unless $formatfields->{$format};
+    my $formatfields = _formatfields();
+    die "unknown format $format" unless $formatfields->{$f};
 
-  foreach my $field ( @{ $formatfields->{$format} } ) {
+    foreach my $field ( @{ $formatfields->{$f} } ) {
 
-    push @fields, sub {
-      my( $self, $value, $conf, $param ) = @_;
-      $param->{"$format.$field"} = $value;
-    };
+      push @fields, sub {
+        my( $self, $value, $conf, $param ) = @_;
+        $param->{"$f.$field"} = $value;
+      };
 
+    }
   }
 
   $opt->{'fields'} = \@fields;

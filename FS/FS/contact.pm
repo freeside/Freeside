@@ -10,6 +10,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 use FS::Cursor;
 use FS::contact_phone;
 use FS::contact_email;
+use FS::contact::Import;
 use FS::queue;
 use FS::phone_type; #for cgi_contact_fields
 use FS::cust_contact;

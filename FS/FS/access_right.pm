@@ -155,6 +155,7 @@ sub _upgrade_data { # class method
     'Refund payment'  => [ 'Refund credit card payment', 'Refund Echeck payment' ],
     'Regular void'    => [ 'Void payments' ],
     'Unvoid'          => [ 'Unvoid payments', 'Unvoid invoices' ],
+    'Employees: Audit Report' => [ 'Employee Reports' ],
   );
 
   foreach my $oldright (keys %migrate) {
@@ -233,9 +234,7 @@ sub _upgrade_data { # class method
                             'Usage: Unrateable CDRs',
                           ],
     'Provision customer service' => [ 'Edit password' ],
-    'Financial reports' => [ 'Employees: Commission Report',
-                             'Employees: Audit Report',
-                           ],
+    'Financial reports' => 'Employee Reports',
     'Change customer package' => 'Detach customer package',
     'Services: Accounts' => 'Services: Cable Subscribers',
     'Bulk change customer packages' => 'Bulk move customer services',
@@ -261,6 +260,7 @@ sub _upgrade_data { # class method
     'List customers' => 'Customers: Customer churn report',
     'Edit customer note' => 'Delete customer note',
     'Edit customer' => 'Edit customer invoice terms',
+    'Financial reports' => 'Basic payment and refund reports',
   );
 
 #  foreach my $old_acl ( keys %onetime ) {

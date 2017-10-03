@@ -23,7 +23,8 @@ sub add_sale {
   my ($self, $cust_bill_pkg) = @_;
 
   my $part_item = $cust_bill_pkg->part_X;
-  my $location = $cust_bill_pkg->tax_location;
+  my $location = $cust_bill_pkg->tax_location
+    or return;
   my $custnum = $self->{cust_main}->custnum;
 
   push @{ $self->{items} }, $cust_bill_pkg;

@@ -2,19 +2,20 @@
 
 <FORM ACTION="access_user_log.html" METHOD="GET">
 
-<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+<INPUT TYPE="hidden" NAME="group_by" VALUE="<% $group_by %>">
 
-  <INPUT TYPE="hidden" NAME="group_by" VALUE="<% $group_by %>">
-
-  <TR>
-    <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1">Search options</FONT>
-    </TH>
-  </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
   <& /elements/tr-input-beginning_ending.html &>
 
   <& /elements/tr-select-user.html &>
+
+  <& /elements/tr-checkbox.html,
+       label => 'Omit components',
+       field => 'skip_components',
+       value => 'Y',
+  &>
 
 </TABLE>
 
@@ -27,7 +28,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Employee Reports');
 
 my $group_by = '';
 if ( $cgi->param('group_by') =~ /^(\w+)$/ ) {

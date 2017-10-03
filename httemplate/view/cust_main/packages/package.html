@@ -258,7 +258,7 @@
                    actionlabel => emt('Change package'),
                    #width       => 768,
                    width       => 960,
-                   height      => 538,
+                   height      => 650,
                  },
 
                  { label       => 'Discount package',
@@ -589,13 +589,13 @@
                       "zip=;country=$countrydefault",
                    actionlabel => emt('Change location'),
                    width       => 960,
-                   height      => 530,
+                   height      => 650,
                  },
 
                  { label       => 'Edit location',
                    acl         => 'Change customer package',
                    condition   => sub { ! $change_from && $cust_pkg->locationnum != $cust_pkg->cust_main->ship_locationnum  },
-                   popup       => 'misc/cust_location.cgi?locationnum='.
+                   popup       => 'edit/cust_location.cgi?locationnum='.
                                     $cust_pkg->locationnum,
                    actionlabel => emt('Edit location'),
                    width       => 700,

@@ -20,8 +20,9 @@
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')",
   ) &>
 
-% } 
+% }
 
+<& /elements/error.html &>
 
 <& elements/svc_radius_usage.html,
               'svc'      => $svc_acct,

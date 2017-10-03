@@ -12,8 +12,8 @@ use Date::Format;
 use Date::Parse 'str2time';
 use Number::Format 1.50;
 use FS::SelfService qw(
-  access_info login_info login customer_info edit_info invoice
-  payment_info process_payment realtime_collect process_prepay
+  access_info login_info login customer_info edit_info insert_payby update_payby 
+  invoice payment_info process_payment realtime_collect process_prepay
   list_pkgs order_pkg signup_info order_recharge
   part_svc_info provision_acct provision_external provision_phone provision_forward
   unprovision_svc change_pkg suspend_pkg domainselector
@@ -59,6 +59,10 @@ my @actions = ( qw(
   change_bill
   change_ship
   change_pay
+  change_creditcard_pay
+  change_check_pay
+  process_change_creditcard_pay
+  process_change_check_pay
   process_change_bill
   process_change_ship
   process_change_pay
@@ -261,18 +265,29 @@ sub myaccount {
   customer_info( 'session_id' => $session_id ); 
 }
 
-sub change_bill { my $payment_info =
-                    payment_info( 'session_id' => $session_id );
-                  return $payment_info if ( $payment_info->{'error'} );
-                  my $customer_info =
-                    customer_info( 'session_id' => $session_id );
-                  return { 
-                    %$payment_info,
-                    %$customer_info,
-                  };
-                }
+sub change_bill {
+  my $payby = shift;
+  my $payment_info;
+  if ($payby) {
+    $payment_info = payment_info( 'session_id' => $session_id, 'payment_payby' => $payby, );
+  }
+  else {
+    $payment_info = payment_info( 'session_id' => $session_id, );
+  }
+
+  return $payment_info if ( $payment_info->{'error'} );
+  my $customer_info =
+    customer_info( 'session_id' => $session_id );
+  return {
+    %$payment_info,
+    %$customer_info,
+  };
+}
 sub change_ship { change_bill(@_); }
 sub change_pay { change_bill(@_); }
+
+sub change_creditcard_pay { change_bill('CARD'); }
+sub change_check_pay { change_bill('CHEK'); }
 
 sub _process_change_info { 
   my ($erroraction, @fields) = @_;
@@ -280,6 +295,30 @@ sub _process_change_info {
   my $results = '';
 
   $results ||= edit_info (
+    'session_id' => $session_id,
+    map { ($_ => $cgi->param($_)) } grep { defined($cgi->param($_)) } @fields,
+  );
+
+
+  if ( $results->{'error'} ) {
+    no strict 'refs';
+    $action = $erroraction;
+    return {
+      $cgi->Vars,
+      %{&$action()},
+      'error' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
+    };
+  } else {
+    return $results;
+  }
+}
+
+sub _process_change_payby {
+  my ($erroraction, @fields) = @_;
+
+  my $results = '';
+
+  $results ||= update_payby (
     'session_id' => $session_id,
     map { ($_ => $cgi->param($_)) } grep { defined($cgi->param($_)) } @fields,
   );
@@ -340,6 +379,30 @@ sub process_change_pay {
         }
 
         _process_change_info( 'change_pay', @list );
+}
+
+sub process_change_creditcard_pay {
+        my $payby  = $cgi->param( 'payby' );
+        $cgi->param('paydate', $cgi->param('year') . '-' . $cgi->param('month') . '-01');
+        my @list =
+          qw( payby payinfo payinfo1 payinfo2 paydate payname custpaybynum 
+              address1 address2 city county state zip country auto paytype
+              paystate ss stateid stateid_state invoicing_list
+            );
+
+        _process_change_payby( 'change_creditcard_pay', @list );
+}
+
+sub process_change_check_pay {
+        my $payby  = $cgi->param( 'payby' );
+        $cgi->param('paydate', $cgi->param('year') . '-' . $cgi->param('month') . '-01');
+        my @list =
+          qw( payby payinfo payinfo1 payinfo2 paydate payname custpaybynum 
+              address1 address2 city county state zip country auto paytype
+              paystate ss stateid stateid_state invoicing_list
+            );
+
+        _process_change_payby( 'change_check_pay', @list );
 }
 
 sub view_invoice {

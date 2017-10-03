@@ -582,9 +582,11 @@ sub actions {
   my( $class, $eventtable ) = @_;
   (
     map  { $_ => $actions{$_} }
-    sort { $actions{$a}->{'default_weight'}<=>$actions{$b}->{'default_weight'} }
-       # || $actions{$a}->{'description'} cmp $actions{$b}->{'description'} }
-    $class->all_actions( $eventtable )
+    sort {
+         $actions{$a}->{'default_weight'} <=> $actions{$b}->{'default_weight'}
+      || $actions{$a}->{'description'}    cmp $actions{$b}->{'description'}
+    }
+      $class->all_actions( $eventtable )
   );
 
 }

@@ -1,0 +1,117 @@
+<& elements/search.html,
+                  'title'       => emt('Customer Timespan Report'),
+                  'name'        => emt('customers'),
+                  'query'       => {
+                     select    	=> join(', ', @select),
+                     table     	=> $table,
+                     addl_from 	=> $addl_from,
+                     extra_sql 	=> $extra_sql,
+                   },
+                  'count_query' => $count_query,
+                  'header'      => \@header,
+                  'fields'      => \@fields,
+                  'links'       => \@links,
+
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Advanced customer search');
+
+my $table = 'cust_main';
+my $customer_link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+my $agent_sql;
+
+## get agent numbers
+if (length($cgi->param('agentnum'))) {
+  $cgi->param('agentnum') =~ /^(\d+)$/ or errorpage("Illegal agentnum");
+  $agent_sql = ' and cust_main.agentnum = ' . $1;
+}
+
+
+## get selected requested customers
+my $cust_status = $cgi->param('cust_status');
+
+my %type_sql_map = (
+	'cancelled' => 'cancel_sql',
+	'suspended' => 'susp_sql',
+);
+
+my $type_sql = $type_sql_map{$cust_status};
+$type_sql = 'cancel_sql' unless $type_sql;
+
+my @custs = qsearch({
+	table     => 'cust_main',
+	extra_sql => ' where ' . FS::cust_main->$type_sql,
+});
+my @customers = ('0');
+foreach my $cust (@custs) { push @customers, $cust->custnum; }
+
+## get locations
+my $location_sub = sub {
+  my $customer = shift;
+  my @cust_location = qsearch({
+	table => 'cust_location',
+	select => 'cust_location.*',
+	addl_from => ' LEFT JOIN cust_main ON (cust_location.locationnum = cust_main.bill_locationnum) ',
+	extra_sql => ' WHERE cust_main.custnum = ' . $customer->custnum ,
+  } );
+
+  my $location;
+  foreach my $loc (@cust_location) {
+	$location .= $loc->address1 unless !$loc->address1;
+	$location .= "<br>" . $loc->address2 unless !$loc->address2;
+	$location .= "<br>" . $loc->city . ", " . $loc->state . ' ' . $loc->zip unless !$loc->city;
+  }
+  $location;
+};
+
+## get contact emails for customer
+my $email_sub = sub {
+  my $customer = shift;
+  #can't because contactnum is in the wrong field #my @contact_email = $contact->contact_email;
+  my @contact_email = qsearch({
+	table => 'contact_email',
+	addl_from => ' LEFT JOIN cust_contact ON (contact_email.contactnum = cust_contact.contactnum) LEFT JOIN cust_main ON (cust_contact.custnum = cust_main.custnum) ',
+	extra_sql => ' WHERE cust_main.custnum = ' . $customer->custnum ,
+  } );
+  join('<br>', map $_->emailaddress, @contact_email);
+};
+
+## sql to get only canceled customers
+my @status = ('active', 'on hold', 'suspended', 'not yet billed', 'one-time charge');
+my $active_pkg_sql = 'select pkgnum from cust_pkg where cust_pkg.custnum = cust_main.custnum and ' . FS::cust_pkg->status_sql . " in ('".join( "', '", @status )."') limit 1";
+
+## sql to get the first active date, last cancel date, and last reason.
+my $active_date = 'select min(setup) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\'';
+my $cancel_date = 'select max(cancel) from cust_pkg where cust_pkg.custnum = cust_main.custnum';
+my $cancel_reason = 'select reason.reason from cust_pkg
+	left join cust_pkg_reason on (cust_pkg.pkgnum = cust_pkg_reason.pkgnum)
+	left join reason on (cust_pkg_reason.reasonnum = reason.reasonnum)
+	where cust_pkg.custnum = cust_main.custnum and cust_pkg_reason.date = ('.$cancel_date.')
+';
+
+my @header = ( '#', 'Name', 'Address', 'Phone', 'Email', 'Active Date', 'Cancelled Date', 'Reason', 'Active Days' );
+my @fields = ( 'custnum', 'custname', $location_sub, 'daytime', $email_sub, 'active_date', 'cancel_date', 'cancel_reason', 'active_days' );
+my @links = ( $customer_link, $customer_link, '', '', '', '', '', '', '' );
+my @select = (
+	'cust_main.*',
+	'cust_location.*',
+	'part_pkg.*',
+	"(select to_char((select to_timestamp((".$active_date."))), 'Mon DD YYYY')) AS active_date",
+	"(select to_char((select to_timestamp((".$cancel_date."))), 'Mon DD YYYY')) AS cancel_date",
+	"($cancel_reason) AS cancel_reason",
+	"(select date_part('day', (select to_timestamp((".$cancel_date."))) - (select to_timestamp((".$active_date."))) )) AS active_days",
+	"CONCAT_WS(', ', last, first) AS custname",
+);
+my $addl_from = '
+  LEFT JOIN cust_location ON (cust_main.bill_locationnum = cust_location.locationnum)
+  LEFT JOIN cust_pkg ON (cust_main.custnum = cust_pkg.custnum)
+  LEFT JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
+';
+my $extra_sql = " WHERE (".$active_date.") IS NOT NULL AND (".$cancel_date.") IS NOT NULL AND cust_main.custnum IN ('" . join( "', '", @customers ). "') $agent_sql ";
+
+## sql to get record count
+my $count_query = 'select COUNT(*) from ' . $table . ' ' . $extra_sql;
+
+</%init>

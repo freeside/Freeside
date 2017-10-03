@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearchs );
+use FS::h_cust_location;
+use FS::cust_location;
+
+adminsuidsetup shift or &usage;
+my $start = shift or &usage;
+my $end = shift or &usage;
+
+for my $locationnum ( $start .. $end ) {
+
+  my $h_cust_location = qsearchs({
+    'table'     => 'h_cust_location',  
+    'hashref'   => { 'locationnum' => $locationnum, },
+    'extra_sql' => " AND ( history_action = 'insert' OR history_action = 'replace_new' )",
+    'order_by'  => 'ORDER BY historynum DESC LIMIT 1',
+  })
+    or die "h_cust_location for $locationnum not found\n";
+
+  warn "recovering cust_locaiton $locationnum\n";
+  my $cust_location = new FS::cust_location { $h_cust_location->hash };
+  my $error = $cust_location->insert;
+  die $error if $error;
+
+}
+
+sub usage {
+  die "Usage: recover-cust_location username start_locationnum end_locationnum\n";
+}

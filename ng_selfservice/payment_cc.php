@@ -88,8 +88,8 @@ if ( $receipt_html ) { ?>
     <TD COLSPAN=7>
       <SELECT NAME="card_type"><OPTION></OPTION>
         <? foreach ( $card_types AS $ct ) { ?>
-          <OPTION <? if ( $card_type == $card_types[$ct] ) { echo 'SELECTED'; } ?>
-                  VALUE="<? echo $card_types[$ct]; ?>"><? echo $ct; ?>
+          <OPTION <? if ( $card_type == $ct ) { echo 'SELECTED'; } ?>
+                  VALUE="<? echo $ct; ?>"><? echo $ct; ?>
         <? } ?>
       </SELECT>
     </TD>

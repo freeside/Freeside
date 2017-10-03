@@ -6,6 +6,7 @@ use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Carp;
 use Data::Dumper;
 use Business::CreditCard 0.35;
+use Business::OnlinePayment;
 use FS::UID qw( dbh myconnect );
 use FS::Record qw( qsearch qsearchs );
 use FS::payby;

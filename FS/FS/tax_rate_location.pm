@@ -111,6 +111,7 @@ sub check {
     $self->ut_numbern('taxratelocationnum')
     || $self->ut_textn('data_vendor')
     || $self->ut_alpha('geocode')
+    || $self->ut_textn('district')
     || $self->ut_textn('city')
     || $self->ut_textn('county')
     || $self->ut_textn('state')
@@ -118,16 +119,12 @@ sub check {
   ;
   return $error if $error;
 
-  my $t;
-  $t = qsearchs( 'tax_rate_location',
-                 { disabled => '',
-                   ( map { $_ => $self->$_ } qw( data_vendor geocode ) ),
-                 },
-               )
+  my $t = '';
+  $t = $self->existing_search
     unless $self->disabled;
 
   $t = $self->by_key( $self->taxratelocationnum )
-    if ( !$t && $self->taxratelocationnum );
+    if !$t && $self->taxratelocationnum;
 
   return "geocode ". $self->geocode. " already in use for this vendor"
     if ( $t && $t->taxratelocationnum != $self->taxratelocationnum );
@@ -153,11 +150,7 @@ record.
 
 sub find_or_insert {
   my $self = shift;
-  my $existing = qsearchs('tax_rate_location', {
-      disabled    => '',
-      data_vendor => $self->data_vendor,
-      geocode     => $self->geocode
-  });
+  my $existing = $self->existing_search;
   if ($existing) {
     my $update = 0;
     foreach (qw(city county state country)) {
@@ -174,6 +167,16 @@ sub find_or_insert {
   } else {
     return $self->insert;
   }
+}
+
+sub existing_search {
+  my $self = shift;
+
+  qsearchs( 'tax_rate_location',
+            { disabled => '',
+              map { $_ => $self->$_ } qw( data_vendor geocode )
+            }
+          );
 }
 
 =back
@@ -390,6 +393,17 @@ sub batch_import {
 
   ''; #no error
 
+}
+
+sub _upgrade_data {
+#actually no, we want to leave those records behind now that they're giving us
+# geo_state etc.
+#  my $class = shift;
+#
+#  my $sql = "UPDATE tax_rate_location SET data_vendor = 'compliance_solutions' WHERE data_vendor = 'compliance solutions'";
+#
+#  my $sth = dbh->prepare($sql) or die $DBI::errstr;
+#  $sth->execute() or die $sth->errstr;
 }
 
 =head1 BUGS

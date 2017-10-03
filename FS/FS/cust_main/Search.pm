@@ -93,7 +93,7 @@ sub smart_search {
     my $phonenum = "$1$2$3";
     #my $extension = $4;
 
-    #cust_main phone numbers
+    #cust_main phone numbers and contact phone number
     push @cust_main, qsearch( {
       'table'   => 'cust_main',
       'hashref' => { %options },
@@ -102,19 +102,11 @@ sub smart_search {
                          join(' OR ', map "$_ = '$phonen'",
                                           qw( daytime night mobile fax )
                              ).
+                          " OR phonenum = '$phonenum' ".
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
+      'addl_from' => ' left join cust_contact using (custnum) left join contact_phone using (contactnum) ',
     } );
-
-    #contact phone numbers
-    push @cust_main,
-      grep $agentnums_href->{$_->agentnum}, #agent virt
-        grep $_, #skip contacts that don't have cust_main records
-          map $_->contact->cust_main,
-            qsearch({
-                      'table'   => 'contact_phone',
-                      'hashref' => { 'phonenum' => $phonenum },
-                   });
 
     unless ( @cust_main || $phonen =~ /x\d+$/ ) { #no exact match
       #try looking for matches with extensions unless one was specified
@@ -136,45 +128,40 @@ sub smart_search {
   } 
   
   
-  if ( $search =~ /@/ ) { #email address
+  if ( $search =~ /@/ ) { #email address from cust_main_invoice and contact_email
 
-      # invoicing email address
-      push @cust_main,
-        grep $agentnums_href->{$_->agentnum}, #agent virt
-	  map $_->cust_main,
-	      qsearch( {
-			 'table'     => 'cust_main_invoice',
-			 'hashref'   => { 'dest' => $search },
-		       }
-		     );
-
-      # contact email address
-      push @cust_main,
-        grep $agentnums_href->{$_->agentnum}, #agent virt
-          grep $_, #skip contacts that don't have cust_main records
-	    map $_->contact->cust_main,
-	      qsearch( {
-			 'table'     => 'contact_email',
-			 'hashref'   => { 'emailaddress' => $search },
-		       }
-		     );
+    push @cust_main, qsearch( {
+      'table'   => 'cust_main',
+      'hashref' => { %options },
+      'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
+                     ' ( '.
+                         join(' OR ', map "$_ = '$search'",
+                                          qw( dest emailaddress )
+                             ).
+                     ' ) '.
+                     " AND $agentnums_sql", #agent virtualization
+      'addl_from' => ' left join cust_main_invoice using (custnum) left join cust_contact using (custnum) left join contact_email using (contactnum) ',
+    } );
 
   # custnum search (also try agent_custid), with some tweaking options if your
   # legacy cust "numbers" have letters
-  } elsif ( $search =~ /^\s*(\d+)\s*$/
-         || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
-              && $search =~ /^\s*(\w\w?\d+)\s*$/
-            )
-         || ( $conf->config('cust_main-custnum-display_special')
-           # it's not currently possible for special prefixes to contain
-           # digits, so just strip off any alphabetic prefix and match 
-           # the rest to custnum
-              && $search =~ /^\s*[[:alpha:]]*(\d+)\s*$/
-            )
-         || ( $conf->exists('address1-search' )
-              && $search =~ /^\s*(\d+\-?\w*)\s*$/ #i.e. 1234A or 9432-D
-            )
-     )
+  } elsif (    $search =~ /^\s*(\d+)\s*$/
+            or ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
+                 && $search =~ /^\s*(\w\w?\d+)\s*$/
+               )
+            or ( $conf->config('cust_main-agent_custid-format') eq 'd+-w'
+                 && $search =~ /^\s*(\d+-\w)\s*$/
+               )
+            or ( $conf->config('cust_main-custnum-display_special')
+                 # it's not currently possible for special prefixes to contain
+                 # digits, so just strip off any alphabetic prefix and match 
+                 # the rest to custnum
+                 && $search =~ /^\s*[[:alpha:]]*(\d+)\s*$/
+               )
+            or ( $conf->exists('address1-search' )
+                 && $search =~ /^\s*(\d+\-?\w*)\s*$/ #i.e. 1234A or 9432-D
+               )
+          )
   {
 
     my $num = $1;
@@ -278,8 +265,8 @@ sub smart_search {
     } elsif ( ! $NameParse->parse($value) ) {
 
       my %name = $NameParse->components;
-      $first = $name{'given_name_1'} || $name{'initials_1'}; #wtf NameParse, Ed?
-      $last  = $name{'surname_1'};
+      $first = lc($name{'given_name_1'}) || $name{'initials_1'}; #wtf NameParse, Ed?
+      $last  = lc($name{'surname_1'});
 
     }
 
@@ -289,27 +276,17 @@ sub smart_search {
 
       #exact
       my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
-      $sql .= "( LOWER(cust_main.last) = $q_last AND LOWER(cust_main.first) = $q_first )";
+      $sql .= "( (LOWER(cust_main.last) = $q_last AND LOWER(cust_main.first) = $q_first)
+                 OR (LOWER(contact.last) = $q_last AND LOWER(contact.first) = $q_first) )";
 
-      #cust_main
+      #cust_main and contacts
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
-        'hashref'   => \%options,
+        'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+        'hashref'   => { %options },
         'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
+        'addl_from' => ' left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
       } );
-
-      #contacts
-      push @cust_main,
-        grep $agentnums_href->{$_->agentnum}, #agent virt
-          grep $_, #skip contacts that don't have cust_main records
-	    map $_->cust_main,
-	      qsearch( {
-			 'table'     => 'contact',
-			 'hashref'   => { 'first' => $first,
-                                          'last'  => $last,
-                                        }, 
-		       }
-		     );
 
       # or it just be something that was typed in... (try that in a sec)
 
@@ -323,7 +300,9 @@ sub smart_search {
                 OR LOWER(cust_main.last)          = $q_value
                 OR LOWER(cust_main.company)       = $q_value
                 OR LOWER(cust_main.ship_company)  = $q_value
-            ";
+                OR LOWER(contact.first)           = $q_value
+                OR LOWER(contact.last)            = $q_value
+            )";
 
     #address1 (yes, it's a kludge)
     $sql .= "   OR EXISTS ( 
@@ -333,20 +312,12 @@ sub smart_search {
                           )"
       if $conf->exists('address1-search');
 
-    #contacts (look, another kludge)
-    $sql .= "   OR EXISTS ( SELECT 1 FROM contact
-                              WHERE (    LOWER(contact.first) = $q_value
-                                      OR LOWER(contact.last)  = $q_value
-                                    )
-                                AND contact.custnum IS NOT NULL
-                                AND contact.custnum = cust_main.custnum
-                          )
-              ) ";
-
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
-      'hashref'   => \%options,
+      'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+      'hashref'   => { %options },
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
+      'addl_from' => 'left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
     } );
 
     #no exact match, trying substring/fuzzy
@@ -872,10 +843,24 @@ sub search {
   ##
   # with referrals
   ##
-  if ( $params->{'with_referrals'} ) {
+  if ( $params->{with_referrals} =~ /^\s*(\d+)\s*$/ ) {
+
+    my $n = $1;
+  
+    # referral status
+    my $and_status = '';
+    if ( grep { $params->{referral_status} eq $_ } FS::cust_main->statuses() ) {
+      my $method = $params->{referral_status}. '_sql';
+      $and_status = ' AND '. FS::cust_main->$method();
+      $and_status =~ s/ cust_main\./ referred_cust_main./g;
+    }
+
     push @where,
-      ' EXISTS ( SELECT 1 FROM cust_main AS referred_cust_main
-                   WHERE cust_main.custnum = referred_cust_main.referral_custnum )';
+      " $n <= ( SELECT COUNT(*) FROM cust_main AS referred_cust_main
+                  WHERE cust_main.custnum = referred_cust_main.referral_custnum
+                    $and_status
+              )";
+
   }
 
   ##
@@ -1064,8 +1049,48 @@ sub search {
                  FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
                );
 
-  my(@extra_headers) = ();
-  my(@extra_fields)  = ();
+  my @extra_headers     = ();
+  my @extra_fields      = ();
+  my @extra_sort_fields = ();
+
+  ## search contacts
+  if ($params->{'contacts'}) {
+    my $contact_params = $params->{'contacts'};
+
+    $addl_from .=
+      ' LEFT JOIN cust_contact ON ( cust_main.custnum = cust_contact.custnum ) ';
+
+    if ($contact_params->{'contacts_firstname'} || $contact_params->{'contacts_lastname'}) {
+      $addl_from .= ' LEFT JOIN contact ON ( cust_contact.contactnum = contact.contactnum ) ';
+      my $first_query = " AND contact.first = '" . $contact_params->{'contacts_firstname'} . "'"
+        unless !$contact_params->{'contacts_firstname'};
+      my $last_query = " AND contact.last = '" . $contact_params->{'contacts_lastname'} . "'"
+        unless !$contact_params->{'contacts_lastname'};
+      $extra_sql .= " AND ( '1' $first_query $last_query )";
+    }
+
+    if ($contact_params->{'contacts_email'}) {
+      $addl_from .= ' LEFT JOIN contact_email ON ( cust_contact.contactnum = contact_email.contactnum ) ';
+      $extra_sql .= " AND ( contact_email.emailaddress = '" . $contact_params->{'contacts_email'} . "' )";
+    }
+
+    if ($contact_params->{'contacts_homephone'} || $contact_params->{'contacts_workphone'} || $contact_params->{'contacts_mobilephone'}) {
+      $addl_from .= ' LEFT JOIN contact_phone ON ( cust_contact.contactnum = contact_phone.contactnum ) ';
+      my $contacts_mobilephone;
+      foreach my $phone (qw( contacts_homephone contacts_workphone contacts_mobilephone )) {
+        (my $num = $contact_params->{$phone}) =~ s/\W//g;
+        if ( $num =~ /^1?(\d{3})(\d{3})(\d{4})(\d*)$/ ) { $contact_params->{$phone} = "$1$2$3"; }
+      }
+      my $home_query = " AND ( contact_phone.phonetypenum = '2' AND contact_phone.phonenum = '" . $contact_params->{'contacts_homephone'} . "' )"
+        unless !$contact_params->{'contacts_homephone'};
+      my $work_query = " AND ( contact_phone.phonetypenum = '1' AND contact_phone.phonenum = '" . $contact_params->{'contacts_workphone'} . "' )"
+        unless !$contact_params->{'contacts_workphone'};
+      my $mobile_query = " AND ( contact_phone.phonetypenum = '3' AND contact_phone.phonenum = '" . $contact_params->{'contacts_mobilephone'} . "' )"
+        unless !$contact_params->{'contacts_mobilephone'};
+      $extra_sql .= " AND ( '1' $home_query $work_query $mobile_query )";
+    }
+
+  }
 
   if ($params->{'flattened_pkgs'}) {
 
@@ -1110,6 +1135,7 @@ sub search {
                                          my $p = $a[!.--$headercount. q!];
                                          $p;
                                         };!;
+      unshift @extra_sort_fields, '';
     }
 
   }
@@ -1125,21 +1151,23 @@ sub search {
 
     unshift @extra_headers, 'Referrals';
     unshift @extra_fields, 'num_referrals';
+    unshift @extra_sort_fields, 'num_referrals';
 
   }
 
   my $select = join(', ', @select);
 
   my $sql_query = {
-    'table'         => 'cust_main',
-    'select'        => $select,
-    'addl_from'     => $addl_from,
-    'hashref'       => {},
-    'extra_sql'     => $extra_sql,
-    'order_by'      => $orderby,
-    'count_query'   => $count_query,
-    'extra_headers' => \@extra_headers,
-    'extra_fields'  => \@extra_fields,
+    'table'             => 'cust_main',
+    'select'            => $select,
+    'addl_from'         => $addl_from,
+    'hashref'           => {},
+    'extra_sql'         => $extra_sql,
+    'order_by'          => $orderby,
+    'count_query'       => $count_query,
+    'extra_headers'     => \@extra_headers,
+    'extra_fields'      => \@extra_fields,
+    'extra_sort_fields' => \@extra_sort_fields,
   };
   $sql_query;
 

@@ -1,6 +1,7 @@
 package FS::API;
 
 use strict;
+use Date::Parse;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
@@ -16,7 +17,20 @@ FS::API - Freeside backend API
 
 =head1 SYNOPSIS
 
-  use FS::API;
+  use Frontier::Client;
+  use Data::Dumper;
+
+  my $url = new URI 'http://localhost:8008/'; #or if accessing remotely, secure
+                                              # the traffic
+
+  my $xmlrpc = new Frontier::Client url=>$url;
+
+  my $result = $xmlrpc->call( 'FS.API.customer_info',
+                                'secret'  => 'sharingiscaring',
+                                'custnum' => 181318,
+                            );
+
+  print Dumper($result);
 
 =head1 DESCRIPTION
 
@@ -525,6 +539,23 @@ sub update_customer {
 Returns general customer information. Takes a list of keys and values as
 parameters with the following keys: custnum, secret 
 
+Example:
+
+  use Frontier::Client;
+  use Data::Dumper;
+
+  my $url = new URI 'http://localhost:8008/'; #or if accessing remotely, secure
+                                              # the traffic
+
+  my $xmlrpc = new Frontier::Client url=>$url;
+
+  my $result = $xmlrpc->call( 'FS.API.customer_info',
+                                'secret'  => 'sharingiscaring',
+                                'custnum' => 181318,
+                            );
+
+  print Dumper($result);
+
 =cut
 
 sub customer_info {
@@ -541,6 +572,28 @@ sub customer_info {
 
 Returns customer service information.  Takes a list of keys and values as
 parameters with the following keys: custnum, secret
+
+Example:
+
+  use Frontier::Client;
+  use Data::Dumper;
+
+  my $url = new URI 'http://localhost:8008/'; #or if accessing remotely, secure
+                                              # the traffic
+
+  my $xmlrpc = new Frontier::Client url=>$url;
+
+  my $result = $xmlrpc->call( 'FS.API.customer_list_svcs',
+                                'secret'  => 'sharingiscaring',
+                                'custnum' => 181318,
+                            );
+
+  print Dumper($result);
+
+  foreach my $cust_svc ( @{ $result->{'cust_svc'} } ) {
+    #print $cust_svc->{mac_addr}."\n" if exists $cust_svc->{mac_addr};
+    print $cust_svc->{circuit_id}."\n" if exists $cust_svc->{circuit_id};
+  }
 
 =cut
 
@@ -597,10 +650,128 @@ sub location_info {
   return \%return;
 }
 
+=item order_package OPTION => VALUE, ...
+
+Orders a new customer package.  Takes a list of keys and values as paramaters
+with the following keys:
+
+=over 4
+
+=item secret
+
+API Secret
+
+=item custnum
+
+=item pkgpart
+
+=item quantity
+
+=item start_date
+
+=item contract_end
+
+=item address1
+
+=item address2
+
+=item city
+
+=item county
+
+=item state
+
+=item zip
+
+=item country
+
+=item setup_fee
+
+Including this implements per-customer custom pricing for this package, overriding package definition pricing
+
+=item recur_fee
+
+Including this implements per-customer custom pricing for this package, overriding package definition pricing
+
+=item invoice_details
+
+A single string for just one detail line, or an array reference of one or more
+lines of detail
+
+=cut
+
+sub order_package {
+  my( $class, %opt ) = @_;
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
+    or return { 'error' => 'Unknown custnum' };
+
+  #some conceptual false laziness w/cust_pkg/Import.pm
+
+  my $cust_pkg = new FS::cust_pkg {
+    'pkgpart'    => $opt{'pkgpart'},
+    'quantity'   => $opt{'quantity'} || 1,
+  };
+
+  #start_date and contract_end
+  foreach my $date_field (qw( start_date contract_end )) {
+    if ( $opt{$date_field} =~ /^(\d+)$/ ) {
+      $cust_pkg->$date_field( $opt{$date_field} );
+    } elsif ( $opt{$date_field} ) {
+      $cust_pkg->$date_field( str2time( $opt{$date_field} ) );
+    }
+  }
+
+  #especially this part for custom pkg price
+  # (false laziness w/cust_pkg/Import.pm)
+  my $s = $opt{'setup_fee'};
+  my $r = $opt{'recur_fee'};
+  my $part_pkg = $cust_pkg->part_pkg;
+  if (    ( length($s) && $s != $part_pkg->option('setup_fee') )
+       or ( length($r) && $r != $part_pkg->option('recur_fee') )
+     )
+  {
+    my $custom_part_pkg = $part_pkg->clone;
+    $custom_part_pkg->disabled('Y');
+    my %options = $part_pkg->options;
+    $options{'setup_fee'} = $s if length($s);
+    $options{'recur_fee'} = $r if length($r);
+    my $error = $custom_part_pkg->insert( options=>\%options );
+    return ( 'error' => "error customizing package: $error" ) if $error;
+    $cust_pkg->pkgpart( $custom_part_pkg->pkgpart );
+  }
+
+  my %order_pkg = ( 'cust_pkg' => $cust_pkg );
+
+  my @loc_fields = qw( address1 address2 city county state zip country );
+  if ( grep length($opt{$_}), @loc_fields ) {
+     $order_pkg{'cust_location'} = new FS::cust_location {
+       map { $_ => $opt{$_} } @loc_fields, 'custnum'
+     };
+  }
+
+  $order_pkg{'invoice_details'} = $opt{'invoice_details'}
+    if $opt{'invoice_details'};
+
+  my $error = $cust_main->order_pkg( %order_pkg );
+
+  #if ( $error ) {
+    return { 'error'  => $error,
+             #'pkgnum' => '',
+           };
+  #} else {
+  #  return { 'error'  => '',
+  #           #cust_main->order_pkg doesn't actually have a way to return pkgnum
+  #           #'pkgnum' => $pkgnum,
+  #         };
+  #}
+
+}
+
 =item change_package_location
 
 Updates package location. Takes a list of keys and values 
-as paramters with the following keys: 
+as parameters with the following keys: 
 
 pkgnum
 
@@ -719,7 +890,205 @@ sub bill_now {
 }
 
 
-#next.. Advertising sources?
+#next.. Delete Advertising sources?
+
+=item list_advertising_sources OPTION => VALUE, ...
+
+Lists all advertising sources.
+
+=over
+
+=item secret
+
+API Secret
+
+=back
+
+Example:
+
+  my $result = FS::API->list_advertising_sources(
+    'secret'  => 'sharingiscaring',
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # list advertising sources returns an array of hashes for sources.
+    print Dumper($result->{'sources'});
+  }
+
+=cut
+
+#list_advertising_sources
+sub list_advertising_sources {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my @sources = qsearch('part_referral', {}, '', "")
+    or return { 'error' => 'No referrals' };
+
+  my $return = {
+    'sources'       => [ map $_->hashref, @sources ],
+  };
+
+  $return;
+}
+
+=item add_advertising_source OPTION => VALUE, ...
+
+Add a new advertising source.
+
+=over
+
+=item secret
+
+API Secret
+
+=item referral
+
+Referral name
+
+=item disabled
+
+Referral disabled, Y for disabled or nothing for enabled
+
+=item agentnum
+
+Agent ID number
+
+=item title
+
+External referral ID
+
+=back
+
+Example:
+
+  my $result = FS::API->add_advertising_source(
+    'secret'     => 'sharingiscaring',
+    'referral'   => 'test referral',
+
+    #optional
+    'disabled'   => 'Y',
+    'agentnum'   => '2', #agent id number
+    'title'      => 'test title',
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # add_advertising_source returns new source upon success.
+    print Dumper($result);
+  }
+
+=cut
+
+#add_advertising_source
+sub add_advertising_source {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  use FS::part_referral;
+
+  my $new_source = $opt{source};
+
+  my $source = new FS::part_referral $new_source;
+
+  my $error = $source->insert;
+
+  my $return = {$source->hash};
+  $return = { 'error' => $error, } if $error;
+
+  $return;
+}
+
+=item edit_advertising_source OPTION => VALUE, ...
+
+Edit a advertising source.
+
+=over
+
+=item secret
+
+API Secret
+
+=item refnum
+
+Referral number to edit
+
+=item source
+
+hash of edited source fields.
+
+=over
+
+=item referral
+
+Referral name
+
+=item disabled
+
+Referral disabled, Y for disabled or nothing for enabled
+
+=item agentnum
+
+Agent ID number
+
+=item title
+
+External referral ID
+
+=back
+
+=back
+
+Example:
+
+  my $result = FS::API->edit_advertising_source(
+    'secret'     => 'sharingiscaring',
+    'refnum'     => '4', # referral number to edit
+    'source'     => {
+       #optional
+       'referral'   => 'test referral',
+       'disabled'   => 'Y',
+       'agentnum'   => '2', #agent id number
+       'title'      => 'test title',
+    }
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # edit_advertising_source returns updated source upon success.
+    print Dumper($result);
+  }
+
+=cut
+
+#edit_advertising_source
+sub edit_advertising_source {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  use FS::part_referral;
+
+  my $refnum = $opt{refnum};
+  my $source = $opt{source};
+
+  my $old = FS::Record::qsearchs('part_referral', {'refnum' => $refnum,});
+  my $new = new FS::part_referral { $old->hash };
+
+  foreach my $key (keys %$source) {
+    $new->$key($source->{$key});
+  }
+
+  my $error = $new->replace;
+
+  my $return = {$new->hash};
+  $return = { 'error' => $error, } if $error;
+
+  $return;
+}
 
 
 ##

@@ -262,6 +262,17 @@ sub cust_statuscolor {
     : '000000';
 }
 
+=item agent_name
+
+=cut
+
+sub agent_name {
+  my $self = shift;
+  $self->cust_linked
+    ? $self->cust_main->agent_name
+    : $self->cust_unlinked_msg;
+}
+
 =item prospect_sql
 
 =item active_sql
@@ -397,13 +408,20 @@ use Digest::SHA qw(sha1); # for duplicate checking
 sub email_search_result {
   my($class, $param) = @_;
 
+  my $conf = FS::Conf->new;
+  my $send_to_domain = $conf->config('email-to-voice_domain');
+
   my $msgnum = $param->{msgnum};
   my $from = delete $param->{from};
   my $subject = delete $param->{subject};
   my $html_body = delete $param->{html_body};
   my $text_body = delete $param->{text_body};
   my $to_contact_classnum = delete $param->{to_contact_classnum};
+  my $emailtovoice_name = delete $param->{emailtovoice_contact};
+
   my $error = '';
+
+  my $to = $emailtovoice_name . '@' . $send_to_domain unless !$emailtovoice_name;
 
   my $job = delete $param->{'job'}
     or die "email_search_result must run from the job queue.\n";
@@ -465,10 +483,14 @@ sub email_search_result {
       next; # unlinked object; nothing else we can do
     }
 
+my %to = {};
+if ($to) { $to{'to'} = $to; }
+
     my $cust_msg = $msg_template->prepare(
       'cust_main' => $cust_main,
       'object'    => $obj,
       'to_contact_classnum' => $to_contact_classnum,
+      %to,
     );
 
     # For non-cust_main searches, we avoid duplicates based on message

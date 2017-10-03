@@ -898,6 +898,14 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'email-to-voice_domain',
+    'section'     => 'email_to_voice_services',
+    'description' => 'The domain name that phone numbers will be attached to for sending email to voice emails via a 3rd party email to voice service.  You will get this domain from your email to voice service provider.  This is utilized on the email customer page or when using the email to voice billing event action.  There you will be able to select the phone number for the email to voice service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'next-bill-ignore-time',
     'section'     => 'billing',
     'description' => 'Ignore the time portion of next bill dates when billing, matching anything from 00:00:00 to 23:59:59 on the billing day.',
@@ -4302,6 +4310,7 @@ and customer address. Include units.',
                        ''       => 'Numeric only',
                        '\d{7}'  => 'Numeric only, exactly 7 digits',
                        'ww?d+'  => 'Numeric with one or two letter prefix',
+                       'd+-w'   => 'Numeric with a dash and one letter suffix',
                      ],
   },
 
@@ -4479,7 +4488,7 @@ and customer address. Include units.',
     'section'     => 'addresses',
     'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 or 2013 for Year 2010 Census tract codes.  A selection of 2011 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
     'type'        => 'select',
-    'select_enum' => [ qw( 2013 2012 2011 ) ],
+    'select_enum' => [ qw( 2017 2016 2015 ) ],
   },
 
   {
@@ -5788,8 +5797,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'logout-timeout',
-    'section'     => 'UI',
-    'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated.  Used to automatically log users out of the backoffice after this many minutes.  Set session timeouts in employee groups instead.',
     'type'       => 'text',
   },
   

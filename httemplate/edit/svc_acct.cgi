@@ -310,11 +310,11 @@
 %   }
 % }
 
-% my %label = ( seconds => 'Time',
-%               upbytes => 'Upload bytes',
-%               downbytes => 'Download bytes',
-%               totalbytes => 'Total bytes',
-%             );
+% tie my %label, 'Tie::IxHash', seconds    => 'Time',
+%                               upbytes    => 'Upload bytes',
+%                               downbytes  => 'Download bytes',
+%                               totalbytes => 'Total bytes',
+% ;
 % foreach my $uf (keys %label) {
 %   my $tf = $uf . "_threshold";
 %   if ( $curuser->access_right('Edit usage') ) { 

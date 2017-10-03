@@ -212,11 +212,15 @@ invoice language options:
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
-<font size="-2"><pre><% encode_entities(join("\n",
-     map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
-         $conf->config($i->key, $agentnum)
-   ) )
-%></pre></font>
+
+% my $escaped = eval { encode_entities(join("\n",
+%                        map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
+%                          $conf->config($i->key, $agentnum)
+%                      ) );
+%                    };
+% $escaped = $@ ? '('.encode_entities($@).')' : $escaped;
+<font size="-2"><pre><% $escaped %></pre></font>
+
               </td>
             </tr>
 
@@ -435,7 +439,7 @@ my @sections = (qw(
     important
     billing payments payment_batching credit_cards e-checks taxation
     packages suspension cancellation
-    printing print_services
+    printing print_services email_to_voice_services
       invoicing invoice_email invoice_balances invoice_templates quotations 
     notification UI addresses customer_number customer_fields reporting
     localization scalability backup

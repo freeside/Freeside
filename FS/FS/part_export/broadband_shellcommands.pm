@@ -70,7 +70,18 @@ sub _export_command {
   my $command = $self->option($action);
   return '' if $command =~ /^\s*$/;
 
-  #set variables for the command
+  my $command_string = $self->_export_subvars( $svc_broadband, $command );
+
+  $self->shellcommands_queue( $svc_broadband->svcnum,
+    user    => $self->option('user')||'root',
+    host    => $self->machine,
+    command => $command_string,
+  );
+}
+
+sub _export_subvars {
+  my( $self, $svc_broadband, $command ) = @_;
+
   no strict 'vars';
   {
     no strict 'refs';
@@ -85,20 +96,25 @@ sub _export_command {
   $locationnum = $cust_pkg ? $cust_pkg->locationnum : '';
   $custnum = $cust_pkg ? $cust_pkg->custnum : '';
 
-  #done setting variables for the command
-
-  $self->shellcommands_queue( $svc_broadband->svcnum,
-    user    => $self->option('user')||'root',
-    host    => $self->machine,
-    command => eval(qq("$command")),
-  );
+  eval(qq("$command"));
 }
 
 sub _export_replace {
   my($self, $new, $old ) = (shift, shift, shift);
   my $command = $self->option('replace');
 
-  #set variable for the command
+  my $command_string = $self->_export_subvars_replace( $new, $old, $command );
+
+  $self->shellcommands_queue( $new->svcnum,
+    user    => $self->option('user')||'root',
+    host    => $self->machine,
+    command => $command_string,
+  );
+}
+
+sub _export_subvars_replace {
+  my( $self, $new, $old, $command ) = @_;
+
   no strict 'vars';
   {
     no strict 'refs';
@@ -120,14 +136,9 @@ sub _export_replace {
   $new_locationnum = $new_cust_pkg ? $new_cust_pkg->locationnum : '';
   $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
 
-  #done setting variables for the command
-
-  $self->shellcommands_queue( $new->svcnum,
-    user    => $self->option('user')||'root',
-    host    => $self->machine,
-    command => eval(qq("$command")),
-  );
+  eval(qq("$command"));
 }
+
 
 #a good idea to queue anything that could fail or take any time
 sub shellcommands_queue {
