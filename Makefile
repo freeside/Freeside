@@ -117,7 +117,7 @@ FREESIDE_URL = "http://localhost/freeside/"
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
 
-TORRUS_ENABLED = 1
+#TORRUS_ENABLED = 1
 
 # for auto-version updates, so we can "make release" more things automatically
 RPM_SPECFILE = rpm/freeside.spec
