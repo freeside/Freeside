@@ -1049,8 +1049,9 @@ sub search {
                  FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
                );
 
-  my(@extra_headers) = ();
-  my(@extra_fields)  = ();
+  my @extra_headers     = ();
+  my @extra_fields      = ();
+  my @extra_sort_fields = ();
 
   ## search contacts
   if ($params->{'contacts'}) {
@@ -1134,6 +1135,7 @@ sub search {
                                          my $p = $a[!.--$headercount. q!];
                                          $p;
                                         };!;
+      unshift @extra_sort_fields, '';
     }
 
   }
@@ -1149,21 +1151,23 @@ sub search {
 
     unshift @extra_headers, 'Referrals';
     unshift @extra_fields, 'num_referrals';
+    unshift @extra_sort_fields, 'num_referrals';
 
   }
 
   my $select = join(', ', @select);
 
   my $sql_query = {
-    'table'         => 'cust_main',
-    'select'        => $select,
-    'addl_from'     => $addl_from,
-    'hashref'       => {},
-    'extra_sql'     => $extra_sql,
-    'order_by'      => $orderby,
-    'count_query'   => $count_query,
-    'extra_headers' => \@extra_headers,
-    'extra_fields'  => \@extra_fields,
+    'table'             => 'cust_main',
+    'select'            => $select,
+    'addl_from'         => $addl_from,
+    'hashref'           => {},
+    'extra_sql'         => $extra_sql,
+    'order_by'          => $orderby,
+    'count_query'       => $count_query,
+    'extra_headers'     => \@extra_headers,
+    'extra_fields'      => \@extra_fields,
+    'extra_sort_fields' => \@extra_sort_fields,
   };
   $sql_query;
 
