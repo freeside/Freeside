@@ -1,11 +1,7 @@
-<html>
-<head>
-  <title>Find Census Tract Map</title>
-  <link rel="stylesheet" href="elements/leaflet/leaflet.css"/>
-  <script src="elements/leaflet/leaflet.js"></script>
-</head>
-<body>
-  <h1>Please select your location on the map</h1>
+<& /elements/header-logo.html, { title => 'Find Census Tract Map', head =>  $head, } &>
+
+<P><h1>Please select your location on the map</h1></P>
+<P>&nbsp;</P>
   <table>
    <tr>
    <td valign=top>
@@ -78,6 +74,11 @@
 local $SIG{__DIE__}; #disable Mason error trap
 
 my $DEBUG = 0;
+
+my $head = '
+  <link rel="stylesheet" href="elements/leaflet/leaflet.css"/>
+  <script src="elements/leaflet/leaflet.js"></script>
+';
 
 my $census_year = $cgi->param('census_year');
 my $pre         = $cgi->param('pre');
