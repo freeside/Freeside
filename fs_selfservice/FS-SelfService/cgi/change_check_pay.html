@@ -1,0 +1,23 @@
+<%= include('header', 'Change ach payment information') %>
+
+<%= if ( $error ) { 
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT><BR><BR>!;
+  }  ''; %>
+
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" onSubmit="document.OneTrueForm.process.disabled=true">
+
+  <TABLE BGCOLOR="#cccccc">
+    <INPUT TYPE="hidden" NAME="payby" VALUE="CHEK">
+    <%= include('check') %>
+    <TR><TD COLSPAN=3>
+      <INPUT TYPE="checkbox" NAME="auto" VALUE="1">Charge future payments to this card automatically
+    </TD></TR>
+  </TABLE>
+
+  <INPUT TYPE="hidden" NAME="action" VALUE="process_change_check_pay">
+  <INPUT TYPE="hidden" NAME="custpaybynum" VALUE="<%=$custpaybynum%>">
+  <BR>
+  <!-- onClick="this.disabled=true"> -->
+  <INPUT TYPE="submit" NAME="process" VALUE="Save payment information">
+
+<%= include('footer') %>
