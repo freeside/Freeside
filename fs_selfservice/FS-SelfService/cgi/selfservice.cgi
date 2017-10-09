@@ -337,6 +337,32 @@ sub _process_change_payby {
   }
 }
 
+sub _process_insert_payby {
+  my ($erroraction, @fields) = @_;
+
+  my $results = '';
+
+  $results ||= insert_payby (
+    'session_id' => $session_id,
+    map { ($_ => $cgi->param($_)) } grep { defined($cgi->param($_)) } @fields,
+  );
+
+  ## check error
+
+
+  if ( $results->{'error'} ) {
+    no strict 'refs';
+    $action = $erroraction;
+    return {
+      $cgi->Vars,
+      %{&$action()},
+      'error' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
+    };
+  } else {
+    return $results;
+  }
+}
+
 sub process_change_bill {
         _process_change_info( 'change_bill', 
           qw( first last company address1 address2 city state
@@ -389,20 +415,20 @@ sub process_change_creditcard_pay {
               address1 address2 city county state zip country auto paytype
               paystate ss stateid stateid_state invoicing_list
             );
-
-        _process_change_payby( 'change_creditcard_pay', @list );
+        if ($cgi->param( 'custpaybynum' )) { _process_change_payby( 'change_creditcard_pay', @list ); }
+        else { _process_insert_payby( 'change_creditcard_pay', @list ); }
 }
 
 sub process_change_check_pay {
         my $payby  = $cgi->param( 'payby' );
-        $cgi->param('paydate', $cgi->param('year') . '-' . $cgi->param('month') . '-01');
+        #$cgi->param('paydate', '2039-12-01');
         my @list =
           qw( payby payinfo payinfo1 payinfo2 paydate payname custpaybynum 
               address1 address2 city county state zip country auto paytype
               paystate ss stateid stateid_state invoicing_list
             );
-
-        _process_change_payby( 'change_check_pay', @list );
+        if ($cgi->param( 'custpaybynum' )) { _process_change_payby( 'change_check_pay', @list ); }
+        else { _process_insert_payby( 'change_check_pay', @list ); }
 }
 
 sub view_invoice {
