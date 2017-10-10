@@ -1707,6 +1707,16 @@ sub update_payby {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
+  if ($p->{'payby'} eq 'CHEK') {
+     $p->{'payinfo1'} =~ /^([\dx]+)$/
+       or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+     my $payinfo1 = $1;
+      $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
+       or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+     my $payinfo2 = $1;
+     $p->{'payinfo'} = $payinfo1. '@'. $payinfo2;
+   }
+
   my $cust_payby = qsearchs('cust_payby', {
                               'custnum'      => $custnum,
                               'custpaybynum' => $p->{'custpaybynum'},
