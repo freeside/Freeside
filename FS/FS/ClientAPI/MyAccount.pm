@@ -882,6 +882,7 @@ sub payment_info {
     if ($cust_payby) {
       $return{payname} = $cust_payby->payname
                          || ( $cust_main->first. ' '. $cust_main->get('last') );
+      $return{custpaybynum} = $cust_payby->custpaybynum;
 
       if ( $cust_payby->payby =~ /^(CARD|DCRD)$/ ) {
         $return{card_type} = cardtype($cust_payby->payinfo);
@@ -1674,14 +1675,15 @@ sub insert_payby {
 
   #XXX payinfo1 + payinfo2 for CHEK?
   #or take the opportunity to use separate, more well- named fields?
-  # my $payinfo;
-  # $p->{'payinfo1'} =~ /^([\dx]+)$/
-  #   or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
-  # my $payinfo1 = $1;
-  #  $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
-  #   or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
-  # my $payinfo2 = $1;
-  # $payinfo = $payinfo1. '@'. $payinfo2;
+   if ($p->{'payby'} eq 'CHEK') {
+     $p->{'payinfo1'} =~ /^([\dx]+)$/
+       or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+     my $payinfo1 = $1;
+      $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
+       or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+     my $payinfo2 = $1;
+     $p->{'payinfo'} = $payinfo1. '@'. $payinfo2;
+   }
 
   my $cust_payby = new FS::cust_payby {
     'custnum' => $custnum,
@@ -1704,6 +1706,16 @@ sub update_payby {
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
+
+  if ($p->{'payby'} eq 'CHEK') {
+     $p->{'payinfo1'} =~ /^([\dx]+)$/
+       or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+     my $payinfo1 = $1;
+      $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
+       or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+     my $payinfo2 = $1;
+     $p->{'payinfo'} = $payinfo1. '@'. $payinfo2;
+   }
 
   my $cust_payby = qsearchs('cust_payby', {
                               'custnum'      => $custnum,

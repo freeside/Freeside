@@ -159,8 +159,9 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =  $self->check_payinfo_cardtype
-            || $self->SUPER::insert;
+  my $error =  $self->check_payinfo_cardtype if $self->payby =~/^(CARD|DCRD)$/;
+  $self->SUPER::insert unless $error;
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
