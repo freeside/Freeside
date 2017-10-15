@@ -171,6 +171,18 @@ function change_invoice_mode(obj) {
 &>
 %   $br++;
 % }
+% if ( $cust_bill->taxengine_request ) { # inefficient
+<% $br ? '|' : '' %>
+<& /elements/popup_link.html,
+  'action'      => 'cust_bill-taxengine_request.html?invnum=' . $cust_bill->invnum,
+  'label'       => mt('View raw tax engine request'),
+  'actionlabel' => mt('Tax engine request'),
+  'width'       => 1050,
+  'height'      => 600,
+  'title'       => emt('Tax engine request'),
+&>
+%   $br++;
+% }
 
 <BR><BR>
 
