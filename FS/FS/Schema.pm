@@ -694,6 +694,7 @@ sub tables_hashref {
         'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
         'agent_invid',  'int', 'NULL', '', '', '', #(varchar?) importing legacy
         'promised_date', @date_type,       '', '',
+        'taxengine_request', 'text', 'NULL', '', '', '',
         
         'pending',     'char', 'NULL',  1, '', '',
       ],
@@ -731,6 +732,7 @@ sub tables_hashref {
         'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
         'agent_invid',  'int', 'NULL', '', '', '', #(varchar?) importing legacy
         'promised_date', @date_type,       '', '',
+        'taxengine_request', 'text', 'NULL', '', '', '',
 
         #void fields
         'void_date', @date_type, '', '', 

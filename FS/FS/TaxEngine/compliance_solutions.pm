@@ -226,6 +226,7 @@ sub make_taxlines {
     }
   );
   warn $request_json if $DEBUG > 1;
+  $cust_bill->taxengine_request($request_json);
 
   my $soap = SOAP::Lite->service("http://tcms1.csilongwood.com/cgi-bin/taxcalc.wsdl");
 
