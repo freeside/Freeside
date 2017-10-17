@@ -59,6 +59,7 @@ Example:
             'no_graph'      => \@no_graph,
             'bottom_link'   => \@bottom_link,
             'transpose'     => $opt{'daily'},
+            'sprintf_fields' => $sprintf_fields,
             map { $_, $opt{$_} } (qw(title
                                     nototal
                                     graph_type
@@ -79,6 +80,7 @@ my $fromparam = $opt{'link_fromparam'} || 'begin';
 my $toparam   = $opt{'link_toparam'} || 'end';
 
 my @items = @{ $opt{'items'} };
+my $sprintf_fields = $opt{'sprintf_fields'};
 
 foreach my $other (qw( labels graph_labels colors links )) {
   if ( ref($opt{$other}) eq 'HASH' ) {
