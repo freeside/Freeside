@@ -7,12 +7,13 @@
   'links'         => \@links,
   'params'        => \@params,
   'agentnum'      => $agentnum,
-  'sprintf'       => ( $normalize ? '%0.1f%%' : '%u'), 
+  'sprintf'       => ( $normalize ? '%0.1f%%' : '%u'),
+  'sprintf_fields' => $sprintf_fields,
   'normalize'     => ( $normalize ? 0 : undef ),
   'disable_money' => 1,
   'remove_empty'  => (scalar(@group_keys) > 1 ? 1 : 0),
   'nototal'       => 1,
-  'no_graph'      => [ 1, 0, 0, 0, 0 ], # don't graph 'active'
+  'no_graph'      => [ 1, 0, 0, 0, 0, 1 ], # don't graph 'active, total_revenue'
 &>
 <%init>
 
@@ -33,7 +34,7 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 
 my $agentname = $agent ? $agent->agent.' ' : '';
 
-my @base_items = qw( active_pkg setup_pkg susp_pkg unsusp_pkg cancel_pkg );
+my @base_items = qw( active_pkg setup_pkg susp_pkg unsusp_pkg cancel_pkg total_revenue_pkg );
 
 my %base_labels = (
   'active_pkg' => 'Active packages',
@@ -41,6 +42,7 @@ my %base_labels = (
   'susp_pkg'   => 'Suspensions',
   'unsusp_pkg' => 'Unsuspensions',
   'cancel_pkg' => 'Cancellations',
+  'total_revenue_pkg' => 'Total Revenue'
 );
 
 my %base_colors = (
@@ -49,7 +51,12 @@ my %base_colors = (
   'susp_pkg'    => 'ff9900', #yellow
   'unsusp_pkg'  => '44ff44', #light green
   'cancel_pkg'  => 'cc0000', #red 
+  'total_revenue_pkg'  => '0000ff', #blue
 );
+
+my $sprintf_fields = {
+  'total_revenue_pkg' => '%.2f', #format to 2 decimal places
+};
 
 my %base_links;
 foreach my $status (qw(active setup cancel susp unsusp)) {

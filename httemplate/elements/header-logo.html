@@ -1,0 +1,114 @@
+<%doc>
+
+Example:
+
+  <& /elements/header-logo.html',
+       {
+         'title'     => 'Title',
+         'menubar'   => \@menubar,
+         'etc'       => '', #included in <BODY> tag, for things like onLoad=
+         'head'      => '', #included before closing </HEAD> tag
+         'nobr'      => 0,  #1 for no <BR><BR> after the title
+         'no_jquery' => #for use from RT, which loads its own
+       }
+  &>
+
+</%doc>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+%#<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+%# above is what RT declares, should we switch now? hopefully no glitches result
+%# or just fuck it, XHTML died anyway, HTML 5 or bust?
+<HTML>
+  <HEAD>
+    <TITLE>
+      <% encode_entities($title) || $title_noescape |n %>
+    </TITLE>
+    <!-- per RT, to prevent IE compatibility mode -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- The X-UA-Compatible <meta> tag above must be very early in <head> -->
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+% if ( $mobile ) {
+    <META NAME="viewport" content="width=device-width height=device-height user-scalable=yes">
+% }
+
+% unless ( $nocss ) {
+  <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+  <link href="<%$fsurl%>elements/freeside-print.css" type="text/css" rel="stylesheet" media="print">
+% }
+
+%   unless ( $no_jquery ) {
+      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.validate.min.js"></SCRIPT>
+%     if ( $FS::CurrentUser::CurrentUser->option('printtofit') ) {
+      <SCRIPT SRC="<% $fsurl %>elements/printtofit.js"></SCRIPT>
+%     }
+%   }
+    <% include('init_overlib.html') |n %>
+    <% include('rs_init_object.html') |n %>
+    <script type="text/javascript" src="<% $fsurl %>elements/topreload.js"></script>
+    <% $head |n %>
+
+%# announce our base path, and the Mason comp path of this page
+  <script type="text/javascript">
+  window.fsurl = <% $fsurl |js_string %>;
+  window.request_comp_path = <% $m->request_comp->path |js_string %>;
+  </script>
+
+  </HEAD>
+  <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
+    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
+      <tr>
+        <td BGCOLOR="#ffffff"><% $company_url ? qq(<A HREF="$company_url">) : '' |n %><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"><% $company_url ? '</A>' : '' |n %></td>
+        <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
+          <font size=6><% $company_name || 'ExampleCo' %></font>
+        </td>
+      </tr>
+    </table>
+
+<%init>
+
+my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
+my( $nobr, $nocss, $no_jquery ) = ( 0, 0, 0 );
+
+my $mobile;
+
+my $opt = shift;
+$title   = $opt->{title};
+$title_noescape = $opt->{title_noescape};
+$menubar    = $opt->{menubar};
+$etc        = $opt->{etc};
+$head       = $opt->{head};
+$nobr       = $opt->{nobr};
+$nocss      = $opt->{nocss};
+$mobile     = $opt->{mobile};
+$no_jquery  = $opt->{no_jquery};
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position')
+                    || 'top'; #new default for 1.9
+
+if ( !defined($mobile) ) {
+  $mobile = $curuser->option('mobile_menu',1) && FS::UI::Web::is_mobile();
+}
+if ( $cgi->param('mobile') =~ /^(\d)$/ ) { # allow client to override
+  $mobile = $1;
+}
+
+my($company_name, $company_url);
+my @agentnums = $curuser->agentnums;
+if ( scalar(@agentnums) == 1 ) {
+  $company_name = $conf->config('company_name', $agentnums[0] );
+  $company_url  = $conf->config('company_url',  $agentnums[0] );
+} else {
+  $company_name = $conf->config('company_name');
+  $company_url  = $conf->config('company_url');
+}
+
+</%init>

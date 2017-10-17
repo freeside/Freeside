@@ -1,0 +1,14 @@
+<& /elements/header-popup.html &>
+<% $cust_bill->taxengine_request |h %>
+<& /elements/footer-popup.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('View invoices');
+
+my $invnum = $cgi->param('invnum');
+my $cust_bill = qsearchs('cust_bill', { invnum=>$invnum });
+
+</%init>
