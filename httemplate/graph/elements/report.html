@@ -249,7 +249,7 @@ any delimiter and linked from the elements in @data.
 %   my $e = 0;
 %   foreach ( @$data_row ) {
 %     my $entry = $_;
-%     $entry = $money_char . sprintf($sprintf, $entry);
+%     $entry = $money_char . sprintf($sprintf_fields->{$row} ? $sprintf_fields->{$row} : $sprintf, $entry);
 %     $entry = $link_prefix . shift(@$links) . "\">$entry</A>" if $link_prefix;
 %     push @{$cell[$i]}, $entry;
 %     $bottom_total[$e++] += $_ unless $opt{no_graph}[$i-1];
@@ -343,6 +343,7 @@ my $conf = new FS::Conf;
 my $money_char = $opt{'disable_money'} ? '' : $conf->config('money_char');
 
 my @items = @{ $opt{'items'} };
+my $sprintf_fields = $opt{'sprintf_fields'};
 
 foreach my $other (qw( col_labels row_labels graph_labels axis_labels colors links )) {
   if ( ref($opt{$other}) eq 'HASH' ) {
