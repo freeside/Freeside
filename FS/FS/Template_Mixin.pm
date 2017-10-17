@@ -2115,6 +2115,7 @@ Returns an argument list to be passed to L<FS::Misc::send_email>.
 =cut
 
 use MIME::Entity;
+use Encode;
 
 sub generate_email {
 
@@ -2191,7 +2192,7 @@ sub generate_email {
         if $DEBUG;
 
       # 'print_text' argument is no longer used
-      @text = $self->print_text(\%args);
+      @text = map Encode::encode_utf8($_), $self->print_text(\%args);
 
     } else {
 
@@ -2286,7 +2287,7 @@ sub generate_email {
                          '    </title>',
                          '  </head>',
                          '  <body bgcolor="#e8e8e8">',
-                         $html,
+                         Encode::encode_utf8($html),
                          '  </body>',
                          '</html>',
                        ],

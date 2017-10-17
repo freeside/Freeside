@@ -5,6 +5,7 @@ use vars qw( @ISA $DEBUG $me );
 use Data::Dumper;
 use Date::Format qw( time2str );
 use MIME::Entity;
+use Encode;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
 use FS::TicketSystem::RT_Libs;
@@ -374,7 +375,7 @@ sub create_ticket {
              : ( $param{'cc'} ? [ $param{'cc'} ] : [] );
 
   my $mimeobj = MIME::Entity->build(
-    'Data' => $param{'message'},
+    'Data' => Encode::encode_utf8( $param{'message'} ),
     'Type' => ( $param{'mime_type'} || 'text/plain' ),
   );
 
