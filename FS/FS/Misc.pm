@@ -156,7 +156,11 @@ sub send_email {
   
       unshift @mimeparts, { 
         'Type'        => ( $options{'content-type'} || 'text/plain' ),
-        'Data'        => $options{'body'},
+        'Charset'     => 'UTF-8',
+        'Data'        => ( $options{'content-type'} =~ /^text\//
+                             ? Encode::encode_utf8( $options{'body'} )
+                             : $options{'body'}
+                         ), 
         'Encoding'    => ( $options{'content-type'} ? '-SUGGEST' : '7bit' ),
         'Disposition' => 'inline',
       };
@@ -165,7 +169,10 @@ sub send_email {
     
       @mimeargs = (
         'Type'     => ( $options{'content-type'} || 'text/plain' ),
-        'Data'     => $options{'body'},
+        'Data'     => ( $options{'content-type'} =~ /^text\//
+                          ? Encode::encode_utf8( $options{'body'} )
+                          : $options{'body'}
+                      ),
         'Encoding' => ( $options{'content-type'} ? '-SUGGEST' : '7bit' ),
       );
 
@@ -373,7 +380,7 @@ sub generate_email {
     'Type'        => 'text/plain',
     'Encoding'    => 'quoted-printable',
     #'Encoding'    => '7bit',
-    'Data'        => $data,
+    'Data'        => Encode::encode_utf8($data),
     'Disposition' => 'inline',
   );
 
@@ -394,7 +401,7 @@ sub generate_email {
                        '    </title>',
                        '  </head>',
                        '  <body bgcolor="#ffffff">',
-                       @html_data,
+                       ( map Encode::encode_utf8($_), @html_data ),
                        '  </body>',
                        '</html>',
                      ],
