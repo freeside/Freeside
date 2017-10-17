@@ -140,9 +140,9 @@ sub churn_fromwhere_sql {
     # XXX or should we include if they were created by a pkgpart change?
     $from = "cust_pkg";
     @where = (
-      "setup >= $speriod",
-      "setup < $eperiod",
-      "change_pkgnum IS NULL"
+      "cust_pkg.setup >= $speriod",
+      "cust_pkg.setup < $eperiod",
+      "cust_pkg.change_pkgnum IS NULL"
     );
   } elsif ( $status eq 'cancel' ) {
     # also simple, because packages should only be canceled once

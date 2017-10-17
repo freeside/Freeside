@@ -863,6 +863,54 @@ sub unsusp_pkg {
   $self->churn_pkg('unsusp', @_);
 }
 
+sub total_revenue_pkg {
+  my $self = shift;
+  my $active_revenue = $self->revenue_pkg('active', @_);
+  my $setup_revenue = $self->revenue_pkg('setup', @_);
+  my $return = sprintf("%.2f", $active_revenue + $setup_revenue);
+
+  return $return;
+}
+
+sub revenue_pkg {
+  my $self = shift;
+  my ( $status, $speriod, $eperiod, $agentnum, %opt ) = @_;
+  my $totalrevenue;
+
+  my ($from, @where) =
+    FS::h_cust_pkg->churn_fromwhere_sql( $status, $speriod, $eperiod);
+
+  push @where, $self->pkg_where(%opt, 'agentnum' => $agentnum);
+
+  my $sql;
+
+  if ($status eq "active") {
+    $sql = "SELECT DISTINCT ON (revenue.pkgnum) revenue.pkgnum AS pkgnum, revenue.recur AS revenue
+      FROM $from
+      JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND cust_pkg.history_date + 5 > revenue.history_date)
+    ";
+  }
+  elsif ($status eq "setup") {
+    $sql = "SELECT DISTINCT ON (revenue.pkgnum) revenue.pkgnum AS pkgnum, revenue.setup AS revenue
+      FROM $from
+      JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
+      JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND cust_pkg.setup + 15 > revenue.history_date)
+    ";
+  }
+
+  $sql .= ' WHERE '.join(' AND ', @where)
+    if scalar(@where);
+
+  $sql .= "ORDER BY revenue.pkgnum ASC, revenue.history_date DESC";
+
+  my $revenue_sql = "SELECT sum(rev.revenue) AS total_revenue FROM ( $sql ) AS rev";
+
+  $self->scalar_sql($revenue_sql);
+}
+
 sub churn_pkg {
   my $self = shift;
   my ( $status, $speriod, $eperiod, $agentnum, %opt ) = @_;
