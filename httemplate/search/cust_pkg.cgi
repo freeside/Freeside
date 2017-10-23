@@ -4,6 +4,7 @@
                   'name'        => 'packages',
                   'query'       => $sql_query,
                   'count_query' => $count_query,
+                  'search_string' => $search_string,
                   'header'      => [ emt('#'),
                                      emt('Quan.'),
                                      emt('Package'),
@@ -150,6 +151,7 @@ my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
 my %search_hash = ();
+my $search_string;
 
 #some false laziness w/misc/bulk_change_pkg.cgi
   
@@ -162,26 +164,31 @@ for (qw( agentnum cust_status cust_main_salesnum salesnum custnum magic status
     )) 
 {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
+  $search_string .= '&'.$_.'='.$cgi->param($_) if length($cgi->param($_));
 }
 
 #arrays
 for my $param (qw( pkgpart classnum refnum towernum )) {
   $search_hash{$param} = [ $cgi->param($param) ]
     if grep { $_ eq $param } $cgi->param;
+  $search_string .= '&'.$param.'='.$cgi->param($param) if grep { $_ eq $param } $cgi->param;
 }
 
 #scalars that need to be passed if empty
 for my $param (qw( censustract censustract2 )) {
   $search_hash{$param} = $cgi->param($param) || ''
     if grep { $_ eq $param } $cgi->param;
+  $search_string .= '&'.$param.'='.$cgi->param($param) if grep { $_ eq $param } $cgi->param;
 }
 
 #location flags (checkboxes)
 my @loc = grep /^\w+$/, $cgi->param('loc');
 $search_hash{"location_$_"} = 1 foreach @loc;
+$search_string .= '&location_'.$_.'=1' foreach @loc;
 
 my $report_option = $cgi->param('report_option');
 $search_hash{report_option} = $report_option if $report_option;
+$search_string .= '&report_option='.$report_option if $report_option;
 
 for my $param (grep /^report_option_any/, $cgi->param) {
   $search_hash{$param} = $cgi->param($param);
@@ -204,6 +211,7 @@ my %disable = (
 foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
 
   $search_hash{$field.'_null'} = scalar( $cgi->param($field.'_null') );
+  $search_string .= '&'.$field.'_null='.scalar( $cgi->param($field.'_null') );
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
@@ -211,6 +219,7 @@ foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cha
        or $disable{$cgi->param('status')}->{$field};
 
   $search_hash{$field} = [ $beginning, $ending ];
+  $search_string .= '&'.$field.'_begin='.$beginning.'&'.$field.'_end='.$ending;
 
 }
 
