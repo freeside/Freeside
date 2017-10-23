@@ -62,7 +62,7 @@
 
         <% defined($opt{'html_init'}) 
               ? ( ref($opt{'html_init'})
-                    ? &{$opt{'html_init'}}($opt{search_string})
+                    ? &{$opt{'html_init'}}($opt{html_init_data})
                     : $opt{'html_init'}
                 )
               : ''
