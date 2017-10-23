@@ -36,10 +36,10 @@
 % foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
 % 
   <INPUT TYPE="hidden" NAME="<% $field %>_null" VALUE="<% $cgi->param("${field}_null") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>begin" VALUE="<% $cgi->param("${field}.begin") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>beginning" VALUE="<% $cgi->param("${field}beginning") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>end" VALUE="<% $cgi->param("${field}.end") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>ending" VALUE="<% $cgi->param("${field}.ending") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>_begin" VALUE="<% $cgi->param("${field}_begin") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>_beginning" VALUE="<% $cgi->param("${field}_beginning") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>_end" VALUE="<% $cgi->param("${field}_end") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>_ending" VALUE="<% $cgi->param("${field}_ending") |h %>">
 % }
 
 <% ntable('#cccccc') %>
