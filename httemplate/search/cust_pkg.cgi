@@ -4,7 +4,7 @@
                   'name'        => 'packages',
                   'query'       => $sql_query,
                   'count_query' => $count_query,
-                  'search_string' => $search_string,
+                  'html_init_data' => $search_string,
                   'header'      => [ emt('#'),
                                      emt('Quan.'),
                                      emt('Package'),
