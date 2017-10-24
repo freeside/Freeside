@@ -72,7 +72,7 @@ my $email_sub = sub {
   #can't because contactnum is in the wrong field #my @contact_email = $contact->contact_email;
   my @contact_email = qsearch({
 	table => 'contact_email',
-	addl_from => ' LEFT JOIN cust_contact ON (contact_email.contactnum = cust_contact.contactnum) LEFT JOIN cust_main ON (cust_contact.custnum = cust_main.custnum) ',
+	addl_from => ' LEFT JOIN contact ON (contact_email.contactnum = contact.contactnum) LEFT JOIN cust_main ON (contact.custnum = cust_main.custnum) ',
 	extra_sql => ' WHERE cust_main.custnum = ' . $customer->custnum ,
   } );
   join('<br>', map $_->emailaddress, @contact_email);
