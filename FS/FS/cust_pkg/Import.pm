@@ -121,7 +121,6 @@ my %import_options = (
     my @location_params = grep { /^location\./ && length($param->{$_}) }
                             keys %$param;
     if (@location_params) {
-warn join('-', @location_params);
       my $cust_location = FS::cust_location->new({
           'custnum' => $record->custnum,
       });
@@ -145,6 +144,9 @@ warn join('-', @location_params);
          or ( length($r) && $r != $part_pkg->option('recur_fee') )
        )
     {
+
+      local($FS::part_pkg::skip_pkg_svc_hack) = 1;
+
       my $custom_part_pkg = $part_pkg->clone;
       $custom_part_pkg->disabled('Y');
       my %options = $part_pkg->options;
@@ -152,6 +154,16 @@ warn join('-', @location_params);
       $options{'recur_fee'} = $r if length($r);
       my $error = $custom_part_pkg->insert( options=>\%options );
       return "error customizing package: $error" if $error;
+
+      #not ->pkg_svc, we want to ignore links and clone the actual package def
+      foreach my $pkg_svc ( $part_pkg->_pkg_svc ) {
+        my $c_pkg_svc = new FS::pkg_svc { $pkg_svc->hash };
+        $c_pkg_svc->pkgsvcnum('');
+        $c_pkg_svc->pkgpart( $custom_part_pkg->pkgpart );
+        my $error = $c_pkg_svc->insert;
+        return "error customizing package: $error" if $error;
+      }
+
       $record->pkgpart( $custom_part_pkg->pkgpart );
     }
 
@@ -187,6 +199,7 @@ warn join('-', @location_params);
       my $ff = $formatfields->{$svc_x};
 
       if ( grep $param->{"$svc_x.$_"}, @$ff ) {
+
         my $svc = "FS::$svc_x"->new( {
           'pkgnum'  => $record->pkgnum,
           'svcpart' => $record->part_pkg->svcpart($svc_x),
