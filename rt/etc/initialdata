@@ -319,6 +319,110 @@ you may reply to this message.</p>
 ],
     },
     {  Queue       => '0',
+       Name        => 'AutoreplyOrCorrespondence',                      # loc
+       Description => 'Plaintext AutoreplyOrCorrespondence template',   # loc
+       Content     => q[{
+      use RT::Template;
+      my $creator_name = $Ticket->CreatorObj->Name;
+      my $requestors = $Ticket->Requestors->UserMembersObj;
+      my ( $c_requestor, $r_count ) = ( 0, 0 );
+      while ( my $r = $requestors->Next() ) {
+          if ( $r->Name eq $creator_name ) {
+              $c_requestor++;
+          }
+          else {
+              $r_count++;
+          }
+      }
+      my $template = new RT::Template($RT::SystemUser);
+      my $template_name;
+
+      #if the creator is not a requestor or
+      #there is more than one requestor ( who's not the creator )
+      #use the Correspondence template
+      if ( ! $c_requestor || $r_count ) {
+          $template_name = 'Correspondence';
+      }
+      else {
+          #otherwise use the Autoreply template
+          $template_name = 'Autoreply';
+      }
+
+      #Load the Queue Template
+      $template->LoadQueueTemplate(
+          Queue => $Ticket->Queue,
+          Name => $template_name,
+      );
+      #if there's no Queue Template attempt to find a Global one.
+      unless ( $template->id ) {
+          $template->LoadGlobalTemplate( $template_name );
+          unless ( $template->id ) {
+              $RT::Logger->error("Could not load template : $template_name")
+          }
+      }
+      #Process embedded fields & expressions of true templates;
+      #note that we can only meaningfully use the body
+      my($ret, $msg) = $template->Parse(
+                           TicketObj => $Ticket,
+                           TransactionObj => $Transaction,
+                       );
+      $ret ? $template->MIMEObj->stringify : $msg;
+    }
+],
+    },
+    {  Queue       => '0',
+       Name        => 'AutoreplyOrCorrespondence in HTML',              # loc
+       Description => 'HTML AutoreplyOrCorrespondence template',   # loc
+       Content     => q[{
+      use RT::Template;
+      my $creator_name = $Ticket->CreatorObj->Name;
+      my $requestors = $Ticket->Requestors->UserMembersObj;
+      my ( $c_requestor, $r_count ) = ( 0, 0 );
+      while ( my $r = $requestors->Next() ) {
+          if ( $r->Name eq $creator_name ) {
+              $c_requestor++;
+          }
+          else {
+              $r_count++;
+          }
+      }
+      my $template = new RT::Template($RT::SystemUser);
+      my $template_name;
+
+      #if the creator is not a requestor or
+      #there is more than one requestor ( who's not the creator )
+      #use the Correspondence template
+      if ( ! $c_requestor || $r_count ) {
+          $template_name = 'Correspondence in HTML';
+      }
+      else {
+          #otherwise use the Autoreply in HTML template
+          $template_name = 'Autoreply in HTML';
+      }
+
+      #Load the Queue Template
+      $template->LoadQueueTemplate(
+          Queue => $Ticket->Queue,
+          Name => $template_name,
+      );
+      #if there's no Queue Template attempt to find a Global one.
+      unless ( $template->id ) {
+          $template->LoadGlobalTemplate( $template_name );
+          unless ( $template->id ) {
+              $RT::Logger->error("Could not load template : $template_name")
+          }
+      }
+      #Process embedded fields & expressions of true templates;
+      #note that we can only meaningfully use the body
+      my($ret, $msg) = $template->Parse(
+                           TicketObj => $Ticket,
+                           TransactionObj => $Transaction,
+                       );
+      $ret ? $template->MIMEObj->stringify : $msg;
+    }
+],
+    },
+    {  Queue       => '0',
        Name        => 'Transaction',                     # loc
        Description => 'Plain text transaction template', # loc
        Content     => 'RT-Attach-Message: yes
