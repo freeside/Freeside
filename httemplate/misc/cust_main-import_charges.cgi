@@ -3,7 +3,15 @@
 Import a CSV file containing customer charges.
 <BR><BR>
 
-<FORM ACTION="process/cust_main-import_charges.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+<& /elements/form-file_upload.html,
+     'name'      => 'OneTimeChargeImportForm',
+     'action'    => 'process/cust_main-import_charges.cgi',
+     'num_files' => 1,
+     'fields'    => [ 'agentnum', 'custbatch', 'format' ],
+     'message'   => 'One time charge batch import successful',
+     'url'       => $p."misc/cust_main-import_charges.cgi",
+     'onsubmit'  => "document.OneTimeChargeImportForm.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -14,22 +22,34 @@ Import a CSV file containing customer charges.
            )
 %>
 
+<INPUT TYPE="hidden" NAME="custbatch" VALUE="<% $custbatch %>"%>
+
 <TR>
   <TH ALIGN="right">Format</TH>
   <TD>
     <SELECT NAME="format">
       <OPTION VALUE="simple">Simple
+      <OPTION VALUE="ooma">Ooma
 <!--      <OPTION VALUE="extended" SELECTED>Extended -->
     </SELECT>
   </TD>
 </TR>
 
-<TR>
-  <TH ALIGN="right">CSV filename</TH>
-  <TD><INPUT TYPE="file" NAME="csvfile"></TD>
-</TR>
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
 
-<TR><TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px"><INPUT TYPE="submit" VALUE="Import CSV file"></TD></TR>
+<TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             NAME    = "submitButton"
+             ID      = "submitButton"
+             VALUE   = "Import file"
+      >
+    </TD>
+</TR>
 
 </TABLE>
 
@@ -59,11 +79,22 @@ Field information:
 
 <BR>
 
+<b>Ooma</b> format has the following field order: <i>Description, Description2, Record Type, Customer Number, Billing Phone Number or Zip Code, Bus/Res Indicator, Invoice Date, Invoice Number, Group, Item, Revenue<%$req%>, LineCount, Exempt, ExemptList, State, City, Zipcode, OfferingPK, Offering name<%$req%>, Quantity, AccountNo<%$req%>, Status, Cust Created, PartnerID</i>
+<BR><BR>
+
+
 <% include('/elements/footer.html') %>
+
+<%once>
+  my $req = qq!<font color="#ff0000">*</font>!;
+</%once>
+
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+  my $custbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 
 </%init>
 
