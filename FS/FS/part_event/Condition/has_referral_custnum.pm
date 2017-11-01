@@ -1,5 +1,6 @@
 package FS::part_event::Condition::has_referral_custnum;
 
+use v5.14;
 use strict;
 use FS::cust_main;
 
@@ -57,16 +58,17 @@ sub condition {
 
 }
 
-#this is incomplete wrt checking referring customer balances, but that's okay.
-# false positives are acceptable here, its just an optimizaiton
 sub condition_sql {
-  my( $class, $table ) = @_;
+  my( $class, $table, %opt ) = @_;
 
-  my $sql = FS::cust_main->active_sql;
-  $sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
-  $sql = 'cust_main.referral_custnum IS NOT NULL AND ('.
-          $class->condition_sql_option('active') . ' IS NULL OR '.$sql.')';
-  return $sql;
+  my $age              = $class->condition_sql_option_age_from('age', $opt{'time'});
+  my $balance_sql      = FS::cust_main->balance_sql( $age ) =~ s/cust_main.custnum/cust_main.referral_custnum/r;
+  my $balance_date_sql = FS::cust_main->balance_date_sql    =~ s/cust_main.custnum/cust_main.referral_custnum/r;
+  my $active_sql       = FS::cust_main->active_sql          =~ s/cust_main.custnum/cust_main.referral_custnum/r;
+
+  my $sql = "cust_main.referral_custnum IS NOT NULL".
+    " AND ( ". $class->condition_sql_option('active') . " IS NULL OR $active_sql )".
+    " AND ( $balance_date_sql <= $balance_sql )";
 }
 
 1;
