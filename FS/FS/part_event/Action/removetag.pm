@@ -1,10 +1,10 @@
-package FS::part_event::Action::addtag;
+package FS::part_event::Action::removetag;
 
 use strict;
 use base qw( FS::part_event::Action );
 use FS::Record qw( qsearch );
 
-sub description { 'Add customer tag'; }
+sub description { 'Remove customer tag'; }
 
 sub eventtable_hashref {
     { 'cust_main'      => 1,
@@ -30,18 +30,16 @@ sub default_weight { 21; }
 sub do_action {
   my( $self, $object, $tagnum ) = @_;
 
-  my %exists = map { $_->tagnum => $_->tagnum }
-        qsearch({
-          table     => 'cust_tag',
-          hashref   => { custnum  => $object->custnum, },
-        });
+  # Get hashref of tags applied to selected customer record
+  my %cust_tag = map { $_->tagnum => $_ } qsearch({
+    table     => 'cust_tag',
+    hashref   => { custnum  => $object->custnum, },
+  });
 
-  my @tags = split(/\,/, $self->option('tagnum'));
+  # Remove tags chosen for this billing event from the customer record
   foreach my $tagnum ( split(/\,/, $self->option('tagnum') ) ) {
-    if ( !$exists{$tagnum} ) {
-      my $cust_tag = new FS::cust_tag { 'tagnum'  => $tagnum,
-                                        'custnum' => $object->custnum, };
-      my $error = $cust_tag->insert;
+    if ( exists $cust_tag{$tagnum} ) {
+      my $error = $cust_tag{$tagnum}->delete;
       die $error if $error;
     }
   }
