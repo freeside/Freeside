@@ -731,6 +731,9 @@ sub order_package {
        or ( length($r) && $r != $part_pkg->option('recur_fee') )
      )
   {
+
+    local($FS::part_pkg::skip_pkg_svc_hack) = 1;
+
     my $custom_part_pkg = $part_pkg->clone;
     $custom_part_pkg->disabled('Y');
     my %options = $part_pkg->options;
@@ -738,7 +741,18 @@ sub order_package {
     $options{'recur_fee'} = $r if length($r);
     my $error = $custom_part_pkg->insert( options=>\%options );
     return ( 'error' => "error customizing package: $error" ) if $error;
+
+    #not ->pkg_svc, we want to ignore links and clone the actual package def
+    foreach my $pkg_svc ( $part_pkg->_pkg_svc ) {
+      my $c_pkg_svc = new FS::pkg_svc { $pkg_svc->hash };
+      $c_pkg_svc->pkgsvcnum('');
+      $c_pkg_svc->pkgpart( $custom_part_pkg->pkgpart );
+      my $error = $c_pkg_svc->insert;
+      return "error customizing package: $error" if $error;
+    }
+
     $cust_pkg->pkgpart( $custom_part_pkg->pkgpart );
+
   }
 
   my %order_pkg = ( 'cust_pkg' => $cust_pkg );
