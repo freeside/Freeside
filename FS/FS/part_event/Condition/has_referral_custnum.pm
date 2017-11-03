@@ -1,6 +1,5 @@
 package FS::part_event::Condition::has_referral_custnum;
 
-use v5.14;
 use strict;
 use FS::cust_main;
 
@@ -61,14 +60,19 @@ sub condition {
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
-  my $age              = $class->condition_sql_option_age_from('age', $opt{'time'});
-  my $balance_sql      = FS::cust_main->balance_sql( $age ) =~ s/cust_main.custnum/cust_main.referral_custnum/r;
-  my $balance_date_sql = FS::cust_main->balance_date_sql    =~ s/cust_main.custnum/cust_main.referral_custnum/r;
-  my $active_sql       = FS::cust_main->active_sql          =~ s/cust_main.custnum/cust_main.referral_custnum/r;
+  my $age = $class->condition_sql_option_age_from('age', $opt{'time'});
+  my $balance_sql      = FS::cust_main->balance_sql( $age );
+  my $balance_date_sql = FS::cust_main->balance_date_sql;
+  my $active_sql       = FS::cust_main->active_sql;
+  $balance_sql      =~ s/cust_main.custnum/cust_main.referral_custnum/;
+  $balance_date_sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
+  $active_sql       =~ s/cust_main.custnum/cust_main.referral_custnum/;
 
   my $sql = "cust_main.referral_custnum IS NOT NULL".
-    " AND ( ". $class->condition_sql_option('active') . " IS NULL OR $active_sql )".
-    " AND ( $balance_date_sql <= $balance_sql )";
+    " AND (".$class->condition_sql_option('active')." IS NULL OR $active_sql)".
+    " AND ($balance_date_sql <= $balance_sql)";
+
+  return $sql;
 }
 
 1;
