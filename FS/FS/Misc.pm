@@ -757,6 +757,8 @@ sub generate_ps {
 
   my $papersize = $conf->config('papersize') || 'letter';
 
+  local($SIG{CHLD}) = sub {};
+
   system('dvips', '-q', '-t', $papersize, "$file.dvi", '-o', "$file.ps" ) == 0
     or die "dvips failed";
 
@@ -813,6 +815,8 @@ sub generate_pdf {
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
   my $papersize = $conf->config('papersize') || 'letter';
+
+  local($SIG{CHLD}) = sub {};
 
   system(
     "dvips -q -f $sfile.dvi -t $papersize ".
@@ -896,6 +900,7 @@ sub do_print {
               : $conf->config('lpr', $opt{'agentnum'} );
 
   my $outerr = '';
+  local($SIG{CHLD}) = sub {};
   run3 $lpr, $data, \$outerr, \$outerr;
   if ( $? ) {
     $outerr = ": $outerr" if length($outerr);
@@ -984,6 +989,8 @@ sub ocr_image {
 
   print $fh $logo_data;
   close $fh;
+
+  local($SIG{CHLD}) = sub {};
 
   run( [qw(ocroscript recognize), $filename], '>'=>"$filename.hocr" )
     or die "ocroscript recognize failed\n";
