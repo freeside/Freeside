@@ -1,0 +1,17 @@
+<%doc>
+
+Example:
+
+  <& /elements/popup-topreload, mt('Action completed') &>
+
+</%doc>
+<& /elements/header-popup.html, encode_entities($message) &>
+  <SCRIPT TYPE="text/javascript">
+    topreload();
+  </SCRIPT>
+<& /elements/footer-popup.html &>
+<%init>
+
+my $message = shift;
+
+</%init>
