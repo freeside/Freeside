@@ -65,9 +65,28 @@
                   'onchange' => 'status_changed(this);',
     &>
 
+    <& /elements/tr-select-reason.html,
+             'field'          => 'reasonnum',
+             'reason_class'   => 'S',
+             'label'          => 'Suspended Reason',
+             'label_id'       => 'reasonnum_label',
+             'hide_addnew'    => '1',
+             'hide_onload'    => '1',
+             'cgi'            => $cgi,
+             'control_button' => 'confirm_suspend_cust_button',
+             'pre_options'    => [ 0 => 'all' ],
+    &>
+
     <SCRIPT TYPE="text/javascript">
   
       function status_changed(what) {
+
+        if (what.options[what.selectedIndex].value == 'suspended') {
+          document.getElementById('reasonnum_row').style.visibility = 'visible';
+        }
+        else {
+          document.getElementById('reasonnum_row').style.visibility = 'collapse';
+        }
 
 %       foreach my $status ( '', FS::cust_pkg->statuses() ) {
 

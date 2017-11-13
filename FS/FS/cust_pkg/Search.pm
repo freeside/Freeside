@@ -627,12 +627,18 @@ sub search {
     push @where, $FS::CurrentUser::CurrentUser->agentnums_sql('table'=>'cust_main');
   }
 
+  push @where,  "cust_pkg_reason.reasonnum = '".$params->{reasonnum}."'" if $params->{reasonnum};
+
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
   my $addl_from = 'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
                   'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) '.
                   'LEFT JOIN cust_location USING ( locationnum ) '.
                   FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
+
+  if ($params->{reasonnum}) {
+    $addl_from .= 'LEFT JOIN cust_pkg_reason ON (cust_pkg_reason.pkgnum = cust_pkg.pkgnum) ';
+  }
 
   my $select;
   my $count_query;
