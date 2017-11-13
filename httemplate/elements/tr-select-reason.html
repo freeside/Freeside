@@ -5,16 +5,22 @@ Example:
   include( '/elements/tr-select-reason.html',
 
     #required 
-    'field'         => 'reasonnum',
-    'reason_class'  => 'C', # one of those in %FS::reason_type::class_name
+    'field'          => 'reasonnum',     # field name
+    'reason_class'   => 'C',             # one of those in %FS::reason_type::class_name
+    'label'          => 'Your Label',    # field display label
 
     #recommended
     'cgi' => $cgi, #easiest way for things to be properly "sticky" on errors
 
     #optional
-    'control_button' => 'element_name', #button to be enabled when a reason is
-                                        #selected
+    'control_button' => 'element_name',  #button to be enabled when a reason is
+                                         #selected
     'id'             => 'element_id',
+    'hide_add'       => '1',             # setting this will hide the add new reason link,
+                                         # even if the user has access to add a new reason.
+    'hide_onload'    => '1',             # setting this will hide reason select box on page load,
+                                         # allowing for it do be displayed later.
+    'pre_options'    => [ 0 => 'all'],   # an array of pre options.  Defaults to 0 => 'select reason...'
 
     #deprecated ways to keep things "sticky" on errors
     # (requires duplicate code in each using file to parse cgi params)
@@ -67,8 +73,9 @@ Example:
 </SCRIPT>
 
 %# sadly can't just use add_inline here, as we have non-text fields
+
 <& tr-select-table.html,
-  'label'           => 'Reason',
+  'label'           => $label,
   'field'           => $name,
   'id'              => $id,
   'table'           => 'reason',
@@ -76,16 +83,17 @@ Example:
   'label_callback'  => sub { my $reason = shift;
                              $reason->type . ' : ' .  $reason->reason },
   'disable_empty'   => 1,
-  'pre_options'     => [ 0 => 'Select reason...' ],
+  'pre_options'     => \@pre_options,
   'post_options'    => \@post_options,
   'curr_value'      => $init_reason,
   'onchange'        => $id.'_changed()',
+  'hide_onload'     => $opt{'hide_onload'},
 &>
 
 % # "add new reason" fields
 % # should be a <fieldset>, but that doesn't fit well into the table
 
-% if ( $curuser->access_right($add_access_right) ) {
+% if ( $curuser->access_right($add_access_right) && !$hide_addnew ) {
 <TR id="<% $id %>_new_fields">
   <TD COLSPAN=2>
     <TABLE CLASS="inv" STYLE="text-align: left">
@@ -184,6 +192,8 @@ my %opt = @_;
 
 my $name = $opt{'field'};
 my $class = $opt{'reason_class'};
+my $label = $opt{'label'} ? $opt{'label'} : 'Reason';
+my $hide_addnew = $opt{'hide_addnew'} ? $opt{'hide_addnew'} : '';
 
 my $init_reason;
 if ( $opt{'cgi'} ) {
@@ -193,6 +203,8 @@ $init_reason ||= $opt{'curr_value'};
 
 my $id = $opt{'id'} || $name;
 $id =~ s/\./_/g; # for edit/part_event
+
+my $label_id = $opt{'label_id'} || '';
 
 my $add_access_right = $FS::reason_type::class_add_access_right{$class}
   or die "unknown class: $class";
@@ -206,8 +218,12 @@ my @reasons = qsearch({
   'order_by'        => ' ORDER BY type, reason',
 });
 
+
+my @pre_options = ( 0 => 'Select reason...' );
+@pre_options = @{ $opt{'pre_options'} if $opt{'pre_options'} };
+
 my @post_options;
-if ( $curuser->access_right($add_access_right) ) {
+if ( $curuser->access_right($add_access_right) && !$hide_addnew ) {
   @post_options = ( -1 => 'Add new reason' );
 }
 

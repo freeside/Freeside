@@ -159,7 +159,7 @@ $search_hash{'query'} = $cgi->keywords;
 
 #scalars
 for (qw( agentnum cust_status cust_main_salesnum salesnum custnum magic status
-         custom cust_fields pkgbatch zip
+         reasonnum custom cust_fields pkgbatch zip
          477part 477rownum date 
     )) 
 {
@@ -269,6 +269,22 @@ my $html_init = sub {
                'width'       => 569,
                'height'      => 210,
              ). '<BR>';
+
+    $text .= include( '/elements/popup_link.html',
+               'label'       => emt('Suspend these packages'),
+               'action'      => "${p}misc/bulk_suspend_pkg.cgi?$query",
+               'actionlabel' => emt('Suspend Packages'),
+               'width'       => 569,
+               'height'      => 210,
+             ). '<BR>' if $search_hash{status} eq 'active';
+
+    $text .= include( '/elements/popup_link.html',
+               'label'       => emt('Unsuspend these packages'),
+               'action'      => "${p}misc/bulk_unsuspend_pkg.cgi?$query",
+               'actionlabel' => emt('Unsuspend Packages'),
+               'width'       => 569,
+               'height'      => 210,
+             ). '<BR>' if $search_hash{status} eq 'suspended';
 
     if ( $curuser->access_right('Edit customer package dates') ) {
       $text .= include( '/elements/popup_link.html',
