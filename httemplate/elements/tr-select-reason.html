@@ -220,7 +220,7 @@ my @reasons = qsearch({
 
 
 my @pre_options = ( 0 => 'Select reason...' );
-@pre_options = @{ $opt{'pre_options'} if $opt{'pre_options'} };
+@pre_options = @{ $opt{'pre_options'} } if $opt{'pre_options'};
 
 my @post_options;
 if ( $curuser->access_right($add_access_right) && !$hide_addnew ) {
