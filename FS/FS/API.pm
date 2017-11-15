@@ -650,6 +650,102 @@ sub location_info {
   return \%return;
 }
 
+=item list_customer_packages OPTION => VALUE, ...
+
+Lists all customer packages.
+
+=over
+
+=item secret
+
+API Secret
+
+=item custnum
+
+Customer Number
+
+=back
+
+Example:
+
+  my $result = FS::API->list_packages(
+    'secret'  => 'sharingiscaring',
+    'custnum'  => custnum,
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # list packages returns an array of hashes for packages ordered by custnum and pkgnum.
+    print Dumper($result->{'pkgs'});
+  }
+
+=cut
+
+sub list_customer_packages {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my $sql_query = FS::cust_pkg->search({ 'custnum' => $opt{custnum}, });
+
+  $sql_query->{order_by} = 'ORDER BY custnum, pkgnum';
+
+  my @packages = qsearch($sql_query)
+    or return { 'error' => 'No packages' };
+
+  my $return = {
+    'packages'       => [ map $_->hashref, @packages ],
+  };
+
+  $return;
+}
+
+=item package_status OPTION => VALUE, ...
+
+Get package status.
+
+=over
+
+=item secret
+
+API Secret
+
+=item pkgnum
+
+Package Number
+
+=back
+
+Example:
+
+  my $result = FS::API->package_status(
+    'secret'  => 'sharingiscaring',
+    'pkgnum'  => pkgnum,
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # package status returns a hash with the status for a package.
+    print Dumper($result->{'status'});
+  }
+
+=cut
+
+sub package_status {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $opt{pkgnum} } )
+    or return { 'error' => 'No packages' };
+
+  my $return = {
+    'status' => $cust_pkg->status,
+  };
+
+  $return;
+}
+
 =item order_package OPTION => VALUE, ...
 
 Orders a new customer package.  Takes a list of keys and values as paramaters
