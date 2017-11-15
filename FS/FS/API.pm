@@ -784,6 +784,234 @@ sub location_info {
   return \%return;
 }
 
+=item list_customer_packages OPTION => VALUE, ...
+
+Lists all customer packages.
+
+=over
+
+=item secret
+
+API Secret
+
+=item custnum
+
+Customer Number
+
+=back
+
+Example:
+
+  my $result = FS::API->list_packages(
+    'secret'  => 'sharingiscaring',
+    'custnum'  => custnum,
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # list packages returns an array of hashes for packages ordered by custnum and pkgnum.
+    print Dumper($result->{'pkgs'});
+  }
+
+=cut
+
+sub list_customer_packages {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my $sql_query = FS::cust_pkg->search({ 'custnum' => $opt{custnum}, });
+
+  $sql_query->{order_by} = 'ORDER BY custnum, pkgnum';
+
+  my @packages = qsearch($sql_query)
+    or return { 'error' => 'No packages' };
+
+  my $return = {
+    'packages'       => [ map $_->hashref, @packages ],
+  };
+
+  $return;
+}
+
+=item package_status OPTION => VALUE, ...
+
+Get package status.
+
+=over
+
+=item secret
+
+API Secret
+
+=item pkgnum
+
+Package Number
+
+=back
+
+Example:
+
+  my $result = FS::API->package_status(
+    'secret'  => 'sharingiscaring',
+    'pkgnum'  => pkgnum,
+  );
+
+  if ( $result->{'error'} ) {
+    die $result->{'error'};
+  } else {
+    # package status returns a hash with the status for a package.
+    print Dumper($result->{'status'});
+  }
+
+=cut
+
+sub package_status {
+  my( $class, %opt ) = @_;
+  return _shared_secret_error() unless _check_shared_secret($opt{secret});
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $opt{pkgnum} } )
+    or return { 'error' => 'No packages' };
+
+  my $return = {
+    'status' => $cust_pkg->status,
+  };
+
+  $return;
+}
+
+=item order_package OPTION => VALUE, ...
+
+Orders a new customer package.  Takes a list of keys and values as paramaters
+with the following keys:
+
+=over 4
+
+=item secret
+
+API Secret
+
+=item custnum
+
+=item pkgpart
+
+=item quantity
+
+=item start_date
+
+=item contract_end
+
+=item address1
+
+=item address2
+
+=item city
+
+=item county
+
+=item state
+
+=item zip
+
+=item country
+
+=item setup_fee
+
+Including this implements per-customer custom pricing for this package, overriding package definition pricing
+
+=item recur_fee
+
+Including this implements per-customer custom pricing for this package, overriding package definition pricing
+
+=item invoice_details
+
+A single string for just one detail line, or an array reference of one or more
+lines of detail
+
+=cut
+
+sub order_package {
+  my( $class, %opt ) = @_;
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $opt{custnum} })
+    or return { 'error' => 'Unknown custnum' };
+
+  #some conceptual false laziness w/cust_pkg/Import.pm
+
+  my $cust_pkg = new FS::cust_pkg {
+    'pkgpart'    => $opt{'pkgpart'},
+    'quantity'   => $opt{'quantity'} || 1,
+  };
+
+  #start_date and contract_end
+  foreach my $date_field (qw( start_date contract_end )) {
+    if ( $opt{$date_field} =~ /^(\d+)$/ ) {
+      $cust_pkg->$date_field( $opt{$date_field} );
+    } elsif ( $opt{$date_field} ) {
+      $cust_pkg->$date_field( str2time( $opt{$date_field} ) );
+    }
+  }
+
+  #especially this part for custom pkg price
+  # (false laziness w/cust_pkg/Import.pm)
+  my $s = $opt{'setup_fee'};
+  my $r = $opt{'recur_fee'};
+  my $part_pkg = $cust_pkg->part_pkg;
+  if (    ( length($s) && $s != $part_pkg->option('setup_fee') )
+       or ( length($r) && $r != $part_pkg->option('recur_fee') )
+     )
+  {
+
+    local($FS::part_pkg::skip_pkg_svc_hack) = 1;
+
+    my $custom_part_pkg = $part_pkg->clone;
+    $custom_part_pkg->disabled('Y');
+    my %options = $part_pkg->options;
+    $options{'setup_fee'} = $s if length($s);
+    $options{'recur_fee'} = $r if length($r);
+    my $error = $custom_part_pkg->insert( options=>\%options );
+    return ( 'error' => "error customizing package: $error" ) if $error;
+
+    #not ->pkg_svc, we want to ignore links and clone the actual package def
+    foreach my $pkg_svc ( $part_pkg->_pkg_svc ) {
+      my $c_pkg_svc = new FS::pkg_svc { $pkg_svc->hash };
+      $c_pkg_svc->pkgsvcnum('');
+      $c_pkg_svc->pkgpart( $custom_part_pkg->pkgpart );
+      my $error = $c_pkg_svc->insert;
+      return "error customizing package: $error" if $error;
+    }
+
+    $cust_pkg->pkgpart( $custom_part_pkg->pkgpart );
+
+  }
+
+  my %order_pkg = ( 'cust_pkg' => $cust_pkg );
+
+  my @loc_fields = qw( address1 address2 city county state zip country );
+  if ( grep length($opt{$_}), @loc_fields ) {
+     $order_pkg{'cust_location'} = new FS::cust_location {
+       map { $_ => $opt{$_} } @loc_fields, 'custnum'
+     };
+  }
+
+  $order_pkg{'invoice_details'} = $opt{'invoice_details'}
+    if $opt{'invoice_details'};
+
+  my $error = $cust_main->order_pkg( %order_pkg );
+
+  #if ( $error ) {
+    return { 'error'  => $error,
+             #'pkgnum' => '',
+           };
+  #} else {
+  #  return { 'error'  => '',
+  #           #cust_main->order_pkg doesn't actually have a way to return pkgnum
+  #           #'pkgnum' => $pkgnum,
+  #         };
+  #}
+
+}
+
 =item change_package_location
 
 Updates package location. Takes a list of keys and values 
