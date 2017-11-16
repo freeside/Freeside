@@ -109,8 +109,7 @@ use vars qw( $conf );
 use Date::Format;
 use MIME::Entity;
 use Email::Sender::Simple qw(sendmail);
-use Email::Sender::Transport::SMTP;
-use Email::Sender::Transport::SMTP::TLS 0.11;
+use Email::Sender::Transport::SMTP 1.300027; #for SSL/TLS support
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -249,17 +248,17 @@ sub send_email {
   my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
   $smtp_opt{'port'} = $port;
 
-  my $transport;
   if ( defined($enc) && $enc eq 'starttls' ) {
-    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
-    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
-  } else {
-    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
-      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
-    }
-    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
-    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
+    $smtp_opt{'ssl'} = 'starttls';
+  } elsif ( defined($enc) && $enc eq 'tls' ) {
+    $smtp_opt{'ssl'} = 'ssl';
   }
+
+  if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+    $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
+  }
+  
+  my $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
   
   push @to, $options{bcc} if defined($options{bcc});
   # fully unpack all addresses found in @to (including Bcc) to make the
@@ -732,6 +731,8 @@ sub generate_ps {
 
   my $papersize = $conf->config('papersize') || 'letter';
 
+  local($SIG{CHLD}) = sub {};
+
   system('dvips', '-q', '-t', $papersize, "$file.dvi", '-o', "$file.ps" ) == 0
     or die "dvips failed";
 
@@ -788,6 +789,8 @@ sub generate_pdf {
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
   my $papersize = $conf->config('papersize') || 'letter';
+
+  local($SIG{CHLD}) = sub {};
 
   system(
     "dvips -q -f $sfile.dvi -t $papersize ".
@@ -871,6 +874,7 @@ sub do_print {
               : $conf->config('lpr', $opt{'agentnum'} );
 
   my $outerr = '';
+  local($SIG{CHLD}) = sub {};
   run3 $lpr, $data, \$outerr, \$outerr;
   if ( $? ) {
     $outerr = ": $outerr" if length($outerr);
@@ -959,6 +963,8 @@ sub ocr_image {
 
   print $fh $logo_data;
   close $fh;
+
+  local($SIG{CHLD}) = sub {};
 
   run( [qw(ocroscript recognize), $filename], '>'=>"$filename.hocr" )
     or die "ocroscript recognize failed\n";
