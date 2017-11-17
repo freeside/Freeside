@@ -140,18 +140,26 @@ sub build_input_item {
         " recurring charge\n"
         if !$taxproduct;
 
-    # when billing on cancellation there are no units
-    my $units = $self->{cancel} ? 0 : $cust_bill_pkg->units;
-    unshift @items, {
+    my %item = (
       $self->generic_item($cust_bill, $cust_main),
       record_type     => 'S',
       unique_id       => 'cust_bill_pkg '. $cust_bill_pkg->billpkgnum. ' recur',
       charge_amount   => $recur_without_usage,
-      location_a      => $cust_bill_pkg->tax_location->zip,
       productcode     => substr($taxproduct,0,4),
       servicecode     => substr($taxproduct,4,3),
-      units           => $units,
-    };
+    );
+
+    # when billing on cancellation there are no units
+    $item{units} = $self->{cancel} ? 0 : $cust_bill_pkg->units;
+
+    my $location =  $cust_bill_pkg->tax_location
+                 || ( $conf->exists('tax-ship_address')
+                        ? $cust_main->ship_location
+                        : $cust_main->bill_location
+                    );
+    $item{location_a} = $location->zip;
+
+    unshift @items, \%item;
   }
 
   ###
@@ -167,16 +175,24 @@ sub build_input_item {
         " setup charge\n"
         if !$taxproduct;
 
-    unshift @items, {
+    my %item = (
       $self->generic_item($cust_bill, $cust_main),
       record_type     => 'S',
       unique_id       => 'cust_bill_pkg '. $cust_bill_pkg->billpkgnum. ' setup',
       charge_amount   => $cust_bill_pkg->setup,
-      location_a      => $cust_bill_pkg->tax_location->zip,
       productcode     => substr($taxproduct,0,4),
       servicecode     => substr($taxproduct,4,3),
       units           => $cust_bill_pkg->units,
-    };
+    );
+
+    my $location =  $cust_bill_pkg->tax_location
+                 || ( $conf->exists('tax-ship_address')
+                        ? $cust_main->ship_location
+                        : $cust_main->bill_location
+                    );
+    $item{location_a} = $location->zip;
+
+    unshift @items, \%item;
   }
 
   return @items;
