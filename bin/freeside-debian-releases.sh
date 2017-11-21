@@ -10,7 +10,7 @@ if [[ $# -ne 3 ]]
     exit;
 fi
 
-DATE=`date +"%Y%m%d"`
+DATE=`date +"%Y%m%d%H"`
 DIR="/home/autobuild/packages/staging/freeside$FS_VERSION/$FS_REPO"
 TARGET="/home/autobuild/public_html/freeside$FS_VERSION-$DISTRO-$FS_REPO"
 
@@ -28,6 +28,16 @@ rm -fr $DIR/freeside/debian/freeside-ng-selfservice.conffiles
 # Pull any changes
 cd $DIR/freeside
 git checkout -- debian/changelog
+
+LOCAL=`git rev-parse FREESIDE_${FS_VERSION}_BRANCH`
+REMOTE=`git ls-remote origin -h refs/heads/FREESIDE_${FS_VERSION}_BRANCH | cut -f1`
+
+if [ $LOCAL = $REMOTE ]; then
+  echo "No new changes in git; aborting build."
+  exit #there's no new changes
+fi
+echo "New changes in git since last build; building new packages."
+
 git pull
 #STATUS=`git pull`
 
