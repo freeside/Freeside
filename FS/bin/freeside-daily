@@ -55,14 +55,6 @@ tax_rate_update(%opt);
 use FS::Cron::set_lata_have_usage qw(set_lata_have_usage);
 set_lata_have_usage(%opt);
 
-# we used to send alerts about upcoming credit card expiration here
-my $conf = new FS::Conf;
-if($conf->exists('alert_expiration')) {
-  warn "WARNING: the alert_expiration option is obsolete.  If you ran 
-  freeside-upgrade, it should have configured credit card expiration alerts 
-  as billing events.\n";
-}
-
 #what to do about the below when using -m?  that is the question.
 
 #you don't want to skip this, besides, it should be cheap
