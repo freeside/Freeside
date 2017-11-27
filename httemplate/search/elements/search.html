@@ -16,7 +16,7 @@ Example:
                                 # (deprecated, will be singularlized
                                 #  simplisticly)
 
-    #literal SQL query string (deprecated?) or qsearch hashref or arrayref
+    #literal SQL query string (corner cases only) or qsearch hashref or arrayref
     #of qsearch hashrefs for a union of qsearches
     'query'       => {
                        'table'     => 'tablename',
@@ -34,7 +34,7 @@ Example:
                      },
                      # "select * from tablename";
    
-    #required unless 'query' is an SQL query string (shouldn't be...)
+    #required (now even if 'query' is an SQL query string)
     'count_query' => 'SELECT COUNT(*) FROM tablename',
 
     ###
@@ -131,7 +131,7 @@ Example:
     'agent_pos'             => 3, # optional position (starting from 0) to
                                   # insert an Agent column (query needs to be a
                                   # qsearch hashref and header & fields need to
-                                  # be defined)cust_pkg_susp.html
+                                  # be defined)
 
     # sort, link & display properties for fields
 
