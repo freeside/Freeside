@@ -66,7 +66,7 @@ FS::UID->install_callback( sub {
 
   eval "use FS::Conf;";
   die $@ if $@;
-  $conf = FS::Conf->new; 
+  $conf = FS::Conf->new;
   $conf_encryption           = $conf->exists('encryption');
   $conf_encryptionmodule     = $conf->config('encryptionmodule');
   $conf_encryptionpublickey  = join("\n",$conf->config('encryptionpublickey'));
@@ -103,7 +103,7 @@ FS::Record - Database record objects
 
     $record  = qsearchs FS::Record 'table', \%hash;
     $record  = qsearchs FS::Record 'table', { 'column' => 'value', ... };
-    @records = qsearch  FS::Record 'table', \%hash; 
+    @records = qsearch  FS::Record 'table', \%hash;
     @records = qsearch  FS::Record 'table', { 'column' => 'value', ... };
 
     $table = $record->table;
@@ -173,14 +173,14 @@ Creates a new record.  It doesn't store it in the database, though.  See
 L<"insert"> for that.
 
 Note that the object stores this hash reference, not a distinct copy of the
-hash it points to.  You can ask the object for a copy with the I<hash> 
+hash it points to.  You can ask the object for a copy with the I<hash>
 method.
 
 TABLE can only be omitted when a dervived class overrides the table method.
 
 =cut
 
-sub new { 
+sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
   my $self = {};
@@ -191,10 +191,10 @@ sub new {
     carp "warning: FS::Record::new called with table name ". $self->{'Table'}
       unless $nowarn_classload;
   }
-  
+
   $self->{'Hash'} = shift;
 
-  foreach my $field ( grep !defined($self->{'Hash'}{$_}), $self->fields ) { 
+  foreach my $field ( grep !defined($self->{'Hash'}{$_}), $self->fields ) {
     $self->{'Hash'}{$field}='';
   }
 
@@ -488,6 +488,26 @@ sub qsearch {
     croak $error;
   }
 
+
+  # Determine how to format rows returned form a union query:
+  #
+  # * When all queries involved in the union are from the same table:
+  #   Return an array of FS::$table_name objects
+  #
+  # * When union query is performed on multiple tables,
+  #   Return an array of FS::Record objects
+  #   ! Note:  As far as I can tell, this functionality was broken, and
+  #   !        actually results in a crash.  Behavior is left intact
+  #   !        as-is, in case the results are in use somewhere
+  #
+  # * Union query is performed on multiple table,
+  #       and $union_options{classname_from_column} = 1
+  #   Return an array of FS::$classname objects, where $classname is
+  #   derived for each row from a static field inserted each returned
+  #   row of data.
+  #   e.g.: SELECT custnum,first,last,'cust_main' AS `__classname`'.
+
+
   my $table = $stable[0];
   my $pkey = '';
   $table = '' if grep { $_ ne $table } @stable;
@@ -507,7 +527,21 @@ sub qsearch {
   #below was refactored out to _from_hashref, this should use it at some point
 
   my @return;
-  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
+  if ($union_options{classname_from_column}) {
+
+    # todo
+    # I'm not implementing the cache for this use case, at least not yet
+    # -mjackson
+
+    for my $row (@stuff) {
+      my $table_class = $row->{__classname}
+        or die "`__classname` column must be set when ".
+               "using \$union_options{classname_from_column}";
+      push @return, new("FS::$table_class",$row);
+    }
+
+  }
+  elsif ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
       #derivied class didn't override new method, so this optimization is safe
       if ( $cache ) {
@@ -530,12 +564,12 @@ sub qsearch {
     # Check for encrypted fields and decrypt them.
    ## only in the local copy, not the cached object
     no warnings 'deprecated'; # XXX silence the warning for now
-    if ( $conf_encryption 
+    if ( $conf_encryption
          && eval '@FS::'. $table . '::encrypted_fields' ) {
       foreach my $record (@return) {
         foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
-          next if $field eq 'payinfo' 
-                    && ($record->isa('FS::payinfo_transaction_Mixin') 
+          next if $field eq 'payinfo'
+                    && ($record->isa('FS::payinfo_transaction_Mixin')
                         || $record->isa('FS::payinfo_Mixin') )
                     && $record->payby
                     && !grep { $record->payby eq $_ } @encrypt_payby;
@@ -656,7 +690,7 @@ sub _query {
     push @statement, $statement;
 
     warn "[debug]$me $statement\n" if $DEBUG > 1 || $debug;
- 
+
 
     foreach my $field (
       grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
@@ -739,12 +773,12 @@ sub _from_hashref {
 
     # Check for encrypted fields and decrypt them.
    ## only in the local copy, not the cached object
-    if ( $conf_encryption 
+    if ( $conf_encryption
          && eval '@FS::'. $table . '::encrypted_fields' ) {
       foreach my $record (@return) {
         foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
-          next if $field eq 'payinfo' 
-                    && ($record->isa('FS::payinfo_transaction_Mixin') 
+          next if $field eq 'payinfo'
+                    && ($record->isa('FS::payinfo_transaction_Mixin')
                         || $record->isa('FS::payinfo_Mixin') )
                     && $record->payby
                     && !grep { $record->payby eq $_ } @encrypt_payby;
@@ -771,7 +805,7 @@ sub get_real_fields {
   $alias_main ||= $table;
 
   ## could be optimized more for readability
-  return ( 
+  return (
     map {
 
       my $op = '=';
@@ -832,7 +866,7 @@ sub get_real_fields {
       }
 
     } @{ $real_fields }
-  );  
+  );
 }
 
 =item by_key PRIMARY_KEY_VALUE
@@ -870,7 +904,7 @@ single SELECT spanning multiple tables, and cache the results for subsequent
 method calls.  Interface will almost definately change in an incompatible
 fashion.
 
-Arguments: 
+Arguments:
 
 =cut
 
@@ -954,7 +988,7 @@ sub get {
   # to avoid "Use of unitialized value" errors
   if ( defined ( $self->{Hash}->{$field} ) ) {
     $self->{Hash}->{$field};
-  } else { 
+  } else {
     '';
   }
 }
@@ -969,7 +1003,7 @@ Sets the value of the column/field/key COLUMN to VALUE.  Returns VALUE.
 
 =cut
 
-sub set { 
+sub set {
   my($self,$field,$value) = @_;
   $self->{'modified'} = 1;
   $self->{'Hash'}->{$field} = $value;
@@ -1028,7 +1062,7 @@ sub AUTOLOAD {
     my %search = ( $foreign_column => $pkey_value );
 
     # FS::Record->$method() ?  they're actually just subs :/
-    if ( $method eq 'qsearchs' ) { 
+    if ( $method eq 'qsearchs' ) {
       return $pkey_value ? qsearchs( $table, \%search ) : '';
     } elsif ( $method eq 'qsearch' ) {
       return $pkey_value ? qsearch(  $table, \%search ) : ();
@@ -1042,7 +1076,7 @@ sub AUTOLOAD {
     $self->setfield($field,$value);
   } else {
     $self->getfield($field);
-  }    
+  }
 }
 
 # efficient (also, old, doesn't support FK stuff)
@@ -1053,7 +1087,7 @@ sub AUTOLOAD {
 #    $_[0]->setfield($field, $_[1]);
 #  } else {
 #    $_[0]->getfield($field);
-#  }    
+#  }
 #}
 
 # get_fk_method(TABLE, FIELD)
@@ -1174,7 +1208,7 @@ sub hash {
   my($self) = @_;
   confess $self. ' -> hash: Hash attribute is undefined'
     unless defined($self->{'Hash'});
-  %{ $self->{'Hash'} }; 
+  %{ $self->{'Hash'} };
 }
 
 =item hashref
@@ -1330,14 +1364,14 @@ sub insert {
   }
 
   my $table = $self->table;
-  
+
   # Encrypt before the database
   if (    scalar( eval '@FS::'. $table . '::encrypted_fields')
        && $conf_encryption
   ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
-      next if $field eq 'payinfo' 
-                && ($self->isa('FS::payinfo_transaction_Mixin') 
+      next if $field eq 'payinfo'
+                && ($self->isa('FS::payinfo_transaction_Mixin')
                     || $self->isa('FS::payinfo_Mixin') )
                 && $self->payby
                 && !grep { $self->payby eq $_ } @encrypt_payby;
@@ -1360,7 +1394,7 @@ sub insert {
     $statement .= 'DEFAULT VALUES';
 
   } else {
-  
+
     if ( $use_placeholders ) {
 
       @bind_values = map $self->getfield($_), @real_fields;
@@ -1394,7 +1428,7 @@ sub insert {
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
@@ -1404,7 +1438,7 @@ sub insert {
   # get inserted id from the database, if applicable & needed
   if ( $db_seq && ! $self->getfield($primary_key) ) {
     warn "[debug]$me retreiving sequence from database\n" if $DEBUG;
-  
+
     my $insertid = '';
 
     if ( driver_name eq 'Pg' ) {
@@ -1453,7 +1487,7 @@ sub insert {
     } else {
 
       dbh->rollback if $FS::UID::AutoCommit;
-      return "don't know how to retreive inserted ids from ". driver_name. 
+      return "don't know how to retreive inserted ids from ". driver_name.
              ", try using counterfiles (maybe run dbdef-create?)";
 
     }
@@ -1477,7 +1511,7 @@ sub insert {
 
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
-  # Now that it has been saved, reset the encrypted fields so that $new 
+  # Now that it has been saved, reset the encrypted fields so that $new
   # can still be used.
   foreach my $field (keys %{$saved}) {
     $self->setfield($field, $saved->{$field});
@@ -1536,7 +1570,7 @@ sub delete {
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
@@ -1544,7 +1578,7 @@ sub delete {
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
   $h_sth->execute or return $h_sth->errstr if $h_sth;
-  
+
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   #no need to needlessly destoy the data either (causes problems actually)
@@ -1594,15 +1628,15 @@ sub replace {
 
   my $error = $new->check;
   return $error if $error;
-  
+
   # Encrypt for replace
   my $saved = {};
   if (    scalar( eval '@FS::'. $new->table . '::encrypted_fields')
        && $conf_encryption
   ) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
-      next if $field eq 'payinfo' 
-                && ($new->isa('FS::payinfo_transaction_Mixin') 
+      next if $field eq 'payinfo'
+                && ($new->isa('FS::payinfo_transaction_Mixin')
                     || $new->isa('FS::payinfo_Mixin') )
                 && $new->payby
                 && !grep { $new->payby eq $_ } @encrypt_payby;
@@ -1614,7 +1648,7 @@ sub replace {
   #my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
   my %diff = map { ($new->getfield($_) ne $old->getfield($_))
                    ? ($_, $new->getfield($_)) : () } $old->fields;
-                   
+
   unless (keys(%diff) || $no_update_diff ) {
     carp "[warning]$me ". ref($new)."->replace ".
            ( $primary_key ? "$primary_key ".$new->get($primary_key) : '' ).
@@ -1625,7 +1659,7 @@ sub replace {
 
   my $statement = "UPDATE ". $old->table. " SET ". join(', ',
     map {
-      "$_ = ". _quote($new->getfield($_),$old->table,$_) 
+      "$_ = ". _quote($new->getfield($_),$old->table,$_)
     } real_fields($old->table)
   ). ' WHERE '.
     join(' AND ',
@@ -1675,7 +1709,7 @@ sub replace {
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
@@ -1687,7 +1721,7 @@ sub replace {
 
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
-  # Now that it has been saved, reset the encrypted fields so that $new 
+  # Now that it has been saved, reset the encrypted fields so that $new
   # can still be used.
   foreach my $field (keys %{$saved}) {
     $new->setfield($field, $saved->{$field});
@@ -1731,7 +1765,7 @@ non-custom fields, etc., and call this method via $self->SUPER::check.
 
 =cut
 
-sub check { 
+sub check {
     my $self = shift;
     foreach my $field ($self->virtual_fields) {
         my $error = $self->ut_textn($field);
@@ -1742,7 +1776,7 @@ sub check {
 
 =item virtual_fields [ TABLE ]
 
-Returns a list of virtual fields defined for the table.  This should not 
+Returns a list of virtual fields defined for the table.  This should not
 be exported, and should only be called as an instance or class method.
 
 =cut
@@ -1836,8 +1870,8 @@ format_types).
 
 =back
 
-PARAMS is a hashref (or base64-encoded Storable hashref) containing the 
-POSTed data.  It must contain the field "uploaded files", generated by 
+PARAMS is a hashref (or base64-encoded Storable hashref) containing the
+POSTed data.  It must contain the field "uploaded files", generated by
 /elements/file-upload.html and containing the list of uploaded files.
 Currently only supports a single file named "file".
 
@@ -1852,7 +1886,7 @@ sub process_batch_import {
   my %formats = %{ $opt->{formats} };
 
   warn Dumper($param) if $DEBUG;
-  
+
   my $files = $param->{'uploaded_files'}
     or die "No files provided.\n";
 
@@ -2192,7 +2226,7 @@ sub batch_import {
       next if $line =~ /^\s*$/; #skip empty lines
 
       $line = &{$row_callback}($line) if $row_callback;
-      
+
       next if $line =~ /^\s*$/; #skip empty lines
 
       $parser->parse($line) or do {
@@ -2245,7 +2279,7 @@ sub batch_import {
     foreach my $field ( @fields ) {
 
       my $value = shift @columns;
-     
+
       if ( ref($field) eq 'CODE' ) {
         #&{$field}(\%hash, $value);
         push @later, $field, $value;
@@ -2370,7 +2404,7 @@ sub _h_statement {
 
 =item unique COLUMN
 
-B<Warning>: External use is B<deprecated>.  
+B<Warning>: External use is B<deprecated>.
 
 Replaces COLUMN in record with a unique number, using counters in the
 filesystem.  Used by the B<insert> method on single-field unique columns
@@ -2541,7 +2575,7 @@ sub ut_numbern {
 
 =item ut_decimal COLUMN[, DIGITS]
 
-Check/untaint decimal numbers (up to DIGITS decimal places.  If there is an 
+Check/untaint decimal numbers (up to DIGITS decimal places.  If there is an
 error, returns the error, otherwise returns false.
 
 =item ut_decimaln COLUMN[, DIGITS]
@@ -2706,7 +2740,7 @@ error, returns the error, otherwise returns false.
 
 sub ut_alphan {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^(\w*)$/ 
+  $self->getfield($field) =~ /^(\w*)$/
     or return "Illegal (alphanumeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -2721,7 +2755,7 @@ an error, returns the error, otherwise returns false.
 
 sub ut_alphasn {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^([\w ]*)$/ 
+  $self->getfield($field) =~ /^([\w ]*)$/
     or return "Illegal (alphanumeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -3040,8 +3074,8 @@ sub ut_name {
   $self->getfield($field) =~ /^([\p{Word} \,\.\-\']+)$/
     or return gettext('illegal_name'). " $field: ". $self->getfield($field);
   my $name = $1;
-  $name =~ s/^\s+//; 
-  $name =~ s/\s+$//; 
+  $name =~ s/^\s+//;
+  $name =~ s/\s+$//;
   $name =~ s/\s+/ /g;
   $self->setfield($field, $name);
   '';
@@ -3122,7 +3156,7 @@ see L<Locale::Country>.
 sub ut_country {
   my( $self, $field ) = @_;
   unless ( $self->getfield($field) =~ /^(\w\w)$/ ) {
-    if ( $self->getfield($field) =~ /^([\w \,\.\(\)\']+)$/ 
+    if ( $self->getfield($field) =~ /^([\w \,\.\(\)\']+)$/
          && country2code($1) ) {
       $self->setfield($field,uc(country2code($1)));
     }
@@ -3438,8 +3472,8 @@ sub scalar_sql {
 
 =item count [ WHERE [, PLACEHOLDER ...] ]
 
-Convenience method for the common case of "SELECT COUNT(*) FROM table", 
-with optional WHERE.  Must be called as method on a class with an 
+Convenience method for the common case of "SELECT COUNT(*) FROM table",
+with optional WHERE.  Must be called as method on a class with an
 associated table.
 
 =cut
@@ -3476,7 +3510,7 @@ sub row_exists {
 
 =item real_fields [ TABLE ]
 
-Returns a list of the real columns in the specified table.  Called only by 
+Returns a list of the real columns in the specified table.  Called only by
 fields() and other subroutines elsewhere in FS::Record.
 
 =cut
@@ -3491,7 +3525,7 @@ sub real_fields {
 
 =item pvf FIELD_NAME
 
-Returns the FS::part_virtual_field object corresponding to a field in the 
+Returns the FS::part_virtual_field object corresponding to a field in the
 record (specified by FIELD_NAME).
 
 =cut
@@ -3504,7 +3538,7 @@ sub pvf {
     my $concat = [ "'cf_'", "name" ];
     return qsearchs({   table   =>  'part_virtual_field',
                         hashref =>  { dbtable => $self->table,
-                                      name    => $name 
+                                      name    => $name
                                     },
                         select  =>  'vfieldpart, dbtable, length, label, '.concat_sql($concat).' as name',
                     });
@@ -3538,7 +3572,7 @@ sub _quote {
     cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
           "using 0 instead";
     0;
-  } elsif ( $value =~ /^\d+(\.\d+)?$/ && 
+  } elsif ( $value =~ /^\d+(\.\d+)?$/ &&
             ! $column_type =~ /(char|binary|text)$/i ) {
     $value;
   } elsif (( $column_type =~ /^bytea$/i || $column_type =~ /(blob|varbinary)/i )
@@ -3602,7 +3636,7 @@ the current database.
 
 =cut
 
-sub str2time_sql { 
+sub str2time_sql {
   my $driver = shift || driver_name;
 
   return 'UNIX_TIMESTAMP('      if $driver =~ /^mysql/i;
@@ -3625,7 +3659,7 @@ the current database.
 
 =cut
 
-sub str2time_sql_closing { 
+sub str2time_sql_closing {
   my $driver = shift || driver_name;
 
   return ' )::INTEGER ' if $driver =~ /^Pg/i;
@@ -3699,7 +3733,7 @@ sub concat_sql {
 
 =item group_concat_sql COLUMN, DELIMITER
 
-Returns an SQL expression to concatenate an aggregate column, using 
+Returns an SQL expression to concatenate an aggregate column, using
 GROUP_CONCAT() for mysql and array_to_string() and array_agg() for Pg.
 
 =cut
@@ -3717,7 +3751,7 @@ sub group_concat_sql {
 
 =item midnight_sql DATE
 
-Returns an SQL expression to convert DATE (a unix timestamp) to midnight 
+Returns an SQL expression to convert DATE (a unix timestamp) to midnight
 on that day in the system timezone, using the default driver name.
 
 =cut
@@ -3789,4 +3823,3 @@ http://poop.sf.net/
 =cut
 
 1;
-

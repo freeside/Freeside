@@ -1,0 +1,15 @@
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Show Voided Credits' %></TD>
+    <TD>
+      <select name='show_voided_credits'>
+        <option value=""></option>
+        <option value="0">no</option>
+        <option value="1">yes</option>
+      </select>
+    </TD>
+  </TR>
+<%init>
+
+my %opt = @_;
+
+</%init>
