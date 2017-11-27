@@ -11,7 +11,7 @@ if [[ $# -ne 3 ]]
 fi
 
 DATE=`date +"%Y%m%d%H"`
-DIR="/home/autobuild/packages/staging/freeside$FS_VERSION/$FS_REPO"
+DIR="/home/autobuild/packages/staging/freeside$FS_VERSION/$DISTRO/$FS_REPO"
 TARGET="/home/autobuild/public_html/freeside$FS_VERSION-$DISTRO-$FS_REPO"
 
 if [ ! -d "$DIR" -a -d $TARGET ]; then
@@ -21,9 +21,6 @@ echo "Staging or Target directories do not exist"
 fi
 
 GIT_VERSION=`grep '^$VERSION' $DIR/freeside/FS/FS.pm | cut -d\' -f2`
-
-# Clean configuration file
-rm -fr $DIR/freeside/debian/freeside-ng-selfservice.conffiles
 
 # Pull any changes
 cd $DIR/freeside
