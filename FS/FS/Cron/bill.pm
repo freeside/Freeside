@@ -123,7 +123,7 @@ sub bill {
             'priority' => 99, #don't get in the way of provisioning jobs
           };
           my $error = $queue->insert( 'custnum'=>$custnum, %args );
-
+          die $error if $error;
         }
 
       } else {
@@ -132,7 +132,12 @@ sub bill {
         if ( $disable_bill ) {
           $cust_main->collect( %args, 'debug' => $debug );
         } else {
-          $cust_main->bill_and_collect( %args, 'debug' => $debug );
+          my $error = $cust_main->bill_and_collect( %args, 'fatal' => 'return',
+                                                           'debug' => $debug, );
+          if ( $error ) {
+            $log->error($error);
+            warn $error; #die $error;
+          }
         }
 
       }
