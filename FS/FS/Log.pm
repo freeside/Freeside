@@ -127,4 +127,19 @@ sub levelmap {
   map { $_ => $LEVELS{$_} } levelnums;
 }
 
+=back
+
+=head1 BUGS
+
+Not yet used universally; being phased in over time.
+
+Not well documented.  Should document the error levels we're using (debug,
+info, warning, error, critical) and the methods to log them.
+
+=head1 SEE ALSO
+
+L<Log::Dispatch>
+
+=cut
+
 1;
