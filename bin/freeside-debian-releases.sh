@@ -22,9 +22,6 @@ fi
 
 GIT_VERSION=`grep '^$VERSION' $DIR/freeside/FS/FS.pm | cut -d\' -f2`
 
-# Clean configuration file
-rm -fr $DIR/freeside/debian/freeside-ng-selfservice.conffiles
-
 # Pull any changes
 cd $DIR/freeside
 git checkout -- debian/changelog
