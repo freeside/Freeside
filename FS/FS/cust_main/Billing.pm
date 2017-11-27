@@ -57,7 +57,7 @@ Cancels and suspends any packages due, generates bills, applies payments and
 credits, and applies collection events to run cards, send bills and notices,
 etc.
 
-By default, warns on errors and continues with the next operation (but see the
+Any errors prevent subsequent operations from continuing and die (but see the
 "fatal" flag below).
 
 Options are passed as name-value pairs.  Currently available options are:
@@ -131,8 +131,7 @@ sub bill_and_collect {
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
-    elsif ( $options{fatal}                                ) { die    $error; }
-    else                                                     { warn   $error; }
+    else                                                     { die    $error; }
   }
 
   $log->debug('suspending adjourned packages', %logopt);
@@ -140,8 +139,7 @@ sub bill_and_collect {
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
-    elsif ( $options{fatal}                                ) { die    $error; }
-    else                                                     { warn   $error; }
+    else                                                     { die    $error; }
   }
 
   $log->debug('unsuspending resumed packages', %logopt);
@@ -149,8 +147,7 @@ sub bill_and_collect {
   if ( $error ) {
     $error = "Error resuming custnum ".$self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
-    elsif ( $options{fatal}                                ) { die    $error; }
-    else                                                     { warn   $error; }
+    else                                                     { die    $error; }
   }
 
   $job->update_statustext('20,billing packages') if $job;
@@ -159,8 +156,7 @@ sub bill_and_collect {
   if ( $error ) {
     $error = "Error billing custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
-    elsif ( $options{fatal}                                ) { die    $error; }
-    else                                                     { warn   $error; }
+    else                                                     { die    $error; }
   }
 
   $job->update_statustext('50,applying payments and credits') if $job;
@@ -169,8 +165,7 @@ sub bill_and_collect {
   if ( $error ) {
     $error = "Error applying custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
-    elsif ( $options{fatal}                                ) { die    $error; }
-    else                                                     { warn   $error; }
+    else                                                     { die    $error; }
   }
 
   # In a batch tax environment, do not run collection if any pending 
@@ -195,8 +190,7 @@ sub bill_and_collect {
     if ( $error ) {
       $error = "Error collecting custnum ". $self->custnum. ": $error";
       if    ($options{fatal} && $options{fatal} eq 'return') { return $error; }
-      elsif ($options{fatal}                               ) { die    $error; }
-      else                                                   { warn   $error; }
+      else                                                   { die    $error; }
     }
   }
 
@@ -216,12 +210,11 @@ sub cancel_expired_pkgs {
 
   my @errors = ();
 
-  my @really_cancel_pkgs;
-  my @cancel_reasons;
+  my @really_cancel_pkgs = ();
+  my @cancel_reasons = ();
 
   CUST_PKG: foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
-    my $error;
 
     if ( $cust_pkg->change_to_pkgnum ) {
 
@@ -231,9 +224,10 @@ sub cancel_expired_pkgs {
                       $cust_pkg->change_to_pkgnum.'; not expiring';
         next CUST_PKG;
       }
-      $error = $cust_pkg->change( 'cust_pkg'        => $new_pkg,
-                                  'unprotect_svcs'  => 1 );
-      $error = '' if ref $error eq 'FS::cust_pkg';
+      my $error = $cust_pkg->change( 'cust_pkg'        => $new_pkg,
+                                     'unprotect_svcs'  => 1,
+                                   );
+      push @errors, $error if $error && ref($error) ne 'FS::cust_pkg';
 
     } else { # just cancel it
 
