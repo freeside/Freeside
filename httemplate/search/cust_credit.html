@@ -11,13 +11,16 @@
                  'links' => \@links,
                  'color' => \@color,
                  'style' => \@style,
+                 'classname_from_column' => 1,
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $money_char = FS::Conf->new->config('money_char') || '$';
+my $conf = new FS::Conf;
+
+my $money_char = $conf->config('money_char') || '$';
 
 my $title = emt('Credit Search Results');
 
@@ -30,10 +33,19 @@ my $clink = sub {
     : '';
 };
 
+# form selectbox for show_voided_credits:
+# - value='': use default from $conf
+# - value="0" : override default, do not show voided credits
+# - value="1" : override default, show voided credits
+my $show_voided_credits;
+$show_voided_credits = $conf->config('show_voided_credits');
+$show_voided_credits = $cgi->param('show_voided_credits')
+  if $cgi->param('show_voided_credits') =~ /^(\d)$/;
+
 my (@header, @fields, @sort_fields, $align, @links, @color, @style);
 $align = '';
 
-#amount
+# Report Column: Amount
 push @header, emt('Amount');
 push @fields, sub { $money_char .sprintf('%.2f', shift->amount) };
 push @sort_fields, 'amount';
@@ -42,7 +54,7 @@ push @links, '';
 push @color, '';
 push @style, '';
 
-# unapplied amount
+# Report Column: Unapplied Amount
 if ($unapplied) {
   push @header, emt('Unapplied');
   push @fields, sub { $money_char .sprintf('%.2f', shift->unapplied_amount) };
@@ -53,6 +65,7 @@ if ($unapplied) {
   push @style, '';
 }
 
+# Report Columns: Date, By, Reason, Info
 push @header, emt('Date'),
               emt('By'),
               emt('Reason'),
@@ -112,6 +125,51 @@ push @links, map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header();
 push @color, FS::UI::Web::cust_colors();
 push @style, FS::UI::Web::cust_styles();
+
+if ( $show_voided_credits ) {
+
+  # Report Column: Void By:
+  push @header, emt('Void By');
+  push @fields, sub {
+    my $rec = shift;
+    return $rec->void_username
+      if $rec->isa('FS::cust_credit_void');
+    return '';
+  };
+  push @sort_fields, '';
+  $align .= 'l';
+  push @links, '';
+  push @color, '';
+  push @style, '';
+
+  # Report Column: Void Date:
+  push @header, emt('Void Date');
+  push @fields, sub {
+    my $rec = shift;
+    return time2str('%b %d %Y', $rec->void_date )
+      if $rec->isa('FS::cust_credit_void');
+    return '';
+  };
+  push @sort_fields, '';
+  $align .= 'l';
+  push @links, '';
+  push @color, '';
+  push @style, '';
+
+  # Report Column: Void Reason:
+  push @header, emt('Void Reason');
+  push @fields, sub {
+    my $rec = shift;
+    return $rec->void_reason_text
+      if $rec->isa('FS::cust_credit_void');
+    return '';
+  };
+  push @sort_fields, '';
+  $align .= 'l';
+  push @links, '';
+  push @color, '';
+  push @style, '';
+}
 
 
 my @search = ();
@@ -181,13 +239,69 @@ push @search, "_date >= $beginning ",
 
 push @search, FS::UI::Web::parse_lt_gt($cgi, 'amount' );
 
-#here is the agent virtualization
+# Agent virtualization
 push @search, $FS::CurrentUser::CurrentUser->agentnums_sql(table=>'cust_main');
 
 my @select = (
-    'cust_credit.*',
-    'cust_main.custnum as cust_main_custnum',
-    FS::UI::Web::cust_sql_fields(),
+  "'cust_credit' as __classname",
+  qw(cust_credit.crednum
+     cust_credit.custnum
+     cust_credit._date
+     cust_credit.amount
+     cust_credit.currency
+     cust_credit.otaker
+     cust_credit.usernum
+     cust_credit.reason
+     cust_credit.reasonnum
+     cust_credit.addlinfo
+     cust_credit.closed
+     cust_credit.pkgnum
+     cust_credit.eventnum
+     cust_credit.commission_agentnum
+     cust_credit.commission_salesnum
+     cust_credit.commission_pkgnum
+     cust_credit.commission_invnum
+     cust_credit.credbatch
+     ),
+  'Null as void_date',
+  'Null as void_usernum',
+  'Null as void_reasonnum',
+  'Null as void_reason',
+  'Null as void_reason_text',
+  'Null as void_username',
+  'cust_main.custnum as cust_main_custnum',
+  FS::UI::Web::cust_sql_fields(),
+);
+my @select_void = (
+  "'cust_credit_void' as __classname",
+  qw(cust_credit_void.crednum
+     cust_credit_void.custnum
+     cust_credit_void._date
+     cust_credit_void.amount
+     cust_credit_void.currency
+     cust_credit_void.otaker
+     cust_credit_void.usernum
+     cust_credit_void.reason
+     cust_credit_void.reasonnum
+     cust_credit_void.addlinfo
+     cust_credit_void.closed
+     cust_credit_void.pkgnum
+     cust_credit_void.eventnum
+     cust_credit_void.commission_agentnum
+     cust_credit_void.commission_salesnum
+     cust_credit_void.commission_pkgnum
+     cust_credit_void.commission_invnum
+     ),
+  'Null as credbatch',
+  qw(cust_credit_void.void_date
+     cust_credit_void.void_usernum
+     cust_credit_void.void_reasonnum
+     cust_credit_void.void_reason
+  ),
+  'reason.reason as void_reason_text',
+  'vusers.username as void_username',
+  'cust_main.custnum as cust_main_custnum',
+  FS::UI::Web::cust_sql_fields(),
 );
 
 if ( $unapplied ) {
@@ -213,5 +327,58 @@ my $sql_query   = {
   'extra_sql' => $where,
   'addl_from' => $addl_from. FS::UI::Web::join_cust_main('cust_credit')
 };
+
+# Join to get reason text and void username to avoid two extra query per row
+my $addl_from_void = join(' ',
+  $addl_from,
+  FS::UI::Web::join_cust_main('cust_credit_void'),
+  ' LEFT JOIN reason ON (reason.reasonnum = cust_credit_void.void_reasonnum) ',
+  ' LEFT JOIN access_user as vusers '.
+    'on (vusers.usernum = cust_credit_void.void_usernum) ',
+);
+
+my $where_void = $where;
+$where_void =~ s/cust_credit/cust_credit_void/g;
+
+my $sql_query_void = {
+  'table'     => 'cust_credit_void',
+  'select'    => join(', ',@select_void),
+  'hashref'   => {},
+  'extra_sql' => $where_void,
+  'addl_from' => $addl_from_void,
+};
+
+if ($show_voided_credits) {
+
+  $sql_query = [$sql_query, $sql_query_void];
+
+  my $count_cust_credit;
+  my $count_cust_credit_void;
+  my $count_sum;
+
+  # Expected fields for count query are count, sum
+  # Get those totals here, and send a fake count query
+  my $count_row = qsearchs({
+    table => 'cust_credit',
+    select => 'count(*), sum(amount)',
+    extra_sql => $where,
+    addl_from => $addl_from . FS::UI::Web::join_cust_main('cust_credit'),
+  });
+  $count_cust_credit = $count_row->count || 0;
+  $count_sum = $count_row->sum || 0;
+
+  $count_row = qsearchs({
+    table => 'cust_credit_void',
+    select => 'count(*)',
+    extra_sql => $where_void,
+    addl_from => $addl_from_void,
+  });
+  $count_cust_credit_void = $count_row->count || 0;
+
+  my $count_combined = $count_cust_credit + $count_cust_credit_void;
+
+  # Fake count query providing needed values
+  $count_query = "SELECT $count_combined as count, $count_sum as sum";
+}
 
 </%init>

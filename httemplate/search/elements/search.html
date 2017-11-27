@@ -411,6 +411,7 @@ my $header = [ map { ref($_) ? $_->{'label'} : $_ } @{$opt{header}} ];
 my $rows;
 
 my ($order_by_key,$order_by_desc) = ($order_by =~ /^\s*(.*?)(\s+DESC)?\s*$/i);
+my $union_order_by;
 $opt{'order_by_sql'} ||= {};
 $order_by_desc ||= '';
 $order_by = $opt{'order_by_sql'}{$order_by_key} . $order_by_desc
@@ -421,6 +422,8 @@ if ( ref $query ) {
   if (ref($query) eq 'HASH') {
     @query = $query;
 
+    # Assemble peices of order_by information as SQL fragment,
+    # store as query->{order_by}
     if ( $order_by ) {
       if ( $query->{'order_by'} ) {
         if ( $query->{'order_by'} =~ /^(\s*ORDER\s+BY\s+)?(\S.*)$/is ) {
@@ -433,27 +436,60 @@ if ( ref $query ) {
         $query->{'order_by'} = "ORDER BY $order_by";
       }
     }
-
     $query->{'order_by'} .= " $limit";
 
   } elsif (ref($query) eq 'ARRAY') {
-    # do we still use this? it was for the old 477 report.
+    # Presented query is a UNION query, with multiple query references
     @query = @{ $query };
+
+    # Assemble peices of order_by information as SQL fragment,
+    # store as $union_order_by.  Omit order_by/limit from individual
+    # $query hashrefs, because this is a union query
+    #
+    # ! Currently, order_by data is only fetched from $cgi->param('order_by')
+    # ! for union queries. If it eventually needs to be passed within query
+    # ! hashrefs, or as mason template options, would need implemented
+    $union_order_by = " ORDER BY $order_by " if $order_by;
+    $union_order_by .= " $limit " if $limit;
+
   } else {
-    die "invalid query reference";
+    die "invalid query reference ($query)";
   }
 
   #eval "use FS::$opt{'query'};";
   my @param = qw( select table addl_from hashref extra_sql order_by debug );
-  $rows = [ qsearch( [ map { my $query = $_;
-                             ({ map { $_ => $query->{$_} } @param });
-                           }
-                       @query
-                     ],
-                     #'order_by' => $opt{order_by}. " ". $limit,
-                   )
-          ];
 
+  if ($opt{classname_from_column}) {
+    # Perform a union of multiple queries, while using the
+    # classname_from_column qsearch union option
+
+    # Constrain hashkeys for each query from @param
+    @query = map{
+      my $query = $_;
+      my $new_query = {};
+      $new_query->{$_} = $query->{$_} for @param;
+      $new_query;
+    } @query;
+
+    $rows = [
+      qsearch(
+        \@query,
+        order_by => $union_order_by,
+        classname_from_column => 1,
+      )
+    ];
+
+  } else {
+    # default perform a query with qsearch
+    $rows = [ qsearch( [ map { my $query = $_;
+                               ({ map { $_ => $query->{$_} } @param });
+                             }
+                         @query
+                       ],
+                       #'order_by' => $opt{order_by}. " ". $limit,
+                     )
+            ];
+  }
 } else { # not ref $query; plain SQL (still used as of 07/2015)
 
   $query .= " $limit";

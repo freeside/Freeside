@@ -482,6 +482,26 @@ sub qsearch {
     croak $error;
   }
 
+
+  # Determine how to format rows returned form a union query:
+  #
+  # * When all queries involved in the union are from the same table:
+  #   Return an array of FS::$table_name objects
+  #
+  # * When union query is performed on multiple tables,
+  #   Return an array of FS::Record objects
+  #   ! Note:  As far as I can tell, this functionality was broken, and
+  #   !        actually results in a crash.  Behavior is left intact
+  #   !        as-is, in case the results are in use somewhere
+  #
+  # * Union query is performed on multiple table,
+  #       and $union_options{classname_from_column} = 1
+  #   Return an array of FS::$classname objects, where $classname is
+  #   derived for each row from a static field inserted each returned
+  #   row of data.
+  #   e.g.: SELECT custnum,first,last,'cust_main' AS `__classname`'.
+
+
   my $table = $stable[0];
   my $pkey = '';
   $table = '' if grep { $_ ne $table } @stable;
@@ -499,7 +519,21 @@ sub qsearch {
   $sth->finish;
 
   my @return;
-  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
+  if ($union_options{classname_from_column}) {
+
+    # todo
+    # I'm not implementing the cache for this use case, at least not yet
+    # -mjackson
+
+    for my $row (@stuff) {
+      my $table_class = $row->{__classname}
+        or die "`__classname` column must be set when ".
+               "using \$union_options{classname_from_column}";
+      push @return, new("FS::$table_class",$row);
+    }
+
+  }
+  elsif ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
       #derivied class didn't override new method, so this optimization is safe
       if ( $cache ) {
