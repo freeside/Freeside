@@ -18,6 +18,7 @@ use DBIx::DBSchema 0.43; #0.43 for foreign keys
 use Locale::Country;
 use Locale::Currency;
 use NetAddr::IP; # for validation
+use Crypt::OpenSSL::RSA;
 use FS::UID qw(dbh datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw(dbdef);
@@ -53,8 +54,6 @@ our $qsearch_qualify_columns = 1;
 
 our $no_check_foreign = 1; #well, not inefficiently in perl by default anymore
 
-my $rsa_module;
-my $rsa_loaded;
 my $rsa_encrypt;
 my $rsa_decrypt;
 
@@ -3359,27 +3358,19 @@ sub decrypt {
 }
 
 sub loadRSA {
-    my $self = shift;
-    #Initialize the Module
-    $rsa_module = 'Crypt::OpenSSL::RSA'; # The Default
+  my $self = shift;
 
-    if ($conf_encryptionmodule && $conf_encryptionmodule ne '') {
-      $rsa_module = $conf_encryptionmodule;
-    }
+  my $rsa_module = $conf_encryptionmodule || 'Crypt::OpenSSL::RSA';
 
-    if (!$rsa_loaded) {
-	eval ("require $rsa_module"); # No need to import the namespace
-	$rsa_loaded++;
-    }
-    # Initialize Encryption
-    if ($conf_encryptionpublickey && $conf_encryptionpublickey ne '') {
-      $rsa_encrypt = $rsa_module->new_public_key($conf_encryptionpublickey);
-    }
+  # Initialize Encryption
+  if ($conf_encryptionpublickey && $conf_encryptionpublickey ne '') {
+    $rsa_encrypt = $rsa_module->new_public_key($conf_encryptionpublickey);
+  }
     
-    # Intitalize Decryption
-    if ($conf_encryptionprivatekey && $conf_encryptionprivatekey ne '') {
-      $rsa_decrypt = $rsa_module->new_private_key($conf_encryptionprivatekey);
-    }
+  # Intitalize Decryption
+  if ($conf_encryptionprivatekey && $conf_encryptionprivatekey ne '') {
+    $rsa_decrypt = $rsa_module->new_private_key($conf_encryptionprivatekey);
+  }
 }
 
 =item h_search ACTION
