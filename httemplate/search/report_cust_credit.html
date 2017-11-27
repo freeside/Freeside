@@ -24,6 +24,11 @@
                 'field' => 'amount',
   &>
 
+  <& /elements/tr-select-show_voided_credits.html,
+                'label' => emt('Show Voided Credits'),
+  &>
+
+
 </TABLE>
 
 <BR>
@@ -46,3 +51,4 @@ my $title = $cgi->param('unapplied') ?
               'Unapplied credit report' : 'Credit report';
 
 </%init>
+
