@@ -24,8 +24,10 @@
                 'field' => 'amount',
   &>
 
-  <& /elements/tr-select-show_voided_credits.html,
-                'label' => emt('Show Voided Credits'),
+  <& /elements/tr-checkbox.html,
+       'label' => emt('Show Voided Credits').':',
+       'field' => 'show_voided_credits',
+       'value' => '1',
   &>
 
 
@@ -51,4 +53,3 @@ my $title = $cgi->param('unapplied') ?
               'Unapplied credit report' : 'Credit report';
 
 </%init>
-

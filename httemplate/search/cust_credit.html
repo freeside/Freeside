@@ -33,14 +33,12 @@ my $clink = sub {
     : '';
 };
 
-# form selectbox for show_voided_credits:
-# - value='': use default from $conf
-# - value="0" : override default, do not show voided credits
-# - value="1" : override default, show voided credits
+# form checkbox for show_voided_credits:
+# - value=unset : do not show voided credits
+# - value="1"   : show voided credits
 my $show_voided_credits;
-$show_voided_credits = $conf->config('show_voided_credits');
 $show_voided_credits = $cgi->param('show_voided_credits')
-  if $cgi->param('show_voided_credits') =~ /^(\d)$/;
+  if $cgi->param('show_voided_credits');
 
 my (@header, @fields, @sort_fields, $align, @links, @color, @style);
 $align = '';
