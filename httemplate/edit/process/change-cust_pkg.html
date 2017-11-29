@@ -40,8 +40,6 @@ if ( $cgi->param('locationnum') == -1 ) {
   $change{'cust_location'} = $cust_location;
 }
 
-$change{waive_setup} = '';
-
 if ( $cgi->param('setup_discountnum') =~ /^(-?\d+)$/ ) { 
   if ( $1 == -2 ) {
     $change{waive_setup} = 'Y';

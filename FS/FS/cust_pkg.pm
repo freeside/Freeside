@@ -2379,8 +2379,7 @@ sub change {
     $same_pkgpart = 0;
   }
 
-  if ($opt->{'waive_setup'}) { $self->set('waive_setup', $opt->{'waive_setup'}) }
-  else { $self->set('waive_setup', ''); }
+  $self->set('waive_setup', $opt->{'waive_setup'}) if $opt->{'waive_setup'};
 
   # Before going any further here: if the package is still in the pre-setup
   # state, it's safe to modify it in place. No need to charge/credit for 
