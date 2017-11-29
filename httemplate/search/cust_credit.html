@@ -43,6 +43,15 @@ $show_voided_credits = $cgi->param('show_voided_credits')
 my (@header, @fields, @sort_fields, $align, @links, @color, @style);
 $align = '';
 
+# Report Column: crednum
+push @header, emt('Ref No');
+push @fields, sub { shift->crednum };
+push @sort_fields, '';
+$align .= 'l';
+push @links, '';
+push @color, '';
+push @style, '';
+
 # Report Column: Amount
 push @header, emt('Amount');
 push @fields, sub { $money_char .sprintf('%.2f', shift->amount) };
