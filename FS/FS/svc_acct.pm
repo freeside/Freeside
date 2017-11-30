@@ -2542,6 +2542,11 @@ sub crypt_password {
       );
     } elsif ( $encryption eq 'md5' ) {
       return unix_md5_crypt( $self->_password );
+    } elsif ( $encryption eq 'sha512' ) {
+      return crypt(
+        $self->_password,
+        '$6$rounds=15420$'. join('', map $saltset[int(rand(64))], (1..16) )
+      );
     } elsif ( $encryption eq 'sha1_base64' ) { #for acct_sql
       my $pass = sha1_base64( $self->_password );
       $pass .= '=' x (4 - length($pass) % 4); #properly padded base64
