@@ -64,7 +64,7 @@ tie my %options, 'Tie::IxHash',
            },
   'crypt' => { label   => 'Default password encryption',
                type=>'select', options=>[qw(crypt md5 sha512)],
-               default => 'md5',
+               default => 'sha512',
              },
   'fail_on_output' => {
       label => 'Treat any output from the command as an error',
