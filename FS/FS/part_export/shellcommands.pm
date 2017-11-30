@@ -97,8 +97,8 @@ tie my %options, 'Tie::IxHash',
                         },
 
   'crypt' => { label   => 'Default password encryption',
-               type=>'select', options=>[qw(crypt md5)],
-               default => 'crypt',
+               type=>'select', options=>[qw(crypt md5 sha512)],
+               default => 'md5',
              },
   'groups_susp_reason' => { label =>
                              'Radius group mapping to reason (via template user)',
