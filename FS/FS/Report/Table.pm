@@ -415,6 +415,18 @@ sub _subtract_11mo {
   timelocal($sec,$min,$hour,$mday,$mon,$year);
 }
 
+=item _subtract_months: subtracts the number of months from a given unix date stamp
+
+=cut
+
+sub _subtract_months {
+  my($self, $number_of_months, $time) = @_;
+  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($time) )[0,1,2,3,4,5];
+  $mon -= $number_of_months;
+  if ( $mon < 0 ) { $mon+=12; $year--; }
+  timelocal($sec,$min,$hour,$mday,$mon,$year);
+}
+
 =item cust_pkg_setup_cost: The total setup costs of packages setup in the period
 
 'classnum': limit to this package class.
@@ -867,7 +879,24 @@ sub total_revenue_pkg {
   my $self = shift;
   my $active_revenue = $self->revenue_pkg('active', @_);
   my $setup_revenue = $self->revenue_pkg('setup', @_);
-  my $return = sprintf("%.2f", $active_revenue + $setup_revenue);
+  my $return = $active_revenue + $setup_revenue;
+
+  return $return;
+}
+
+sub total_revenue_diff {
+  my $self = shift;
+
+  my @current_month = @_;
+  my @previous_month = @current_month;
+
+  $previous_month[0] = $self->_subtract_months(1,$current_month[0]);
+  $previous_month[1] = $self->_subtract_months(1,$current_month[1]);
+
+  my $previous_revenue = $self->revenue_pkg('active', @previous_month) + $self->revenue_pkg('setup', @previous_month);
+  my $current_revenue  = $self->revenue_pkg('active', @current_month) + $self->revenue_pkg('setup', @current_month);
+
+  my $return = $current_revenue - $previous_revenue;
 
   return $return;
 }
@@ -889,7 +918,7 @@ sub revenue_pkg {
       FROM $from
       JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
       JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
-      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND cust_pkg.history_date + 5 > revenue.history_date)
+      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND cust_pkg.history_date < $speriod )
     ";
   }
   elsif ($status eq "setup") {
@@ -897,7 +926,8 @@ sub revenue_pkg {
       FROM $from
       JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
       JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
-      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND cust_pkg.setup + 15 > revenue.history_date)
+      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND
+      ( cust_pkg.setup > $speriod AND cust_pkg.setup < $eperiod) )
     ";
   }
 
