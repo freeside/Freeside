@@ -52,10 +52,10 @@ any delimiter and linked from the elements in @data.
 %
 %   my @bottom_total = ();
 %   my $row = 0;
-%   foreach ( @items ) {
+%   foreach my $i ( @items ) {
 %
 %     my $col = 0;
-%     my @row = map { sprintf($sprintf, $_) } @{ shift(@data) };
+%     my @row = map { sprintf($sprintf_fields->{$i} ? $sprintf_fields->{$i} : $sprintf, $_) } @{ shift(@data) };
 %     my $total = sum(@row);
 %     push @row, sprintf($sprintf, $total) unless $opt{'nototal'};
 %     unless ($opt{'no_graph'}[$row]) {
@@ -101,7 +101,7 @@ any delimiter and linked from the elements in @data.
 %   }
 %
 %   my @bottom_total = ();
-%   foreach ( @items ) {
+%   foreach my $i ( @items ) {
 %     $row++;
 %     $col = 0;
 %     my $total = 0;
@@ -109,7 +109,7 @@ any delimiter and linked from the elements in @data.
 %     foreach ( @{ shift( @data ) } ) {
 %       $total += $_;
 %       $bottom_total[$col-1] += $_ unless $opt{no_graph}[$row];
-%       $worksheet->write_number($row, $col++,  sprintf($sprintf, $_) );
+%       $worksheet->write_number($row, $col++,  sprintf($sprintf_fields->{$i} ? $sprintf_fields->{$i} : $sprintf, $_) );
 %     }
 %     if ( !$opt{'nototal'} ) {
 %       $bottom_total[$col-1] += $total unless $opt{no_graph}[$row]; 
