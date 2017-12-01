@@ -169,10 +169,10 @@ sub batch_charge {
 
     if ( $row{agent_custid} && $agentnum ) {
       $id = $row{agent_custid};
-      $data{$id}{cust} = (
+      $data{$id}{cust} = {
         'agent_custid' => $row{agent_custid},
         'agentnum'     => $agentnum,
-      );
+      };
       %hash = ( 'agent_custid' => $row{agent_custid},
                 'agentnum'     => $agentnum,
               );
