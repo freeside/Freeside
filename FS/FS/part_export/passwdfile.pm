@@ -9,8 +9,8 @@ use FS::part_export::null;
 
 tie %options, 'Tie::IxHash',
   'crypt' => { label=>'Password encryption',
-               type=>'select', options=>[qw(crypt md5)],
-               default=>'crypt',
+               type=>'select', options=>[qw(crypt md5 sha512)],
+               default=>'md5',
              },
 ;
 

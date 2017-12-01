@@ -254,7 +254,12 @@
     #   ExecModule           => 'CustomFieldChange',
     #   ApplicableTransTypes => 'Any',
     #},
-
+    {  Name                 => 'On Resolve Allow Quiet',
+       Description          => 'Whenever a ticket is resolved, '.
+                               'except with resolve_quiet',
+       ApplicableTransTypes => 'Status',
+       ExecModule           => 'StatusChangeQuietResolve',
+    },
 );
 
 @Templates = (
@@ -931,8 +936,12 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
        ScripCondition => 'On Owner Change',
        ScripAction    => 'Notify Owner',
        Template       => 'Transaction in HTML' },
-    {  Description    => 'On Resolve Notify Requestors',
-       ScripCondition => 'On Resolve',
+#    {  Description    => 'On Resolve Notify Requestors',
+#       ScripCondition => 'On Resolve',
+#       ScripAction    => 'Notify Requestors',
+#       Template       => 'Resolved in HTML' },
+    {  Description    => 'On Resolve Notify Requestors, Allow Quiet Resolve',
+       ScripCondition => 'On Resolve Allow Quiet',
        ScripAction    => 'Notify Requestors',
        Template       => 'Resolved in HTML' },
     {  Description    => "On transaction, add any tags in the transaction's subject to the ticket's subject",
@@ -1067,6 +1076,10 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
     # RT 4.2
     # superseded by "notify owner and adminccs"
     'notify adminccs'           => { 'transaction' => 1 },
+  },
+  'on resolve' => {
+    # superseded by "On Resolve Notify Requestors, Allow Quiet Resolve"
+    'notify requestors' => { 'resolved in html' => 1 },
   },
 );
 
