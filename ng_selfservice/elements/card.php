@@ -18,7 +18,7 @@
         <TD> / </TD>
         <TD>
           <SELECT NAME="year">
-            <? $years = array( '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023' );
+            <? $years = array( '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026' );
                foreach ( $years as $y ) {
             ?>
                   <OPTION <? if ($y == $year ) { echo 'SELECTED'; } ?>><? echo $y; ?>
