@@ -58,6 +58,8 @@ Set($MessageBoxRichTextHeight, 368);
 
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 
+# Enable blacklist for e-mail notifications (matches via case insensitive regex)
+#Set(@NotifyBlacklist,(qw(reddit.com slashdot.org frank)));
 
 # Define default lifecycle to include resolved_quiet status workflow
 Set(%Lifecycles,
