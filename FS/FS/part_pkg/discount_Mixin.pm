@@ -46,7 +46,11 @@ sub calc_discount {
   my $conf = new FS::Conf;
 
   my $br = $self->base_recur($cust_pkg, $sdate);
-  $br += $param->{'override_charges'} * ($cust_pkg->part_pkg->freq || 0) if $param->{'override_charges'};
+
+  ## can not multiply non monthly recurring frequency so skip.
+  unless ($cust_pkg->part_pkg->freq !~ /^\d+$/) {
+    $br += $param->{'override_charges'} * ($cust_pkg->part_pkg->freq || 0) if $param->{'override_charges'};
+  }
 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
@@ -138,6 +142,9 @@ sub calc_discount {
       # remaining discount amount is for less time than the package period,
       # the "estimated recurring fee" is only for as long as the discount
       # lasts.
+
+      # can not multiply non monthly recurring frequency so skip.
+      next if $self->freq !~ /^\d+$/;
 
       my $recur_charge = $br * $months / $self->freq;
       # round this, because the real recur charge is rounded
