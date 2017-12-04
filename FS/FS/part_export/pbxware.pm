@@ -17,10 +17,11 @@ our $DEBUG = 0;
 # our $DEBUG = 2; # log requests and content of replies
 
 tie my %options, 'Tie::IxHash',
-  'apikey'  => { label => 'API key' },
-  'debug'   => { label => 'Enable debugging', type => 'checkbox', value => 1 },
-  'ext'     => { label => 'PBXware "ext" field in CDR download request', },
-  'cdrtype' => { label => 'PBXware "cdrtype" field in CDR download request', },
+  'apikey'   => { label => 'API key' },
+  'debug'    => { label => 'Enable debugging', type => 'checkbox', value => 1 },
+  'ext'      => { label => 'PBXware "ext" field in CDR download request', },
+  'cdrtype'  => { label => 'PBXware "cdrtype" field in CDR download request', },
+  'trunkdst' => { label => 'PBXware "trunkdst" field in CDR download request', },
 ;
 
 our %info = (
@@ -100,7 +101,7 @@ sub import_cdrs {
   );
 
   $opt{$_} = $self->option($_)
-    for grep length( $self->option($_) ), qw( ext cdrtype );
+    for grep length( $self->option($_) ), qw( ext cdrtype trunkdst );
 
   # unlike Certain Other VoIP providers, this one does proper pagination if
   # the result set is too big to fit in a single chunk.
