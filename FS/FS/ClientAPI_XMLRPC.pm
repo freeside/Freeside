@@ -47,13 +47,18 @@ our %typefix_skin_info = (
   'menu_bottom_image' => 'base64',
 );
 our %typefix = (
-  'invoice_pdf'        => { 'invoice_pdf' => 'base64', },
-  'legacy_invoice_pdf' => { 'invoice_pdf' => 'base64', },
-  'skin_info'          => \%typefix_skin_info,
-  'login_info'         => \%typefix_skin_info,
-  'invoice_logo'       => { 'logo' => 'base64', },
-  'login_banner_image' => { 'image' => 'base64', },
-  'quotation_print'    => { 'document' => 'base64' },
+  'invoice_pdf'          => { 'invoice_pdf' => 'base64', },
+  'legacy_invoice_pdf'   => { 'invoice_pdf' => 'base64', },
+  'skin_info'            => \%typefix_skin_info,
+  'login_info'           => \%typefix_skin_info,
+  'logout'               => \%typefix_skin_info,
+  'access_info'          => \%typefix_skin_info,
+  'reset_passwd'         => \%typefix_skin_info,
+  'check_reset_passwd'   => \%typefix_skin_info,
+  'process_reset_passwd' => \%typefix_skin_info,
+  'invoice_logo'         => { 'logo' => 'base64', },
+  'login_banner_image'   => { 'image' => 'base64', },
+  'quotation_print'      => { 'document' => 'base64' },
 );
 
 sub AUTOLOAD {
