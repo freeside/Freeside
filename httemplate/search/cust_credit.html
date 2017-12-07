@@ -53,7 +53,7 @@ if ($unapplied) {
   push @style, '';
 }
 
-push @header, emt('Date'), 
+push @header, emt('Date'),
               emt('By'),
               emt('Reason'),
               emt('Info'),
@@ -197,7 +197,7 @@ my $where = 'WHERE '. join(' AND ', @search);
 
 my $count_query = 'SELECT COUNT(*), SUM(amount) ';
 $count_query .= ', SUM(' . FS::cust_credit->unapplied_sql . ') ' if $unapplied;
-$count_query .= 'FROM cust_credit'. 
+$count_query .= 'FROM cust_credit'.
                   $addl_from. FS::UI::Web::join_cust_main('cust_credit').
                   $where;
 
