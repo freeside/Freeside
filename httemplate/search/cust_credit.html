@@ -265,7 +265,6 @@ my @select = (
      cust_credit.commission_agentnum
      cust_credit.commission_salesnum
      cust_credit.commission_pkgnum
-     cust_credit.commission_invnum
      cust_credit.credbatch
      ),
   'Null as void_date',
@@ -295,7 +294,6 @@ my @select_void = (
      cust_credit_void.commission_agentnum
      cust_credit_void.commission_salesnum
      cust_credit_void.commission_pkgnum
-     cust_credit_void.commission_invnum
      ),
   'Null as credbatch',
   qw(cust_credit_void.void_date

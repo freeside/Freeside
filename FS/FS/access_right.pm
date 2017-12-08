@@ -253,7 +253,7 @@ sub _upgrade_data { # class method
     'Generate quotation' => 'Disable quotation',
     'Void credit' => 'Void credit',
     'Unvoid credit' => 'Unvoid credit',
-    'Add on-the-fly void credit reason' => 'Add on-the-fly void credit reason',
+    'Add on-the-fly void credit reason' => 'Add on-the-fly void reason',
     '_ALL' => 'Employee preference telephony integration',
     '_ALL' => 'RT activity notification',
     'Edit customer package dates' => [ 'Change package start date', #4.x
@@ -361,4 +361,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-
