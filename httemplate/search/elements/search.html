@@ -9,7 +9,7 @@ Example:
     ###
 
     'title'         => 'Page title',
-    
+
     'name_singular' => 'item',  #singular name for the records returned
        #OR#                     # (preferred, will be pluralized automatically)
     'name'          => 'items', #plural name for the records returned
@@ -30,10 +30,10 @@ Example:
                        'addl_from' => '', #'LEFT JOIN othertable USING ( key )',
                        'extra_sql' => '', #'AND otherstuff', #'WHERE onlystuff',
                        'order_by'  => 'ORDER BY something',
-   
+
                      },
                      # "select * from tablename";
-   
+
     #required unless 'query' is an SQL query string (shouldn't be...)
     'count_query' => 'SELECT COUNT(*) FROM tablename',
 
@@ -47,7 +47,7 @@ Example:
     'header'      => [ '#',
                        'Item',
                        { 'label' => 'Another Item',
-                         
+
                        },
                      ],
 
@@ -70,11 +70,11 @@ Example:
     'redirect_empty' => sub { my( $cgi ) = @_;
                               popurl(2).'view/item.html';
                             },
-   
+
     ###
     # optional
     ###
-   
+
     # some HTML callbacks...
     'menubar'          => '', #menubar arrayref
     'html_init'        => '', #after the header/menubar and before the pager
@@ -85,21 +85,21 @@ Example:
     'html_foot'        => '', #at the bottom
     'html_posttotal'   => '', #at the bottom
                               # (these three can be strings or coderefs)
-    
+
     'count_addl' => [], #additional count fields listref of sprintf strings or coderefs
                         # [ $money_char.'%.2f total paid', ],
-   
+
     #second (smaller) header line, currently only for HTML
     'header2      => [ '#',
                        'Item',
                        { 'label' => 'Another Item',
-                         
+
                        },
                      ],
 
     #listref of column footers
     'footer'      => [],
-    
+
     #disabling things
     'disable_download'  => '', # set true to hide the CSV/Excel download links
     'disable_total'     => '', # set true to hide the total"
@@ -107,7 +107,7 @@ Example:
     'disable_nonefound' => '', # set true to disable the "No matching Xs found"
                                # message
     'nohtmlheader'      => '', # set true to remove the header and menu bar
- 
+
     #handling "disabled" fields in the records
     'disableable' => 1,  # set set to 1 (or column position for "disabled"
                          # status col) to enable if this table has a "disabled"
@@ -140,7 +140,7 @@ Example:
     'order_by_sql' => {              #to keep complex SQL expressions out of cgi order_by value,
       'fieldname' => 'sql snippet',  #  maps fields/sort_fields values to sql snippets
     }
-   
+
     #listref - each item is the empty string,
     #          or a listref of link and method name to append,
     #          or a listref of link and coderef to run and append
@@ -155,7 +155,7 @@ Example:
     #one letter for each column, left/right/center/none
     # or pass a listref with full values: [ 'left', 'right', 'center', '' ]
     'align'       => 'lrc.',
-   
+
     #listrefs of ( scalars or coderefs )
     # currently only HTML, maybe eventually Excel too
     'color'       => [],
@@ -166,11 +166,11 @@ Example:
     # Excel-specific listref of ( hashrefs or coderefs )
     # each hashref: http://search.cpan.org/dist/Spreadsheet-WriteExcel/lib/Spreadsheet/WriteExcel.pm#Format_methods_and_Format_properties
     'xls_format' => => [],
-   
+
 
     # miscellany
    'download_label' => 'Download this report',
-                        # defaults to 'Download full results' 
+                        # defaults to 'Download full results'
    'link_field'     => 'pkgpart'
                         # will create internal links for each row,
                         # with the value of this field as the NAME attribute
@@ -210,7 +210,7 @@ Example:
           )
 %>
 %
-% } 
+% }
 <%init>
 
 my(%opt) = @_;
@@ -304,10 +304,10 @@ if ( $opt{'agent_virt'} ) {
       $opt{$att} ||= [ map '', @{ $opt{'fields'} } ];
     }
 
-    splice @{ $opt{'header'} }, $pos, 0, 'Agent'; 
-    splice @{ $opt{'align'}  }, $pos, 0, 'c'; 
-    splice @{ $opt{'style'}  }, $pos, 0, ''; 
-    splice @{ $opt{'size'}   }, $pos, 0, ''; 
+    splice @{ $opt{'header'} }, $pos, 0, 'Agent';
+    splice @{ $opt{'align'}  }, $pos, 0, 'c';
+    splice @{ $opt{'style'}  }, $pos, 0, '';
+    splice @{ $opt{'size'}   }, $pos, 0, '';
     splice @{ $opt{'fields'} }, $pos, 0,
       sub { $_[0]->agentnum ? $_[0]->agent->agent : '(global)'; };
     splice @{ $opt{'color'}  }, $pos, 0, '';
@@ -329,7 +329,7 @@ if ( $opt{'disableable'} ) {
 
     my $table = $query->{'table'};
 
-    $count_query .= 
+    $count_query .=
       ( $count_query =~ /\bWHERE\b/i ? ' AND ' : ' WHERE ' ).
       "( $table.disabled = '' OR $table.disabled IS NULL )";
 
@@ -342,10 +342,10 @@ if ( $opt{'disableable'} ) {
       $opt{$att} ||= [ map '', @{ $opt{'fields'} } ];
     }
 
-    splice @{ $opt{'header'} }, $pos, 0, 'Status'; 
-    splice @{ $opt{'align'}  }, $pos, 0, 'c'; 
-    splice @{ $opt{'style'}  }, $pos, 0, 'b'; 
-    splice @{ $opt{'size'}   }, $pos, 0, ''; 
+    splice @{ $opt{'header'} }, $pos, 0, 'Status';
+    splice @{ $opt{'align'}  }, $pos, 0, 'c';
+    splice @{ $opt{'style'}  }, $pos, 0, 'b';
+    splice @{ $opt{'size'}   }, $pos, 0, '';
     splice @{ $opt{'fields'} }, $pos, 0,
       sub { shift->disabled ? 'DISABLED' : 'Active'; };
     splice @{ $opt{'color'}  }, $pos, 0,
@@ -452,7 +452,7 @@ if ( ref $query ) {
                      ],
                      #'order_by' => $opt{order_by}. " ". $limit,
                    )
-          ]; 
+          ];
 
 } else { # not ref $query; plain SQL (still used as of 07/2015)
 
