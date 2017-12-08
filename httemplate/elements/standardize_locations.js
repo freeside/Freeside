@@ -94,7 +94,7 @@ function standardize_locations() {
 
 % } else {
 
-  post_standardization();
+  confirm_manual_address();
 
 % } # if address_standardize_method
 }
