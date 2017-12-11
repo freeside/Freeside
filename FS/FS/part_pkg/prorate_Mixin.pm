@@ -107,7 +107,8 @@ sub calc_prorate {
      )
   {
     #warn "[calc_prorate] #".$cust_pkg->pkgnum.": running deferred setup\n";
-    $param->{'setup_fee'} = $self->calc_setup($cust_pkg, $$sdate, $details);
+    $param->{'setup_fee'} = $self->calc_setup($cust_pkg, $$sdate, $details)
+      unless $cust_pkg->{'Hash'}->{'waive_setup'};
     $mnow = $cust_pkg->setup;
     $add_period = 1;
   }
