@@ -4,8 +4,8 @@ use strict;
 use Getopt::Std;
 use Date::Format;
 use File::Temp 'tempdir';
-use Net::SSLGlue::FTP; #at least until the Deb 9 transition is done, then
-                       # regular Net::FTP has SSL support
+use Net::FTP 2.80; #3.08; 2.79 in deb 8 doesn't work, 3.08 in deb 9 does
+use IO::Socket::SSL 2.007;
 use FS::UID qw(adminsuidsetup datasrc dbh);
 use FS::cdr;
 use FS::cdr_batch;
