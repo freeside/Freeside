@@ -27,7 +27,7 @@ my $cust_pkg = qsearchs({
 die 'unknown pkgnum' unless $cust_pkg;
 
 my %change = map { $_ => scalar($cgi->param($_)) }
-                 qw( locationnum pkgpart quantity );
+                 qw( locationnum pkgpart quantity waive_setup);
 
 $change{'keep_dates'} = 1;
 
@@ -38,18 +38,6 @@ if ( $cgi->param('locationnum') == -1 ) {
         FS::cust_main->location_fields
   });
   $change{'cust_location'} = $cust_location;
-}
-
-$change{waive_setup} = '';
-
-if ( $cgi->param('setup_discountnum') =~ /^(-?\d+)$/ ) { 
-  if ( $1 == -2 ) {
-    $change{waive_setup} = 'Y';
-  } else {
-    $change{setup_discountnum} = $1;
-    $change{setup_discountnum_amount} = $cgi->param('setup_discountnum_amount');
-    $change{setup_discountnum_percent} = $cgi->param('setup_discountnum_percent');
-  }
 }
 
 my $error;
@@ -81,8 +69,7 @@ unless ($error) {
         $change_to->locationnum  == $change{'locationnum'} and
         $change_to->quantity     == $change{'quantity'} and
         $change_to->contract_end == $change{'contract_end'} and
-        $change_to->waive_setup  == $change{'waive_setup'} and
-        !$usagechanged
+        $change_to->waive_setup  == $change{'waive_setup'}
       ) {
         %change = ( 'cust_pkg' => $change_to );
       }
