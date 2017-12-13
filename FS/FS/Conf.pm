@@ -1546,7 +1546,7 @@ and customer address. Include units.',
   { 
     'key'         => 'invoice_default_terms',
     'section'     => 'invoicing',
-    'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
+    'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.  WARNING: If you do not want to change the terms on existing invoices, do not change this after going live.',
     'type'        => 'select',
     'per_agent'   => 1,
     'select_enum' => \@invoice_terms,
