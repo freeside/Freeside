@@ -59,13 +59,12 @@ a.download {
   <caption>
     <span class="parttitle"><% $part_titles->{$partname} %></span>
 %   if ( $this_part->{num_errors} > 0 ) {
-%     # disable downloading while it contains errors
-    <span class="errortitle">
-      <% emt('This section contains [quant,_1,error].', $this_part->{num_errors}) %>
-    </span>
-%   } else {
-    <a class="download" href="<% $cgi->self_url %>">Download</a>
+%     # show error heading while it contains errors
+      <span class="errortitle">
+        <% emt('This section contains [quant,_1,error].', $this_part->{num_errors}) %>
+      </span>
 %   }
+    <a class="download" href="<% $cgi->self_url %>">Download</a>
   </caption>
 %   my $header = ".header_$partname";
 %   my $data = $this_part->{data};
