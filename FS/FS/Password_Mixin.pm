@@ -47,7 +47,9 @@ sub is_password_allowed {
   my $self = shift;
   my $password = shift;
 
-  my $cust_main = $self->cust_main;
+  my $cust_main = $self->table eq 'access_user'
+                    ? $self->user_cust_main
+                    : $self->cust_main;
 
   # workaround for non-inserted services
   if ( !$cust_main and $self->get('pkgnum') ) {
