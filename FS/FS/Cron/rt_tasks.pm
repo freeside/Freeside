@@ -31,6 +31,8 @@ sub rt_daily {
   my $system = $FS::TicketSystem::system;
   return if !defined($system) || $system ne 'RT_Internal';
 
+  system('/opt/rt3/sbin/rt-clean-sessions --older 1M --skip-user &');
+
   system('/opt/rt3/sbin/rt-fulltext-indexer --quiet --limit 5400 &');
 
   # if -d or -y is in use, bail out.  There's no reliable way to tell RT 
