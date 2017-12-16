@@ -82,7 +82,9 @@ sub is_password_allowed {
   return '' unless $self->get($self->primary_key); # for validating new passwords pre-insert
 
   #check against customer fields
-  my $cust_main = $self->cust_main;
+  my $cust_main = $self->table eq 'access_user'
+                    ? $self->user_cust_main
+                    : $self->cust_main;
   if ($cust_main) {
     my @words;
     # words from cust_main
