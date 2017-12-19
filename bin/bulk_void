@@ -3,10 +3,12 @@
 use strict;
 use warnings;
 use vars qw( %opt );
+use Date::Format;
+use File::Slurp;
 use FS::Misc::Getopt;
 use FS::Record qw(qsearch qsearchs dbh);
 
-getopts('cpiXr:t:');
+getopts('cpiXr:t:u:v');
 
 my $dbh = dbh;
 $FS::UID::AutoCommit = 0;
@@ -16,12 +18,18 @@ sub usage() {
                   -r void_reason
                   { -c | -p | -i }
                   [ -t payby ]
+                  [ -u filename ]
+                  [ -k pkgpart ]
+                  [ -v ]
                   [ -X ]
                   <user>
 -s, -e: date range (required)
 -r: void reason text (required)
 -c, -p, -i: void credits, payments, invoices
+-u: specifies a filename of customer numbers - only void for those customers
+-k: skip invoices with only this pkgpart
 -t: only void payments with this payby
+-v: verbose - show more detail
 -X: commit changes
 ";
 }
@@ -35,8 +43,13 @@ print "DRY RUN--changes will not be committed.\n" unless $opt{X};
 my %search = ();
 $search{payby} = $opt{t} if $opt{t} && $opt{p};
 
-my $date = (keys %search ? ' AND ' : ' WHERE ').
-           " _date >= $opt{start} AND _date <= $opt{end}";
+my $extra_sql = (keys %search ? ' AND ' : ' WHERE ').
+                " _date >= $opt{start} AND _date <= $opt{end}";
+
+if ( $opt{u} ) {
+  my @custnums = map { chomp; $_; } read_file($opt{u});
+  $extra_sql .= ' AND custnum IN ('. join(',', @custnums). ') ';
+}
 
 my %tables = (
   c => 'cust_credit',
@@ -46,20 +59,37 @@ my %tables = (
 
 my $reason = $opt{r};
 
+
 foreach my $k (keys %tables) {
   next unless $opt{$k};
   my $table = $tables{$k};
   debug("$table:");
   my $done_count = 0;
   my $error_count = 0;
+  my $pkey = '';
 
   my $cursor = FS::Cursor->new({
     table     => $table,
     hashref   => \%search,
-    extra_sql => $date,
+    extra_sql => $extra_sql,
   });
   my $error;
   while (my $record = $cursor->fetch) {
+
+    if ( $opt{k} && $opt{i} ) {
+      my @other_pkgs = grep { $_->pkgpart != $opt{k} }
+                         grep $_, map $_->cust_pkg, $record->cust_bill_pkg;
+      next if ! @other_pkgs;
+    }
+
+    if ( $opt{v} ) {
+      $pkey ||= $record->primary_key;
+      my $num = $record->get($pkey);
+      my $date = time2str('%x', $record->_date);
+      my $name = $record->cust_main->name;
+      warn "Voiding $table #$num ($date) for $name\n";
+    }
+
     $error = $record->void($reason);
     if ( $error ) {
       $error = "$table #" . $record->get($record->primary_key) . ": $error";
