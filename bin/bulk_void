@@ -8,7 +8,7 @@ use File::Slurp;
 use FS::Misc::Getopt;
 use FS::Record qw(qsearch qsearchs dbh);
 
-getopts('cpiXr:t:u:vk:');
+getopts('cpiXr:t:u:vk:f');
 
 my $dbh = dbh;
 $FS::UID::AutoCommit = 0;
@@ -29,6 +29,7 @@ sub usage() {
 -u: specifies a filename of customer numbers - only void for those customers
 -k: skip invoices with only this pkgpart
 -t: only void payments with this payby
+-f: force - continue voiding invoices even if some have errors
 -v: verbose - show more detail
 -X: commit changes
 ";
@@ -95,7 +96,7 @@ foreach my $k (keys %tables) {
       $error = "$table #" . $record->get($record->primary_key) . ": $error";
       print "$error\n";
       $error_count++;
-      if ( $opt{X} ) {
+      if ( $opt{X} && ! $opt{f} ) {
         $dbh->rollback;
         exit(1);
       }
