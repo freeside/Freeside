@@ -8,7 +8,7 @@ use File::Slurp;
 use FS::Misc::Getopt;
 use FS::Record qw(qsearch qsearchs dbh);
 
-getopts('cpiXr:t:u:v');
+getopts('cpiXr:t:u:vk:');
 
 my $dbh = dbh;
 $FS::UID::AutoCommit = 0;
