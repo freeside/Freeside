@@ -90,6 +90,8 @@ if ($group_info->{num} > 1) {
 #  }
 #}
 
+my $conf = FS::Conf->new;
+my $money = $conf->config('money_char') || '$';
 </%init>
 
 <& /elements/header.html, $opt{title} &>
@@ -107,7 +109,7 @@ if ($group_info->{num} > 1) {
 
 <DIV CLASS="fstabcontainer">
 % if ( $group->num_rows > 0 ) {
-<P><% emt('[quant,_1,_2]', $group->num_rows, $opt{name_singular}) %>
+<P><% emt('[quant,_1,_2]', $group->num_rows, $opt{name_singular}) %> for <% emt($money.$group->paid) %>
 </P>
 %# download links
 <P><% emt('Download results:') %>
