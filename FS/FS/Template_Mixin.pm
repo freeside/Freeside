@@ -1955,6 +1955,23 @@ sub due_date2str {
   $self->due_date ? $self->time2str_local(shift, $self->due_date) : '';
 }
 
+=item invoice_pay_by_msg
+
+  displays the invoice_pay_by_msg or default Please pay by [_1] if empty.
+
+=cut
+
+sub invoice_pay_by_msg {
+  my $self = shift;
+  my $msg = '';
+  my $please_pay_by =
+        $self->conf->config('invoice_pay_by_msg', $self->agentnum)
+        || 'Please pay by [_1]';
+  $msg .= ' - ' . $self->mt($please_pay_by, $self->due_date2str('short')) . ' ';
+
+  $msg;
+}
+
 =item balance_due_msg
 
 =cut
@@ -1969,11 +1986,7 @@ sub balance_due_msg {
     # _items_total) and not here
     # (yes, or if invoice_sections is enabled; this is just for compatibility)
     if ( $self->due_date ) {
-      my $please_pay_by =
-        $self->conf->config('invoice_pay_by_msg', $self->agentnum)
-        || 'Please pay by [_1]';
-      $msg .= ' - ' . $self->mt($please_pay_by, $self->due_date2str('short')).
-              ' '
+      $msg .= $self->invoice_pay_by_msg
        unless $self->conf->config_bool('invoice_omit_due_date',$self->agentnum);
     } elsif ( $self->terms ) {
       $msg .= ' - '. $self->mt($self->terms);

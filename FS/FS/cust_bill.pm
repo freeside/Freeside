@@ -3450,17 +3450,12 @@ sub _items_total {
     $total_descr = $self->mt('Total Charges');
   }
 
-  if ( $conf->exists('invoice_show_prior_due_date') ) {
+  if ( $conf->exists('invoice_show_prior_due_date') && !$conf->exists('invoice_omit_due_date') ) {
     # then the due date should be shown with Total New Charges,
     # and should NOT be shown with the Balance Due message.
 
     if ( $self->due_date ) {
-      $total_descr = join(' ',
-        $total_descr,
-        '-',
-        $self->mt('Please pay by'),
-        $self->due_date2str('short')
-      );
+      $total_descr .= $self->invoice_pay_by_msg;
     } elsif ( $self->terms ) {
       $total_descr = join(' ',
         $total_descr,
