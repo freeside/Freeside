@@ -1,3 +1,15 @@
+<%doc>
+
+Example:
+
+  include( '/elements/tr-select-invoice.html',
+
+    #opt - most get used in /elements/tr-amount-fee
+    'custnum'              => 4,     # customer number,
+    'prefix'               => 'pre', # prefix to fields and row ID's
+  )
+
+</%doc>
 
   <TR ID="invoice_row" STYLE="display:none;">
     <TH ALIGN="right"><% mt('Open invoices') |h %></TH>
@@ -6,7 +18,6 @@
   	  ID       = "<% $opt{prefix} %>invoice"
   	  NAME     = "<% $opt{prefix} %>invoice"
   	  onChange = "<% $opt{prefix} %>invoice_select_changed(this)"
-  	  <% $opt{disabled} %>
 	>
   		<OPTION VALUE="select">Select an invoice to pay</OPTION>
 %         foreach my $record (@records) {
