@@ -22,4 +22,11 @@
 
 my %opt = @_;
 
+my @records = qsearch( {
+    'select'    => '*',
+    'table'     => 'cust_bill',
+    'hashref'   => { 'custnum' => $opt{custnum} },
+    'order_by'  => 'ORDER BY _date',
+});
+
 </%init>
