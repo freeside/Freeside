@@ -12,7 +12,8 @@
 
 <TABLE class="fsinnerbox">
 
-  <& /elements/tr-amount_fee.html,
+  <& /elements/tr-select-payment_options.html,
+       'custnum'            => $cust_main->custnum,
        'amount'             => $amount,
        'process-pkgpart'    => 
           scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),

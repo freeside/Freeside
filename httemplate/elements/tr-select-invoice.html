@@ -1,0 +1,25 @@
+
+  <TR ID="invoice_row" STYLE="display:none;">
+    <TH ALIGN="right"><% mt('Open invoices') |h %></TH>
+    <TD COLSPAN=7>
+     <SELECT
+  	  ID       = "<% $opt{prefix} %>invoice"
+  	  NAME     = "<% $opt{prefix} %>invoice"
+  	  onChange = "<% $opt{prefix} %>invoice_select_changed(this)"
+  	  <% $opt{disabled} %>
+	>
+  		<OPTION VALUE="select">Select an invoice to pay</OPTION>
+%         foreach my $record (@records) {
+%            my $read_date = time2str("%b %o, %Y", $record->_date);
+            <OPTION VALUE="<% $record->charged %>"><% $record->invnum %> (<% $read_date %>) - <% $record->charged %></OPTION>	
+%         }
+
+	</SELECT>	
+    </TD>
+  </TR>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

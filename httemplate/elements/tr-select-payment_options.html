@@ -1,0 +1,68 @@
+
+  <TR STYLE="display:block">
+    <TH ALIGN="right"><% mt('Payment options') |h %></TH>
+    <TD COLSPAN=7>
+     <SELECT
+  	  ID       = "<% $opt{prefix} %>payment_option"
+  	  NAME     = "<% $opt{prefix} %>payment_option"
+  	  onChange = "<% $opt{prefix} %>payment_option_changed(this)"
+  	  <% $opt{disabled} %>
+	>
+  		<OPTION VALUE="select">Select payment option</OPTION>
+  		<OPTION VALUE="<% $opt{amount} %>">Pay full balance</OPTION>
+  		<OPTION VALUE="invoice">Pay specific invoice</OPTION>
+  		<OPTION VALUE="">Pay specific amount</OPTION>
+	</SELECT>	
+    </TD>
+  </TR>
+
+  <& /elements/tr-select-invoice.html,
+       %opt
+  &>
+
+  <& /elements/tr-amount_fee.html,
+       %opt
+  &>
+
+  <SCRIPT TYPE="text/javascript">
+
+      function <% $opt{prefix} %>payment_option_changed(what) {
+
+        if ( what.value == 'select' ) {
+        	document.getElementById('payment_amount_row').style.display = 'none';
+        	document.getElementById('invoice_row').style.display = 'none';
+        	document.getElementById('amount').value = '';
+        }
+        else if ( what.value == 'invoice' ) {
+        	document.getElementById('payment_amount_row').style.display = 'none';
+        	document.getElementById('invoice_row').style.display = 'block';
+        	document.getElementById('amount').value = '';
+        }
+        else {
+        	document.getElementById('payment_amount_row').style.display = 'block';
+        	document.getElementById('invoice_row').style.display = 'none';
+        	document.getElementById('amount').value = what.value;
+        }
+
+      }
+
+      function <% $opt{prefix} %>invoice_select_changed(what) {
+
+        if ( what.value == 'select' ) {
+        	document.getElementById('payment_amount_row').style.display = 'none';
+        	document.getElementById('amount').value = '';
+        }
+        else {
+        	document.getElementById('payment_amount_row').style.display = 'block';
+        	document.getElementById('amount').value = what.value;
+        }
+
+      }
+
+</SCRIPT>
+
+<%init>
+
+my %opt = @_;
+
+</%init>
