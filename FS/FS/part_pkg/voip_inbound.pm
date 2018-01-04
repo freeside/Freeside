@@ -120,6 +120,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                            'type' => 'checkbox',
                          },
 
+    'bill_only_pkg_dates' => { 'name' => 'Only bill CDRs with a date during the package billing period',
+                               'type' => 'checkbox',
+                             },
+
     #XXX also have option for an external db
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -160,6 +164,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        use_duration
                        output_format usage_mandate summarize_usage usage_section
                        bill_every_call
+                       bill_only_pkg_dates
                      )
                   ],
   'weight' => 42,
@@ -236,12 +241,18 @@ sub calc_usage {
   ) {
     my $svc_phone = $cust_svc->svc_x;
 
-    my $cdr_search = $svc_phone->psearch_cdrs(
+    my %options = (
       'inbound'        => 1,
       'default_prefix' => $self->option('default_prefix'),
       'status'         => '', # unprocessed only
       'for_update'     => 1,
     );
+    if ( $self->option('bill_only_pkg_dates') ) {
+      $options{'begin'} = $last_bill;
+      $options{'end'}   = $$sdate;
+    }
+
+    my $cdr_search = $svc_phone->psearch_cdrs(%options);
     $cdr_search->limit(1000);
     $cdr_search->increment(0);
     while ( my $cdr = $cdr_search->fetch ) {
