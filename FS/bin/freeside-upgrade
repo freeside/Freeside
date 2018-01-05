@@ -449,8 +449,10 @@ Also performs other upgrade functions:
   [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
           current default.
 
-  [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
-          changes will be replicated from the Pg/slony master.
+  [ -s ]: Schema changes only.  Used to be useful for Pg/slony slaves where the
+          data changes would be replicated from the Pg/slony master (current
+          native Pg replication replicates schema changes to slaves
+          automatically).
 
   [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
           databases may be inaccessible.
