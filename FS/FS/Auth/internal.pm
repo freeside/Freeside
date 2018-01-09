@@ -48,7 +48,9 @@ sub change_password {
   my($self, $access_user, $new_password) = @_;
 
   # do nothing if the password is unchanged
-  return if $self->authenticate( $access_user, $new_password );
+  #XXX breaks password changes in employee edit ($access_user object already
+  # has new [plaintext] password)
+  #return if $self->authenticate( $access_user, $new_password );
 
   $self->change_password_fields( $access_user, $new_password );
 
