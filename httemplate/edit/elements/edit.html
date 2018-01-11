@@ -358,6 +358,7 @@ Example:
 %     #contact
 %     'custnum'     => $f->{'custnum'},
 %     'prospectnum' => $f->{'prospectnum'},
+%
 %   );
 %
 %   $include_common{$_} = $f->{$_} foreach grep exists($f->{$_}),
@@ -370,7 +371,7 @@ Example:
 %     qw( formatted_value ),                               #fixed
 %     qw( country ),                                       #select-country
 %     qw( width height config ),                           #htmlarea
-%     qw( alt_format ),                                    #select-cust_location
+%     qw( is_optional alt_format ),                        #select-cust_location
 %     qw( classnum ),                                   # select-inventory_item
 %     qw( aligned ),                                    # columnstart
 %     qw( debug ),                                      # select-table
