@@ -61,7 +61,10 @@ my $cust_main = $opt{'cust_main'}
 my $custnum = $cust_main->custnum;
 
 my $where = "WHERE cust_msg.custnum = $custnum";
-my $maxrecords = $curuser->option('customer_view_emails') || 10;
+my $maxrecords = 10;
+if ( $curuser->option('customer_view_emails') =~ /^\s*(\d+)\s*$/ ) {
+  $maxrecords = $1;
+}
 
 my $order_by = '_date DESC';
 
