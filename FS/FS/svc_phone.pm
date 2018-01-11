@@ -813,7 +813,7 @@ sub phone_name_or_cust {
   }
   my $cust_pkg = $self->cust_svc->cust_pkg or return '';
   if ( $cust_pkg->contactnum ) {
-    return $cust_pkg->contact->firstlast;
+    return $cust_pkg->contact_obj->firstlast;
   } else {
     return $cust_pkg->cust_main->name_short;
   }
