@@ -872,7 +872,9 @@ my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} ||
 my $fields = $opt{'fields'}
              #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
              || [ grep { $_ ne $pkey } fields($table) ];
-#my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
+my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
+
+push @actualfields, $pkey;
 
 my $js_form_validate = {};
 
@@ -915,7 +917,7 @@ if ( $opt{'embed'} ) {
     $mode = 'error';
 
     $object = $class->new( {
-      map { $_ => scalar($cgi->param($_)) } fields($table)
+      map { $_ => scalar($cgi->param($_)) } @actualfields
     });
 
     &{$opt{'error_callback'}}( $cgi, $object, $fields, \%opt )

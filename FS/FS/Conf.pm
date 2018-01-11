@@ -2753,13 +2753,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'manual_process-single_invoice_amount',
-    'section'     => 'payments',
-    'description' => 'When entering manual credit card and ACH payments, amount will not autofill if the customer has more than one open invoice',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'manual_process-pkgpart',
     'section'     => 'payments',
     'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas. Surcharging is also generally prohibited in most countries outside the US, AU and UK.',

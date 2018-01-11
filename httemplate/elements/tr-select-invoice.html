@@ -1,0 +1,43 @@
+<%doc>
+
+Example:
+
+  include( '/elements/tr-select-invoice.html',
+
+    #opt - most get used in /elements/tr-amount-fee
+    'custnum'              => 4,     # customer number,
+    'prefix'               => 'pre', # prefix to fields and row ID's
+  )
+
+</%doc>
+
+  <TR ID="invoice_row" STYLE="display:none;">
+    <TH ALIGN="right"><% mt('Open invoices') |h %></TH>
+    <TD COLSPAN=7>
+     <SELECT
+  	  ID       = "<% $opt{prefix} %>invoice"
+  	  NAME     = "<% $opt{prefix} %>invoice"
+  	  onChange = "<% $opt{prefix} %>invoice_select_changed(this)"
+	>
+  		<OPTION VALUE="select">Select an invoice to pay</OPTION>
+%         foreach my $record (@records) {
+%            my $read_date = time2str("%b %o, %Y", $record->_date);
+            <OPTION VALUE="<% $record->charged %>"><% $record->invnum %> (<% $read_date %>) - <% $record->charged %></OPTION>	
+%         }
+
+	</SELECT>	
+    </TD>
+  </TR>
+
+<%init>
+
+my %opt = @_;
+
+my @records = qsearch( {
+    'select'    => '*',
+    'table'     => 'cust_bill',
+    'hashref'   => { 'custnum' => $opt{custnum} },
+    'order_by'  => 'ORDER BY _date',
+});
+
+</%init>

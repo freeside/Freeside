@@ -12,8 +12,9 @@
 
 <TABLE class="fsinnerbox">
 
-  <& /elements/tr-amount_fee.html,
-       'amount'             => $amount,
+  <& /elements/tr-select-payment_options.html,
+       'custnum'            => $cust_main->custnum,
+       'amount'             => $balance,
        'process-pkgpart'    => 
           scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
        'process-display'    => scalar($conf->config('manual_process-display')),
@@ -355,15 +356,6 @@ my %states = map { $_->state => 1 }
                  'country' => $conf->config('countrydefault') || 'US'
                } );
 my @states = sort { $a cmp $b } keys %states;
-
-my $amount = '';
-if ( $balance > 0 ) {
-  # when configured to do so, amount will only auto-fill with balance
-  # if balance represents a single invoice
-  $amount = $balance
-    unless $conf->exists('manual_process-single_invoice_amount')
-      && ($cust_main->open_cust_bill != 1);
-}
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
 

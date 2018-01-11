@@ -1,0 +1,94 @@
+<%doc>
+
+Example:
+
+  include( '/elements/tr-select-payment_options.html',
+
+    #opt - most get used in /elements/tr-amount-fee
+    'custnum'              => 4,     # customer number needed for selecting invoices
+    'prefix'               => 'pre', # prefix to fields and row ID's
+    'amount'               => 1,     # payment amount
+    'process-pkgpart'      => scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
+    'process-display'      => scalar($conf->config('manual_process-display')),
+    'process-skip_first'   => $conf->exists('manual_process-skip_first'),
+    'num_payments'         => scalar($cust_main->cust_pay),
+    'surcharge_percentage' =>
+      ( $payby eq 'CARD'
+          ? scalar($conf->config('credit-card-surcharge-percentage', $cust_main->agentnum))
+          : 0
+      ),
+  )
+
+</%doc>
+
+  <TR STYLE="display:block">
+    <TH ALIGN="right"><% mt('Payment options') |h %></TH>
+    <TD COLSPAN=7>
+     <SELECT
+  	  ID       = "<% $opt{prefix} %>payment_option"
+  	  NAME     = "<% $opt{prefix} %>payment_option"
+  	  onChange = "<% $opt{prefix} %>payment_option_changed(this)"
+  	  <% $opt{disabled} %>
+	>
+  		<OPTION VALUE="select">Select payment option</OPTION>
+  		<OPTION VALUE="<% $opt{amount} %>">Pay full balance</OPTION>
+  		<OPTION VALUE="invoice">Pay specific invoice</OPTION>
+  		<OPTION VALUE="">Pay specific amount</OPTION>
+	</SELECT>	
+    </TD>
+  </TR>
+
+  <& /elements/tr-select-invoice.html,
+       'custnum' => $opt{custnum},
+       'prefix'  => $opt{prefix},
+  &>
+
+  <& /elements/tr-amount_fee.html,
+       'row_style'  => 'STYLE="display:none;"',
+       %opt
+  &>
+
+  <SCRIPT TYPE="text/javascript">
+
+      function <% $opt{prefix} %>payment_option_changed(what) {
+
+        if ( what.value == 'select' ) {
+        	document.getElementById('payment_amount_row').style.display = 'none';
+        	document.getElementById('invoice_row').style.display = 'none';
+          document.getElementById('<% $opt{prefix} %>invoice').value = 'select';
+        	document.getElementById('amount').value = '';
+        }
+        else if ( what.value == 'invoice' ) {
+        	document.getElementById('payment_amount_row').style.display = 'none';
+        	document.getElementById('invoice_row').style.display = 'block';
+        	document.getElementById('amount').value = '';
+        }
+        else {
+        	document.getElementById('payment_amount_row').style.display = 'block';
+        	document.getElementById('invoice_row').style.display = 'none';
+          document.getElementById('<% $opt{prefix} %>invoice').value = 'select';
+        	document.getElementById('amount').value = what.value;
+        }
+
+      }
+
+      function <% $opt{prefix} %>invoice_select_changed(what) {
+
+        if ( what.value == 'select' ) {
+        	document.getElementById('payment_amount_row').style.display = 'none';
+        	document.getElementById('amount').value = '';
+        }
+        else {
+        	document.getElementById('payment_amount_row').style.display = 'block';
+        	document.getElementById('amount').value = what.value;
+        }
+
+      }
+
+</SCRIPT>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

@@ -1,4 +1,4 @@
-  <TR>
+  <TR ID="payment_amount_row" <% $opt{'row_style'} %>>
     <TH ALIGN="right"><% mt('Payment amount') |h %></TH>
     <TD COLSPAN=7>
       <TABLE><TR><TD BGCOLOR="#ffffff">
@@ -15,7 +15,7 @@
                                   onKeyPress = "amount_changed(this)"
 %                               }
                          >
-      </TD><TD BGCOLOR="#cccccc">
+      </TD><TD BGCOLOR="<% length($fee) ? '#cccccc' : '#ffffff' %>">
 %        if ( $fee ) {
            <INPUT TYPE="hidden" NAME="fee_pkgpart" VALUE="<% $fee_pkg->pkgpart %>">
            <INPUT TYPE="hidden" NAME="fee" VALUE="<% $fee_display eq 'add' ? $fee : '' %>">
