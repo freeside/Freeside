@@ -1,9 +1,16 @@
 <% include('/elements/header.html', 'Preferences for '. getotaker ) %>
 
+% my $js_form_validate = { 'pref_form' => { 'name' => 'pref_form' } };
+
 <FORM METHOD="POST" NAME="pref_form" ACTION="pref-process.html">
 
 <% include('/elements/error.html') %>
 
+<<<<<<< HEAD
+=======
+<& /elements/alert.html &>
+
+% if ( FS::Auth->auth_class->can('change_password') ) {
 
 <% mt('Change password (leave blank for no change)') |h %>
 <% ntable("#cccccc",2) %>
@@ -156,10 +163,14 @@ Interface
     </TD>
   </TR>
 
+% my $validate_field_cve = 'customer_view_emails';
+% $js_form_validate->{pref_form}->{validate_fields}{$validate_field_cve} = 'digits: true';
+% $js_form_validate->{pref_form}->{error_message}{$validate_field_cve} = 'Please only enter numbers here.';
+
   <TR>
     <TH ALIGN="right">How many recent outbound emails to show in customer view</TH>
     <TD ALIGN="left" COLSPAN=2>
-      <INPUT TYPE="text" NAME="customer_view_emails" VALUE="<% $curuser->option('customer_view_emails') %>"></TD>
+      <INPUT TYPE="text" ID="<% $validate_field_cve %>" NAME="<% $validate_field_cve %>" VALUE="<% $curuser->option('customer_view_emails') %>"></TD>
     </TD>
   </TR>
 
@@ -273,7 +284,13 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 
 <INPUT TYPE="submit" VALUE="Update preferences">
 
-<% include('/elements/footer.html') %>
+% my %footerdata = (
+%   'formvalidation' => $js_form_validate,
+% );
+<% include("/elements/footer.html", %footerdata) %>
+
+%#<&/elements/footer.html &>
+
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

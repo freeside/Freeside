@@ -4,6 +4,7 @@
 % } else {
 <% include('/elements/header.html', 'Preferences updated') %>
 <% include('/elements/footer.html') %>
+<% $cgi->redirect(popurl(1). "pref.html?alert=Preferences updated" ) %>
 % }
 <%init>
 
