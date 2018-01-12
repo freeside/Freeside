@@ -33,8 +33,10 @@
                    sub {
                      my $access_user = shift;
 
-                     '<BR>Employee Groups<BR>'.
-                     ntable("#cccccc",2).
+                     '<BR>'.
+                     '<FONT CLASS="fsinnerbox-title">Employee Groups</FONT>'.
+                     '<BR>'.
+                     '<TABLE CLASS="fsinnerbox">'.
                      '<TR><TD>'.
                      include( '/elements/checkboxes-table.html',
                                 'source_obj'   => $access_user,
@@ -49,6 +51,7 @@
                    },
                  'onsubmit'  => 'check_user_custnum_search',
                  'html_foot' => $check_user_custnum_search,
+                 'html_table_class' => 'fsinnerbox',
            )
 %>
 <%init>
