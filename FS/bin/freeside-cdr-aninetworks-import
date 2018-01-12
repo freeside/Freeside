@@ -152,7 +152,11 @@ sub sftp {
   #reuse connections
   return $sftp if $sftp && $sftp->cwd;
 
-  my %sftp = ( host => $host, user => $login, password => $password );
+  my %sftp = ( host => $host,
+               user => $login,
+               password => $password,
+               more => [-o => 'StrictHostKeyChecking no'],
+             );
 
   $sftp = Net::SFTP::Foreign->new(%sftp);
   $sftp->error and die "SFTP connection failed: ". $sftp->error;
