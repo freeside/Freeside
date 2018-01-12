@@ -1,10 +1,15 @@
 % if ( $error ) {
 %   $cgi->param('error', $error);
-<% $cgi->redirect(popurl(1). "pref.html?". $cgi->query_string ) %>
+    <% $cgi->redirect(popurl(1). "pref.html?". $cgi->query_string ) %>
 % } else {
-<% include('/elements/header.html', mt('Preferences updated')) %>
-<% include('/elements/footer.html') %>
-<% $cgi->redirect(popurl(1). "pref.html?alert=Preferences updated" ) %>
+    <% $cgi->redirect( -uri    => popurl(1). "pref.html",
+                   -cookie => CGI::Cookie->new(
+                     -name    => 'freeside_status',
+                     -value   => mt('Preferences updated'),
+                     -expires => '+5m',
+                   ),
+       )
+    %>
 % }
 <%init>
 
