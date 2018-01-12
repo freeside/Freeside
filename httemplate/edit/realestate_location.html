@@ -1,0 +1,72 @@
+<% include( 'elements/edit.html',
+ 'name_singular' => 'Real Estate Location',
+ 'table'  => 'realestate_location',
+
+ 'labels' => {
+    realestatelocnum => 'Location',
+    location_title => "Location",
+    address1       => "Address",
+    address2       => "Address",
+    city           => "City",
+    state          => "State",
+    zip            => "Zip-Code",
+    disabled       => "Disabled",
+  },
+  'fields' => [
+    { field => 'realestatelocnum', type => 'hidden' },
+
+    { field => 'location_title',
+      type=>'text',
+      size => 40,
+      maxlength => 80,
+    },
+    { field => 'address1',
+      type=>'text',
+      size => 40,
+      maxlength => 80,
+    },
+    { field => 'address2',
+      type=>'text',
+      size => 40,
+      maxlength => 80,
+    },
+    { field => 'city',
+      type=>'text',
+      size => 40,
+      maxlength => 80,
+    },
+    { field => 'state',
+      type=>'text',
+      size => 40,
+      maxlength => 80,
+    },
+    { field => 'zip',
+      type=>'text',
+      size => 5,
+      maxlength => 5,
+    },
+
+    { field => 'agentnum',
+      type => 'select-agent',
+      value => 1,
+    },
+    { field => 'disabled',
+      type=>'checkbox',
+      value=>'Y'
+    },
+  ],
+
+ 'viewall_dir' => 'browse',
+ 'agent_virt' => 1,
+)
+%>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die("access denied")
+  unless $curuser->access_right('Edit inventory')
+      || $curuser->access_right('Edit global inventory')
+      || $curuser->access_right('Configuration');
+
+</%init>

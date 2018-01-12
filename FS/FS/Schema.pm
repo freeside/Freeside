@@ -495,8 +495,44 @@ sub tables_hashref {
 
   my $username_len = 64; #usernamemax config file
 
-    # name type nullability length default local
+  # Return a hashref defining the entire application database schema
+  # Each key of the hashref contains a structure describing a database table
+  #
+  # table_name => {
+  #   columns      => [...],
+  #   primary_key  => 'column',
+  #   unique       => [column,column,...],
+  #   index        => [[column],[column,column],...],
+  #   foreign_keys => [{...},{...},...],
+  # }
+  #
+  #
+  # columns => [
+  #
+  #   'column_name',
+  #
+  #   'column_type',
+  #
+  #   'NULL' or '',   # 'NULL' : Allow null values
+  #                   # ''     : Disallow null values
+  #
+  #   'length',       # Column size value.  eg:
+  #                   # 40     : VARCHAR(40)
+  #                   # '10,2' : FLOAT(10,2)
+  #
+  #   'default',      # Default column value for a new record
+  #                   # (Unclear if setting this to '' results in a default
+  #                   #  value of NULL or empty string?)
+  #
+  #   '',             # local ?
+  #
+  #   name, type, nullability, length, default, local,
+  #   name, type, nullability, length, default, local,
+  #   ...
+  #
+  # ],
 
+  # name type nullability length default local
   return {
 
     'agent' => {
@@ -7601,6 +7637,57 @@ sub tables_hashref {
       'foreign_keys'  => [],
     },
 
+    'realestate_unit' => {
+      'columns' => [
+        'realestatenum',    'serial',  '',     '',      '',  '',
+        'realestatelocnum', 'int',     '',     '',      '',  '',
+        'agentnum',         'int',     'NULL', '',      '',  '',
+        'unit_title',       'varchar', '',     $char_d, '',  '',
+        'disabled',         'char',    'NULL', 1,       '',  '',
+      ],
+      'primary_key'  => 'realestatenum',
+      'unique'       => [ ['unit_title'] ],
+      'index'        => [
+        ['agentnum'],
+        ['realestatelocnum'],
+        ['disabled'],
+        ['unit_title'],
+      ],
+      'foreign_keys' => [
+        {columns => ['agentnum'], table => 'agent'},
+        {columns => ['realestatelocnum'] => table => 'realestate_location'},
+      ],
+    },
+
+    realestate_location => {
+      'columns' => [
+        'realestatelocnum', 'serial',  '',     '',      '', '',
+        'agentnum',         'int',     'NULL', '',      '', '',
+       'location_title',   'varchar', '',     $char_d, '', '',
+        'address1',         'varchar', 'NULL', $char_d, '',  '',
+        'address2',         'varchar', 'NULL', $char_d, '',  '',
+        'city',             'varchar', 'NULL', $char_d, '',  '',
+        'state',            'varchar', 'NULL', $char_d, '',  '',
+        'zip',              'char',    'NULL', 5,       '',  '',
+        'disabled',         'char',    'NULL', 1,       '',  '',
+      ],
+      primary_key  => 'realestatelocnum',
+      'unique'     => [ ['location_title'] ],
+      'index'      => [ ['agentnum'], ['disabled'] ],
+      'foreign_keys' => [
+        {columns => ['agentnum'], table => 'agent'},
+      ],
+    },
+
+    svc_realestate => {
+      columns => [
+        'svcnum',        'serial',  '',     '',      '', '',
+        'realestatenum', 'int',     'NULL', '',      '', '',
+      ],
+      primary_key => 'svcnum',
+      index => [],
+    },
+
     # name type nullability length default local
 
     #'new_table' => {
@@ -7627,4 +7714,3 @@ L<DBIx::DBSchema>
 =cut
 
 1;
-

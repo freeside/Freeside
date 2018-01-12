@@ -1,0 +1,59 @@
+<%doc>
+
+Display a pair of select boxes for provisioning a realestate_unit
+- Real Estate Location
+- Real Estate Unit
+
+NOTE:
+  Records are always suppresed if
+  - realestate_location.disabled is set
+  - realestate_unit is provisioned to a customer [not working]
+
+  If it becomes necessary, an option may be added to the template
+  to show disabled/provisioned records, but is not yet implemented
+
+</%doc>
+<& select-tiered.html,
+  'tiers' => [
+    {
+
+      field         => 'realestate_location',
+      table         => 'realestate_location',
+      extra_sql     => "WHERE realestate_location.disabled IS NULL "
+                     . "   OR realestate_location.disabled = '' ",
+      name_col      => 'location_title',
+      empty_label   => '(all)',
+    },
+    {
+      field         => 'realestatenum',
+      table         => 'realestate_unit',
+      name_col      => 'unit_title',
+      value_col     => 'realestatenum',
+      link_col      => 'realestatelocnum',
+
+      # TODO: Filter units assigned to customers
+      # SQL below breaks the selectbox... why?
+
+      # Also, can we assume if realestatenum doesn't appear in svc_realestate
+      # that the realestate_unit is unprovisioned to a customer?  What indicator
+      # should be used to determine when a realestae_unit is not provisioned?
+
+      # addl_from     => "
+      #   LEFT JOIN svc_realestate
+      #     ON svc_realestate.realestatenum = realestate_unit.realestatenum
+      # ",
+
+      #extra_sql     => "WHERE svc_realestate.svcnum IS NULL ",
+
+      disable_empty => 1,
+      debug => 1,
+    },
+  ],
+  %opt,
+  'prefix' => $opt{'prefix'}. $opt{'field'}. '_', #after %opt so it overrides
+&>
+<%init>
+
+my %opt = @_;
+
+</%init>

@@ -834,6 +834,11 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
   || $curuser->access_right('Edit global inventory')
   || $curuser->access_right('Configuration');
 
+$config_misc{'Real estate inventory'} = [ $fsurl.'browse/realestate_unit.html', 'Setup real estate inventory' ]
+  if $curuser->access_right('Edit realestate inventory')
+  || $curuser->access_right('Edit global inventory')
+  || $curuser->access_right('Configuration');
+
 $config_misc{'Upload targets'} = [ $fsurl.'browse/upload_target.html', 'Billing and payment upload destinations' ]
   if $curuser->access_right('Configuration');
 
@@ -1038,4 +1043,3 @@ sub submenu {
 }
 
 </%init>
-

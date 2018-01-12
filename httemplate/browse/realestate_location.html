@@ -1,0 +1,43 @@
+<% include( 'elements/browse.html',
+  title       => emt('Real Estate Locations'),
+  name        => 'real estate locations',
+
+  menubar => [
+    'Edit units'         => "${p}browse/realestate_unit.html",
+    'Add a new location' => "${p}edit/realestate_location.html",
+    'Add a new unit'     => "${p}edit/realestate_unit.html",
+  ],
+
+  query => { table => 'realestate_location' },
+  count_query => 'SELECT COUNT(*) FROM realestate_location',
+
+  header => [ 'Location', 'Address', 'Address 2', 'City', 'State', 'Zip' ],
+  fields => [
+    'location_title',
+    'address1',
+    'address2',
+    'city',
+    'state',
+    'zip'
+  ],
+  links => [
+    ["${p}edit/realestate_location.html?",  'realestatelocnum' ],
+  ],
+
+  agent_virt  => 1,
+  agent_pos   => 0,
+  disableable => 1,
+)
+%>
+<%init>
+
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die("access denied")
+  unless $curuser->access_right('Edit inventory')
+      || $curuser->access_right('Edit global inventory')
+      || $curuser->access_right('Configuration');
+
+
+
+</%init>
