@@ -6,7 +6,6 @@
 
 <% include('/elements/error.html') %>
 
-% if ( FS::Auth->auth_class->can('change_password') ) {
 
 <% mt('Change password (leave blank for no change)') |h %>
 <% ntable("#cccccc",2) %>
@@ -178,7 +177,7 @@ Email Address
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH>Email Address(es) (comma separated) </TH>
+    <TH><% emt("Email Address(es) (comma separated) ") %></TH>
     <TD>
    <TD><INPUT TYPE="text" NAME="email_address" VALUE="<% $email_address %>">
     </TD>
