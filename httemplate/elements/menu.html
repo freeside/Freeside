@@ -418,6 +418,8 @@ if( $curuser->access_right('Financial reports') ) {
 
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
+  $report_financial{'Upcoming Auto-Bill Transactions'} = [ $fsurl.'search/report_future_autobill.html', 'Upcoming auto-bill transactions' ];
+
 } elsif($curuser->access_right('Receivables report')) {
 
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];

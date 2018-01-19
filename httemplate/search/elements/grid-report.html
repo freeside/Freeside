@@ -161,7 +161,7 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 .shaded { background-color: #c8c8c8; }
 .totalshaded { background-color: #bfc094; }
 </style>
-<table class="report" width="100%" cellspacing=0>
+<table class="<% $table_class %>" width="<% $table_width %>" cellspacing=0>
 % foreach my $rowinfo (@rows) {
   <tr<% $rowinfo->{class} ? ' class="'.$rowinfo->{class}.'"' : ''%>>
 %   my $thisrow = shift @cells;
@@ -172,7 +172,11 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 %     $style .= " rowspan=".$cell->{rowspan} if $cell->{rowspan} > 1;
 %     $style .= " colspan=".$cell->{colspan} if $cell->{colspan} > 1;
 %     $style .= ' class="' . $cell->{class} . '"' if $cell->{class};
+% if ($cell->{bypass_filter}) {
+      <<%$td%><%$style%>><% $cell->{value} %></<%$td%>>
+% } else {
       <<%$td%><%$style%>><% $cell->{value} |h %></<%$td%>>
+% }
 %   }
   </tr>
 % }
@@ -186,4 +190,6 @@ $title
 @cells
 $head => ''
 $foot => ''
+$table_width => "100%"
+$table_class => "report"
 </%args>
