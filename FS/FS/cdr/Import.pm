@@ -19,7 +19,7 @@ FS::cdr::Import - CDR importing
   use FS::cdr::Import;
 
   FS::cdr::Import->dbi_import(
-    'dbd'         => 'mysql', #Pg, Sybase, etc.
+    'dbd'         => 'Pg', #mysql, Sybase, etc.
     'table'       => 'TABLE_NAME',
     'primary_key' => 'BILLING_ID',
     'status_table' = > 'STATUS_TABLE_NAME', # if using a table rather than field in main table
@@ -46,61 +46,64 @@ sub dbi_import {
 
   my %opt; #opt is specified for each install / run of the script
   getopts('H:U:P:D:T:c:L:S:', \%opt);
+
   my $user = shift(@ARGV) or die $class->cli_usage;
+  my $database = $opt{D} || $args{database};
+  my $table = $opt{T} || $args{table};
+  my $pkey = $args{primary_key};
+  my $pkey_info = $args{primary_key_info} ? $args{primary_key_info} : 'BIGINT';
+  my $status_table = $opt{S} || $args{status_table};
+  my $dbd_type = $args{'dbd'} ? $args{'dbd'} : 'Pg';
+  my $status_column = $args{status_column} ? $args{status_column} : 'freesidestatus';
+  my $status_column_info = $args{status_column_info} ? $args{status_column} : 'VARCHAR(32)';
 
-  $opt{D} ||= $args{database};
+  my $queries = get_queries({
+    'dbd'                 => $dbd_type,
+    'table'               => $table,
+    'status_column'       => $status_column,
+    'status_column_info'  => $status_column_info,
+    'status_table'        => $status_table,
+    'primary_key'         => $pkey,
+    'primary_key_info'    => $pkey_info,
+  });
 
-  #do we want to add more types? or add as we go?
-  my %dbi_connect_types = {
-    'Sybase'  => ':server',
-    'Pg'      => ':host',
-  };
-
-  my $dsn = 'dbi:'. $args{dbd};
-
-  my $dbi_connect_type = $dbi_connect_types{$args{'dbd'}} ? $dbi_connect_types{$args{'dbd'}} : ':host';
-  $dsn .= $dbi_connect_type . "=$opt{H}";
-  $dsn .= ";database=$opt{D}" if $opt{D};
+  my $dsn = 'dbi:'. $dbd_type;
+  $dsn .= $queries->{connect_type} . "=$opt{H}";
+  $dsn .= ";database=$database" if $database;
 
   my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
     or die $DBI::errstr;
 
   adminsuidsetup $user;
 
-  #my $fsdbh = FS::UID::dbh;
-
-  my $table = $opt{T} || $args{table};
-  my $pkey = $args{primary_key};
-  my $status_table = $opt{S} || $args{status_table};
-
-  #just doing this manually with IVR MSSQL databases for now
-  #  # check for existence of freesidestatus
-  #  my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
-  #  if( ! @$status ) {
-  #    print "Adding freesidestatus column...\n";
-  #    $dbi->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
-  #      or die $dbi->errstr;
-  #  }
-  #  else {
-  #    print "freesidestatus column present\n";
-  #  }
-  # or if using a status_table:
-  #      CREATE TABLE FREESIDE_BILLING (
-  #        BILLING_ID BIGINT,
-  #        FREESIDESTATUS VARCHAR(32)
-  #      )
+  ## check for status table if using. if not there create it.
+  if ($status_table) {
+    my $status = $dbi->selectall_arrayref( $queries->{check_statustable} );
+    if( ! @$status ) {
+      print "Adding status table $status_table ...\n";
+      $dbi->do( $queries->{create_statustable} )
+        or die $dbi->errstr;
+    }
+  }
+  ## check for column freeside status if not using status table and create it if not there.
+  else {
+    my $status = $dbi->selectall_arrayref( $queries->{check_statuscolumn} );
+    if( ! @$status ) {
+      print "Adding $status_column column...\n";
+      $dbi->do( $queries->{create_statuscolumn} )
+        or die $dbi->errstr;
+    }
+  }
 
   #my @cols = values %{ $args{column_map} };
   my $sql = "SELECT $table.* FROM $table "; # join(',', @cols). " FROM $table ".
-  $sql .=  'LEFT JOIN '. $status_table.
-           " ON ( $table.$pkey = ". $status_table. ".$pkey )"
+  $sql .=  "LEFT JOIN $status_table ON ( $table.$pkey = $status_table.$pkey ) "
     if $status_table;
-  $sql .= ' WHERE freesidestatus IS NULL ';
+  $sql .= "WHERE  $status_column IS NULL ";
 
   #$sql .= ' LIMIT '. $opt{L} if $opt{L};
   my $sth = $dbi->prepare($sql);
   $sth->execute or die $sth->errstr. " executing $sql";
-  #MySQL-specific print "Importing ".$sth->rows." records...\n";
 
   my $cdr_batch = new FS::cdr_batch({ 
       'cdrbatch' => $args{batch_name} . '-import-'. time2str('%Y/%m/%d-%T',time),
@@ -123,6 +126,7 @@ sub dbi_import {
       }
       $hash{$field} = '' if $hash{$field} =~ /^\s+$/; #IVR (MSSQL?) bs
     }
+
     my $cdr = FS::cdr->new(\%hash);
 
     $cdr->cdrtypenum($opt{c}) if $opt{c};
@@ -145,12 +149,12 @@ sub dbi_import {
       if ( $status_table ) {
 
         $st_sql = 
-          'INSERT INTO '. $status_table. " ( $pkey, freesidestatus ) ".
+          'INSERT INTO '. $status_table. " ( $pkey, $status_column ) ".
             " VALUES ( ?, 'done' )";
 
       } else {
 
-        $st_sql = "UPDATE $table SET freesidestatus = 'done' WHERE $pkey = ?";
+        $st_sql = "UPDATE $table SET $status_column = 'done' WHERE $pkey = ?";
 
       }
 
@@ -179,10 +183,58 @@ sub cli_usage {
   "Usage: \n  $0\n\t-H hostname\n\t[ -D database ]\n\t-U user\n\t-P password\n\t[ -c cdrtypenum ]\n\t[ -L num_cdrs_limit ]\n\t[ -T table ]\n\t[ -S status table ]\n\tfreesideuser\n";
 }
 
+sub get_queries {
+  #my ($dbd, $table, $column, $column_create_info, $status_table, $primary_key, $primary_key_info) = @_;
+  my $info = shift;
+
+  #do we want to add more types? or add as we go?
+  my %dbi_connect_types = (
+    'Sybase'  => ':server',
+    'Pg'      => ':host',
+  );
+
+  #Check for freeside status table Sybase has not been tested
+  my %dbi_check_statustable = (
+    'Sybase'  => "SELECT systables.name FROM sysobjects
+                  JOIN systables ON sysobjects.id = systables.id
+                  WHERE sysobjects.name LIKE '$info->{table}' AND systables.name = $info->{status_table}",
+    'Pg'      => "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$info->{status_table}' AND column_name = '$info->{status_column}'",
+  );
+
+  #Check for freeside status table Sybase has not been tested
+  my %dbi_create_statustable = (
+    'Sybase'  => "CREATE TABLE $info->{status_table} ( $info->{primary_key} $info->{primary_key_info}, $info->{status_column} $info->{status_column_info} )",
+    'Pg'      => "CREATE TABLE $info->{status_table} ( $info->{primary_key} $info->{primary_key_info}, $info->{status_column} $info->{status_column_info} )",
+  );
+
+  #Check for freeside status column Sybase has not been tested
+  my %dbi_check_statuscolumn = (
+    'Sybase'  => "SELECT syscolumns.name FROM sysobjects
+                  JOIN syscolumns ON sysobjects.id = syscolumns.id
+                  WHERE sysobjects.name LIKE '$info->{table}' AND syscolumns.name = $info->{status_column}",
+    'Pg'      => "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$info->{table}' AND column_name = '$info->{status_column}' ",
+  );
+
+    #Check for freeside status column Sybase has not been tested
+  my %dbi_create_statuscolumn = (
+    'Sybase'  => "ALTER TABLE $info->{table} ADD COLUMN $info->{status_column} $info->{status_column_info}",
+    'Pg'      => "ALTER TABLE $info->{table} ADD COLUMN $info->{status_column} $info->{status_column_info}",
+  );
+
+  my $queries = {
+    'connect_type'         =>  $dbi_connect_types{$info->{dbd}},
+    'check_statustable'    =>  $dbi_check_statustable{$info->{dbd}},
+    'create_statustable'   =>  $dbi_create_statustable{$info->{dbd}},
+    'check_statuscolumn'   =>  $dbi_check_statuscolumn{$info->{dbd}},
+    'create_statuscolumn'  =>  $dbi_create_statuscolumn{$info->{dbd}},
+  };
+
+  return $queries;
+}
+
 =head1 BUGS
 
-Not everything has been refactored out of the various bin/cdr-*.import scripts,
-let alone other places.
+This has only been test with Pg -> postgresql databases
 
 Sparse documentation.
 
