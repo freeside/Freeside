@@ -1,0 +1,189 @@
+<%doc>
+
+Report listing upcoming auto-bill transactions
+
+Spec requested the ability to run this report with a longer date range,
+and see which charges will process on which day.  Checkbox multiple_billing_dates
+enables this functionality.
+
+Performance:
+This is a dynamically generated report.  The time this report takes to run
+will depends on the number of customers.  Installations with a high number
+of auto-bill customers may find themselves unable to run this report
+because of browser timeout.  Report could be implemented as a queued job if
+necessary, to solve the performance problem.
+
+</%doc>
+<& elements/grid-report.html,
+  title => 'Upcoming auto-bill transactions',
+  rows => \@rows,
+  cells => \@cells,
+  table_width => "",
+  table_class => 'gridreport',
+  head => '
+    <style type="text/css">
+      table.gridreport { margin: .5em; border: solid 1px #aaa; }
+      th.gridreport { background-color: #ccc; }
+      tr.gridreport:nth-child(even) { background-color: #eee; }
+      tr.gridreport:nth-child(odd)  { background-color: #fff; }
+      td.gridreport { margin: 0 .2em; padding: 0 .4em; }
+    </style>
+  ',
+&>
+
+<%init>
+
+use FS::UID qw( dbh myconnect );
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+  my $target_dt;
+  my @target_dates;
+
+  # Work with all date/time operations @ 12 noon
+  my %noon = (
+    hour   => 12,
+    minute => 0,
+    second => 0
+  );
+
+  my $now_dt = DateTime->now;
+  $now_dt = DateTime->new(
+    month => $now_dt->month,
+    day   => $now_dt->day,
+    year  => $now_dt->year,
+    %noon,
+  );
+
+  # Get target date from form
+  if ($cgi->param('target_date')) {
+    my ($mm, $dd, $yy) = split /[\-\/]/,$cgi->param('target_date');
+    $target_dt = DateTime->new(
+      month => $mm,
+      day   => $dd,
+      year  => $yy,
+      %noon,
+    ) if $mm && $dd & $yy;
+
+    # Catch a date from the past: time only travels in one direction
+    $target_dt = undef if $target_dt->epoch < $now_dt->epoch;
+  }
+
+  # without a target date, default to tomorrow
+  unless ($target_dt) {
+    $target_dt = DateTime->from_epoch( epoch => time() + 86400) ;
+    $target_dt = DateTime->new(
+      month => $target_dt->month,
+      day   => $target_dt->day,
+      year  => $target_dt->year,
+      %noon
+    );
+  }
+
+  # If multiple_billing_dates checkbox selected, create a range of dates
+  # from today until the given report date.  Otherwise, use target date only.
+  if ($cgi->param('multiple_billing_dates')) {
+    my $walking_dt = DateTime->from_epoch(epoch => $now_dt->epoch);
+    until ($walking_dt->epoch > $target_dt->epoch) {
+     push @target_dates, $walking_dt->epoch;
+     $walking_dt->add(days => 1);
+    }
+  } else {
+    push @target_dates, $target_dt->epoch;
+  }
+
+  # List all customers with an auto-bill method
+  #
+  # my %cust_payby = map {$_->custnum => $_} qsearch({
+  #   table => 'cust_payby',
+  #   hashref => {
+  #     weight  => { op => '>', value => '0' },
+  #     paydate => { op => '>', value => $target_dt->ymd },
+  #   },
+  #   order_by => " ORDER BY weight DESC ",
+  # });
+
+  # List all customers with an auto-bill method that's not expired
+  my %cust_payby = map {$_->custnum => $_} qsearch({
+    table => 'cust_payby',
+    hashref => {
+      weight  => { op => '>', value => '0' },
+    },
+    order_by => " ORDER BY weight DESC ",
+    extra_sql => " AND ( payby = 'CHEK' OR ( paydate > '".$target_dt->ymd."')) ",
+  });
+
+  my %abreport;
+  my @rows;
+
+  local $@;
+  local $SIG{__DIE__};
+  my $temp_dbh = myconnect();
+  eval { # Creating sandbox dbh where all connections are to be rolled back
+    local $FS::UID::dbh = $temp_dbh;
+    local $FS::UID::AutoCommit = 0;
+
+    # Generate report data into @rows
+    for my $custnum (keys %cust_payby) {
+      my $cust_main = qsearchs('cust_main', {custnum => $custnum});
+
+      # walk forward through billing dates
+      for my $query_epoch (@target_dates) {
+        my $return_bill = [];
+
+        eval { # Don't let an error on one customer crash the report
+          my $error = $cust_main->bill(
+            time           => $query_epoch,
+            return_bill    => $return_bill,
+            no_usage_reset => 1,
+          );
+          die "$error (simulating future billing)" if $error;
+        };
+        warn ("$@: (future_autobill custnum:$custnum)");
+
+        if (@{$return_bill}) {
+          my $inv = $return_bill->[0];
+          push @rows,{
+            name => $cust_main->name,
+            _date => $inv->_date,
+            cells => [
+              { class => 'gridreport', value => $custnum },
+              { class => 'gridreport',
+                value => '<a href="/view/cust_main.cgi?"'.$custnum.'">'.$cust_main->name.'</a>',
+                bypass_filter => 1,
+              },
+              { class => 'gridreport', value => $inv->charged, format => 'money' },
+              { class => 'gridreport', value => DateTime->from_epoch(epoch=>$inv->_date)->ymd },
+              { class => 'gridreport', value => ($cust_payby{$custnum}->payby || $cust_payby{$custnum}->paytype) },
+              { class => 'gridreport', value => $cust_payby{$custnum}->paymask },
+            ]
+          };
+        }
+
+      }
+      $temp_dbh->rollback;
+    } # /foreach $custnum
+
+  }; # /eval
+  warn("$@") if $@;
+
+  # Sort output by date, and format for output to grid-report.html
+  my @cells = [
+      # header row
+      { class => 'gridreport', value => '#',       header => 1 },
+      { class => 'gridreport', value => 'Name',    header => 1 },
+      { class => 'gridreport', value => 'Amount',  header => 1 },
+      { class => 'gridreport', value => 'Date',    header => 1 },
+      { class => 'gridreport', value => 'Type',    header => 1 },
+      { class => 'gridreport', value => 'Account', header => 1 },
+    ];
+  push @cells,
+    map  { $_->{cells} }
+    sort { $a->{_date} <=> $b->{_date} || $a->{name} cmp $b->{name} }
+    @rows;
+
+  # grid-report.html requires a parallel @rows parameter to accompany @cells
+  @rows = map { {class => 'gridreport'} } 1..scalar(@cells);
+
+</%init>

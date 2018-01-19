@@ -1,0 +1,42 @@
+<%doc>
+
+Display date selector for the future_autobill.html report
+
+</%doc>
+<% include('/elements/header.html', 'Future Auto-Bill Transactions' ) %>
+
+
+<FORM ACTION="future_autobill.html" METHOD="GET">
+<TABLE>
+<& /elements/tr-input-date-field.html,
+  {
+    name     => 'target_date',
+    value    => $target_date,
+    label    => emt('Target billing date').': ',
+    required => 1
+  }
+&>
+
+<& /elements/tr-checkbox.html,
+     'label' => emt('Multiple billing dates (slow)').': ',
+     'field' => 'multiple_billing_dates',
+     'value' => '1',
+&>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $target_date = DateTime->from_epoch(epoch=>(time()+86400))->mdy('/');
+
+</%init>
