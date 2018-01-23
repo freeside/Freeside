@@ -200,9 +200,7 @@ sub get_queries {
 
   #Check for freeside status table Sybase has not been tested
   my %dbi_check_statustable = (
-    'Sybase'  => "SELECT systables.name FROM sysobjects
-                  JOIN systables ON sysobjects.id = systables.id
-                  WHERE sysobjects.name LIKE '$info->{table}' AND systables.name = $info->{status_table}",
+    'Sybase'  => "SELECT * FROM sysobjects WHERE name = $info->{status_table}",
     'Pg'      => "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$info->{status_table}' AND column_name = '$info->{status_column}'",
   );
 
@@ -222,7 +220,7 @@ sub get_queries {
 
     #Check for freeside status column Sybase has not been tested
   my %dbi_create_statuscolumn = (
-    'Sybase'  => "ALTER TABLE $info->{table} ADD COLUMN $info->{status_column} $info->{status_column_info}",
+    'Sybase'  => "ALTER TABLE $info->{table} ADD $info->{status_column} $info->{status_column_info}",
     'Pg'      => "ALTER TABLE $info->{table} ADD COLUMN $info->{status_column} $info->{status_column_info}",
   );
 
