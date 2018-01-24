@@ -108,8 +108,7 @@ my $prospect_main = qsearchs( {
 });
 die "Prospect not found!" unless $prospect_main;
 
-my $title = encode_entities($prospect_main->name);
-$title = mt("Prospect"). ": $title";
+my $title = mt("Prospect"). ': '. $prospect_main->name;
 $title .= ' ('.mt('DISABLED').')'
   if $prospect_main->disabled;
 
