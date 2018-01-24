@@ -19,15 +19,19 @@ FS::cdr::Import - CDR importing
   use FS::cdr::Import;
 
   FS::cdr::Import->dbi_import(
-    'dbd'         => 'Pg', #mysql, Sybase, etc.
-    'table'       => 'TABLE_NAME',
-    'primary_key' => 'BILLING_ID',
-    'status_table' = > 'STATUS_TABLE_NAME', # if using a table rather than field in main table
-    'column_map'  => { #freeside => remote_db
-      'freeside_column' => 'remote_db_column',
-      'freeside_column' => sub { my $row = shift; $row->{remote_db_column}; },
+    'dbd'                => 'Pg', #mysql, Sybase, etc.
+    'database'           => 'DATABASE_NAME',
+    'table'              => 'TABLE_NAME',,
+    'status_table'       => 'STATUS_TABLE_NAME', # if using a table rather than field in main table
+    'primary_key'        => 'BILLING_ID',
+    'primary_key_info'   => 'BIGINT', # defaults to bigint
+    'status_column'      => 'STATUS_COLUMN_NAME', # defaults to freesidestatus
+    'status_column_info' => 'varchar(32)', # defaults to varchar(32)
+    'column_map'         => { #freeside => remote_db
+      'freeside_column'    => 'remote_db_column',
+      'freeside_column'    => sub { my $row = shift; $row->{remote_db_column}; },
     },
-    'batch_name' => 'batch_name', # cdr_batch name -import-date gets appended.
+    'batch_name'         => 'batch_name', # cdr_batch name -import-date gets appended.
   );
 
 =head1 DESCRIPTION
@@ -59,6 +63,7 @@ sub dbi_import {
 
   my $queries = get_queries({
     'dbd'                 => $dbd_type,
+    'host'                => $opt{H},
     'table'               => $table,
     'status_column'       => $status_column,
     'status_column_info'  => $status_column_info,
@@ -67,8 +72,7 @@ sub dbi_import {
     'primary_key_info'    => $pkey_info,
   });
 
-  my $dsn = 'dbi:'. $dbd_type;
-  $dsn .= $queries->{connect_type} . "=$opt{H}";
+  my $dsn = 'dbi:'. $dbd_type . $queries->{connect_type};
   $dsn .= ";database=$database" if $database;
 
   my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
@@ -178,44 +182,46 @@ sub dbi_import {
 }
 
 sub cli_usage {
-  #"Usage: \n  $0\n\t[ -H hostname ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
-  #"Usage: \n  $0\n\t-H hostname\n\t-D database\n\t-U user\n\t-P password\n\t[ -c cdrtypenum ]\n\tfreesideuser\n";
   "Usage: \n  $0\n\t-H hostname\n\t[ -D database ]\n\t-U user\n\t-P password\n\t[ -c cdrtypenum ]\n\t[ -L num_cdrs_limit ]\n\t[ -T table ]\n\t[ -S status table ]\n\tfreesideuser\n";
 }
 
 sub get_queries {
-  #my ($dbd, $table, $column, $column_create_info, $status_table, $primary_key, $primary_key_info) = @_;
+  #my ($dbd, $host, $table, $column, $column_create_info, $status_table, $primary_key, $primary_key_info) = @_;
   my $info = shift;
 
-  #do we want to add more types? or add as we go?
+  #get host and port information.
+  my ($host, $port) = split /:/, $info->{host};
+  $host ||= 'localhost';
+  $port ||= '5000'; # check for pg default 5000 is sybase.
+
   my %dbi_connect_types = (
-    'Sybase'  => ':server',
-    'Pg'      => ':host',
+    'Sybase'  => ':host='.$host.';port='.$port,
+    'Pg'      => ':host='.$info->{host},
   );
 
-  #Check for freeside status table Sybase has not been tested
+  #Check for freeside status table
   my %dbi_check_statustable = (
-    'Sybase'  => "SELECT * FROM sysobjects WHERE name = $info->{status_table}",
+    'Sybase'  => "SELECT * FROM sysobjects WHERE name = '$info->{status_table}'",
     'Pg'      => "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$info->{status_table}' AND column_name = '$info->{status_column}'",
   );
 
-  #Check for freeside status table Sybase has not been tested
+  #Create freeside status table
   my %dbi_create_statustable = (
     'Sybase'  => "CREATE TABLE $info->{status_table} ( $info->{primary_key} $info->{primary_key_info}, $info->{status_column} $info->{status_column_info} )",
     'Pg'      => "CREATE TABLE $info->{status_table} ( $info->{primary_key} $info->{primary_key_info}, $info->{status_column} $info->{status_column_info} )",
   );
 
-  #Check for freeside status column Sybase has not been tested
+  #Check for freeside status column
   my %dbi_check_statuscolumn = (
     'Sybase'  => "SELECT syscolumns.name FROM sysobjects
                   JOIN syscolumns ON sysobjects.id = syscolumns.id
-                  WHERE sysobjects.name LIKE '$info->{table}' AND syscolumns.name = $info->{status_column}",
+                  WHERE sysobjects.name LIKE '$info->{table}' AND syscolumns.name = '$info->{status_column}'",
     'Pg'      => "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$info->{table}' AND column_name = '$info->{status_column}' ",
   );
 
-    #Check for freeside status column Sybase has not been tested
+    #Create freeside status column
   my %dbi_create_statuscolumn = (
-    'Sybase'  => "ALTER TABLE $info->{table} ADD $info->{status_column} $info->{status_column_info}",
+    'Sybase'  => "ALTER TABLE $info->{table} ADD $info->{status_column} $info->{status_column_info} NULL",
     'Pg'      => "ALTER TABLE $info->{table} ADD COLUMN $info->{status_column} $info->{status_column_info}",
   );
 
@@ -232,7 +238,7 @@ sub get_queries {
 
 =head1 BUGS
 
-This has only been test with Pg -> postgresql databases
+currently works with Pg(Postgresql) and Sybase(Sybase AES)
 
 Sparse documentation.
 
