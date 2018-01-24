@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#probably not needed with systemd
+/usr/sbin/update-rc.d freeside defaults 23 01
+
+exit 0
+
