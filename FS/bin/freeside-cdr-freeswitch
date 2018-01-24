@@ -9,7 +9,7 @@ FS::cdr::Import->dbi_import(
   'database'            => 'fusionpbx',
   'table'               => 'v_xml_cdr',
   'status_column'       => 'freesidestatus',
-  'primary_key'         => 'uuid',:q
+  'primary_key'         => 'uuid',
   'column_map'          => { #freeside => fusionpbx
     #'cdrid'             => 'uuid', #Primary key
     #'' => 'CALL_SESSION_ID', # Call Session Id (unique per call session – GUID)
