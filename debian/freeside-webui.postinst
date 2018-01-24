@@ -1,0 +1,10 @@
+#!/bin/sh
+
+chown -R freeside /usr/local/etc/freeside
+rm -fr  /usr/local/etc/freeside/masondata/*
+
+#XXX systemd equivalent (start apache after postgres)
+/sbin/insserv -d
+
+exit 0
+
