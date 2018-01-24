@@ -22,7 +22,6 @@ use Encode;
                  generate_ps generate_pdf do_print
                  csv_from_fixed
                  ocr_image
-                 bytes_substr
                  money_pretty
                );
 
@@ -982,23 +981,26 @@ sub ocr_image {
 
 =item bytes_substr STRING, OFFSET[, LENGTH[, REPLACEMENT] ]
 
+DEPRECATED
+  Use Unicode::Truncate truncate_egc instead
+
 A replacement for "substr" that counts raw bytes rather than logical 
 characters. Unlike "bytes::substr", will suppress fragmented UTF-8 characters
 rather than output them. Unlike real "substr", is not an lvalue.
 
 =cut
 
-sub bytes_substr {
-  my ($string, $offset, $length, $repl) = @_;
-  my $bytes = substr(
-    Encode::encode('utf8', $string),
-    $offset,
-    $length,
-    Encode::encode('utf8', $repl)
-  );
-  my $chk = $DEBUG ? Encode::FB_WARN : Encode::FB_QUIET;
-  return Encode::decode('utf8', $bytes, $chk);
-}
+# sub bytes_substr {
+#   my ($string, $offset, $length, $repl) = @_;
+#   my $bytes = substr(
+#     Encode::encode('utf8', $string),
+#     $offset,
+#     $length,
+#     Encode::encode('utf8', $repl)
+#   );
+#   my $chk = $DEBUG ? Encode::FB_WARN : Encode::FB_QUIET;
+#   return Encode::decode('utf8', $bytes, $chk);
+# }
 
 =item money_pretty
 
