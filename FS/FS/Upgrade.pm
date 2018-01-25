@@ -311,7 +311,10 @@ sub upgrade {
       });
       foreach my $object ( @objects ) {
           my $payinfo = $object->decrypt($object->payinfo);
-          die "error decrypting payinfo" if $payinfo eq $object->payinfo;
+          if ( $payinfo eq $object->payinfo ) {
+            warn "error decrypting payinfo for $table: $payinfo\n";
+            next;
+          }
           $object->payinfo($payinfo);
           my $error = $object->replace;
           die $error if $error;
