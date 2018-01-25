@@ -61,8 +61,8 @@ if ( $opt_a ) {
   if ($most_recent) {
     if ($most_recent->cdrbatch =~ /^*Daily_(\d+)_/) {
       my $date = $1;
-      warn "limiting to dates > $date (from most recent batch)\n" if $opt_v;
-      @files = grep { /^*Daily_(\d+)_/ && $1 > $date } @files;
+      warn "limiting to dates >= $date (from most recent batch)\n" if $opt_v;
+      @files = grep { /^*Daily_(\d+)_/ && $1 >= $date } @files;
     }
   }
 }
