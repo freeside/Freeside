@@ -55,30 +55,34 @@ my $ls = $sftp->ls('.', wanted => qr/^UYM.*.zip$/i, names_only =>1 );
 my @files = @$ls;
 
 warn scalar(@files)." CDR files found.\n" if $opt_v;
-# apply date range
+# apply date range from last downloaded batch.
 if ( $opt_a ) {
   my $most_recent = $previous[0];
   if ($most_recent) {
-    if ($most_recent->cdrbatch =~ /^ani_networks-(\d+)/) {
+    if ($most_recent->cdrbatch =~ /^*Daily_(\d+)_/) {
       my $date = $1;
       warn "limiting to dates > $date (from most recent batch)\n" if $opt_v;
       @files = grep { /^*Daily_(\d+)_/ && $1 > $date } @files;
     }
-  } # else download them all
+  }
 }
+
+# apply a start date if given
 if ( $opt_s ) {
-  # start date
   # normalize date format
   $opt_s = time2str('%Y%m%d', str2time($opt_s)) if $opt_s =~ /\D/;
   warn "limiting to dates > $opt_s\n" if $opt_v;
   @files= grep { /^*Daily_(\d+)_/ && $1 >= $opt_s } @files;
 }
+
+# apply a end date if given
 if ( $opt_e ) {
-  # end date
+  # normalize date format
   $opt_e = time2str('%Y%m%d', str2time($opt_e)) if $opt_e =~ /\D/;
   warn "limiting to dates < $opt_e\n" if $opt_v;
   @files= grep { /^*Daily_(\d+)_/ && $1 < $opt_e } @files;
 }
+
 warn scalar(@files) ." files to be downloaded\n" if $opt_v;
 foreach my $file (@files) {
 
@@ -164,3 +168,55 @@ sub sftp {
   $sftp;
 }
 
+=head1 NAME
+
+freeside-cdr-aninetworks-import - Download CDR files from a remote server via SFTP
+
+=head1 SYNOPSIS
+
+  freeside-cdr-aninetworks-import [ -v ] [ -d ] [ -a ] [ -c cdrtypenum ]
+    [ -s startdate ] [ -e enddate ] user sftpuser sftppassword
+
+=head1 DESCRIPTION
+
+Command line tool to download CDR files from a remote server via SFTP
+and then import them into the database.
+
+-v: be verbose
+
+-d: enable sftp debugging (very noisy)
+
+-a: automatically choose start date from most recently downloaded batch
+
+-c: cdrtypenum to set, defaults to none
+
+-s: if specified, sets a startdate. startdate starts at 00:00:00
+
+-e: if specified, sets a enddate. enddate starts at 00:00:00 so if you wish to include enddate must add one more day.
+
+user: freeside username
+
+sftpuser: sftp user for arkftp.aninetworks.com
+
+sftppassword: password for sftp user
+
+=head1 EXAMPLES
+
+freeside-cdr-aninetworks-import -a <freeside user> <sftp login> <sftp password>
+will get all cdr files starting from the day of the last day processed.
+
+freeside-cdr-aninetworks-import -s 20180120 -e 20180121 <freeside user> <sftp login> <sftp password>
+will get all cdr files from 01/20/2018
+
+freeside-cdr-aninetworks-import -v -s $(date --date="-1 day" +\%Y\%m\%d) -e $(date +\%Y\%m\%d) <freeside user> <sftp login> <sftp password>
+will get all cdr files from yesterday
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cdr>
+
+=cut
+
+1;
