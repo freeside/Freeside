@@ -204,7 +204,7 @@ sub prorate_setup {
         # For some reason (probably user override), the bill date has been set even
         # though the package isn't billing yet. Start billing as though that was the
         # start date.
-        $sdate = $cust_pkg->bill;
+        $$sdate = $cust_pkg->bill;
         $cust_pkg->setup($cust_pkg->bill);
       }
       # Now figure the start and end of the period that contains the start date.
