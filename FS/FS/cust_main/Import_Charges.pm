@@ -68,7 +68,9 @@ sub batch_charge {
   if ( $format eq 'simple' ) {
     @fields = qw( custnum agent_custid amount pkg );
   } elsif ( $format eq 'ooma' ) {
-    @fields = ( 'userfield1', 'userfield2', 'userfield3', 'userfield4', 'userfield5', 'userfield6', 'userfield7', 'userfield8', 'userfield9', 'userfield10', 'amount', 'userfield12', 'userfield13', 'userfield14', 'userfield15', 'userfield16', 'userfield17', 'userfield18', 'pkg', 'userfield20', 'custnum', 'userfield22', 'userfield23', 'userfield24', 'userfield25', );
+    #@fields = ( 'userfield1', 'userfield2', 'userfield3', 'userfield4', 'userfield5', 'userfield6', 'userfield7', 'userfield8', 'userfield9', 'userfield10', 'amount', 'userfield12', 'userfield13', 'userfield14', 'userfield15', 'userfield16', 'userfield17', 'userfield18', 'pkg', 'userfield20', 'custnum', 'userfield22', 'userfield23', 'userfield24', 'userfield25', );
+    @fields = ( 'userfield1', 'userfield2', 'userfield3', 'userfield4', 'userfield5', 'userfield6', 'userfield7', 'userfield8', 'amount', 'userfield10', 'userfield11', 'userfield12', 'userfield13', 'userfield14', 'userfield15', 'userfield16', 'pkg', 'userfield18', 'custnum', 'userfield20', 'userfield21', 'userfield22', 'userfield23', 'userfield24', 'userfield25', );
+
   ##should charges to charge be a config option?
     %charges = (
       'DISABILITY ACCESS/ENHANCED 911 SERVICES SURCHARGE' => '1',
