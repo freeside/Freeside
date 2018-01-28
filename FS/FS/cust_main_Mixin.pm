@@ -348,10 +348,21 @@ sub cust_search_sql {
 
 =item email_search_result HASHREF
 
-Emails a notice to the specified customers.  Customers without 
-invoice email destinations will be skipped.
+Emails a notice to the specified customer's contact_email addresses.
 
-Parameters: 
+
+If the user has specified "Invoice recipients" on the send e-mail screen,
+contact_email rows containing the invoice_dest flag will be included.
+This option is default, if neither 'invoice' nor 'message' are present.
+
+If the user has specified "Message recipients" on the send e-mail screen,
+contact_email rows containing the message_dest flag will be included.
+
+The selection is indicated by the presence of the text 'message' or
+'invoice' within the to_contact_classnum argument.
+
+
+Parameters:
 
 =over 4
 
@@ -386,9 +397,19 @@ Text body
 
 =item to_contact_classnum
 
-The customer contact class (or classes, as a comma-separated list) to send
-the message to. If unspecified, will be sent to any contacts that are marked
-as invoice destinations (the equivalent of specifying 'invoice').
+This field contains a comma-separated list.  This list may contain:
+
+- the text "invoice" indicating emails should only be sent to contact_email
+  addresses with the invoice_dest flag set
+- the text "message" indicating emails should only be sent to contact_email
+  addresses with the message_dest flag set
+- numbers representing classnum id values for email contact classes.
+  If any classnum are present, emails should only be sent to contact_email
+  addresses where contact_email.classnum contains one of these classes.
+  The classnum 0 also includes where contact_email.classnum IS NULL
+
+If neither 'invoice' nor 'message' has been specified, this method will
+behave as if 'invoice' had been selected
 
 =back
 
@@ -483,8 +504,8 @@ sub email_search_result {
       next; # unlinked object; nothing else we can do
     }
 
-my %to = {};
-if ($to) { $to{'to'} = $to; }
+    my %to = ();
+    if ($to) { $to{'to'} = $to; }
 
     my $cust_msg = $msg_template->prepare(
       'cust_main' => $cust_main,
@@ -736,4 +757,3 @@ L<FS::cust_main>, L<FS::Record>
 =cut
 
 1;
-
