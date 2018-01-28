@@ -11,6 +11,7 @@
   <%$th%>Email</TH>
   <%$th%>Send invoices</TH>
   <%$th%>Self-service</TH>
+  <%$th%>Send messages</TH>
 % foreach my $phone_type (@phone_type) {
     <%$th%><% $phone_type->typename |h %></TH>
 % }
@@ -32,6 +33,7 @@
 %       my @contact_email = $contact->contact_email;
         <%$td%><% join(', ', map $_->emailaddress, @contact_email) %></TD>
         <%$td%><% $cust_contact->invoice_dest eq 'Y' ? 'Yes' : 'No' %></TD>
+        <%$td%><% $cust_contact->message_dest eq 'Y' ? 'Yes' : 'No' %></TD>
         <%$td%>
 %         if ( $cust_contact->selfservice_access ) {
             Enabled

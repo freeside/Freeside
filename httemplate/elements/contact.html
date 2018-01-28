@@ -42,7 +42,8 @@
 %         $value = join(', ', map $_->emailaddress, $contact->contact_email);
 %       } elsif ( $field eq 'selfservice_access'
 %              or $field eq 'comment'
-%              or $field eq 'invoice_dest' ) {
+%              or $field eq 'invoice_dest'
+%              or $field eq 'message_dest' ) {
 %         $value = $X_contact->get($field);
 %       } else {
 %         $value = $contact->get($field);
@@ -78,7 +79,7 @@
                       return false
                     }
             </SCRIPT>
-%         } elsif ( $field eq 'invoice_dest' ) {
+%         } elsif ( $field eq 'invoice_dest' || $field eq 'message_dest' ) {
 %           my $curr_value = $cgi->param($name . '_' . $field);
 %           $curr_value = $value if !defined($curr_value);
             <& select.html,
@@ -168,6 +169,7 @@ tie my %label, 'Tie::IxHash',
 
 unless ($opt{'for_prospect'}) {
   $label{'invoice_dest'} = 'Send&nbsp;invoices';
+  $label{'message_dest'} = 'Send&nbsp;messages';
   $label{'selfservice_access'} = 'Self-service';
 }
 

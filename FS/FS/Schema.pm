@@ -1793,7 +1793,8 @@ sub tables_hashref {
         'classnum',              'int', 'NULL',  '', '', '',
         'comment',           'varchar', 'NULL', 255, '', '',
         'selfservice_access',   'char', 'NULL',   1, '', '',
-        'invoice_dest',         'char', 'NULL',       1, '', '',
+        'invoice_dest',         'char', 'NULL',   1, '', '', # Y or NULL
+        'message_dest',         'char', 'NULL',   1, '', '', # Y or NULL
       ],
       'primary_key'  => 'custcontactnum',
       'unique'       => [ [ 'custnum', 'contactnum' ], ],

@@ -1,3 +1,11 @@
+<%doc>
+
+  This form works indirectly with the tables contact_email and
+  contact_phone.  The columns are updated against an FS::contact
+  object.  The insert/update methods of FS::contact will make the
+  necessary inserts/updates to contact_email and contact_phone.
+
+</%doc>
 <% include('elements/process.html',
      'table'          => 'cust_main',
      'error_redirect' => popurl(3). 'edit/cust_main-contacts.html?',
