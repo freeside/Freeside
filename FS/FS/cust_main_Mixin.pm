@@ -399,10 +399,10 @@ Text body
 
 This field contains a comma-separated list.  This list may contain:
 
-- the text "invoice" indicating emails should only be sent to contact_email
-  addresses with the invoice_dest flag set
-- the text "message" indicating emails should only be sent to contact_email
-  addresses with the message_dest flag set
+- the text "invoice" indicating contacts with invoice_dest flag should
+  be included
+- the text "message" indicating contacts with message_dest flag should
+  be included
 - numbers representing classnum id values for email contact classes.
   If any classnum are present, emails should only be sent to contact_email
   addresses where contact_email.classnum contains one of these classes.

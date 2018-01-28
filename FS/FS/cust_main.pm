@@ -3033,7 +3033,7 @@ contacts with a matching cust_contact.classnum are returned.  When a
 classnum of 0 is given, contacts with a null classnum are also included.
 
 Arguments may also contain the dest flag names 'invoice' or 'message'.
-If given, contacts who's invoice_dest and/or invoice_message flags are
+If given, contacts who's invoice_dest and/or message_dest flags are
 not set to 'Y' will be excluded.
 
 =cut

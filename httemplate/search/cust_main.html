@@ -140,8 +140,14 @@ my $menubar = [];
 
 if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
 
+  # URI::query_from does not support hashref
+  #   results in: ...&contacts=HASH(0x55e16cb81da8)&...
+  my %query_hash = %search_hash;
+  delete $query_hash{contacts}
+    if exists $query_hash{contacts} && ref $query_hash{contacts};
+
   my $uri = new URI;
-  $uri->query_form( \%search_hash );
+  $uri->query_form( \%query_hash );
   my $query = $uri->query;
 
   push @$menubar, emt('Email a notice to these customers') =>
