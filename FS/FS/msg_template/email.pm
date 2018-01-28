@@ -210,6 +210,22 @@ go away in the future.
 
 A L<MIME::Entity> (or arrayref of them) to attach to the message.
 
+=item to_contact_classnum
+
+Set a string containing a comma-separated list.  This list may contain:
+
+- the text "invoice" indicating emails should only be sent to contact_email
+  addresses with the invoice_dest flag set
+- the text "message" indicating emails should only be sent to contact_email
+  addresses with the message_dest flag set
+  - numbers representing classnum id values for email contact classes.
+    If any classnum are present, emails should only be sent to contact_email
+    addresses where contact_email.classnum contains one of these classes.
+    The classnum 0 also includes where contact_email.classnum IS NULL
+
+If neither 'invoice' nor 'message' has been specified, this method will
+behave as if 'invoice' had been selected
+
 =cut
 
 =back
@@ -296,8 +312,16 @@ sub prepare {
 
     my $classnum = $opt{'to_contact_classnum'} || '';
     my @classes = ref($classnum) ? @$classnum : split(',', $classnum);
-    # traditional behavior: send to all invoice recipients
-    @classes = ('invoice') unless @classes;
+
+    # There are two e-mail opt-in flags per contact_email address.
+    # If neither 'invoice' nor 'message' has been specified, default
+    # to 'invoice'.
+    #
+    # This default supports the legacy behavior of
+    #    send to all invoice recipients
+    push @classes,'invoice'
+      unless grep {$_ eq 'invoice' || $_ eq 'message'} @classes;
+
     @to = $cust_main->contact_list_email(@classes);
     # not guaranteed to produce contacts, but then customers aren't
     # guaranteed to have email addresses on file. in that case, env_to
@@ -625,4 +649,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-

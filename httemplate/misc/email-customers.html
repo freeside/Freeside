@@ -171,16 +171,18 @@ Template:
  <TD>Send to contacts:</TD>
  <TD>
    <div id="contactclassesdiv">
-  <& /elements/checkboxes.html,
-    'style'               => 'display: inline; vertical-align: top',
-    'disable_links'       => 1,
-    'names_list'          => \@contact_checkboxes,
-    'element_name_prefix' => 'contact_class_',
-    'checked_callback'    => sub {
-      my($cgi, $name) = @_;
-      $name eq 'invoice' #others default to unchecked
-    },
-  &>
+     <& /elements/checkboxes.html,
+       'style'               => 'display: inline; vertical-align: top',
+       'disable_links'       => 1,
+       'names_list'          => \@contact_checkboxes,
+       'element_name_prefix' => 'contact_class_',
+       'checked_callback'    => sub {
+         # Called for each checkbox
+         # Return true to default as checked, false as unchecked
+         my($cgi, $name) = @_;
+         $name eq 'message'
+       },
+     &>
    </div>
 % if ($send_to_domain) {
    <div>
@@ -422,6 +424,8 @@ if ( !$cgi->param('preview') ) {
         push @contact_classnum, $1;
         if ( $1 eq 'invoice' ) {
           push @contact_classname, 'Invoice recipients';
+        } elsif ( $1 eq 'message' ) {
+          push @contact_classname, 'Message recipients';
         } else {
           my $contact_class = FS::contact_class->by_key($1);
           push @contact_classname, encode_entities($contact_class->classname);
@@ -432,7 +436,8 @@ if ( !$cgi->param('preview') ) {
 }
 
 my @contact_checkboxes = (
-  [ 'invoice' => { label => 'Invoice recipients' } ]
+  [ 'message' => { label => 'Message recipients' } ],
+  [ 'invoice' => { label => 'Invoice recipients' } ],
 );
 
 foreach my $class (qsearch('contact_class', { disabled => '' })) {
