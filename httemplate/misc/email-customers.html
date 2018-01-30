@@ -174,7 +174,7 @@ Template:
      <& /elements/checkboxes.html,
        'style'               => 'display: inline; vertical-align: top',
        'disable_links'       => 1,
-       'names_list'          => \@contact_checkboxes,
+       'names_list'          => \@optin_checkboxes,
        'element_name_prefix' => 'contact_class_',
        'checked_callback'    => sub {
          # Called for each checkbox
@@ -199,6 +199,27 @@ Template:
    </div>
 % }
  </TD>
+% if (@active_classes) {
+</tr>
+<tr>
+<TD>Contact Type:</TD>
+<TD>
+  <div id="contactclassesdiv">
+    <& /elements/checkboxes.html,
+      'style'               => 'display: inline; vertical-align: top',
+      'disable_links'       => 1,
+      'names_list'          => \@classnum_checkboxes,
+      'element_name_prefix' => 'contact_class_',
+      'checked_callback'    => sub {
+        # Called for each checkbox
+        # Return true to default as checked, false as unchecked
+        my($cgi, $name) = @_;
+        exists $classnum_ischecked{$name};
+      },
+    &>
+  </div>
+</TD>
+% }
 </TR>
 </TABLE>
 <BR>
@@ -342,6 +363,21 @@ if ( !$cgi->param('preview') ) {
 
 } else {
 
+  my @checked_email_dest;
+  my @checked_contact_type;
+  for ($cgi->param) {
+    if (/^contact_class_(.+)$/) {
+      my $f = $1;
+      if ($f eq 'invoice' || $f eq 'message') {
+        push @checked_email_dest, $f;
+      } elsif ( $f =~ /^\d+$/ ) {
+        push @checked_contact_type, $f;
+      }
+    }
+  }
+  $search{with_email_dest} = \@checked_email_dest if @checked_email_dest;
+  $search{with_contact_type} = \@checked_contact_type if @checked_contact_type;
+
   my $sql_query = "FS::$table"->search(\%search);
   my $count_query = delete($sql_query->{'count_query'});
   my $count_sth = dbh->prepare($count_query)
@@ -391,6 +427,8 @@ if ( !$cgi->param('preview') ) {
     $sql_query->{'select'} = "$table.*";
     $sql_query->{'order_by'} = '';
     my $object = qsearchs($sql_query);
+    # Could use better error handling here...
+    die "No customers match the search criteria" unless ref $object;
     $cust = $object->cust_main;
     my %msgopts = (
       'cust_main' => $cust,
@@ -435,16 +473,35 @@ if ( !$cgi->param('preview') ) {
   }
 }
 
-my @contact_checkboxes = (
+# Build data structures for "Opt In" and "Contact Type" checkboxes
+#
+# By default, message recipients will be selected, this is a message.
+# By default, all Contact Types will be selected, but this may be
+#   overridden by passing 'classnums' get/post values.  If no contact
+#   types have been defined, the option will not be presented.
+
+my @active_classes = qsearch(contact_class => {disabled => ''} );
+
+$CGI::LIST_CONTEXT_WARN = 0;
+my @classnums = grep{ /^\d+$/ } $cgi->param('classnums');
+
+my %classnum_ischecked;
+if (@classnums) {
+  # values passed to form
+  $classnum_ischecked{$_} = 1 for @classnums;
+} else {
+  # default values
+  $classnum_ischecked{$_->classnum} = 1 for @active_classes;
+  $classnum_ischecked{0} = 1;
+}
+
+my @optin_checkboxes = (
   [ 'message' => { label => 'Message recipients' } ],
   [ 'invoice' => { label => 'Invoice recipients' } ],
 );
-
-foreach my $class (qsearch('contact_class', { disabled => '' })) {
-  push @contact_checkboxes, [
-    $class->classnum,
-    { label => $class->classname }
-  ];
-}
+my @classnum_checkboxes = (
+  [ '0' => { label => '(None)' }],
+  map { [ $_->classnum => {label => $_->classname} ] } @active_classes,
+);
 
 </%init>

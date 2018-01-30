@@ -1,0 +1,32 @@
+<%doc>
+
+  Displays Contact Types as a multi-select box.
+
+  If no non-disabled Contact Types have been defined in contact_class table,
+  renders a hidden input field with a blank value.
+
+</%doc>
+
+% if ($has_types) {
+<TR>
+  <TD ALIGN="right"><% $opt{'label'} || emt('Contact Type') %></TD>
+  <TD>
+    <% include( '/elements/select-multiple-contact_class.html', %opt ) %>
+  </TD>
+</TR>
+% } else {
+<INPUT TYPE="hidden" NAME="<% $opt{field} %>" VALUE="">
+% }
+
+<%init>
+
+my %opt = @_;
+$opt{field} ||= $opt{element_name} ||= 'classnum';
+
+my $has_types =()= qsearch({
+  table     => 'contact_class',
+  hashref   => { disabled => '' },
+  extra_sql => ' LIMIT 1 ',
+});
+
+</%init>

@@ -3072,14 +3072,15 @@ sub contact_list {
 
   # WHERE ...
   # AND (
-  #   ( cust_contact.classnum IN (1,2,3) )
-  #   OR
-  #   ( cust_contact.classnum IS NULL )
-  #
-  #   AND (
-  #     ( cust_contact.invoice_dest = 'Y' )
+  #   (
+  #     cust_contact.classnum IN (1,2,3)
   #     OR
-  #     ( cust_contact.message_dest = 'Y' )
+  #     cust_contact.classnum IS NULL
+  #   )
+  #   AND (
+  #     cust_contact.invoice_dest = 'Y'
+  #     OR
+  #     cust_contact.message_dest = 'Y'
   #   )
   # )
 
@@ -3105,12 +3106,14 @@ sub contact_list {
     $search->{extra_sql} .= ' AND ( ';
 
       if (@or_classnum) {
-        $search->{extra_sql} .= join ' OR ', map {" ($_) "} @or_classnum;
+        $search->{extra_sql} .= ' ( ';
+        $search->{extra_sql} .= join ' OR ', map {" $_ "} @or_classnum;
+        $search->{extra_sql} .= ' ) ';
         $search->{extra_sql} .= ' AND ( ' if @and_dest;
       }
 
       if (@and_dest) {
-        $search->{extra_sql} .= join ' OR ', map {" ($_) "} @and_dest;
+        $search->{extra_sql} .= join ' OR ', map {" $_ "} @and_dest;
         $search->{extra_sql} .= ' ) ' if @or_classnum;
       }
 

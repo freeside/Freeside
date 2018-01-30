@@ -21,6 +21,11 @@
        'curr_value' => scalar( $cgi->param('link') ),
   &>
 
+  <& /elements/tr-select-multiple-contact_class.html,
+    label => 'Contact Type',
+    field => 'classnum',
+  &>
+
 </FORM>
 
 </TABLE>

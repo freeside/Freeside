@@ -1,6 +1,7 @@
 package FS::cust_main::Search;
 
 use strict;
+use Carp qw( croak );
 use base qw( Exporter );
 use vars qw( @EXPORT_OK $DEBUG $me $conf @fuzzyfields );
 use String::Approx qw(amatch);
@@ -804,15 +805,51 @@ sub search {
     unless $params->{'cancelled_pkgs'};
 
   ##
-  # "with email address(es)" checkbox
+  # "with email address(es)" checkbox,
+  #    also optionally: with_email_dest and with_contact_type
   ##
 
-  push @where,
-    'EXISTS ( SELECT 1 FROM contact_email
+  if ($params->{with_email}) {
+    my @email_dest;
+    my $email_dest_sql;
+    my $contact_type_sql;
+
+    if ($params->{with_email_dest}) {
+      croak unless ref $params->{with_email_dest} eq 'ARRAY';
+
+      @email_dest = @{$params->{with_email_dest}};
+      $email_dest_sql =
+        " AND ( ".
+        join(' OR ',map(" cust_contact.${_}_dest IS NOT NULL ", @email_dest)).
+        " ) ";
+        # Can't use message_dist = 'Y' because single quotes are escaped later
+    }
+    if ($params->{with_contact_type}) {
+      croak unless ref $params->{with_contact_type} eq 'ARRAY';
+
+      my @contact_type = grep {/^\d+$/ && $_ > 0} @{$params->{with_contact_type}};
+      my $has_null_type = 0;
+      $has_null_type = 1 if grep { $_ eq 0 } @{$params->{with_contact_type}};
+      my $hnt_sql;
+      if ($has_null_type) {
+        $hnt_sql  = ' OR ' if @contact_type;
+        $hnt_sql .= ' cust_contact.classnum IS NULL ';
+      }
+
+      $contact_type_sql =
+        " AND ( ".
+        join(' OR ', map(" cust_contact.classnum = $_ ", @contact_type)).
+        $hnt_sql.
+        " ) ";
+    }
+    push @where,
+      "EXISTS ( SELECT 1 FROM contact_email
                 JOIN cust_contact USING (contactnum)
                 WHERE cust_contact.custnum = cust_main.custnum
-            )'
-    if $params->{'with_email'};
+                $email_dest_sql
+                $contact_type_sql
+              ) ";
+  }
 
   ##
   # "with postal mail invoices" checkbox
@@ -1390,4 +1427,3 @@ L<FS::cust_main>, L<FS::Record>
 =cut
 
 1;
-
