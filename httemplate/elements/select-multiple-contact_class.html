@@ -1,0 +1,21 @@
+<%doc>
+
+Display a multi-select box containing all Email Types listed in
+the contact_class table.
+
+NOTE:
+  Don't confuse "Contact Type" (contact_email.classnum) with
+  "Customer Class" (cust_main.classnum)
+
+</%doc>
+<% include( '/elements/select-table.html',
+    table        => 'contact_class',
+    hashref      => { disabled => '' },
+    name_col     => 'classname',
+    field        => 'classnum',
+    pre_options  => [ 0 => '(No Type)' ],
+    multiple     => 1,
+    all_selected => 1,
+    @_,
+  )
+%>

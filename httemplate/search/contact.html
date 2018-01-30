@@ -11,11 +11,18 @@
   header        => \@header,
   fields        => \@fields,
   links         => \@links,
+  html_init     => $send_email_link,
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
+
+# Catch classnum values from multi-select box
+# A classnum of 0 indicates to include rows where classnum IS NULL
+$CGI::LIST_CONTEXT_WARN = 0;
+my @classnum      = grep{ /^\d+$/ && $_ > 0 } $cgi->param('classnum');
+my $classnum_null = grep{ $_ eq 0           } $cgi->param('classnum');
 
 my @select = 'contact.contactnum AS contact_contactnum'; #if we select it as bare contactnum, the multi-customer listings go away
 push @select, map "contact.$_", qw( first last title );
@@ -53,6 +60,18 @@ my $home_phone_sub = sub {
   join(', ', map $_->phonenum, @contact_homephone);
 };
 
+my $invoice_dest_sub = sub {
+  my $contact = shift;
+  my $cust_contact = qsearchs(cust_contact => {custnum => $contact->custnum});
+  $cust_contact->invoice_dest ? 'Y' : 'N';
+};
+
+my $message_dest_sub = sub {
+  my $contact = shift;
+  my $cust_contact = qsearchs(cust_contact => {custnum => $contact->custnum});
+  $cust_contact->message_dest ? 'Y' : 'N';
+};
+
 my $link; #for closure in this sub, we'll define it later
 my $contact_classname_sub = sub {
   my $contact = shift;
@@ -63,14 +82,14 @@ my $contact_classname_sub = sub {
   } elsif ( $link eq 'prospect_main' ) {
     $X_contact = qsearchs('prospect_contact', { %hash, 'prospectnum' => $contact->prospectnum } );
   } else {
-    die 'guru meditation #5555';
+    die "guru meditation #5555 (\$link: $link)";
   }
   $X_contact->contact_classname;
 };
 
-my @header = ( 'First', 'Last', 'Title', 'Email', 'Work Phone', 'Mobile Phone', 'Home Phone', 'Type' );
-my @fields = ( 'first', 'last', 'title', $email_sub, $work_phone_sub, $mobile_phone_sub, $home_phone_sub, $contact_classname_sub );
-my @links = ( '', '', '', '', '', '', '', '', );
+my @header = ( 'First', 'Last', 'Title', 'Email', 'Work Phone', 'Mobile Phone', 'Home Phone', 'Type', 'Invoice Destination', 'Message Destination');
+my @fields = ( 'first', 'last', 'title', $email_sub, $work_phone_sub, $mobile_phone_sub, $home_phone_sub, $contact_classname_sub, $invoice_dest_sub, $message_dest_sub );
+my @links = ( '', '', '', '', '', '', '', '', '', '');
 
 my $company_link = '';
 
@@ -93,6 +112,14 @@ if ( $link ) {
       ' LEFT JOIN cust_contact USING ( contactnum ) '.
       ' LEFT JOIN cust_main ON ( cust_contact.custnum = cust_main.custnum )';
     $extra_sql = ' cust_contact.custnum IS NOT NULL ';
+    if (@classnum || $classnum_null) {
+      $extra_sql .= ' AND ( ';
+      $extra_sql .= ' cust_contact.classnum IN ('.join(',',@classnum).') '
+        if @classnum;
+      $extra_sql .= ' OR ' if $classnum_null && @classnum;
+      $extra_sql .= ' cust_contact.classnum IS NULL ' if $classnum_null;
+      $extra_sql .= ' ) ';
+    }
     $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
   } elsif ( $link eq 'prospect_main' ) {
     push @header, 'Prospect';
@@ -103,6 +130,14 @@ if ( $link ) {
       ' LEFT JOIN prospect_contact USING ( contactnum ) '.
       ' LEFT JOIN prospect_main ON ( prospect_contact.prospectnum = prospect_main.prospectnum )';
     $extra_sql = ' prospect_contact.prospectnum IS NOT NULL ';
+    if (@classnum || $classnum_null) {
+      $extra_sql .= ' AND ( ';
+      $extra_sql .= ' prospect_contact.classnum IN ('.join(',',@classnum).') '
+        if @classnum;
+      $extra_sql .= ' OR ' if $classnum_null && @classnum;
+      $extra_sql .= ' prospect_contact.classnum IS NULL ' if $classnum_null;
+      $extra_sql .= ' ) ';
+    }
     $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
   } else {
     die "don't know how to report on contacts linked to specified table";
@@ -122,5 +157,22 @@ push @fields, 'comment';
 
 $extra_sql = (keys(%hash) ? ' AND ' : ' WHERE '). $extra_sql
  if $extra_sql;
+
+my $classnum_url_part;
+if (@classnum) {
+  $classnum_url_part = join '', map{ "&classnums=$_" } @classnum;
+  $classnum_url_part .= '&classnums=0' if $classnum_null;
+}
+my $send_email_link =
+  "<a href=\"${fsurl}misc/email-customers.html?".
+    'table=cust_main'.
+    '&POST=on'.
+    '&all_pkg_classnums=0'.
+    '&all_tags=0'.
+    '&any_pkg_status=0'.
+    '&refnum=1'.
+    '&with_email=on'.
+    $classnum_url_part.
+  "\">Email a notice to these customers</a>";
 
 </%init>
