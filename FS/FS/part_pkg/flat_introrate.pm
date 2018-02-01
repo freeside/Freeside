@@ -94,7 +94,7 @@ sub base_recur {
 
 sub item_discount {
   my ($self, $cust_pkg) = @_;
-  return unless $self->option('show_as_discount');
+  return unless $self->option('show_as_discount',1);
   my $intro_end = $self->intro_end($cust_pkg);
   my $amount = sprintf('%.2f',
                 $self->option('intro_fee') - $self->option('recur_fee')

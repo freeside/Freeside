@@ -863,7 +863,7 @@ sub _item_discount {
   # show introductory rate as a pseudo-discount
   if (!$d) { # this will conflict with showing real discounts
     my $part_pkg = $self->part_pkg;
-    if ( $part_pkg and $part_pkg->option('show_as_discount') ) {
+    if ( $part_pkg and $part_pkg->option('show_as_discount',1) ) {
       my $cust_pkg = $self->cust_pkg;
       my $intro_end = $part_pkg->intro_end($cust_pkg);
       my $_date = $self->cust_bill->_date;
