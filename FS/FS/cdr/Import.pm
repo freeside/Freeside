@@ -110,7 +110,7 @@ sub dbi_import {
   $sth->execute or die $sth->errstr. " executing $sql";
 
   my $cdr_batch = new FS::cdr_batch({ 
-      'cdrbatch' => 'IVR-import-'. time2str('%Y/%m/%d-%T',time),
+      'cdrbatch' => $args{batch_name} . '-import-'. time2str('%Y/%m/%d-%T',time),
     });
   my $error = $cdr_batch->insert;
   die $error if $error;
