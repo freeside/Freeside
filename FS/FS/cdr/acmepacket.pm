@@ -130,17 +130,28 @@ our %info = (
     # clid, dst, src CDR field formatted as one of the following:
     #   'WIRELESS CALLER'<sip:12513001300@4.2.2.2:5060;user=phone>;tag=SDepng302
     #   <sip:12513001300@4.2.2.2:5060;user=phone>;tag=SDepng302
+    #   '12513001300'<sip:4.2.2.2:5060;user=phone>;tag=SDepng302
 
     # clid
     $out[0] = $out[0] =~ /^\'(.+)\'/ ? $1 : "";
 
     # src, dst
-    # All of the sample data given shows sip connections.  In case the same
-    # switch is hooked into another circuit type in the future, we'll just
-    # tease out a length 7+ number not contained in the caller-id-text field
+    # Use the 7+ digit number as the src/dst phone number.
+    # Prefer using the number within <sip> label.  If there is not one,
+    # allow using number from caller-id text field.
     for (1,2) {
+      my $f = $out[$_];
       $out[$_] =~ s/^\'.+\'//g; # strip caller id label portion
-      $out[$_] = $out[$_] =~ /(\d{7,})/ ? $1 : undef;
+      if ($out[$_] =~ /(\d{7,})/) {
+        # Using number from <sip>
+        $out[$_] = $1;
+      } elsif ($f =~ /(\d{7,})/) {
+        # Using number from caller-id text
+        $out[$_] = $1;
+      } else {
+        # No phone number, perhaps an IP only call
+        $out[$_] = undef;
+      }
     }
 
     if ($DEBUG) {
