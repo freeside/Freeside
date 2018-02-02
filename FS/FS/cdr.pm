@@ -1733,6 +1733,14 @@ sub _cdr_date_parse {
     # Telos 2014-10-10T05:30:33Z
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
     $options{gmt} = 1;
+  } elsif ( $date =~ /^(\d+):(\d+):(\d+)\.\d+ \w+ (\w+) (\d+) (\d+)$/ ) {
+    ($hour, $min, $sec, $mon, $day, $year) = ( $1, $2, $3, $4, $5, $6 );
+    $mon = { # Acme Packet: 15:54:56.868 PST DEC 18 2017
+      # My best guess of month abbv they may use
+      JAN => '01', FEB => '02', MAR => '03', APR => '04',
+      MAY => '05', JUN => '06', JUL => '07', AUG => '08',
+      SEP => '09', OCT => '10', NOV => '11', DEC => '12'
+    }->{$mon};
   } else {
      die "unparsable date: $date"; #maybe we shouldn't die...
   }
@@ -1932,4 +1940,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-
