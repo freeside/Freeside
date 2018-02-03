@@ -1659,7 +1659,12 @@ foreach my $INC ( @INC ) {
 
 tie my %import_formats, 'Tie::IxHash',
   map  { $_ => $cdr_info{$_}->{'name'} }
-  sort { $cdr_info{$a}->{'weight'} <=> $cdr_info{$b}->{'weight'} }
+  
+  #this is not doing anything useful anymore
+  #sort { $cdr_info{$a}->{'weight'} <=> $cdr_info{$b}->{'weight'} }
+  #so just sort alpha
+  sort { lc($cdr_info{$a}->{'name'}) cmp lc($cdr_info{$b}->{'name'}) }
+
   grep { exists($cdr_info{$_}->{'import_fields'}) }
   keys %cdr_info;
 
