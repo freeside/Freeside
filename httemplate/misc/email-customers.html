@@ -180,7 +180,7 @@ Template:
          # Called for each checkbox
          # Return true to default as checked, false as unchecked
          my($cgi, $name) = @_;
-         $name eq 'message'
+         exists $dest_ischecked{$name};
        },
      &>
    </div>
@@ -466,7 +466,9 @@ if ( !$cgi->param('preview') ) {
           push @contact_classname, 'Message recipients';
         } else {
           my $contact_class = FS::contact_class->by_key($1);
-          push @contact_classname, encode_entities($contact_class->classname);
+          push @contact_classname, encode_entities(
+            $contact_class ? $contact_class->classname : '(none)'
+          );
         }
       }
     }
@@ -482,18 +484,29 @@ if ( !$cgi->param('preview') ) {
 
 my @active_classes = qsearch(contact_class => {disabled => ''} );
 
-$CGI::LIST_CONTEXT_WARN = 0;
-my @classnums = grep{ /^\d+$/ } $cgi->param('classnums');
-
 my %classnum_ischecked;
-if (@classnums) {
-  # values passed to form
-  $classnum_ischecked{$_} = 1 for @classnums;
+my %dest_ischecked;
+
+$CGI::LIST_CONTEXT_WARN = 0;
+if ( my @in_classnums = $cgi->param('classnums') ) {
+  # Set checked boxes from form input
+  for my $v (@in_classnums) {
+
+    if ( $v =~ /^\d+$/ ) {
+      $classnum_ischecked{$v} = 1
+    } elsif ( $v =~ /^(invoice|message)$/ ) {
+      $dest_ischecked{$v} = 1;
+    }
+
+  }
 } else {
-  # default values
+  # Checked boxes default values
   $classnum_ischecked{$_->classnum} = 1 for @active_classes;
   $classnum_ischecked{0} = 1;
 }
+
+# At least one destination is required
+$dest_ischecked{message} = 1 unless %dest_ischecked;
 
 my @optin_checkboxes = (
   [ 'message' => { label => 'Message recipients' } ],
