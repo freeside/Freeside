@@ -4,22 +4,20 @@
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-%#  This has never been actually supported on this report.
-%#  Remove the selectbox until support is implemented
-%#
-%#  <& /elements/tr-select-agent.html,
-%#                 'curr_value'    => scalar( $cgi->param('agentnum') ),
-%#                 'label'         => emt('Contacts for agent: '),
-%#                 'disable_empty' => 0,
-%#  &>
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => emt('Contacts for agent: '),
+                 'disable_empty' => 0,
+  &>
 
+% # Selecting contacts and prospects at the same time has been sacrificed
+% # for agent virtualization
   <& /elements/tr-select.html,
-       'label'      => 'Contact source:', #??? not "type" - contacts have a type
+       'label'      => 'Contact source:',
        'field'      => 'link',
-       'options'    => [ 'prospect_main', 'cust_main', 'both' ],
+       'options'    => [ 'prospect_main', 'cust_main' ],
        'labels'     => { 'prospect_main' => 'Prospect contacts',
                          'cust_main'     => 'Customer contacts',
-                         'both'          => 'All contacts',
                        },
        'curr_value' => scalar( $cgi->param('link') ),
   &>

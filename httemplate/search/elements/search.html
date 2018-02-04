@@ -119,7 +119,11 @@ Example:
                                #(query needs to be a qsearch hashref and
                                # header & fields need to be defined)
 
-    #handling agent virtualization
+    # Agent Virtualization parameters:
+    #   In this context, only available if your selected table has agentnum.
+    #   You must also include agentnum as a SELECT column in your SQL query,
+    #     or experience non-obvious problems
+    #
     'agent_virt'            => 1, # set true if this search should be
                                   # agent-virtualized
     'agent_null'            => 1, # set true to view global records always
