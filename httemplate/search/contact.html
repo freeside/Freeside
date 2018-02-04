@@ -3,15 +3,15 @@
   name_singular => 'contact',
   query         => {
     select    => join(', ', @select),
-    table     => 'contact',
+    table     => $link,
     addl_from => $addl_from,
-    hashref   => {}, #\%hash,
+    hashref   => {},
     extra_sql => "WHERE $extra_sql",
     order_by  => "ORDER BY contact_last,contact_first,contact_email_emailaddress"
   },
   count_query => "
     SELECT COUNT(*)
-    FROM contact
+    FROM $link
     $addl_from
     WHERE $extra_sql
   ",
@@ -19,7 +19,8 @@
   fields    => \@fields,
   links     => \@links,
   html_init => $send_email_link,
-#  agent_virt    => 1, # Not supported unless table is cust_main/prospect_main
+  agent_virt => 1,
+  agent_pos  => 11,
 &>
 <%init>
 
@@ -39,7 +40,6 @@ my $classnum_null = grep{ $_ eq 0           } $cgi->param('classnum');
 my @dest = grep{ /^(message|invoice)$/ } $cgi->param('dest');
 @dest = ('message') unless @dest;
 
-
 # Cache the contact_class table
 my %classname =
   map {$_->classnum => $_->classname}
@@ -53,14 +53,11 @@ my %colmap = (
       contact => [qw/first last title contactnum/],
       contact_email => [qw/emailaddress/],
     },
-    joinsql => "
-      LEFT JOIN contact_email
-        ON (contact.contactnum = contact_email.contactnum)
-    ",
+    joinsql => "",
   },
 
   # These are included if we're viewing customer records
-  customer => {
+  cust_main => {
     cols => {
       cust_main => [qw/first last company/],
       cust_contact => [qw/
@@ -69,23 +66,27 @@ my %colmap = (
     },
     joinsql => "
       LEFT JOIN cust_contact
-        ON (contact.contactnum = cust_contact.contactnum)
-      LEFT JOIN cust_main
-        ON (cust_contact.custnum = cust_main.custnum)
+        ON (cust_main.custnum = cust_contact.custnum)
+      LEFT JOIN contact
+        on (cust_contact.contactnum = contact.contactnum)
+      LEFT JOIN contact_email
+        ON (cust_contact.contactnum = contact_email.contactnum)
     ",
   },
 
   # These are included if we're viewing prospect records
-  prospect => {
+  prospect_main => {
     cols => {
       prospect_main => [qw/company/],
       prospect_contact => [qw/prospectnum classnum comment/],
     },
     joinsql => "
       LEFT JOIN prospect_contact
-        ON (contact.contactnum = prospect_contact.contactnum)
-      LEFT JOIN prospect_main
-        ON (prospect_contact.prospectnum = prospect_main.prospectnum)
+        ON (prospect_main.prospectnum = prospect_contact.prospectnum)
+      LEFT JOIN contact
+        on (prospect_contact.contactnum = contact.contactnum)
+      LEFT JOIN contact_email
+        ON (prospect_contact.contactnum = contact_email.contactnum)
     ",
   },
 );
@@ -94,14 +95,16 @@ my @select;
 my $addl_from;
 my $extra_sql;
 my $hashref;
-my $link = $cgi->param('link'); # cust_main, prospect_main or both
+my $link = $cgi->param('link'); # cust_main or prospect_main
 
-my @rectypes = ('common');
-push @rectypes,'customer' if $link eq 'cust_main'     || $link eq 'both';
-push @rectypes,'prospect' if $link eq 'prospect_main' || $link eq 'both';
+push @select,'agentnum';
+
+# this shouldn't happen without funny-busines
+die "Invalid \$link type ($link)"
+  unless $link eq 'cust_main' || $link eq 'prospect_main';
 
 # Build @select and $addl_from
-for my $key (@rectypes) {
+for my $key ('common', $link) {
   $addl_from .= $colmap{$key}->{joinsql};
   my $cols = $colmap{$key}->{cols};
   for my $tbl (keys %{$cols}) {
@@ -109,39 +112,19 @@ for my $key (@rectypes) {
   }
 }
 
-# Filter for custnum/prospectnum
-$extra_sql .= ' (';
-$extra_sql .= "cust_contact.custnum IS NOT NULL"
-  if $link eq 'cust_main' || $link eq 'both';
-$extra_sql .= " OR " if $link eq 'both';
-$extra_sql .= "prospect_contact.prospectnum IS NOT NULL"
-  if $link eq 'prospect_main' || $link eq 'both';
-$extra_sql .= ') ';
-
 # Filter for Contact Type
 if (@classnum || $classnum_null) {
   my @stm;
-
-  push @stm, 'cust_contact.classnum IN ('.join(',',@classnum).')'
-    if @classnum && ($link eq 'cust_main' || $link eq 'both');
-
-  push @stm, 'prospect_contact.classnum IN ('.join(',',@classnum).')'
-    if @classnum && ($link eq 'prospect_main' || $link eq 'both');
-
-  push @stm, 'cust_contact.classnum IS NULL'
-    if $classnum_null && ($link eq 'cust_main' || $link eq 'both');
-
-  push @stm, 'prospect_contact.classnum IS NULL'
-    if $classnum_null && ($link eq 'prospect_main' || $link eq 'both');
-
-  $extra_sql .= "\nAND (" . join(' OR ',@stm) . ') ';
+  my $tbl = $link eq 'cust_main' ? 'cust_contact' : 'prospect_contact';
+  push @stm, "${tbl}.classnum IN (".join(',',@classnum).')' if @classnum;
+  push @stm, "${tbl}.classnum IS NULL" if $classnum_null;
+  $extra_sql .= " (" . join(' OR ',@stm) . ') ';
 }
 
 # Filter for destination
-if (@dest && ($link eq 'cust_main' || $link eq 'both')) {
+if (@dest && $link eq 'cust_main') {
   my @stm;
   push @stm, "cust_contact.${_}_dest IS NOT NULL" for @dest;
-  push @stm, "prospect_contact.prospectnum IS NOT NULL" if $link eq 'both';
   $extra_sql .= "\nAND (".join(' OR ',@stm).') ';
 }
 
@@ -150,13 +133,14 @@ if ($DEBUG) {
   print "select \n";
   print join ",\n",@select;
   print "\n";
-  print "from contact \n";
+  print "from $link \n";
   print "$addl_from\n";
   print "WHERE \n $extra_sql\n";
   print "</pre>\n";
 }
 
 # Prepare to display phone numbers
+# adds 3 additional queries per table record :-(
 my %phonetype = (qw/1 Work 2 Home 3 Mobile 4 Fax/);
 my %phoneid   = (qw/Work 1 Home 2 Mobile 3 Fax 4/);
 my $get_phone_sub = sub {
@@ -178,13 +162,13 @@ my %classname =
 
 # And now for something completly different:
 my @report = (
-  { label => 'First', field => sub { shift->contact_first }},
-  { label => 'Last', field => sub { shift->contact_last }},
-  { label => 'Title', field => sub { shift->contact_title }},
+  { label => 'First',  field => sub { shift->contact_first }},
+  { label => 'Last',   field => sub { shift->contact_last }},
+  { label => 'Title',  field => sub { shift->contact_title }},
   { label => 'E-Mail', field => sub { shift->contact_email_emailaddress }},
-  { label => 'Work Phone', field => $get_phone_sub->('Work') },
+  { label => 'Work Phone',   field => $get_phone_sub->('Work') },
   { label => 'Mobile Phone', field => $get_phone_sub->('Mobile') },
-  { label => 'Home Phone', field => $get_phone_sub->('Home') },
+  { label => 'Home Phone',   field => $get_phone_sub->('Home') },
   { label => 'Type',
     field => sub {
       my $rec = shift;
@@ -213,9 +197,9 @@ my @report = (
   { label => 'Customer',
     link  => sub {
       my $rec = shift;
-      $rec->prospect_contact_prospectnum
-      ? ["${p}view/prospect_main.html?", 'prospect_contact_prospectnum' ]
-      : ["${p}view/cust_main.cgi?", 'cust_contact_custnum' ];
+      $rec->cust_main_custnum
+      ? ["${p}view/cust_main.cgi?", 'cust_main_custnum' ]
+      : ["${p}view/prospect_main.html?", 'prospect_main_prospectnum' ];
     },
     field => sub {
       my $rec = shift;
@@ -253,12 +237,14 @@ if (@classnum) {
   $classnum_url_part .= '&classnums=0' if $classnum_null;
 }
 
-# E-mail pipeline doesn't support mixing prospects and customers in one go
+# E-mail pipeline, from email-customers.html through to email queue job,
+# doesn't support cust_prospect table
 my $send_email_link = undef;
 if ($link eq 'cust_main') {
   $send_email_link =
     "<a href=\"${fsurl}misc/email-customers.html?".
       'table=cust_main'.
+      '&agentnum='.$cgi->param('agentnum').
       '&POST=on'.
       '&all_pkg_classnums=0'.
       '&all_tags=0'.
