@@ -1,3 +1,23 @@
+<%doc>
+
+Display a <tr> containing multiple checkboxes
+
+USAGE:
+
+<& /elements/tr-checkbox-multipe.html,
+  label => emt('Label'),
+  field => 'field_name',
+  options => ['opt1', 'opt2'],
+  labels => {
+    opt1 => 'Option 1',
+    opt2 => 'Option 2',
+  },
+  value => {
+    opt2 => '1', # opt2 defaults as checked
+  }
+&>
+
+</%doc>
 <% include('tr-td-label.html', @_ ) %>
 
   <TD <% $style %>>
