@@ -324,7 +324,7 @@ sub insert {
 
 }
 
-=item void [ REASON ]
+=item void [ REASON [ , REPROCESS_CDRS ] ]
 
 Voids this line item: deletes the line item and adds a record of the voided
 line item to the FS::cust_bill_pkg_void table (and related tables).
@@ -334,6 +334,7 @@ line item to the FS::cust_bill_pkg_void table (and related tables).
 sub void {
   my $self = shift;
   my $reason = scalar(@_) ? shift : '';
+  my $reprocess_cdrs = scalar(@_) ? shift : '';
 
   unless (ref($reason) || !$reason) {
     $reason = FS::reason->new_or_existing(
@@ -373,6 +374,9 @@ sub void {
     cust_tax_exempt_pkg
     cust_bill_pkg_fee
   )) {
+    my %delete_args = ();
+    $delete_args{'reprocess_cdrs'} = $reprocess_cdrs
+      if $table eq 'cust_bill_pkg_detail';
 
     foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
 
@@ -380,7 +384,7 @@ sub void {
       my $void = $vclass->new( {
         map { $_ => $linked->get($_) } $linked->fields
       });
-      my $error = $void->insert || $linked->delete;
+      my $error = $void->insert || $linked->delete(%delete_args);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;

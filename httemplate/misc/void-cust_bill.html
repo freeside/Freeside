@@ -18,6 +18,14 @@
              'cgi'            => $cgi
 &>
 
+% if ( $cust_bill->has_call_details ) {
+  <& /elements/tr-checkbox.html,
+       label => 'Reprocess CDRs',
+       field => 'reprocess_cdrs',
+       value => '1',
+  &>
+% }
+
 </TABLE>
 
 <BR>

@@ -214,7 +214,7 @@ sub insert {
 
 }
 
-=item void [ REASON ]
+=item void [ REASON [ , REPROCESS_CDRS ] ]
 
 Voids this invoice: deletes the invoice and adds a record of the voided invoice
 to the FS::cust_bill_void table (and related tables starting from
@@ -225,6 +225,7 @@ FS::cust_bill_pkg_void).
 sub void {
   my $self = shift;
   my $reason = scalar(@_) ? shift : '';
+  my $reprocess_cdrs = scalar(@_) ? shift : '';
 
   unless (ref($reason) || !$reason) {
     $reason = FS::reason->new_or_existing(
@@ -256,7 +257,7 @@ sub void {
   }
 
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
-    my $error = $cust_bill_pkg->void($reason);
+    my $error = $cust_bill_pkg->void($reason, $reprocess_cdrs);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -2911,6 +2912,23 @@ sub _items_total {
 }
 
 
+
+=item has_call_details
+
+Returns true if this invoice has call details.
+
+=cut
+
+sub has_call_details {
+  my $self = shift;
+  $self->scalar_sql("
+    SELECT 1 FROM cust_bill_pkg_detail
+             LEFT JOIN cust_bill_pkg USING (billpkgnum)
+      WHERE cust_bill_pkg_detail.format = 'C'
+        AND cust_bill_pkg.invnum = ?
+      LIMIT 1
+  ", $self->invnum);
+}
 
 =item call_details [ OPTION => VALUE ... ]
 
