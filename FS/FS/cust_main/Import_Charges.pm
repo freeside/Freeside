@@ -8,6 +8,48 @@ use FS::UID qw( dbh );
 use FS::CurrentUser;
 use FS::Record qw( qsearchs );
 use FS::cust_main;
+use FS::Conf;
+
+my $DEBUG = '';
+
+my %import_charges_info;
+foreach my $INC ( @INC ) {
+  warn "globbing $INC/FS/cust_main/import_charges/[a-z]*.pm\n" if $DEBUG;
+  foreach my $file ( glob("$INC/FS/cust_main/import_charges/[a-z]*.pm") ) {
+    warn "attempting to load import charges format info from $file\n" if $DEBUG;
+    $file =~ /\/(\w+)\.pm$/ or do {
+      warn "unrecognized file in $INC/FS/cust_main/import_charges/: $file\n";
+      next;
+    };
+    my $mod = $1;
+    my $info = eval "use FS::cust_main::import_charges::$mod; ".
+                    "\\%FS::cust_main::import_charges::$mod\::info;";
+    if ( $@ ) {
+      die "error using FS::cust_main::import_charges::$mod (skipping): $@\n" if $@;
+      next;
+    }
+    unless ( keys %$info ) {
+      warn "no %info hash found in FS::cust_main::import_charges::$mod, skipping\n";
+      next;
+    }
+    warn "got import charges format info from FS::cust_main::import_charges::$mod: $info\n" if $DEBUG;
+    if ( exists($info->{'disabled'}) && $info->{'disabled'} ) {
+      warn "skipping disabled import charges format FS::cust_main::import_charges::$mod" if $DEBUG;
+      next;
+    }
+    $import_charges_info{$mod} = $info;
+  }
+}
+
+tie my %import_formats, 'Tie::IxHash',
+  map  { $_ => $import_charges_info{$_}->{'name'} }
+  sort { $import_charges_info{$a}->{'weight'} <=> $import_charges_info{$b}->{'weight'} }
+  grep { exists($import_charges_info{$_}->{'fields'}) }
+  keys %import_charges_info;
+
+sub import_formats {
+  %import_formats;
+}
 
 =head1 NAME
 
@@ -65,20 +107,10 @@ sub batch_charge {
 
   my @fields;
   my %charges;
-  if ( $format eq 'simple' ) {
-    @fields = qw( custnum agent_custid amount pkg );
-  } elsif ( $format eq 'ooma' ) {
-    #below is gcet file.
-    #@fields = ( 'userfield1', 'userfield2', 'userfield3', 'userfield4', 'userfield5', 'userfield6', 'userfield7', 'userfield8', 'userfield9', 'userfield10', 'amount', 'userfield12', 'userfield13', 'userfield14', 'userfield15', 'userfield16', 'userfield17', 'userfield18', 'pkg', 'userfield20', 'custnum', 'userfield22', 'userfield23', 'userfield24', 'userfield25', );
-    @fields = ( 'userfield1', 'userfield2', 'userfield3', 'userfield4', 'userfield5', 'userfield6', 'userfield7', 'userfield8', 'amount', 'userfield10', 'userfield11', 'userfield12', 'userfield13', 'userfield14', 'userfield15', 'userfield16', 'pkg', 'userfield18', 'custnum', 'userfield20', 'userfield21', 'userfield22', 'userfield23', 'userfield24', 'userfield25', );
 
-  ##should charges to charge be a config option?
-    %charges = (
-      'DISABILITY ACCESS/ENHANCED 911 SERVICES SURCHARGE' => '1',
-      'FEDERAL TRS FUND'                                  => '1',
-      'FEDERAL UNIVERSAL SERVICE FUND'                    => '1',
-      'STATE SALES TAX'                                   => '1',
-    );
+  if ( $import_charges_info{$format} ) {
+    @fields = @{$import_charges_info{$format}->{'fields'}};
+    %charges = %{$import_charges_info{$format}->{'charges'}};
   } else {
     die "unknown format $format";
   }
