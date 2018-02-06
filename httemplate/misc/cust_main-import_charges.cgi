@@ -28,9 +28,9 @@ Import a CSV file containing customer charges.
   <TH ALIGN="right">Format</TH>
   <TD>
     <SELECT NAME="format">
-      <OPTION VALUE="simple">Simple
-      <OPTION VALUE="ooma">Ooma
-<!--      <OPTION VALUE="extended" SELECTED>Extended -->
+%       foreach my $format ( keys %formats ) {
+         <OPTION VALUE="<% $format %>"><% $formats{$format} %></OPTION>
+%       }
     </SELECT>
   </TD>
 </TR>
@@ -93,6 +93,8 @@ Field information:
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+  tie my %formats, 'Tie::IxHash', FS::cust_main::Import_Charges->import_formats;
 
   my $custbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 
