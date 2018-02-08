@@ -5,6 +5,8 @@ package FS::cust_main::Import_Charges;
 
 use strict;
 use FS::UID qw( dbh );
+use Storable qw(thaw);
+use MIME::Base64;
 use FS::CurrentUser;
 use FS::Record qw( qsearchs );
 use FS::cust_main;
@@ -81,7 +83,7 @@ Batch customer charging.
 
 sub batch_charge {
   my $job = shift;
-  my $param = shift;
+  my $param = thaw(decode_base64(shift));
   #warn join('-',keys %$param);
   my $agentnum = $param->{agentnum};
   my $format = $param->{format};
