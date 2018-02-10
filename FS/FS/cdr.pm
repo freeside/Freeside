@@ -172,6 +172,8 @@ following fields are currently supported:
 
 =item cdrbatch
 
+=item cdrbatchnum
+
 =item detailnum - Link to invoice detail (L<FS::cust_bill_pkg_detail>)
 
 =back
@@ -1865,41 +1867,6 @@ sub process_batch_import {
 #    @columns = map { s/^ +//; $_; } @columns;
 #  }
 
-# _ upgrade_data
-#
-# Used by FS::Upgrade to migrate to a new database.
-
-sub _upgrade_data {
-  my ($class, %opts) = @_;
-
-  warn "$me upgrading $class\n" if $DEBUG;
-
-  my $sth = dbh->prepare(
-    'SELECT DISTINCT(cdrbatch) FROM cdr WHERE cdrbatch IS NOT NULL'
-  ) or die dbh->errstr;
-
-  $sth->execute or die $sth->errstr;
-
-  my %cdrbatchnum = ();
-  while (my $row = $sth->fetchrow_arrayref) {
-
-    my $cdr_batch = qsearchs( 'cdr_batch', { 'cdrbatch' => $row->[0] } );
-    unless ( $cdr_batch ) {
-      $cdr_batch = new FS::cdr_batch { 'cdrbatch' => $row->[0] };
-      my $error = $cdr_batch->insert;
-      die $error if $error;
-    }
-
-    $cdrbatchnum{$row->[0]} = $cdr_batch->cdrbatchnum;
-  }
-
-  $sth = dbh->prepare('UPDATE cdr SET cdrbatch = NULL, cdrbatchnum = ? WHERE cdrbatch IS NOT NULL AND cdrbatch = ?') or die dbh->errstr;
-
-  foreach my $cdrbatch (keys %cdrbatchnum) {
-    $sth->execute($cdrbatchnum{$cdrbatch}, $cdrbatch) or die $sth->errstr;
-  }
-
-}
 
 =item ip_addr_sql FIELD RANGE
 
