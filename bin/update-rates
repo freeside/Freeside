@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use FS::UID 'adminsuidsetup';
+use FS::Record qw(dbh qsearch qsearchs);
+use FS::tax_class;
+use FS::tax_rate;
+use strict;
+
+adminsuidsetup('ivan');
+$FS::UID::AutoCommit = 0;
+my @location = ( geocode => { op => 'like', value => '24%' } );
+
+# convert TELECOMM RELAY SYSTEMS SURCHARGE:CENTREX LINES
+# to      TELECOMM RELAY SYSTEMS SURCHARGE:TELECOMMUNICATIONS
+my $old_taxclassnum = qsearchs('tax_class', { 'taxclass' => '09:35' })->taxclassnum;
+my $new_taxclassnum = qsearchs('tax_class', { 'taxclass' => '09:00' })->taxclassnum;
+my $error;
+
+my @bindings = qsearch('part_pkg_taxrate', {
+  'taxclassnum' => $old_taxclassnum,
+  @location
+});
+print "remapping ".scalar(@bindings)." tax rate bindings.\n";
+foreach my $part_pkg_taxrate (@bindings) {
+  $part_pkg_taxrate->set('taxclassnum', $new_taxclassnum);
+  $error = $part_pkg_taxrate->replace;
+  die $part_pkg_taxrate->pkgtaxratenum .": $error" if $error;
+}
+
+# change the fee to 0.05.
+my @tax_rates = qsearch('tax_rate', {
+  taxclassnum => $new_taxclassnum,
+  @location
+});
+print "changing rate on ".scalar(@tax_rates)." tax rate definitions.\n";
+foreach my $tax_rate (@tax_rates) {
+  $tax_rate->set('fee', 0.05);
+  my $error = $tax_rate->replace;
+  die $tax_rate->taxnum . ": $error\n" if $error;
+}
+
+dbh->commit;
