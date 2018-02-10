@@ -1877,8 +1877,11 @@ sub process_batch_import {
 #
 # Used by FS::Upgrade to migrate to a new database.
 
+use FS::upgrade_journal;
 sub _upgrade_data {
   my ($class, %opts) = @_;
+
+  return if FS::upgrade_journal->is_done('cdr_cdrbatchnum');
 
   warn "$me upgrading $class\n" if $DEBUG;
 
@@ -1906,6 +1909,8 @@ sub _upgrade_data {
   foreach my $cdrbatch (keys %cdrbatchnum) {
     $sth->execute($cdrbatchnum{$cdrbatch}, $cdrbatch) or die $sth->errstr;
   }
+
+  FS::upgrade_journal->set_done('cdr_cdrbatchnum');
 
 }
 
