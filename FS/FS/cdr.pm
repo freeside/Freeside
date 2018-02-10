@@ -170,8 +170,6 @@ following fields are currently supported:
 
 =item freesiderewritestatus - NULL, done, skipped
 
-=item cdrbatch
-
 =item cdrbatchnum
 
 =item detailnum - Link to invoice detail (L<FS::cust_bill_pkg_detail>)
@@ -242,7 +240,6 @@ sub table_info {
         'svcnum'                => 'Freeside service',
         'freesidestatus'        => 'Freeside status',
         'freesiderewritestatus' => 'Freeside rewrite status',
-        'cdrbatch'              => 'Legacy batch',
         'cdrbatchnum'           => 'Batch',
         'detailnum'             => 'Freeside invoice detail line',
     },
