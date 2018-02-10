@@ -6,7 +6,7 @@ use base qw( FS::cust_pkg::Search FS::cust_pkg::API
            );
 
 use strict;
-use Carp qw(cluck);
+use Carp qw(cluck croak);
 use Scalar::Util qw( blessed );
 use List::Util qw(min max sum);
 use Tie::IxHash;
@@ -2379,8 +2379,20 @@ sub change {
     $same_pkgpart = 0;
   }
 
-  if ($opt->{'waive_setup'}) { $self->set('waive_setup', $opt->{'waive_setup'}) }
-  else { $self->set('waive_setup', ''); }
+  # Discounts:
+  #   When a new discount level is specified in $opt:
+  #     If new discountnum matches old discountnum, months_used/end_date are
+  #       carried over as the discount is applied to the new cust_pkg
+  #
+  #   Legacy behavior:
+  #     Unless discount-related fields have been set within $opt, change()
+  #     sets no discounts on the changed packages unless the new pkgpart is the
+  #     same as the old pkgpart.  In that case, discounts from the old cust_pkg
+  #     are copied onto the new cust_pkg
+
+  # Read discount fields from $opt
+  my %new_discount = $self->_parse_new_discounts($opt);
+  $self->set(waive_setup => $opt->{waive_setup} ? $opt->{waive_setup} : '');
 
   # Before going any further here: if the package is still in the pre-setup
   # state, it's safe to modify it in place. No need to charge/credit for 
@@ -2435,6 +2447,22 @@ sub change {
       }
 
     } # done transferring services
+
+    # Set waive_setup as directed
+    if ( !$error && exists $opt->{waive_setup} ) {
+      $self->set(waive_setup => $opt->{waive_setup});
+      $error = $self->replace;
+    }
+
+    # Set discounts if explicitly specified in $opt
+    if ( !$error && %new_discount ) {
+      $error = $self->change_discount(%new_discount);
+    }
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
 
     $dbh->commit if $oldAutoCommit;
     return $self;
@@ -2625,8 +2653,18 @@ sub change {
     }
   }
 
-  # transfer discounts, if we're not changing pkgpart
-  if ( $same_pkgpart ) {
+  if (%new_discount && !$error) {
+
+    # If discounts were explicitly specified in $opt
+    $error = $cust_pkg->change_discount(%new_discount);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "applying discounts: $error";
+    }
+
+  } elsif ( $same_pkgpart ) {
+
+    # transfer discounts, if we're not changing pkgpart
     foreach my $old_discount ($self->cust_pkg_discount_active) {
       # don't remove the old discount, we may still need to bill that package.
       my $new_discount = new FS::cust_pkg_discount {
@@ -2843,6 +2881,20 @@ sub change_later {
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
   }
 
+  # Discounts:
+  #   Applies discounts to the newly created future_change package
+  #
+  #   If a new discount is the same as the old discount, carry over the
+  #     old discount's months_used/end_date fields too
+  #
+  #   Legacy behavior:
+  #     Legacy behavior was to create the next package with no discount.
+  #     This behavior is preserved.  Without the discount fields in $opt,
+  #     the new package will be created with no discounts.
+
+  # parse discount information from $opt
+  my %new_discount = $self->_parse_new_discounts($opt);
+
   if ( $self->change_to_pkgnum ) {
     my $change_to = FS::cust_pkg->by_key($self->change_to_pkgnum);
     my $new_pkgpart = $opt->{'pkgpart'}
@@ -2880,6 +2932,16 @@ sub change_later {
       $change_to->set('start_date', $date);
       $error = $self->replace || $change_to->replace;
     }
+
+    if ( !$error && exists $opt->{waive_setup} ) {
+      $change_to->set(waive_setup => $opt->{waive_setup} );
+      $error = $change_to->insert();
+    }
+
+    if ( !$error && %new_discount ) {
+      $error = $change_to->change_discount(%new_discount);
+    }
+
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -2913,11 +2975,17 @@ sub change_later {
   } );
   $error = $new->insert('change' => 1, 
                         'allow_pkgpart' => ($new_pkgpart ? 0 : 1));
+
+  if ( !$error && %new_discount ) {
+    $error = $new->change_discount(%new_discount);
+  }
+
   if ( !$error ) {
     $self->set('change_to_pkgnum', $new->pkgnum);
     $self->set('expire', $date);
     $error = $self->replace;
   }
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
   } else {
@@ -2925,6 +2993,66 @@ sub change_later {
   }
 
   $error;
+}
+
+# Helper method reads $opt hashref from change() and change_later()
+# Returns a hash of %new_discount suitable for passing to change_discount()
+sub _parse_new_discounts {
+  my ($self, $opt) = @_;
+
+  croak "Bad parameter list" unless ref $opt;
+
+  my %old_discount =
+    map { $_->setuprecur => $_ }
+    qsearch('cust_pkg_discount', {
+      pkgnum   => $self->pkgnum,
+      disabled => '',
+    });
+
+  my %new_discount;
+  for my $type(qw|setup recur|) {
+
+    if (exists $opt->{"${type}_discountnum"}) {
+      $new_discount{$type} = {
+        discountnum => $opt->{"${type}_discountnum"},
+        amount      => $opt->{"${type}_discountnum_amount"},
+        percent     => $opt->{"${type}_discountnum_percent"},
+      };
+    }
+
+    # Specified discountnum same as old discountnum, carry over addl fields
+    if (
+      exists $opt->{"${type}_discountnum"}
+      && exists $old_discount{$type}
+      && $opt->{"${type}_discountnum"} eq $old_discount{$type}->discountnum
+    ){
+      $new_discount{$type}->{months}   = $old_discount{$type}->months;
+      $new_discount{$type}->{end_date} = $old_discount{$type}->end_date;
+    }
+
+    # No new discount specified, carryover old discount
+    #   If we wanted to abandon legacy behavior, and always carry old discounts
+    #   uncomment this:
+
+    # if (!exists $new_discount{$type} && $old_discount{$type}) {
+    #   $new_discount{$type} = {
+    #     discountnum => $old_discount{$type}->discountnum,
+    #     amount      => $old_discount{$type}->amount,
+    #     percent     => $old_discount{$type}->percent,
+    #     months      => $old_discount{$type}->months,
+    #     end_date    => $old_discount{$type}->end_date,
+    #   };
+    # }
+  }
+
+  if ($DEBUG) {
+    warn "_parse_new_discounts(), pkgnum: ".$self->pkgnum." \n";
+    warn "Determine \%old_discount, \%new_discount: \n";
+    warn Dumper(\%old_discount);
+    warn Dumper(\%new_discount);
+  }
+
+  %new_discount;
 }
 
 =item abort_change
@@ -4738,6 +4866,149 @@ sub insert_discount {
   '';
 }
 
+=item change_discount %opt
+
+Method checks if the given values represent a change in either setup or
+discount level.  If so, the existing discounts are revoked, the new
+discounts are recorded.
+
+Usage:
+
+$error = change_discount(
+  setup => {
+
+    # -1: Indicates a "custom discount"
+    #  0: Indicates to remove any discount
+    # >0: discountnum to apply
+    discountnum => [-1, 0, discountnum],
+
+    # When discountnum is "-1" to indicate custom discount, include
+    # the additional fields:
+    amount      => AMOUNT_DISCOUNT
+    percent     => PERCENTAGE_DISCOUNT
+    months      => -1,
+  },
+
+  recur => {...}
+);
+
+
+=cut
+
+sub change_discount {
+  my ($self, %opt) = @_;
+  return "change_discount() called with bad \%opt"
+    unless %opt;
+
+  for (keys %opt) {
+    return "change_discount() called with unknown bad key $_"
+      unless $_ eq 'setup' || $_ eq 'recur';
+  }
+
+  my @old_discount =
+    qsearch('cust_pkg_discount',{
+      pkgnum   => $self->pkgnum,
+      disabled => '',
+    });
+
+  if ($DEBUG) {
+    warn "change_discount() pkgnum: ".$self->pkgnum." \n";
+    warn "change_discount() \%opt: \n";
+    warn Dumper(\%opt);
+  }
+
+  my @to_be_disabled;
+
+  for my $type (qw|setup recur|) {
+    next unless ref $opt{$type};
+    my %change = %{$opt{$type}};
+
+    return "change_discount() called with bad \$opt($type)"
+      unless $change{discountnum} =~ /^-?\d+$/;
+
+    if ($change{discountnum} eq 0) {
+      # Removing old discount
+
+      delete $opt{$type};
+      push @to_be_disabled, grep {$_->setuprecur eq $type} @old_discount;
+    } else {
+
+      if (
+        grep {
+          $_->discountnum   eq $change{discountnum}
+          && $_->setuprecur eq $type
+        } @old_discount
+      ){
+        # Duplicate, disregard this entry
+        delete $opt{$type};
+        next;
+      } else {
+        # Mark any discounts we're replacing
+        push @to_be_disabled, grep{ $_->setuprecur eq $type} @old_discount;
+      }
+
+    }
+  }
+
+
+  # If we still have changes queued, pass them to insert_discount()
+  # by setting values into object fields
+  for my $type (keys %opt) {
+    $self->set("${type}_discountnum", $opt{$type}->{discountnum});
+
+    if ($opt{$type}->{discountnum} eq '-1') {
+      $self->set("${type}_discountnum_${_}", $opt{$type}->{$_})
+        for qw(amount percent months);
+    }
+
+  }
+
+  if ($DEBUG) {
+    warn "change_discount() \% opt before insert \n";
+    warn Dumper \%opt;
+    warn "\@to_be_disabled \n";
+    warn Dumper \@to_be_disabled;
+  }
+
+  # Roll these updates into a transaction
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error;
+
+  # The "waive setup fee" flag has traditionally been handled by setting
+  # $cust_pkg->waive_setup_fee = Y.  This has been appropriately, and separately
+  # handled, and it operates on a differetnt table than cust_pkg_discount,
+  # so the "-2 for waive setup fee" option is not being reimplemented
+  # here.  Perhaps this may change later.
+  #
+  # When a setup discount is entered, we still need unset waive_setup
+  if ( $opt{setup} && $opt{setup} > -2 && $self->waive_setup ) {
+    $self->set(waive_setup => '');
+    $error = $self->replace();
+  }
+
+  # Create new discounts
+  $error ||= $self->insert_discount();
+
+  # Disabling old discounts
+  for my $tbd (@to_be_disabled) {
+    unless ($error) {
+      $tbd->set(disabled => 'Y');
+      $error = $tbd->replace();
+    }
+  }
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return undef;
+}
+
 =item set_usage USAGE_VALUE_HASHREF 
 
 USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
@@ -5707,4 +5978,3 @@ L<FS::pkg_svc>, schema.html from the base documentation
 =cut
 
 1;
-

@@ -89,8 +89,14 @@
 %
 % if ( $discount_cust_pkg || $waive_setup_fee ) {
   <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
-  <% ntable("#cccccc") %>
-    <& /elements/tr-select-pkg-discount.html, disable_recur => 1, &>
+  <TABLE CLASS="fsinnerbox">
+    <& /elements/tr-select-pkg-discount.html,
+      curr_value_setup    => $discount{setup},
+      curr_value_recur    => $discount{recur},
+      disable_setup       => 0,
+      disable_recur       => 0,
+      disable_waive_setup => 0
+    &>
   </TABLE><BR>
 
 % }
@@ -168,4 +174,14 @@ if ( $cust_pkg->change_to_pkgnum ) {
   }
   $title = "Edit Scheduled Package Change";
 }
+
+# Get current values of discounts for selectboxes
+my %discount = (setup => undef, recur => undef);
+$discount{$_->setuprecur} = $_->discountnum
+  for qsearch('cust_pkg_discount', {
+    pkgnum   => $cust_pkg->pkgnum,
+    disabled => '',
+  });
+$discount{setup} = '-2' if $cust_pkg->waive_setup;
+
 </%init>
