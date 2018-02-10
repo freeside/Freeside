@@ -1,0 +1,17 @@
+<TR>
+  <TH ALIGN="right"><% $opt{'label'} || 'Real Estate Location' %></TD>
+  <TD>
+    <% include( '/elements/select-realestate_location.html',
+        'curr_value' => $curr_value,
+        %opt
+      )
+    %>
+  </TD>
+</TR>
+
+<%init>
+
+my %opt = @_;
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+</%init>

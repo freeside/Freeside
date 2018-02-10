@@ -237,6 +237,13 @@ sub login {
 
     $svc_x = $svc_phone;
 
+  } elsif ( $p->{'domain'} eq 'ip_mac' ) {
+
+      my $svc_broadband = qsearchs( 'svc_broadband', { 'mac_addr' => $p->{'username'} } );
+      return { error => 'IP address not found' }
+        unless $svc_broadband;
+      $svc_x = $svc_broadband;
+
   } elsif ( $p->{email}
               && (my $contact = FS::contact->by_selfservice_email($p->{email}))
           )

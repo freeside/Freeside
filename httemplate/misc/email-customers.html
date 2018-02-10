@@ -171,16 +171,18 @@ Template:
  <TD>Send to contacts:</TD>
  <TD>
    <div id="contactclassesdiv">
-  <& /elements/checkboxes.html,
-    'style'               => 'display: inline; vertical-align: top',
-    'disable_links'       => 1,
-    'names_list'          => \@contact_checkboxes,
-    'element_name_prefix' => 'contact_class_',
-    'checked_callback'    => sub {
-      my($cgi, $name) = @_;
-      $name eq 'invoice' #others default to unchecked
-    },
-  &>
+     <& /elements/checkboxes.html,
+       'style'               => 'display: inline; vertical-align: top',
+       'disable_links'       => 1,
+       'names_list'          => \@optin_checkboxes,
+       'element_name_prefix' => 'contact_class_',
+       'checked_callback'    => sub {
+         # Called for each checkbox
+         # Return true to default as checked, false as unchecked
+         my($cgi, $name) = @_;
+         exists $dest_ischecked{$name};
+       },
+     &>
    </div>
 % if ($send_to_domain) {
    <div>
@@ -197,6 +199,27 @@ Template:
    </div>
 % }
  </TD>
+% if (@active_classes) {
+</tr>
+<tr>
+<TD>Contact Type:</TD>
+<TD>
+  <div id="contactclassesdiv">
+    <& /elements/checkboxes.html,
+      'style'               => 'display: inline; vertical-align: top',
+      'disable_links'       => 1,
+      'names_list'          => \@classnum_checkboxes,
+      'element_name_prefix' => 'contact_class_',
+      'checked_callback'    => sub {
+        # Called for each checkbox
+        # Return true to default as checked, false as unchecked
+        my($cgi, $name) = @_;
+        exists $classnum_ischecked{$name};
+      },
+    &>
+  </div>
+</TD>
+% }
 </TR>
 </TABLE>
 <BR>
@@ -340,6 +363,21 @@ if ( !$cgi->param('preview') ) {
 
 } else {
 
+  my @checked_email_dest;
+  my @checked_contact_type;
+  for ($cgi->param) {
+    if (/^contact_class_(.+)$/) {
+      my $f = $1;
+      if ($f eq 'invoice' || $f eq 'message') {
+        push @checked_email_dest, $f;
+      } elsif ( $f =~ /^\d+$/ ) {
+        push @checked_contact_type, $f;
+      }
+    }
+  }
+  $search{with_email_dest} = \@checked_email_dest if @checked_email_dest;
+  $search{with_contact_type} = \@checked_contact_type if @checked_contact_type;
+
   my $sql_query = "FS::$table"->search(\%search);
   my $count_query = delete($sql_query->{'count_query'});
   my $count_sth = dbh->prepare($count_query)
@@ -389,6 +427,8 @@ if ( !$cgi->param('preview') ) {
     $sql_query->{'select'} = "$table.*";
     $sql_query->{'order_by'} = '';
     my $object = qsearchs($sql_query);
+    # Could use better error handling here...
+    die "No customers match the search criteria" unless ref $object;
     $cust = $object->cust_main;
     my %msgopts = (
       'cust_main' => $cust,
@@ -422,24 +462,59 @@ if ( !$cgi->param('preview') ) {
         push @contact_classnum, $1;
         if ( $1 eq 'invoice' ) {
           push @contact_classname, 'Invoice recipients';
+        } elsif ( $1 eq 'message' ) {
+          push @contact_classname, 'Message recipients';
         } else {
           my $contact_class = FS::contact_class->by_key($1);
-          push @contact_classname, encode_entities($contact_class->classname);
+          push @contact_classname, encode_entities(
+            $contact_class ? $contact_class->classname : '(none)'
+          );
         }
       }
     }
   }
 }
 
-my @contact_checkboxes = (
-  [ 'invoice' => { label => 'Invoice recipients' } ]
-);
+# Build data structures for "Opt In" and "Contact Type" checkboxes
+#
+# By default, message recipients will be selected, this is a message.
+# By default, all Contact Types will be selected, but this may be
+#   overridden by passing 'classnums' get/post values.  If no contact
+#   types have been defined, the option will not be presented.
 
-foreach my $class (qsearch('contact_class', { disabled => '' })) {
-  push @contact_checkboxes, [
-    $class->classnum,
-    { label => $class->classname }
-  ];
+my @active_classes = qsearch(contact_class => {disabled => ''} );
+
+my %classnum_ischecked;
+my %dest_ischecked;
+
+$CGI::LIST_CONTEXT_WARN = 0;
+if ( my @in_classnums = $cgi->param('classnums') ) {
+  # Set checked boxes from form input
+  for my $v (@in_classnums) {
+
+    if ( $v =~ /^\d+$/ ) {
+      $classnum_ischecked{$v} = 1
+    } elsif ( $v =~ /^(invoice|message)$/ ) {
+      $dest_ischecked{$v} = 1;
+    }
+
+  }
+} else {
+  # Checked boxes default values
+  $classnum_ischecked{$_->classnum} = 1 for @active_classes;
+  $classnum_ischecked{0} = 1;
 }
+
+# At least one destination is required
+$dest_ischecked{message} = 1 unless %dest_ischecked;
+
+my @optin_checkboxes = (
+  [ 'message' => { label => 'Message recipients' } ],
+  [ 'invoice' => { label => 'Invoice recipients' } ],
+);
+my @classnum_checkboxes = (
+  [ '0' => { label => '(None)' }],
+  map { [ $_->classnum => {label => $_->classname} ] } @active_classes,
+);
 
 </%init>

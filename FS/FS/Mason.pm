@@ -418,6 +418,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_svc_msgcat;
   use FS::commission_schedule;
   use FS::commission_rate;
+  use FS::realestate_location;
+  use FS::realestate_unit;
+  use FS::svc_realestate;
   use FS::saved_search;
   use FS::sector_coverage;
   # Sammath Naur

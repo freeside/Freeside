@@ -1,126 +1,258 @@
 <& elements/search.html,
-  title         => 'Contacts',
+  title         => emt('Contacts'),
   name_singular => 'contact',
-  query         => { select    => join(', ', @select),
-                     table     => 'contact',
-                     addl_from => $addl_from,
-                     hashref   => \%hash,
-                     extra_sql => $extra_sql,
-                   },
-  count_query   => "SELECT COUNT(*) FROM contact $addl_from $extra_sql", #XXX
-  header        => \@header,
-  fields        => \@fields,
-  links         => \@links,
+  query         => {
+    select    => join(', ', @select),
+    table     => $link,
+    addl_from => $addl_from,
+    hashref   => {},
+    extra_sql => "WHERE $extra_sql",
+    order_by  => "ORDER BY contact_last,contact_first,contact_email_emailaddress"
+  },
+  count_query => "
+    SELECT COUNT(*)
+    FROM $link
+    $addl_from
+    WHERE $extra_sql
+  ",
+  header    => \@header,
+  fields    => \@fields,
+  links     => \@links,
+  html_init => $send_email_link,
+  agent_virt => 1,
+  agent_pos  => 11,
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
 
-my @select = 'contact.contactnum AS contact_contactnum'; #if we select it as bare contactnum, the multi-customer listings go away
-push @select, map "contact.$_", qw( first last title );
-my %hash = ();
-my $addl_from = '';
+my $DEBUG = 0;
 
-my $email_sub = sub {
-  my $contact = shift;
-  #can't because contactnum is in the wrong field #my @contact_email = $contact->contact_email;
-  my @contact_email = qsearch('contact_email', { 'contactnum' => $contact->contact_contactnum } );
-  join(', ', map $_->emailaddress, @contact_email);
-};
+# Catch classnum values from multi-select box
+# A classnum of 0 indicates to include rows where classnum IS NULL
+$CGI::LIST_CONTEXT_WARN = 0;
+my @classnum      = grep{ /^\d+$/ && $_ > 0 } $cgi->param('classnum');
+my $classnum_null = grep{ $_ eq 0           } $cgi->param('classnum');
 
-my $work_phone_sub = sub {
-  my $contact = shift;
-  my $phone_type = qsearchs('phone_type', { 'typename' => 'Work' });
-  #can't because contactnum is in the wrong field
-  my @contact_workphone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => $phone_type->phonetypenum } );
-  join(', ', map $_->phonenum, @contact_workphone);
-};
+# Catch destination values from dest multi-checkbox, default to message
+# irrelevant to prospect contacts
+my @dest = grep{ /^(message|invoice)$/ } $cgi->param('dest');
+@dest = ('message') unless @dest;
 
-my $mobile_phone_sub = sub {
-  my $contact = shift;
-  my $phone_type = qsearchs('phone_type', { 'typename' => 'Mobile' });
-  #can't because contactnum is in the wrong field
-  my @contact_mobilephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => $phone_type->phonetypenum } );
-  join(', ', map $_->phonenum, @contact_mobilephone);
-};
+# Cache the contact_class table
+my %classname =
+  map {$_->classnum => $_->classname}
+  qsearch(contact_class => {disabled => ''});
 
-my $home_phone_sub = sub {
-  my $contact = shift;
-  my $phone_type = qsearchs('phone_type', { 'typename' => 'Home' });
-  #can't because contactnum is in the wrong field
-  my @contact_homephone = qsearch('contact_phone', { 'contactnum' => $contact->contact_contactnum, 'phonetypenum' => $phone_type->phonetypenum } );
-  join(', ', map $_->phonenum, @contact_homephone);
-};
+# This data structure is used to generate the sql query parameters
+my %colmap = (
+  # These are included regardless of which tables we're viewing
+  common => {
+    cols => {
+      contact => [qw/first last title contactnum/],
+      contact_email => [qw/emailaddress/],
+    },
+    joinsql => "",
+  },
 
-my $link; #for closure in this sub, we'll define it later
-my $contact_classname_sub = sub {
-  my $contact = shift;
-  my %hash = ( 'contactnum' => $contact->contact_contactnum );
-  my $X_contact;
-  if ( $link eq 'cust_main' ) {
-    $X_contact = qsearchs('cust_contact', { %hash, 'custnum' => $contact->custnum } );
-  } elsif ( $link eq 'prospect_main' ) {
-    $X_contact = qsearchs('prospect_contact', { %hash, 'prospectnum' => $contact->prospectnum } );
-  } else {
-    die 'guru meditation #5555';
+  # These are included if we're viewing customer records
+  cust_main => {
+    cols => {
+      cust_main => [qw/first last company/],
+      cust_contact => [qw/
+        custnum classnum invoice_dest message_dest selfservice_access comment
+      /],
+    },
+    joinsql => "
+      LEFT JOIN cust_contact
+        ON (cust_main.custnum = cust_contact.custnum)
+      LEFT JOIN contact
+        on (cust_contact.contactnum = contact.contactnum)
+      LEFT JOIN contact_email
+        ON (cust_contact.contactnum = contact_email.contactnum)
+    ",
+  },
+
+  # These are included if we're viewing prospect records
+  prospect_main => {
+    cols => {
+      prospect_main => [qw/company/],
+      prospect_contact => [qw/prospectnum classnum comment/],
+    },
+    joinsql => "
+      LEFT JOIN prospect_contact
+        ON (prospect_main.prospectnum = prospect_contact.prospectnum)
+      LEFT JOIN contact
+        on (prospect_contact.contactnum = contact.contactnum)
+      LEFT JOIN contact_email
+        ON (prospect_contact.contactnum = contact_email.contactnum)
+    ",
+  },
+);
+
+my @select;
+my $addl_from;
+my $extra_sql;
+my $hashref;
+my $link = $cgi->param('link'); # cust_main or prospect_main
+
+push @select,'agentnum';
+
+# this shouldn't happen without funny-busines
+die "Invalid \$link type ($link)"
+  unless $link eq 'cust_main' || $link eq 'prospect_main';
+
+# Build @select and $addl_from
+for my $key ('common', $link) {
+  $addl_from .= $colmap{$key}->{joinsql};
+  my $cols = $colmap{$key}->{cols};
+  for my $tbl (keys %{$cols}) {
+    push @select, map{ "$tbl.$_ AS ${tbl}_$_" } @{$cols->{$tbl}};
   }
-  $X_contact->contact_classname;
-};
-
-my @header = ( 'First', 'Last', 'Title', 'Email', 'Work Phone', 'Mobile Phone', 'Home Phone', 'Type' );
-my @fields = ( 'first', 'last', 'title', $email_sub, $work_phone_sub, $mobile_phone_sub, $home_phone_sub, $contact_classname_sub );
-my @links = ( '', '', '', '', '', '', '', '', );
-
-my $company_link = '';
-
-if ( $cgi->param('selfservice_access') eq 'Y' ) {
-  $hash{'selfservice_access'} = 'Y';
 }
 
-my $extra_sql = '';
-$link = $cgi->param('link');
-if ( $link ) {
-
-  my $as       = ') AS prospect_or_customer';
-
-  if ( $link eq 'cust_main' ) {
-    push @header, 'Customer';
-    push @select,
-       "COALESCE( cust_main.company, cust_main.first||' '||cust_main.last $as",
-       map "cust_contact.$_", qw( custnum classnum comment selfservice_access );
-    $addl_from =
-      ' LEFT JOIN cust_contact USING ( contactnum ) '.
-      ' LEFT JOIN cust_main ON ( cust_contact.custnum = cust_main.custnum )';
-    $extra_sql = ' cust_contact.custnum IS NOT NULL ';
-    $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
-  } elsif ( $link eq 'prospect_main' ) {
-    push @header, 'Prospect';
-    push @select,
-      "COALESCE( prospect_main.company, contact.first||'  '||contact.last $as",
-      map "prospect_contact.$_", qw( prospectnum classnum comment );
-    $addl_from =
-      ' LEFT JOIN prospect_contact USING ( contactnum ) '.
-      ' LEFT JOIN prospect_main ON ( prospect_contact.prospectnum = prospect_main.prospectnum )';
-    $extra_sql = ' prospect_contact.prospectnum IS NOT NULL ';
-    $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
-  } else {
-    die "don't know how to report on contacts linked to specified table";
-  }
-
-  #because right now its harder to show it for both kinds of contacts
-  push @fields, 'prospect_or_customer';
-  push @links, $company_link; 
-
+# Filter for Contact Type
+if (@classnum || $classnum_null) {
+  my @stm;
+  my $tbl = $link eq 'cust_main' ? 'cust_contact' : 'prospect_contact';
+  push @stm, "${tbl}.classnum IN (".join(',',@classnum).')' if @classnum;
+  push @stm, "${tbl}.classnum IS NULL" if $classnum_null;
+  $extra_sql .= " (" . join(' OR ',@stm) . ') ';
 }
 
-push @header, 'Self-service';
-push @fields, 'selfservice_access';
+# Filter for destination
+if (@dest && $link eq 'cust_main') {
+  my @stm;
+  push @stm, "cust_contact.${_}_dest IS NOT NULL" for @dest;
+  $extra_sql .= "\nAND (".join(' OR ',@stm).') ';
+}
 
-push @header, 'Comment';
-push @fields, 'comment';
+if ($DEBUG) {
+  print "<pre>\n";
+  print "select \n";
+  print join ",\n",@select;
+  print "\n";
+  print "from $link \n";
+  print "$addl_from\n";
+  print "WHERE \n $extra_sql\n";
+  print "</pre>\n";
+}
 
-$extra_sql = (keys(%hash) ? ' AND ' : ' WHERE '). $extra_sql
- if $extra_sql;
+# Prepare to display phone numbers
+# adds 3 additional queries per table record :-(
+my %phonetype = (qw/1 Work 2 Home 3 Mobile 4 Fax/);
+my %phoneid   = (qw/Work 1 Home 2 Mobile 3 Fax 4/);
+my $get_phone_sub = sub {
+  my $type = shift;
+  return sub {
+    my $rec = shift;
+    my @p = qsearch('contact_phone', {
+      contactnum => $rec->contact_contactnum,
+      phonetypenum => $phoneid{$type}
+    });
+    @p ? (join ', ',map{$_->phonenum} @p) : undef;
+  };
+};
+
+# Cache contact types
+my %classname =
+  map {$_->classnum => $_->classname}
+  qsearch(contact_class => {disabled => ''});
+
+# And now for something completly different:
+my @report = (
+  { label => 'First',  field => sub { shift->contact_first }},
+  { label => 'Last',   field => sub { shift->contact_last }},
+  { label => 'Title',  field => sub { shift->contact_title }},
+  { label => 'E-Mail', field => sub { shift->contact_email_emailaddress }},
+  { label => 'Work Phone',   field => $get_phone_sub->('Work') },
+  { label => 'Mobile Phone', field => $get_phone_sub->('Mobile') },
+  { label => 'Home Phone',   field => $get_phone_sub->('Home') },
+  { label => 'Type',
+    field => sub {
+      my $rec = shift;
+      if ($rec->cust_contact_custnum) {
+        return $rec->cust_contact_classnum
+               ? $classname{$rec->cust_contact_classnum}
+               : undef;
+      } else {
+        return $rec->prospect_contact_classnum
+               ? $classname{$rec->prospect_contact_classnum}
+               : undef;
+      }
+  }},
+  { label => 'Send Invoices',
+    field => sub {
+      my $rec = shift;
+      return 'N/A' if $rec->prospect_contact_prospectnum;
+      $rec->cust_contact_invoice_dest ? 'Y' : 'N';
+    }},
+  { label => 'Send Messages',
+    field => sub {
+      my $rec = shift;
+      return 'N/A' if $rec->prospect_contact_prospectnum;
+      $rec->cust_contact_message_dest ? 'Y' : 'N';
+    }},
+  { label => 'Customer',
+    link  => sub {
+      my $rec = shift;
+      $rec->cust_main_custnum
+      ? ["${p}view/cust_main.cgi?", 'cust_main_custnum' ]
+      : ["${p}view/prospect_main.html?", 'prospect_main_prospectnum' ];
+    },
+    field => sub {
+      my $rec = shift;
+      if ($rec->prospect_contact_prospectnum) {
+        return $rec->contact_company
+          || $rec->contact_last.' '.$rec->contact_first;
+      }
+      $rec->cust_main_company || $rec->cust_main_last.' '.$rec->cust_main_first;
+    }},
+  { label => 'Self-service',
+    field => sub {
+      my $rec = shift;
+      return 'N/A' if $rec->prospect_contact_prospectnum;
+      $rec->cust_contact_selfservice_access ? 'Y' : 'N';
+    }},
+  { label => 'Comment',
+    field => sub {
+      my $rec = shift;
+      $rec->prospect_contact_prospectnum
+      ? $rec->prospect_contact_comment
+      : $rec->cust_contact_comment;
+    }},
+);
+
+my (@header, @fields, @links);
+for my $col (@report) {
+  push @header, emt($col->{label});
+  push @fields, $col->{field};
+  push @links, ($col->{link} || "");
+}
+
+my $classnum_url_part;
+if (@classnum) {
+  $classnum_url_part = join '', map{ "&classnums=$_" } @classnum, @dest;
+  $classnum_url_part .= '&classnums=0' if $classnum_null;
+}
+
+# E-mail pipeline, from email-customers.html through to email queue job,
+# doesn't support cust_prospect table
+my $send_email_link = undef;
+if ($link eq 'cust_main') {
+  $send_email_link =
+    "<a href=\"${fsurl}misc/email-customers.html?".
+      'table=cust_main'.
+      '&agentnum='.$cgi->param('agentnum').
+      '&POST=on'.
+      '&all_pkg_classnums=0'.
+      '&all_tags=0'.
+      '&any_pkg_status=0'.
+      '&refnum=1'.
+      '&with_email=on'.
+      $classnum_url_part.
+    "\">Email a notice to these customers</a>";
+}
 
 </%init>

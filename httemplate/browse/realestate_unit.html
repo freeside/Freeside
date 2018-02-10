@@ -1,0 +1,70 @@
+<% include( 'elements/browse.html',
+  title       => emt('Real Estate Inventory'),
+  name        => 'real estate inventory',
+
+  menubar => [
+    'Edit locations'     => "${p}browse/realestate_location.html",
+    'Add a new location' => "${p}edit/realestate_location.html",
+    'Add a new unit'     => "${p}edit/realestate_unit.html",
+  ],
+
+  query => {
+    table => 'realestate_unit',
+    select => join(', ',qw(
+      realestate_unit.*
+      realestate_location.location_title
+      cust_main.first
+      cust_main.last
+      cust_main.company
+    )),
+    addl_from => "
+      LEFT JOIN realestate_location
+        ON realestate_location.realestatelocnum
+           = realestate_unit.realestatelocnum
+      LEFT JOIN svc_realestate
+        ON realestate_unit.realestatenum = svc_realestate.realestatenum
+      LEFT JOIN cust_svc
+        ON svc_realestate.svcnum = cust_svc.svcnum
+      LEFT JOIN cust_pkg
+        ON cust_svc.pkgnum = cust_pkg.pkgnum
+      LEFT JOIN cust_main
+        ON cust_pkg.custnum = cust_main.custnum
+    ",
+    order_by => "ORDER BY location_title, unit_title"
+  },
+
+  count_query => 'SELECT COUNT(*) FROM realestate_unit',
+
+  header => [ 'Location', 'Unit', 'Customer' ],
+  fields => [
+    'location_title',
+    'unit_title',
+    sub {
+      return '' unless $_[0]->custnum;
+      return $_[0]->company if $_[0]->company;
+      return $_[0]->first.' '.$_[0]->last;
+    },
+  ],
+  links => [
+    ["${p}edit/realestate_location.html?", 'realestatelocnum' ],
+    ["${p}edit/realestate_unit.html?",     'realestatenum' ],
+    ["${p}view/cust_main.cgi?",            'custnum' ]
+  ],
+
+  agent_virt  => 1,
+  agent_pos   => 0,
+  disableable => 1,
+)
+%>
+<%init>
+
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die("access denied")
+  unless $curuser->access_right('Edit inventory')
+      || $curuser->access_right('Edit global inventory')
+      || $curuser->access_right('Configuration');
+
+
+
+</%init>

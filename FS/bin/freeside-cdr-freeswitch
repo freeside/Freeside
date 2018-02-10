@@ -5,11 +5,12 @@ use Date::Parse 'str2time';
 use FS::cdr::Import;
 
 FS::cdr::Import->dbi_import(
-  'dbd'          => 'Pg',
-  'database'     => 'fusionpbx',
-  'table'        => 'v_xml_cdr',
-  'primary_key'  => 'uuid',
-  'column_map'   => { #freeside => fusionpbx
+  'dbd'                 => 'Pg',
+  'database'            => 'fusionpbx',
+  'table'               => 'v_xml_cdr',
+  'status_column'       => 'freesidestatus',
+  'primary_key'         => 'uuid',
+  'column_map'          => { #freeside => fusionpbx
     #'cdrid'             => 'uuid', #Primary key
     #'' => 'CALL_SESSION_ID', # Call Session Id (unique per call session – GUID)
     'uniqueid'          => 'uuid', #

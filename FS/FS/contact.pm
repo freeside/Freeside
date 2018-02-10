@@ -155,7 +155,7 @@ sub insert {
   $self->custnum('');
 
   my %link_hash = ();
-  for (qw( classnum comment selfservice_access invoice_dest )) {
+  for (qw( classnum comment selfservice_access invoice_dest message_dest)) {
     $link_hash{$_} = $self->get($_);
     $self->$_('');
   }
@@ -430,7 +430,7 @@ sub replace {
   $self->custnum('');
 
   my %link_hash = ();
-  for (qw( classnum comment selfservice_access invoice_dest )) {
+  for (qw( classnum comment selfservice_access invoice_dest message_dest )) {
     $link_hash{$_} = $self->get($_);
     $self->$_('');
   }
@@ -955,7 +955,7 @@ sub cgi_contact_fields {
 
   my @contact_fields = qw(
     classnum first last title comment emailaddress selfservice_access
-    invoice_dest password
+    invoice_dest message_dest password
   );
 
   push @contact_fields, 'phonetypenum'. $_->phonetypenum
@@ -1028,4 +1028,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-

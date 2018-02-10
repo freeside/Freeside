@@ -122,6 +122,15 @@ sub virtual_fields {
 
 =item label
 
+Returns a label to identify a record of this service.
+Label may be displayed on freeside screens, and within customer bills.
+
+For example, $obj->label may return:
+
+ - A provisioned phone number for svc_phone
+ - The mailing list name and e-mail address for svc_mailinglist
+ - The address of a rental property svc_realestate
+
 svc_Common provides a fallback label subroutine that just returns the svcnum.
 
 =cut
@@ -1586,4 +1595,3 @@ from the base documentation.
 =cut
 
 1;
-

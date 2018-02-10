@@ -3022,15 +3022,19 @@ sub invoicing_list_emailonly_scalar {
   join(', ', $self->invoicing_list_emailonly);
 }
 
-=item contact_list [ CLASSNUM, ... ]
+=item contact_list [ CLASSNUM, DEST_FLAG... ]
 
-Returns a list of contacts (L<FS::contact> objects) for the customer. If
-a list of contact classnums is given, returns only contacts in those
-classes. If the pseudo-classnum 'invoice' is given, returns contacts that
-are marked as invoice destinations. If '0' is given, also returns contacts
-with no class.
+Returns a list of contacts (L<FS::contact> objects) for the customer.
 
 If no arguments are given, returns all contacts for the customer.
+
+Arguments may contain classnums.  When classnums are specified, only
+contacts with a matching cust_contact.classnum are returned.  When a
+classnum of 0 is given, contacts with a null classnum are also included.
+
+Arguments may also contain the dest flag names 'invoice' or 'message'.
+If given, contacts who's invoice_dest and/or message_dest flags are
+not set to 'Y' will be excluded.
 
 =cut
 
@@ -3038,32 +3042,84 @@ sub contact_list {
   my $self = shift;
   my $search = {
     table       => 'contact',
-    select      => 'contact.*, cust_contact.invoice_dest',
+    select      => join(', ',(
+                    'contact.*',
+                    'cust_contact.invoice_dest',
+                    'cust_contact.message_dest',
+    )),
     addl_from   => ' JOIN cust_contact USING (contactnum)',
     extra_sql   => ' WHERE cust_contact.custnum = '.$self->custnum,
   };
 
-  my @orwhere;
+  # Bugfix notes:
+  #   Calling methods were relying on this method to use invoice_dest to
+  #   block e-mail messages.  Depending on parameters, this may or may not
+  #   have actually happened.
+  #
+  #   The bug could cause this SQL to be used to filter e-mail addresses:
+  #
+  #   AND (
+  #     cust_contact.classnums IN (1,2,3)
+  #     OR cust_contact.invoice_dest = 'Y'
+  #   )
+  #
+  #   improperly including everybody with the opt-in flag AND everybody
+  #   in the contact classes
+  #
+  # Possibility to introduce new bugs:
+  #   If callers of this method called it incorrectly, and didn't notice
+  #   because it seemed to send the e-mails they wanted.
+
+  # WHERE ...
+  # AND (
+  #   (
+  #     cust_contact.classnum IN (1,2,3)
+  #     OR
+  #     cust_contact.classnum IS NULL
+  #   )
+  #   AND (
+  #     cust_contact.invoice_dest = 'Y'
+  #     OR
+  #     cust_contact.message_dest = 'Y'
+  #   )
+  # )
+
+  my @and_dest;
+  my @or_classnum;
   my @classnums;
-  foreach (@_) {
-    if ( $_ eq 'invoice' ) {
-      push @orwhere, 'cust_contact.invoice_dest = \'Y\'';
-    } elsif ( $_ eq '0' ) {
-      push @orwhere, 'cust_contact.classnum is null';
+  for (@_) {
+    if ($_ eq 'invoice' || $_ eq 'message') {
+      push @and_dest, " cust_contact.${_}_dest = 'Y' ";
+    } elsif ($_ eq '0') {
+      push @or_classnum, ' cust_contact.classnum IS NULL ';
     } elsif ( /^\d+$/ ) {
       push @classnums, $_;
     } else {
-      die "bad classnum argument '$_'";
+      croak "bad classnum argument '$_'";
     }
   }
 
-  if (@classnums) {
-    push @orwhere, 'cust_contact.classnum IN ('.join(',', @classnums).')';
-  }
-  if (@orwhere) {
-    $search->{extra_sql} .= ' AND (' .
-                            join(' OR ', map "( $_ )", @orwhere) .
-                            ')';
+  push @or_classnum, 'cust_contact.classnum IN ('.join(',',@classnums).')'
+    if @classnums;
+
+  if (@or_classnum || @and_dest) { # catch, no arguments given
+    $search->{extra_sql} .= ' AND ( ';
+
+      if (@or_classnum) {
+        $search->{extra_sql} .= ' ( ';
+        $search->{extra_sql} .= join ' OR ', map {" $_ "} @or_classnum;
+        $search->{extra_sql} .= ' ) ';
+        $search->{extra_sql} .= ' AND ( ' if @and_dest;
+      }
+
+      if (@and_dest) {
+        $search->{extra_sql} .= join ' OR ', map {" $_ "} @and_dest;
+        $search->{extra_sql} .= ' ) ' if @or_classnum;
+      }
+
+    $search->{extra_sql} .= ' ) ';
+
+    warn "\$extra_sql: $search->{extra_sql} \n" if $DEBUG;
   }
 
   qsearch($search);
@@ -5540,4 +5596,3 @@ L<FS::cust_main_invoice>, L<FS::UID>, schema.html from the base documentation.
 =cut
 
 1;
-

@@ -418,6 +418,8 @@ if( $curuser->access_right('Financial reports') ) {
 
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
+  $report_financial{'Upcoming Auto-Bill Transactions'} = [ $fsurl.'search/report_future_autobill.html', 'Upcoming auto-bill transactions' ];
+
 } elsif($curuser->access_right('Receivables report')) {
 
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
@@ -835,6 +837,11 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
   || $curuser->access_right('Edit global inventory')
   || $curuser->access_right('Configuration');
 
+$config_misc{'Real estate inventory'} = [ $fsurl.'browse/realestate_unit.html', 'Setup real estate inventory' ]
+  if $curuser->access_right('Edit realestate inventory')
+  || $curuser->access_right('Edit global inventory')
+  || $curuser->access_right('Configuration');
+
 $config_misc{'Upload targets'} = [ $fsurl.'browse/upload_target.html', 'Billing and payment upload destinations' ]
   if $curuser->access_right('Configuration');
 
@@ -1039,4 +1046,3 @@ sub submenu {
 }
 
 </%init>
-

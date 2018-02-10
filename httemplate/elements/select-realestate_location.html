@@ -1,0 +1,32 @@
+<%doc>
+
+  Displays a selectbox populated with values from realestate_location.
+  key:   realestate_location.realestatenum
+  value: realestate_location.location_title
+
+</%doc>
+
+<% include( '/elements/select-table.html',
+    %opt,
+    table         => 'realestate_location',
+    name_col      => 'location_title',
+    hashref       => { 'disabled' => '' },
+    value         => $select_value,
+    disable_empty => 1,
+  )
+%>
+
+<%init>
+
+#
+# possible todo:
+# I'd like to change the behavior of this select based on if
+# a new item is being created, or an existing item being edited
+
+my %opt = @_;
+my $select_value = $opt{'curr_value'} || $opt{'value'};
+
+# use Data::Dumper qw(Dumper);
+# print Dumper(\%opt);
+
+</%init>

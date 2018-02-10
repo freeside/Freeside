@@ -10,15 +10,32 @@
                  'disable_empty' => 0,
   &>
 
+% # Selecting contacts and prospects at the same time has been sacrificed
+% # for agent virtualization
   <& /elements/tr-select.html,
-       'label'      => 'Contact source', #??? not "type" - contacts have a type
+       'label'      => 'Contact source:',
        'field'      => 'link',
-       'options'    => [ 'prospect_main', 'cust_main', '' ],
+       'options'    => [ 'prospect_main', 'cust_main' ],
        'labels'     => { 'prospect_main' => 'Prospect contacts',
                          'cust_main'     => 'Customer contacts',
-                         ''              => 'All contacts',
                        },
        'curr_value' => scalar( $cgi->param('link') ),
+  &>
+
+  <& /elements/tr-checkbox-multiple.html,
+    label => emt('Destinations').':',
+    field => 'dest',
+    options => [ 'message', 'invoice' ],
+    labels => {
+      invoice => 'Invoice recipients',
+      message => 'Message recipients',
+    },
+    value => { message => 1 },
+  &>
+
+  <& /elements/tr-select-multiple-contact_class.html,
+    label => emt('Contact Type').':',
+    field => 'classnum',
   &>
 
 </FORM>
