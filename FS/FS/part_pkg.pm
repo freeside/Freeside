@@ -232,6 +232,19 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  if ( length($self->classnum) && $self->classnum !~ /^(\d+)$/ ) {
+    my $pkg_class = qsearchs('pkg_class', { 'classname' => $self->classnum } )
+                 || new FS::pkg_class { classname => $self->classnum };
+    unless ( $pkg_class->classnum ) {
+      my $error = $pkg_class->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+    $self->classnum( $pkg_class->classnum );
+  }
+
   warn "  inserting part_pkg record" if $DEBUG;
   my $error = $self->SUPER::insert( $options{options} );
   if ( $error ) {
