@@ -20,7 +20,7 @@ my $charges = {
   'charges'  => $charges,
   'name'     => 'Gcet',
   'weight'   => '30',
-  'disabled' => '1',
+  'disabled' => '',
 );
 
 1;
