@@ -228,8 +228,9 @@ install-stamp: build-stamp
 
 	# Torrus 
 	
-	install -d ${TORRUS_CONF}
-	install -o root -m 755 htetc/freeside-torrus.conf $(TORRUS_CONF)/
+	#in freeside-webui package
+	#install -d ${TORRUS_CONF}
+	#install -o root -m 755 htetc/freeside-torrus.conf $(TORRUS_CONF)/
 
 	( cd torrus; \
 	torrus_user=freeside var_user=freeside var_group=freeside ./configure; \

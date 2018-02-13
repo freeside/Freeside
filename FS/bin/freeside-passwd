@@ -1,0 +1,19 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+my $user = shift or die &usage;
+my $password = shift or die &usage;
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearchs );
+use FS::access_user;
+
+adminsuidsetup $user;
+
+my $access_user = qsearchs('access_user', {'username'=>$user})
+  or die "unknown username $user\n";
+my $error = $access_user->change_password($password);
+die $error if $error;
+
+1;

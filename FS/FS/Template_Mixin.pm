@@ -657,10 +657,11 @@ sub print_generic {
   $invoice_data{'cid'} = $params{'cid'}
     if $params{'cid'};
 
-  if ( $cust_main->country eq $countrydefault ) {
-    $invoice_data{'country'} = '';
-  } else {
+  if ( $cust_main->bill_locationnum
+       && $cust_main->bill_location->country ne $countrydefault ) {
     $invoice_data{'country'} = &$escape_function($cust_main->bill_country_full);
+  } else {
+    $invoice_data{'country'} = '';
   }
 
   my @address = ();

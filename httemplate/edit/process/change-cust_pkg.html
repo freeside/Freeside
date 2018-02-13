@@ -40,19 +40,54 @@ if ( $cgi->param('locationnum') == -1 ) {
   $change{'cust_location'} = $cust_location;
 }
 
-$change{waive_setup} = '';
+my $error;
 
-if ( $cgi->param('setup_discountnum') =~ /^(-?\d+)$/ ) { 
-  if ( $1 == -2 ) {
+# Discounts:
+# setup_discountnum and change_discountnum may contain one of the following:
+# - "-1" Represents the 'other' option.  Results in a new entry to the
+#        discount table.
+# - "-2" Represents the "waive setup fee" option. Sets cust_pkg.waive_setup = Y
+# - int  Represents the id for a discount row: discount.discountnum
+# my %discount;
+# $change{waive_setup} = '';
+# for my $type (qw|setup recur|) {
+#   my $dnum = $cgi->param("${type}_discountnum");
+
+#   if ($dnum eq '-2' && $type eq 'setup') {
+#     $change{waive_setup} = 'Y';
+#   } elsif ($val =~ /^-?\d+$/) {
+#     $discount{$type} = {discountnum => $dnum};
+#     if ($dnum eq '-1') {
+#       $discount{$type}->{amount}  = $cgi->param("${type}_discountnum_amount");
+#       $discount{$type}->{percent} = $cgi->param("${type}_discountnum_percent");
+#     }
+#   } else {
+#     # Shouldn't happen without funny business
+#     $error = "Bad value ${type}_discountnum ($val)";
+#   }
+# }
+
+
+$change{waive_setup} = '';
+for my $type (qw|setup_discountnum recur_discountnum|) {
+  my $dnum = $cgi->param($type);
+
+  if ($dnum eq '-2' && $type eq 'setup_discountnum') {
+    # Waive Discount
     $change{waive_setup} = 'Y';
+  } elsif ($dnum =~ /^-?\d+$/) {
+    # Set discountnum
+    $change{$type} = $dnum;
+    $change{"${type}_amount"}  = $cgi->param("${type}_amount");
+    $change{"${type}_percent"} = $cgi->param("${type}_percent");
+  } elsif ($dnum eq '') {
+    # Set discount as no discount
+    $change{"${type}"} = 0;
   } else {
-    $change{setup_discountnum} = $1;
-    $change{setup_discountnum_amount} = $cgi->param('setup_discountnum_amount');
-    $change{setup_discountnum_percent} = $cgi->param('setup_discountnum_percent');
+    $error = "Bad value ${type}_discountnum ($dnum)";
   }
 }
 
-my $error;
 my $now = time;
 if (defined($cgi->param('contract_end'))) {
   $change{'contract_end'} = parse_datetime($cgi->param('contract_end'));

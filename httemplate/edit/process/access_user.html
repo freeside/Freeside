@@ -11,7 +11,7 @@
                                        'target_table' => 'access_group',
                                      },
                  'precheck_callback'        => \&precheck_callback,
-                 'post_new_object_callback' => \&post_new_object_callback,
+                 #'post_new_object_callback' => \&post_new_object_callback,
                  'noerror_callback'         => \&noerror_callback,
              )
 %>
@@ -38,19 +38,23 @@ sub precheck_callback {
   return '';
 }
 
-sub post_new_object_callback {
+#sub post_new_object_callback {
+#  my( $cgi, $access_user ) = @_;
+#
+#  if ( length($cgi->param('_password')) ) {
+#    my $password = scalar($cgi->param('_password'));
+#    my $error = $access_user->is_password_allowed($password);
+#    #XXX and then bubble the error back up to the UI
+#  }
+#}
+
+sub noerror_callback {
   my( $cgi, $access_user ) = @_;
 
   if ( length($cgi->param('_password')) ) {
     my $password = scalar($cgi->param('_password'));
-    my $error = $access_user->is_password_allowed($password)
-             || $access_user->change_password($password);
+    $access_user->change_password($password);
   }
-
-}
-
-sub noerror_callback {
-  my( $cgi, $access_user ) = @_;
 
   #handle installer checkbox
   my @sched_item = $access_user->sched_item;

@@ -106,21 +106,37 @@ sub insert {
   '';
 }
 
-=item delete
+=item delete [ ARG => VALUE ... ]
 
 Delete this record from the database.
+
+If the "reprocess_cdrs" argument is set to true, resets the status of any
+related CDRs (and deletes their associated cdr_termination records, if any).
 
 =cut
 
 sub delete {
-  my $self = shift;
+  my( $self, %args ) = @_;
+
   my $error = $self->SUPER::delete;
   return $error if $error;
+
   foreach my $cdr (qsearch('cdr', { detailnum => $self->detailnum })) {
+
     $cdr->set('detailnum', '');
+    $cdr->set('freesidestatus', '') if $args{'reprocess_cdrs'};
     $error = $cdr->replace;
     return "error unlinking CDR #" . $cdr->acctid . ": $error" if $error;
+
+    #well, technically this could have been on other invoices / termination
+    # partners... separate flag?
+    $self->scalar_sql( 'DELETE FROM cdr_termination WHERE acctid = ?',
+                       $cdr->acctid )
+      if $args{'reprocess_cdrs'};
+
   }
+
+  '';
 }
 
 =item replace OLD_RECORD

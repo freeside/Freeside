@@ -5661,9 +5661,6 @@ sub tables_hashref {
         'sessionnum',       'int',    'NULL',      '', '', '',
         'subscriber',   'varchar',    'NULL', $char_d, '', '',
 
-        #old
-        'cdrbatch',     'varchar',    'NULL',     255, '', '',
-        #new
         'cdrbatchnum',      'int',    'NULL',      '', '', '',
 
         # FK to cust_bill_pkg_detail; having a value here absolutely means

@@ -716,7 +716,10 @@ sub estimate {
     my $cust_main;
     if ( $cust_or_prospect->isa('FS::prospect_main') ) {
       $cust_main = $cust_or_prospect->convert_cust_main;
-      die "$cust_main (simulating customer signup)\n" unless ref $cust_main;
+      unless ( ref($cust_main) ) {
+        $temp_dbh->rollback;
+        die "$cust_main (simulating customer signup)\n";
+      }
       $fake_self->set('prospectnum', '');
       $fake_self->set('custnum', $cust_main->custnum);
     } else {
@@ -726,7 +729,10 @@ sub estimate {
     # order packages
     local($FS::cust_pkg::disable_start_on_hold) = 1;
     $error = $fake_self->order(\%pkgnum_of);
-    die "$error (simulating package order)\n" if $error;
+    if ( $error ) {
+      $temp_dbh->rollback;
+      die "$error (simulating package order)\n";
+    }
 
     my @new_pkgs = map { FS::cust_pkg->by_key($_) } values(%pkgnum_of);
 
@@ -739,7 +745,10 @@ sub estimate {
       'no_usage_reset'  => 1,
     );
     $error = $cust_main->bill(%bill_opt);
-    die "$error (simulating initial billing)\n" if $error;
+    if ( $error ) {
+      $temp_dbh->rollback;
+      die "$error (simulating initial billing)\n" if $error;
+    }
 
     # pick dates for future bills
     my %next_bill_pkgs;
@@ -755,7 +764,10 @@ sub estimate {
       $bill_opt{'return_bill'} = $return_bill[$i] = [];
       $bill_opt{'pkg_list'} = $next_bill_pkgs{$next_bill};
       $error = $cust_main->bill(%bill_opt);
-      die "$error (simulating recurring billing cycle $i)\n" if $error;
+      if ( $error ) {
+        $temp_dbh->rollback;
+        die "$error (simulating recurring billing cycle $i)\n";
+      }
       $i++;
     }
 
