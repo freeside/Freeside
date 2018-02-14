@@ -7,7 +7,9 @@ In order_pkg.html or similar:
   curr_value_recur    => ($cgi->param('recur_discountnum') || ''),
   disable_setup       => 0,
   disable_recur       => 0,
-  disable_waive_setup => 0
+  disable_waive_setup => 0,
+  carry_value_setup   => $carry_setup_discountnum,
+  carry_value_recur   => $carry_recur_discountnum,
 &>
 
 This provides the following:
@@ -20,6 +22,8 @@ This provides the following:
   checkbox to waive setup fee.
 - Same for recurring fee, but without the "waive setup fee" stuff, obviously.
 - Custom recurring discounts also have an option for a duration in months.
+- When changing a package, the original package's discount option is
+  labeled in the select options
 
 "disable_setup" locks the setup discount, but will still show a static
 description if curr_value_setup is set. Likewise "disable_recur".
@@ -47,6 +51,8 @@ description if curr_value_setup is set. Likewise "disable_recur".
       curr_value  => $opt{'curr_value_setup'},
       disable_empty => 1,
       pre_options => $pre_options,
+      also_show_option => $opt{carry_value_setup},
+      label_callback   => $opt{carry_value_setup} ? $carry_setup_sub : undef,
     &>
   </td>
 </tr>
@@ -107,6 +113,8 @@ description if curr_value_setup is set. Likewise "disable_recur".
       id          => 'recur_discountnum',
       hashref     =>  { disabled => '' },
       curr_value  => $opt{'curr_value_recur'},
+      also_show_option => $opt{carry_value_recur},
+      label_callback   => $opt{carry_value_recur} ? $carry_recur_sub : undef,
     &>
 
   </td>
@@ -196,4 +204,18 @@ my %opt = (
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $money_char = FS::Conf->new->config('money_char') || '$';
 
+# Change the label for the select-option when it matches the carryover
+# discountnum
+my $carry_recur_sub =  sub {
+  my ($rec) = @_;
+  $rec->discountnum eq $opt{carry_value_recur}
+    ? $rec->description() . ' [Continues existing discount]'
+    : $rec->description();
+};
+my $carry_setup_sub =  sub {
+  my ($rec) = @_;
+  $rec->discountnum eq $opt{carry_value_setup}
+    ? $rec->description() . ' [Continues existing discount]'
+    : $rec->description();
+};
 </%init>
