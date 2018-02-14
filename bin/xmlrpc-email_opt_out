@@ -1,0 +1,44 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Frontier::Client;
+
+my $uri = new URI 'http://localhost:8008/';
+
+my $server = new Frontier::Client ( 'url' => $uri );
+
+my $secret = 'sharingiscaring';
+
+die "
+Usage:
+  xmlrpc-email_opt_out email\@address.com email\@address.net ...
+
+" unless @ARGV && $ARGV[0] =~ /\@/;
+
+
+for my $address (@ARGV) {
+
+  my $response = $server->call('FS.API.email_opt_out',
+    # API shared secret
+    secret => $secret,
+
+    # E-Mail address
+    address => $address,
+
+    #   Do not clear the invoice_dest field:
+    # disable_invoice_dest => 0,
+
+    #   Do not clear the message_dest field:
+    # disable_message_dest => 0,
+  );
+
+  if ($response->{error}) {
+    print "$response->{error} \n";
+  } else {
+    print "opt-out: $address \n";
+  }
+}
+
+
+1;

@@ -10,6 +10,7 @@ use FS::cust_pay;
 use FS::cust_credit;
 use FS::cust_refund;
 use FS::cust_pkg;
+use FS::cust_contact;
 
 =head1 NAME
 
@@ -794,6 +795,8 @@ Including this implements per-customer custom pricing for this package, overridi
 A single string for just one detail line, or an array reference of one or more
 lines of detail
 
+=back
+
 =cut
 
 sub order_package {
@@ -1201,6 +1204,66 @@ sub edit_advertising_source {
 }
 
 
+=item email_optout OPTION => VALUE, ...
+
+Each e-mail address, or L<FS::cust_contact> record, has two opt-in flags:
+message_dest: recieve non-invoicing messages, and invoice_dest: recieve
+invoicing messages
+
+Use this API call to remove opt-in flags for an e-mail address
+
+=over 4
+
+=item address
+
+E-Mail address
+
+=item disable_message_dest
+
+Enabled by default:
+Set this parameter as 0 in your API call to leave the message_dest flag as is
+
+=item disable_invoice_dest
+
+Enabled by default:
+Set this parameter as 0 in your API call to leave the invoice_dest flag as is
+
+=back
+
+=cut
+
+sub email_opt_out {
+  my ($class, %opt) = @_;
+
+  return _shared_secret_error()
+    unless _check_shared_secret($opt{secret});
+
+  return {error => 'No e-mail address specified'}
+    unless $opt{address} && $opt{address} =~ /\@/;
+
+  $opt{disable_message_dest} ||= 1;
+  $opt{disable_invoice_dest} ||= 1;
+
+  my $address = FS::Record::dbh->quote($opt{address});
+
+  for my $cust_contact (
+    FS::Record::qsearch({
+      table     => 'cust_contact',
+      select    => 'cust_contact.*',
+      addl_from => 'LEFT JOIN contact_email USING (contactnum)',
+      extra_sql => "WHERE contact_email.emailaddress = $address",
+    })
+  ) {
+    $cust_contact->set(invoice_dest => '') if $opt{disable_invoice_dest};
+    $cust_contact->set(message_dest => '') if $opt{disable_message_dest};
+
+    my $error = $cust_contact->replace();
+    return {error => $error} if $error;
+  }
+  return;
+}
+
+
 ##
 # helper subroutines
 ##
@@ -1212,5 +1275,10 @@ sub _check_shared_secret {
 sub _shared_secret_error {
   return { 'error' => 'Incorrect shared secret' };
 }
+
+
+=back
+
+=cut
 
 1;
