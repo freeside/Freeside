@@ -195,13 +195,22 @@ if ( ref( $value ) eq 'ARRAY' ) {
   $value = { map { $_ => 1 } @$value };
 }
 
-unless (    !ref($value) && $value < 1 # !$value #ignore negatives too
-         or ! exists( $opt{hashref}->{disabled} ) #??
-         #or grep { $value == $_->$key() } @records
-       ) {
+
+if (
+     (ref $value && $value)
+  or (ref $opt{hashref} && exists $opt{hashref}->{disabled})
+  or $opt{also_show_option}
+) {
+
   delete $opt{hashref}->{disabled};
 
-  foreach my $v ( ref($value) ? keys %$value : ($value) ) {
+  # also_show_option: (hack for change_pkg form):
+  #   Include an absent select option, without selecting it
+  #   as the curr_value
+  my @also_show = ref($value) ? keys %$value : ($value);
+  push @also_show, $opt{also_show_option} if $opt{also_show_option};
+
+  foreach my $v ( @also_show ) {
     next if grep { $v == $_->$key() } @records;
 
     $opt{hashref}->{$key} = $v;

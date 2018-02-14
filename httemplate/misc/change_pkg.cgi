@@ -91,11 +91,13 @@
   <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
   <TABLE CLASS="fsinnerbox">
     <& /elements/tr-select-pkg-discount.html,
-      curr_value_setup    => $discount{setup},
-      curr_value_recur    => $discount{recur},
+      # curr_value_setup    => $discount{setup},
+      # curr_value_recur    => $discount{recur},
       disable_setup       => 0,
       disable_recur       => 0,
-      disable_waive_setup => 0
+      disable_waive_setup => 0,
+      carry_value_setup   => $discount{setup},
+      carry_value_recur   => $discount{recur},
     &>
   </TABLE><BR>
 
