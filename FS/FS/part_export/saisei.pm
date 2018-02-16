@@ -1,15 +1,13 @@
 package FS::part_export::saisei;
 
 use strict;
-use base qw( FS::part_export );
 use vars qw( @ISA %info );
+use base qw( FS::part_export );
 use Date::Format 'time2str';
 use Cpanel::JSON::XS;
-use Net::HTTPS::Any qw(https_post);
 use MIME::Base64;
 use REST::Client;
 use Data::Dumper;
-
 use FS::Conf;
 
 #@ISA = qw( FS::part_export::http );
@@ -33,19 +31,12 @@ This module also provides generic methods for working through the L</Saisei API>
 =cut
 
 tie my %options, 'Tie::IxHash',
+  'port'             => { label => 'Port',
+                          default => 5000 },
   'username'         => { label => 'User Name',
                           default => '' },
   'password'         => { label => 'Password',
                           default => '' },
-  'host'             => { label => 'Host',
-                          default => 'STM IP ADDRESS' },
-  'port'             => { label => 'Port',
-                          default => 5000 },
-  'customer_name'    => { label => 'Customer Name',
-                          default => 'FREESIDE CUST $custnum' },
-  'account_id'       => { label => 'Account ID',
-                          default => 'SVC$svcnum' },
-  'product_id'       => { label => 'Account Product ID' },
   'debug'            => { type => 'checkbox',
                           label => 'Enable debug warnings' },
 ;
@@ -101,22 +92,28 @@ sub _export_insert {
   my $username = $email[0];
   my $description = $cust_main->{Hash}->{first}." ".$cust_main->{Hash}->{last};
 
-  # check for existing user.
-  my $existing_user;
-  $existing_user = $self->api_get_user($username) unless ( $self->{'__saisei_error'} || !$username);
+  if (!$username) {
+    $self->{'__saisei_error'} = 'no username - can not export';
+    warn "No email found $username\n" if $self->option('debug');
+    return;
+  }
+  else {
+    # check for existing user.
+    my $existing_user;
+    $existing_user = $self->api_get_user($username) unless $self->{'__saisei_error'};
  
-  # if no existing user create one.
-  $self->api_create_user($username, $description) unless $existing_user;
+    # if no existing user create one.
+    $self->api_create_user($username, $description) unless $existing_user;
 
-  # set user to existing one or newly created one.
-  my $user = $existing_user ? $existing_user : $self->api_get_user($username);
+    # set user to existing one or newly created one.
+    my $user = $existing_user ? $existing_user : $self->api_get_user($username);
 
-  ## add access point ?
+    ## add access point ?
  
-  ## tie host to user
-  $self->api_add_host_to_user($user->{collection}->[0]->{name}, $rateplan->{collection}->[0]->{name}, $svc_broadband->{Hash}->{ip_addr}) unless $self->{'__saisei_error'};
+    ## tie host to user
+    $self->api_add_host_to_user($user->{collection}->[0]->{name}, $rateplan->{collection}->[0]->{name}, $svc_broadband->{Hash}->{ip_addr}) unless $self->{'__saisei_error'};
+  }
 
-  #die('ending for testing');
   return '';
 
 }
@@ -187,14 +184,18 @@ sub api_call {
   my $auth_info = $self->option('username') . ':' . $self->option('password');
   $params ||= {};
 
-  print "Calling /$method\n" if $self->option('debug');
+  warn "Calling $method on http://"
+    .$self->{Hash}->{machine}.':'.$self->option('port')
+    ."/rest/stm/configurations/running/$path\n" if $self->option('debug');
 
   my $data = encode_json($params) if keys %{ $params };
 
   my $client = REST::Client->new();
   $client->addHeader("Authorization", "Basic ".encode_base64($auth_info));
-  $client->setHost('http://'.$self->option('host').':'.$self->option('port'));
+  $client->setHost('http://'.$self->{Hash}->{machine}.':'.$self->option('port'));
   $client->$method('/rest/stm/configurations/running/'.$path, $data, { "Content-type" => 'application/json'});
+
+  warn "Response Code is ".$client->responseCode()."\n" if $self->option('debug');
 
   my $result;
 
@@ -207,7 +208,7 @@ sub api_call {
   }
   else {
     $self->{'__saisei_error'} = "Bad response from server during $method: " . $client->responseContent();
-    print "My response content fo /$method\n". Dumper($client->responseContent) if $self->option('debug');
+    warn "Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return; 
   }
 
@@ -387,16 +388,16 @@ Creates a access point.
 sub api_create_accesspoint {
   my ($self,$accesspoint) = @_;
 
-  my $new_accesspoint = $self->api_call(
-      "PUT", 
-      "access_points/$accesspoint",
-      {
-        'description' => 'my description',
-      },
-  );
+  #my $new_accesspoint = $self->api_call(
+  #    "PUT", 
+  #    "access_points/$accesspoint",
+  #    {
+  #      'description' => 'my description',
+  #    },
+  #);
 
-  $self->{'__saisei_error'} = "Access point not created"
-    unless $new_accesspoint; # should never happen
+  #$self->{'__saisei_error'} = "Access point not created"
+  #  unless $new_accesspoint; # should never happen
   return;
 
 }
