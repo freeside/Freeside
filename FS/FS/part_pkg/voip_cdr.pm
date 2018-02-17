@@ -360,6 +360,13 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                      )
                   ],
   'weight' => 41,
+  'validate' => sub {
+    # Validation function for FS::part_pkg::check_options()
+    my $options = shift;
+    return "Please select a rate plan for price plan VoIP/telco CDR rating (standard)"
+      unless $options->{ratenum};
+    return;
+  },
 );
 
 sub price_info {
@@ -724,4 +731,3 @@ sub hide_svc_detail {
 
 
 1;
-
