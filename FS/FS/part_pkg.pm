@@ -787,11 +787,17 @@ sub check {
 
 =item check_options
 
-For a passed I<$options> hashref, validates any options that
-have 'validate' subroutines defined in the info hash, 
-then validates the entire hashref if the price plan has 
-its own 'validate' subroutine defined in the info hash 
-(I<$options> values might be altered.)  
+Pass an I<$options> hashref that contains the values to be
+inserted or updated for any FS::part_pkg::MODULE.pm.
+
+For each key in I<$options>, validates the value by calling
+the 'validate' subroutine defined for that option e.g.
+FS::part_pkg::MODULE::plan_info()->{$KEY}->{validate}.  The
+option validation function is only called when the hashkey for
+that option exists in I<$options>.
+
+Then the module validation function is called, from
+FS::part_pkg::MODULE::plan_info()->{validate}
 
 Returns error message, or empty string if valid.
 
@@ -2610,4 +2616,3 @@ schema.html from the base documentation.
 =cut
 
 1;
-
