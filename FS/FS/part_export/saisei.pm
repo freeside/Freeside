@@ -193,7 +193,7 @@ sub api_call {
   my $client = REST::Client->new();
   $client->addHeader("Authorization", "Basic ".encode_base64($auth_info));
   $client->setHost('http://'.$self->{Hash}->{machine}.':'.$self->option('port'));
-  $client->$method('/rest/stm/configurations/running/'.$path, $data, { "Content-type" => 'application/json'});
+  $client->$method('/rest/stm/configurations/running'.$path, $data, { "Content-type" => 'application/json'});
 
   warn "Response Code is ".$client->responseCode()."\n" if $self->option('debug');
 
@@ -237,7 +237,7 @@ Gets a list of global policies.
 sub api_get_policies {
   my $self = shift;
 
-  my $get_policies = $self->api_call("GET", 'policies/?token=1&order=name&start=0&limit=20&select=name%2Cpercent_rate%2Cassured%2C');
+  my $get_policies = $self->api_call("GET", '/policies/?token=1&order=name&start=0&limit=20&select=name%2Cpercent_rate%2Cassured%2C');
   return if $self->api_error;
   $self->{'__saisei_error'} = "Did not receive any global policies"
     unless $get_policies;
@@ -255,7 +255,7 @@ sub api_get_rateplan {
   my $self = shift;
   my $rateplan = shift;
 
-  my $get_rateplan = $self->api_call("GET", "rate_plans/$rateplan");
+  my $get_rateplan = $self->api_call("GET", "/rate_plans/$rateplan");
   return if $self->api_error;
   $self->{'__saisei_error'} = "Did not receive any rateplan info"
     unless $get_rateplan;
@@ -273,7 +273,7 @@ sub api_get_user {
   my $self = shift;
   my $user = shift;
 
-  my $get_user = $self->api_call("GET", "users/$user");
+  my $get_user = $self->api_call("GET", "/users/$user");
   return if $self->api_error;
   $self->{'__saisei_error'} = "Did not receive any user info"
     unless $get_user;
@@ -291,7 +291,7 @@ sub api_get_accesspoint {
   my $self = shift;
   my $accesspoint;
 
-  my $get_accesspoint = $self->api_call("GET", "access_points/$accesspoint");
+  my $get_accesspoint = $self->api_call("GET", "/access_points/$accesspoint");
   return if $self->api_error;
   $self->{'__saisei_error'} = "Did not receive any user info"
     unless $get_accesspoint;
@@ -310,7 +310,7 @@ sub api_create_rateplan {
 
   my $new_rateplan = $self->api_call(
       "PUT", 
-      "rate_plans/$rateplan",
+      "/rate_plans/$rateplan",
       {
         'downstream_rate' => $svc->{Hash}->{speed_down},
         'upstream_rate' => $svc->{Hash}->{speed_up},
@@ -338,7 +338,7 @@ sub api_modify_rateplan {
     if ($policy->{background}) { $rate_multiplier = ".01"; }
     my $modified_rateplan = $self->api_call(
       "PUT", 
-      "rate_plans/$rateplan_name/partitions/$policyname",
+      "/rate_plans/$rateplan_name/partitions/$policyname",
       {
         'restricted'      =>  $policy->{assured},         # policy_assured_flag
         'rate_multiplier' => $rate_multiplier,           # policy_background 0.1
@@ -366,7 +366,7 @@ sub api_create_user {
 
   my $new_user = $self->api_call(
       "PUT", 
-      "users/$user",
+      "/users/$user",
       {
         'description' => $description,
       },
@@ -390,7 +390,7 @@ sub api_create_accesspoint {
 
   #my $new_accesspoint = $self->api_call(
   #    "PUT", 
-  #    "access_points/$accesspoint",
+  #    "/access_points/$accesspoint",
   #    {
   #      'description' => 'my description',
   #    },
@@ -413,7 +413,7 @@ sub api_add_host_to_user {
 
   my $new_host = $self->api_call(
       "PUT", 
-      "hosts/$ip",
+      "/hosts/$ip",
       {
         'user'      => $user,
         'rate_plan' => $rateplan,
@@ -436,7 +436,22 @@ ties host to user and rateplan.
 sub api_delete_host_to_user {
   my ($self,$user, $rateplan, $ip) = @_;
 
-  my $delete_host = $self->api_call("DELETE", "hosts/$ip");
+  my $default_rate_plan = $self->api_call("GET", '?token=1&select=default_rate_plan');
+    return if $self->api_error;
+  $self->{'__saisei_error'} = "Did not receive a default rate plan"
+    unless $default_rate_plan;
+
+  my $default_rateplan_name = $default_rate_plan->{collection}->[0]->{default_rate_plan}->{link}->{name};
+
+  my $delete_host = $self->api_call(
+      "PUT",
+      "/hosts/$ip",
+      {
+        'user'          => '<none>',
+        'access_point'  => '<none>',
+        'rate_plan'     => $default_rateplan_name,
+      },
+  );
 
   $self->{'__saisei_error'} = "Host not created"
     unless $delete_host; # should never happen
