@@ -95,8 +95,9 @@
 %               {
 %                 $cgi->delete('maxrecords');
 %                 $cgi->param('_dummy', 1);
+%                 my $query = $m->scomp('/elements/create_uri_query');
 
-                  ( show <SELECT NAME="maxrecords" onChange="window.location = '<% "$self_url?". $cgi->query_string %>;maxrecords=' + this.options[this.selectedIndex].value;">
+                  ( show <SELECT NAME="maxrecords" onChange="window.location = '<% "$self_url?$query" %>;maxrecords=' + this.options[this.selectedIndex].value;">
 
 %                   foreach my $max ( map { $_ * $confmax } qw( 1 5 10 25 ) ) {
                   <OPTION VALUE="<% $max %>" <% ( $maxrecords == $max ) ? 'SELECTED' : '' %>><% $max %></OPTION>
@@ -139,18 +140,22 @@
                 <% $opt{'download_label'} || 'Download results:' %>
 
 %               $cgi->param('_type', "$xlsname.xls" ); 
-                <A HREF="<% "$self_url?". $cgi->query_string %>">Spreadsheet</A>&nbsp;|&nbsp;
+%               my $query = $m->scomp('/elements/create_uri_query');
+                <A HREF="<% "$self_url?$query" %>">Spreadsheet</A>&nbsp;|&nbsp;
 
 %               $cgi->param('_type', 'csv'); 
-                <A HREF="<% "$self_url?". $cgi->query_string %>">CSV</A>&nbsp;|&nbsp;
+%               my $query = $m->scomp('/elements/create_uri_query');
+                <A HREF="<% "$self_url?$query" %>">CSV</A>&nbsp;|&nbsp;
 
 %             if ( defined($opt{xml_elements}) ) {
 %               $cgi->param('_type', 'xml'); 
-                <A HREF="<% "$self_url?". $cgi->query_string %>">XML</A>&nbsp;|&nbsp;
+%               my $query = $m->scomp('/elements/create_uri_query');
+                <A HREF="<% "$self_url?$query" %>">XML</A>&nbsp;|&nbsp;
 %             }
 
 %               $cgi->param('_type', 'html-print'); 
-                <A HREF="<% "$self_url?". $cgi->query_string %>">webpage</A>
+%               my $query = $m->scomp('/elements/create_uri_query');
+                <A HREF="<% "$self_url?$query" %>">webpage</A>
 
 %# "save search" -- for now, obey disable_download and the 'Download
 %# report data' ACL, because saving a search allows the user to receive
@@ -307,8 +312,8 @@ my $self_url = $cgi->url('-path_info' => 1, '-full' =>1);
 %     } else {
 %       $cgi->param('order_by', $field);
 %     }
-%     $label = qq(<A HREF="$self_url?). $cgi->query_string.
-%              qq(">$label</A>);
+%     my $query = $m->scomp('/elements/create_uri_query');
+%     $label = qq(<A HREF="$self_url?$query">$label</A>);
 %   }
 %
 %   $colspan = ref($header) ? $header->{colspan} : 0;
