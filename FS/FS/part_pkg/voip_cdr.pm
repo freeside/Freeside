@@ -363,8 +363,8 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
   'validate' => sub {
     # Validation function for FS::part_pkg::check_options()
     my $options = shift;
-    return "Please select a rate plan for price plan VoIP/telco CDR rating (standard)"
-      unless $options->{ratenum};
+    return "Please choose a Rate Plan for use with selected Rating Method"
+      if $options->{rating_method} eq 'prefix' &&  !$options->{ratenum};
     return;
   },
 );
