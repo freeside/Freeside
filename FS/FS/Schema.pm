@@ -5677,7 +5677,7 @@ sub tables_hashref {
                    ['accountcode'], ['uniqueid'], ['carrierid'], ['cdrid'],
                    [ 'sessionnum' ], [ 'subscriber' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
-                   [ 'cdrbatch' ], [ 'cdrbatchnum' ],
+                   [ 'cdrbatchnum' ],
                    [ 'src_ip_addr' ], [ 'dst_ip_addr' ], [ 'dst_term' ],
                    [ 'detailnum' ],
                  ],
