@@ -238,6 +238,8 @@ my $process_url = $opt{'process_url'} || 'process/email-customers.html';
 my $title = $opt{'title'} || 'Send customer notices';
 push( @no_search_fields, @{$opt{'no_search_fields'}} ) if $opt{'no_search_fields'};
 
+$m->comp('/elements/handle_uri_query');
+
 my $table = $cgi->param('table') or die "'table' required";
 my $agent_virt_agentnum = $cgi->param('agent_virt_agentnum') || '';
 
