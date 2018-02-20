@@ -10,6 +10,8 @@ die "access denied" unless
 
 my $conf = new FS::Conf;
 
+$m->comp('/elements/handle_uri_query');
+
 my @features; # geoJSON structure
 
 # accept all the search logic from svc_broadband.cgi...

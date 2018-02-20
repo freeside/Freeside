@@ -1,9 +1,17 @@
+<%doc>
+
+Usage (before accessing any $cgi parameters):
+
+$m->comp('/elements/handle_uri_query');
+
+</%doc>
 <%init>
 
-my %opt = @_;
+#my %opt = @_;
 
 if ( $cgi->param('redirect') ) {
   my $session = $cgi->param('redirect');
+  my $maxrecords = $cgi->param('maxrecords');
 
   my $pref = $FS::CurrentUser::CurrentUser->option("redirect$session");
   die "unknown redirect session $session\n" unless length($pref);
@@ -15,6 +23,8 @@ if ( $cgi->param('redirect') ) {
     my $decrypted = FS::Record->decrypt( $value );
     $cgi->param($param, $decrypted);
   }
+
+  $cgi->param('maxrecords', $maxrecords) if $maxrecords =~ /^(\d+)$/;
 
 }
 </%init>

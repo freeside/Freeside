@@ -1,18 +1,19 @@
 % if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
-<A HREF="<%$p%>misc/email-customers.html?table=<%$table%>&agent_virt_agentnum=<%$agent_virt_agentnum%>&<%$query%>"><%$label%></A>
+<A HREF="<%$p%>misc/email-customers.html?<%$query%>"><%$label%></A>
 % }
 <%init>
 my %opt = @_;
-my $table = $opt{'table'};
-my $agent_virt_agentnum = $opt{'agent_virt_agentnum'};
 my $search_hash = $opt{'search_hash'};
-die "'table' required" if !$table;
+die "'table' required" if !$opt{'table'};
 die "'search_hash' required" if !$search_hash;
 
 my $uri = new URI;
 my @params = map { $_, $search_hash->{$_} } sort keys %$search_hash;
-$uri->query_form(@params);
-my $query = $uri->query;
+$uri->query_form( @params,
+                  table               => $opt{'table'},
+                  agent_virt_agentnum => $opt{'agent_virt_agentnum'}
+                );
+my $query = $m->scomp('/elements/create_uri_query', query=>$uri->query);
 my $label = ($opt{'label'} || 'Email a notice to these customers');
 </%init>
 

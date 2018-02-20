@@ -218,6 +218,8 @@ my(%opt) = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
+$m->comp('/elements/handle_uri_query');
+
 my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|xml|select|html(-print)?)$/
            ? $1 : 'html' ;
 
