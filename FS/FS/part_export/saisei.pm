@@ -100,7 +100,7 @@ sub _export_insert {
   my $rateplan = $existing_rateplan ? $existing_rateplan : $self->api_get_rateplan($rateplan_name);
 
   my @email = map { $_->emailaddress } FS::Record::qsearch({
-        'table'     => 'cust_contact',
+        'table'     => 'contact',
         'select'    => 'emailaddress',
         'addl_from' => ' JOIN contact_email USING (contactnum)',
         'hashref'   => { 'custnum' => $cust_main->{Hash}->{custnum}, },
@@ -150,7 +150,7 @@ sub _export_delete {
   $rateplan_name =~ s/\s/_/g;
 
   my @email = map { $_->emailaddress } FS::Record::qsearch({
-        'table'     => 'cust_contact',
+        'table'     => 'contact',
         'select'    => 'emailaddress',
         'addl_from' => ' JOIN contact_email USING (contactnum)',
         'hashref'   => { 'custnum' => $cust_main->{Hash}->{custnum}, },
