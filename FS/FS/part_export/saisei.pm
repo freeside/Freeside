@@ -10,8 +10,6 @@ use REST::Client;
 use Data::Dumper;
 use FS::Conf;
 
-#@ISA = qw( FS::part_export::http );
-
 =pod
 
 =head1 NAME
@@ -25,6 +23,19 @@ Saisei integration for Freeside
 =head1 DESCRIPTION
 
 This export offers basic svc_broadband provisioning for Saisei.
+
+This is a customer integration with Saisei.  This will setup a rate plan and tie
+the rate plan to a host via the Saisei API when the broadband service is provisioned.
+It will also untie the rate  plan via the API upon unprovisioning of the broadband service.
+
+This export will use the broadband service descriptive label for the Saisei rate plan name and
+will use the email from the first contact for the Saisei username that will be
+attached to this rate plan.  It will use the Saisei default Access Point.
+
+Hostname or IP - Host name to Saisei API
+Port - <I>Port number to Saisei API
+User Name -  <I>Saisei API user name
+Password - <I>Saisei API password
 
 This module also provides generic methods for working through the L</Saisei API>.
 
@@ -46,17 +57,22 @@ tie my %options, 'Tie::IxHash',
   'desc'            => 'Export broadband service/account to Saisei',
   'options'         => \%options,
   'notes'           => <<'END',
-This is customer integration with Saisei.
+This is a customer integration with Saisei.  This will setup a rate plan and tie 
+the rate plan to a host via the Saisei API when the broadband service is provisioned.  
+It will also untie the rate  plan via the API upon unprovisioning of the broadband service.
+<P>This export will use the broadband service descriptive label for the Saisei rate plan name and
+will use the email from the first contact for the Saisei username that will be
+attached to this rate plan.  It will use the Saisei default Access Point.
+<P>
+Required Fields:
+<UL>
+<LI>Hostname or IP - <I>Host name to Saisei API</I></LI>
+<LI>Port - <I>Port number to Saisei API</I></LI>
+<LI>User Name -  <I>Saisei API user name</I></LI>
+<LI>Password - <I>Saisei API password</I></LI>
+</UL>
 END
 );
-
-#"/STM_IP:5000/rest/top/configurations/running/" is for http 5029 for https
-
-#Creating User Names
-#Users are tracked by their name which gives access to the internal slice data which in turn allows the viewing of  Applications and Geo-Locations.
-#Creating a user name requires a command of the following format: -
-#'put', 'users/USER_NAME', {'description':description}
-#When creating a user name it is usual to add a description and since a user attribute set does not normally contain the users plan name it is best to encode it into the description field.
 
 sub _export_insert {
   my ($self, $svc_broadband) = @_;
@@ -166,15 +182,10 @@ set in the export options.
 
 =head2 api_call
 
-Accepts I<$service>, I<$method>, I<$params> hashref and optional
-I<$returnfield>.  Places an api call to the specified service
-and method with the specified params.  Returns the decoded json
-object returned by the api call.  If I<$returnfield> is specified,
-returns only that field of the decoded object, and errors out if
-that field does not exist.  Returns empty on failure;  retrieve
-error messages using L</api_error>.
-
-Must run L</api_login> first.
+Accepts I<$method>, I<$path>, I<$params> hashref and optional.
+Places an api call to the specified path and method with the specified params.
+Returns the decoded json object returned by the api call.
+Returns empty on failure;  retrieve error messages using L</api_error>.
 
 =cut
 
@@ -357,7 +368,7 @@ sub api_modify_rateplan {
 
 =head2 api_create_user
 
-Creates a rateplan.
+Creates a user.
 
 =cut
 
@@ -388,6 +399,7 @@ Creates a access point.
 sub api_create_accesspoint {
   my ($self,$accesspoint) = @_;
 
+  # this has not been tested, but should work, if needed.
   #my $new_accesspoint = $self->api_call(
   #    "PUT", 
   #    "/access_points/$accesspoint",
@@ -404,7 +416,7 @@ sub api_create_accesspoint {
 
 =head2 api_add_host_to_user
 
-ties host to user and rateplan.
+ties host to user, rateplan and default access point.
 
 =cut
 
@@ -427,9 +439,9 @@ sub api_add_host_to_user {
 
 }
 
-=head2 api_add_host_to_user
+=head2 api_delete_host_to_user
 
-ties host to user and rateplan.
+unties host to user and rateplan.
 
 =cut
 
