@@ -24,6 +24,12 @@
 
   <& /elements/tr-input-beginning_ending.html &>
 
+  <& /elements/tr-checkbox.html,
+        label => 'Include waived setup fees:',
+        field => 'include_waived_setup',
+        value => 'Y',
+  &>
+
 <!-- doesn't actually work yet, needs support in cust_bill_pkg_discount.html
   <& /elements/tr-input-lessthan_greaterthan.html,
        'label' => 'Amount',
