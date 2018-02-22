@@ -1,110 +1,238 @@
+<%doc>
+
+Display the Discount Detail Report:
+
+Parameters:
+
+ - discount_classnum
+ - usernum
+ - agentnum
+ - beginning
+ - ending
+ - include_waived_setup
+
+</%doc>
 <& elements/search.html,
-                 'title'       => 'Discounts',
-                 'name'        => 'discounts',
-                 'query'       => $query,
-                 'count_query' => $count_query,
-                 'count_addl'  => [ $money_char. '%.2f total', ],
-                 'header'      => [
-                   #'#',
-                   'Discount',
-                   'Class',
-                   'Amount',
-                   'Months',
-                   'Package',
-                   'Invoice',
-                   'Date',
-                   FS::UI::Web::cust_header(),
-                 ],
-                 'fields'      => [
-                   #'billpkgdiscountnum',
-                   sub { $_[0]->cust_pkg_discount->discount->description },
-                   sub { $_[0]->cust_pkg_discount->discount->classname },
-                   sub { sprintf($money_char.'%.2f', shift->amount ) },
-                   $months_sub,
-                   'pkg',#sub { $_[0]->cust_bill_pkg->cust_pkg->part_pkg->pkg },
-                   'invnum',
-                   sub { time2str('%b %d %Y', shift->_date ) },
-                   \&FS::UI::Web::cust_fields,
-                 ],
-                 'sort_fields' => [
-                   '',
-                   '',
-                   'amount',
-                   'months',
-                   'pkg',
-                   'invnum',
-                   '_date',
-                 ],
-                 'links'       => [
-                   #'',
-                   '', #link to customer discount???
-                   '',
-                   '',
-                   '',
-                   '',
-                   $ilink,
-                   $ilink,
-                   ( map { $_ ne 'Cust. Status' ? $clink : '' }
-                         FS::UI::Web::cust_header()
-                   ),
-                 ],
-                 #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'lcrrlrr'.FS::UI::Web::cust_aligns(),
-                 'color' => [ 
-                              #'',
-                              '',
-                              '',
-                              '',
-                              '',
-                              '',
-                              '',
-                              '',
-                              FS::UI::Web::cust_colors(),
-                            ],
-                 'style' => [ 
-                              #'',
-                              '',
-                              '',
-                              '',
-                              '',
-                              '',
-                              '',
-                              '',
-                              FS::UI::Web::cust_styles(),
-                            ],
+  title       => 'Discounts',
+  name        => 'discounts',
+  query       => $query,
+  count_query => $count_query,
+  count_addl  => [ $money_char . '%.2f total' ],
+
+  header => [
+    qw(
+      Discount
+      Class
+      Amount
+      Months
+      Package
+      Invoice
+      Date
+    ),
+    FS::UI::Web::cust_header(),
+  ],
+
+  fields => [
+    # Discount
+    sub {
+        if ( $_[0]->pkgdiscountnum ) {
+            # Standard discount, not a waived setup fee
+            my $discount = qsearchs('discount',{
+                pkgdiscountnum => $_[0]->pkgdiscountnum
+            });
+            return $discount->description;
+        } else {
+            return 'Waive setup fee';
+        }
+    },
+
+    # Class
+    sub {
+        if ( $_[0]->discountnum ) {
+            # Standard discount, not a waived setup fee
+            my $discount = qsearchs('discount',{
+                discountnum => $_[0]->discountnum
+            });
+            return $discount->classname;
+        } else {
+            return 'n/a';
+        }
+    },
+
+    # Amount
+    sub {
+      sprintf(
+        $money_char.'%.2f',
+        $_[0]->amount ? $_[0]->amount : $_[0]->setup_fee
+      )
+    },
+
+    # Months
+    sub {
+      my $row = shift;
+      if ($row->pkgdiscountnum) {
+        $row->setuprecur eq 'setup'
+          ? 'Setup'
+          : sprintf( '%.2f', $row->months ),
+      } else {
+        return 'Setup';
+      }
+    },
+
+    # Package
+    'pkg',
+
+    # Invoice
+    'invnum',
+
+    # Date
+    sub { time2str('%b %d %Y', $_[0]->_date) },
+
+    # Customer
+    \&FS::UI::Web::cust_fields,
+  ],
+
+  sort_fields => [
+    '',       # Discount
+    '',       # Class
+    'amount', # Amount
+    'months', # Months
+    'pkg',    # Package
+    'invnum', # Invoice
+    '_date',  # Date
+  ],
+
+  links => [
+    '', # Discount
+    '', # Class
+    '', # Amount
+    '', # Months
+    '', # Package
+    [ "${p}view/cust_bill.cgi?", 'invnum' ], # Invoice
+    [ "${p}view/cust_bill.cgi?", 'invnum' ], # Date
+    (   # Customer
+      map {
+        $_ ne 'Cust. Status'
+          ? [ "${p}view/cust_main.cgi?", 'custnum' ]
+          : ''
+      } FS::UI::Web::cust_header()
+    ),
+  ],
+
+  align => 'lcrrlrr'.FS::UI::Web::cust_aligns(),
+  color => [ '','','','','','','',FS::UI::Web::cust_colors() ],
+  style => [ '','','','','','','',FS::UI::Web::cust_styles() ],
            
 &>
 <%init>
-
-#a little false laziness below w/cust_bill_pkg.cgi
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
 
-#here is the agent virtualization
-my $agentnums_sql =
-  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+# Query building blocks
+my @select = (qw(
+  cust_bill_pkg_discount.billpkgdiscountnum
+  cust_bill_pkg_discount.pkgdiscountnum
+  cust_bill_pkg_discount.amount
+  cust_bill_pkg_discount.months
 
-my @where = ( $agentnums_sql );
+  cust_bill.invnum
+  cust_bill._date
 
+  part_pkg.pkg
+
+  cust_main.custnum
+
+  cust_pkg_discount.setuprecur
+  cust_pkg_discount.discountnum
+  cust_pkg.waive_setup),
+
+  "
+  (  SELECT optionvalue
+     FROM part_pkg_option
+     WHERE
+        part_pkg_option.pkgpart = cust_pkg.pkgpart
+        AND optionname = 'setup_fee'
+  ) as setup_fee  ",
+
+  "
+  COALESCE(
+      CAST(cust_bill_pkg_discount.amount AS TEXT),
+      (  SELECT optionvalue
+         FROM part_pkg_option
+         WHERE
+            part_pkg_option.pkgpart = cust_pkg.pkgpart
+            AND optionname = 'setup_fee'
+      )
+  ) as discountorwaive
+  ",
+
+  FS::UI::Web::cust_sql_fields(),
+);
+
+my $join = "
+LEFT JOIN cust_bill_pkg_discount
+  USING (billpkgnum)
+
+LEFT JOIN cust_pkg_discount
+  ON cust_bill_pkg_discount.pkgdiscountnum = cust_pkg_discount.pkgdiscountnum
+
+LEFT JOIN cust_pkg
+  ON cust_bill_pkg.pkgnum = cust_pkg.pkgnum
+
+LEFT JOIN part_pkg
+  USING (pkgpart)
+
+LEFT JOIN cust_bill USING (invnum)
+
+LEFT JOIN cust_main
+  ON cust_bill.custnum = cust_main.custnum
+
+";
+
+# Each entry in @where will be joined with AND
+my @where = (
+
+  # Agent Virtualization
+  $FS::CurrentUser::CurrentUser->agentnums_sql(table => 'cust_main'),
+
+  # Select only rows where there is a discount or waived setup fee
+  "(
+    cust_bill_pkg_discount.billpkgdiscountnum IS NOT NULL
+    OR (
+      cust_pkg.setup = cust_bill_pkg.sdate
+      AND cust_pkg.waive_setup = 'Y'
+    )
+  )",
+
+);
+
+
+# Filter: Date Range
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @where, "_date >= $beginning",
-             "_date <= $ending";
+push @where, "_date >= $beginning", "_date <= $ending";
 
+
+# Filter: Agent
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
 
-#usernum
+
+# Filter: User
 if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
-  push @where, "cust_pkg_discount.usernum = $1";
+  push @where,
+    "( cust_pkg_discount.usernum = $1 OR cust_pkg_discount.usernum IS NULL )";
 }
 
-# (discount) classnum
-my $join_discount = '';
-#false laziness w/cust_pkg_discount.html and cust_pkg.pm::search
+# Filter: Include waived setup fees
+if ( !$cgi->param('include_waived_setup') ) {
+  push @where, "cust_bill_pkg_discount.pkgdiscountnum IS NOT NULL";
+}
+
+# Filter: Discount Class
 if ( grep { $_ eq 'discount_classnum' } $cgi->param ) {
 
 #  my @classnum = ();
@@ -128,7 +256,7 @@ if ( grep { $_ eq 'discount_classnum' } $cgi->param ) {
    if ( $cgi->param('discount_classnum') =~ /^(\d*)$/ && $1 ne '0' ) {
     my @classnum = ( $1 );
 
-    $join_discount = 'LEFT JOIN discount USING (discountnum)';
+    $join .= ' LEFT JOIN discount USING (discountnum) ';
 
     my @c_where = ();
     my @nums = grep $_, @classnum;
@@ -169,40 +297,32 @@ if ( grep { $_ eq 'discount_classnum' } $cgi->param ) {
 #   }
 # }
 
-my $count_query = "SELECT COUNT(*), SUM(cust_bill_pkg_discount.amount)";
-
-my $join_cust_pkg_discount =
-  'LEFT JOIN cust_pkg_discount USING (pkgdiscountnum)';
-
-my $join_cust =
-  '         JOIN cust_bill USING ( invnum ) '.
-  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
-
-my $join_pkg =
-  '    JOIN cust_bill_pkg USING ( billpkgnum )
-  LEFT JOIN cust_pkg ON ( cust_bill_pkg.pkgnum = cust_pkg.pkgnum )
-  LEFT JOIN part_pkg USING ( pkgpart ) ';
-  #LEFT JOIN part_pkg AS override
-  #  ON pkgpart_override = override.pkgpart ';
-
-my $join = "$join_cust_pkg_discount $join_discount $join_pkg $join_cust";
+my $count_query;
+if ( $cgi->param('include_waived_setup') ) {
+  $count_query = "
+    SELECT
+      COUNT(*),
+      SUM(
+        COALESCE(
+          cust_bill_pkg_discount.amount,
+          CAST((  SELECT optionvalue
+             FROM part_pkg_option
+             WHERE
+                part_pkg_option.pkgpart = cust_pkg.pkgpart
+                AND optionname = 'setup_fee'
+          ) AS NUMERIC )
+        )
+      ) ";
+} else {
+  $count_query = "SELECT COUNT(*), SUM(cust_bill_pkg_discount.amount)";
+}
 
 my $where = ' WHERE '. join(' AND ', @where);
 
-$count_query .= " FROM cust_bill_pkg_discount $join $where";
-
-my @select = (
-               'cust_bill_pkg_discount.*',
-               #'cust_bill_pkg.*',
-               'cust_bill.invnum',
-               'cust_bill._date',
-             );
-push @select, 'part_pkg.pkg';
-push @select, 'cust_main.custnum',
-              FS::UI::Web::cust_sql_fields();
+$count_query .= " FROM cust_bill_pkg $join $where";
 
 my $query = {
-  'table'     => 'cust_bill_pkg_discount',
+  'table'     => 'cust_bill_pkg',
   'addl_from' => $join,
   'hashref'   => {},
   'select'    => join(', ', @select ),
@@ -210,17 +330,6 @@ my $query = {
   'order_by'  => 'ORDER BY _date, billpkgdiscountnum',
 };
 
-my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
-my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
-
-my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
-
-my $months_sub = sub {
-  my $cust_bill_pkg_discount = shift;
-  return 'Setup'
-    if $cust_bill_pkg_discount->cust_pkg_discount->setuprecur eq 'setup';
-  sprintf('%.2f', $cust_bill_pkg_discount->months);
-};
 
 </%init>
