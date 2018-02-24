@@ -3010,6 +3010,7 @@ sub _parse_new_discounts {
         discountnum => $opt->{"${type}_discountnum"},
         amount      => $opt->{"${type}_discountnum_amount"},
         percent     => $opt->{"${type}_discountnum_percent"},
+        months      => $opt->{"${type}_discountnum_months"},
       };
     }
 
