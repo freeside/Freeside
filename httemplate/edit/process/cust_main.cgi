@@ -62,7 +62,7 @@ if ( $payby ) {
     $cgi->param( 'exp_month' ). '-'. $cgi->param( 'exp_year' ) );
 }
 
-my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
+my @invoicing_list = split( /[,\s]+/, $cgi->param('invoicing_list') );
 push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 push @invoicing_list, 'FAX' if $cgi->param('invoicing_list_FAX');
 $cgi->param('invoicing_list', join(',', @invoicing_list) );
