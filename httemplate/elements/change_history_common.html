@@ -210,6 +210,12 @@ my $tag_labelsub = sub {
   $label. ': <SPAN STYLE="background-color: #'.$part_tag->tagcolor.'">'. encode_entities($part_tag->tagname). '</SPAN>';
 };
 
+my $contact_labelsub = sub {
+  my($item, $label) = @_;
+  my $contact = qsearchs('h_contact',{ contactnum => $item->contactnum });
+  $label. ': <B>'. encode_entities($contact->first). ' ' . encode_entities($contact->last) . '</B>';
+};
+
 my %h_table_labelsub = (
   'h_cust_pkg'      => $pkg_labelsub,
   'h_svc_acct'      => $svc_labelsub,
@@ -222,6 +228,7 @@ my %h_table_labelsub = (
   'h_svc_phone'     => $svc_labelsub,
   #'h_phone_device'
   #'h_cust_tag'      => $tag_labelsub,
+  'h_contact'  => $contact_labelsub,
 );
 
 my $tag_descripsub = sub {

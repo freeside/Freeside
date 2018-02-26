@@ -48,6 +48,7 @@ tie my %tables, 'Tie::IxHash',
   'cust_pkg_discount' => 'Discount',
   #? it gets provisioned anyway 'phone_avail'         => 'Phone',
   'cust_tag'          => 'Tag',
+  'contact'           => 'Contact',
 ;
 
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
@@ -68,6 +69,7 @@ my %table_join = (
   'radius_usergroup' => $svc_join,
   'phone_device'     => $svc_join,
   'cust_pkg_discount'=> $pkg_join,
+  'contact'          => "JOIN cust_contact USING ( contactnum )",
 );
 
 %table_join = (%table_join, map { $_ => $svc_join } @svc_tables);
@@ -141,13 +143,16 @@ my $newer_than = int( time - $years * 31556736 ); #60*60*24*365.24
 
 local($FS::Record::nowarn_classload) = 1;
 
+my $extra_sql = ' AND custnum = '. $cust_main->custnum;
+
 my %foundsvcs;
 foreach my $table ( keys %tables ) {
+  $extra_sql = ' AND cust_contact.custnum = '. $cust_main->custnum if $table eq 'contact';
   my @items = qsearch({
     'table'     => "h_$table",
     'addl_from' => $table_join{$table},
     'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than }, },
-    'extra_sql' => ' AND custnum = '. $cust_main->custnum,
+    'extra_sql' => $extra_sql,
   });
   %foundsvcs = (%foundsvcs, map { $_->svcnum => 1 } @items)
     if $table =~ /^svc/;
