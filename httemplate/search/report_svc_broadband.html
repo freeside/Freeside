@@ -1,6 +1,6 @@
 <% include('/elements/header.html', $title ) %>
 
-<FORM ACTION="svc_broadband.cgi" METHOD="GET">
+<FORM ACTION="svc_broadband.cgi" METHOD="POST">
 <INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 %# extensive false laziness with svc_acct

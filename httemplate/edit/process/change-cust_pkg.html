@@ -80,6 +80,7 @@ for my $type (qw|setup_discountnum recur_discountnum|) {
     $change{$type} = $dnum;
     $change{"${type}_amount"}  = $cgi->param("${type}_amount");
     $change{"${type}_percent"} = $cgi->param("${type}_percent");
+    $change{"${type}_months"}  = $cgi->param("${type}_months");
   } elsif ($dnum eq '') {
     # Set discount as no discount
     $change{"${type}"} = 0;

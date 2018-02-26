@@ -1,3 +1,24 @@
+<%doc>
+
+Instead of:
+
+  my $link = $self_url. '?'. $cgi->query_string;
+
+which will fail when the query string exceeds ~2k (browser-dependent)
+
+
+Usage:
+
+  my $query = $m->scomp('/elements/create_uri_query');
+  my $link = $self_url. '?'. $query;
+
+You can also pass an optional 'secure'=>1 parameter to force handling as
+session data, even for short query strings.
+
+
+See also handle_uri_query which needs to be used by the target page.
+
+</%doc>
 <% $query %>\
 <%init>
 
@@ -14,7 +35,7 @@ if ( $opt{secure} ) {
 
 }
 
-my $query = $cgi->query_string;
+my $query = $opt{query} || $cgi->query_string;
 
 if ( length($query) > 1920 || $opt{secure} ) { #stupid IE 2083 URL limit
 

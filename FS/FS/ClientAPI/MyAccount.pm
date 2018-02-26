@@ -3589,6 +3589,11 @@ sub list_tickets {
 
   # unavoidable false laziness w/ httemplate/view/cust_main/tickets.html
   if ( $FS::TicketSystem::system && FS::TicketSystem->selfservice_priority ) {
+
+    @tickets = grep { $_->{'_selfservice_priority'}
+                        !~ /^\s*(closed?|resolved?|done)\s*/i }
+                 @tickets;
+
     my $conf = new FS::Conf;
     my $dir = $conf->exists('ticket_system-priority_reverse') ? -1 : 1;
     +{ tickets => [ 

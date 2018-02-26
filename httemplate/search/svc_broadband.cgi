@@ -82,6 +82,8 @@ my %cust_pkg_cache;
 
 my $conf = new FS::Conf;
 
+$m->comp('/elements/handle_uri_query');
+
 my %search_hash;
 if ( $cgi->param('magic') eq 'unlinked' ) {
   %search_hash = ( 'unlinked' => 1 );
@@ -132,9 +134,12 @@ my $html_init = include('/elements/email-link.html',
                   'search_hash' => \%search_hash,
                   'table' => 'svc_broadband' 
                 );
+
+my $query = $m->scomp('/elements/create_uri_query');
+
 $html_init .= ' | ' .
   '<a href="' .
-  $fsurl . 'search/svc_broadband-map.html?' . $cgi->query_string .
+  $fsurl . 'search/svc_broadband-map.html?' . $query .
   '">' . emt('View a map of these services') . '</a>';
 
 my (@header_pkg,@fields_pkg,@blank_pkg);
