@@ -402,7 +402,8 @@ if ( $cgi->param('error') ) {
 }
 
 my %keep = map { $_=>1 } qw( error tagnum lock_agentnum lock_pkgpart );
-$cgi->delete( grep { !$keep{$_} && $_ !~ /^tax_/ } $cgi->param );
+#$cgi->delete( grep { !$keep{$_} && $_ !~ /^tax_/ } $cgi->param );
+$cgi->delete( grep { !$keep{$_} && $_ !~ /^tax_/ && $_ !~ /^contactnum/ } $cgi->param );
 
 my $title = $custnum ? 'Edit Customer' : 'Add Customer';
 $title = mt($title);
