@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::UID qw( adminsuidsetup dbh );
+use FS::Record qw( qsearch );
+use FS::cust_main_county;
+
+adminsuidsetup shift or die "Usage: copy-cust_main_county username\n";
+
+my $from_state = 'XX'; #XXX
+
+$FS::UID::AutoCommit = 0;
+
+my @from_cust_main_county = qsearch({
+  'table'     => 'cust_main_county',
+  'hashref'   => { 'state'   => $from_state,
+                   'country' => 'US',
+                 },
+  'extra_sql' => "AND taxname LIKE 'FED%'",
+});
+
+#select distinct state from cust_main_county where country = 'US'
+#and then exclude the one other state?
+#my @to_states = ();
+#no, just find the target records directly.  there should be one per state?
+my @to_cust_main_county = qsearchs({
+  'table'   => 'cust_main_county',
+  'hashref' => { 'taxclass' => '',
+                 'country'  => 'US',
+                 'taxname'  => '',
+                 'tax'      => 0,
+               },
+});
+
+foreach my $to_cust_main_county (@to_cust_main_county) {
+
+  foreach my $from_cust_main_county (@from_cust_main_county) {
+
+    my $new = new FS::cust_main_county {
+                'state'   => $to_cust_main_county->state,
+                'country' => 'US',
+                map { $_ => $from_cust_main_county->$_ }
+                  qw( tax taxclass taxname setuptax recurtax ),
+                 
+              };
+    my $error = $new->insert;
+    if ( $error ) {
+      dbh->rollback;
+      die $error;
+    }
+
+  }
+
+  my $error = $to_cust_main_county->delete;
+  if ( $error ) {
+    dbh->rollback;
+    die $error;
+  }
+
+}
+
+dbh->rollback or die dbh->errstr;
+#dbh->commit or die dbh->errstr;
+
+1;
+
