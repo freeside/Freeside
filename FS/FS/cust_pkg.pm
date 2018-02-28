@@ -2765,6 +2765,10 @@ The date for the package change.  Required, and must be in the future.
 
 =item quantity
 
+=item discount
+
+Optional hashref that will be passed to $new_pkg->change_discount()
+
 =item contract_end
 
 The pkgpart, locationnum, quantity and optional contract_end of the new 
@@ -2781,6 +2785,9 @@ sub change_later {
   # check contract_end, prevent adding/removing
   my $error = $self->_check_change($opt);
   return $error if $error;
+
+  my %discount;
+  %discount = %{$opt->{discount}} if ref $opt->{discount};
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -2834,6 +2841,10 @@ sub change_later {
                  (($err_or_pkg->pkgnum == $change_to->pkgnum) ? '' :
                   $change_to->cancel('no_delay_cancel' => 1) ||
                   $change_to->delete);
+
+        # Apply user-specified discount to new cust_pkg
+        $error = $err_or_pkg->change_discount(\%discount)
+          if !$error && %discount && %discount{discountnum} =~ /^-?\d+$/;
       } else {
         $error = $err_or_pkg;
       }
@@ -2841,6 +2852,10 @@ sub change_later {
       $self->set('expire', $date);
       $change_to->set('start_date', $date);
       $error = $self->replace || $change_to->replace;
+
+      # Apply user-specified discount to new cust_pkg
+      $error = $change_to->change_discount(\%discount)
+        if !$error && %discount && %discount{discountnum} =~ /^-?\d+$/;
     }
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -2880,6 +2895,11 @@ sub change_later {
     $self->set('expire', $date);
     $error = $self->replace;
   }
+
+  # Apply user-specified discount to new cust_pkg
+  $new->change_discount(\%discount)
+    if !$error && %discount && %discount{discountnum} =~ /^-?\d+$/;
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
   } else {
@@ -4704,6 +4724,139 @@ sub insert_discount {
   $cust_pkg_discount->insert;
 }
 
+
+=item change_discount %opt
+
+Method checks if the given values represent a change in either setup or
+discount level.  If so, the existing discounts are revoked, the new
+discounts are recorded.
+
+Usage:
+
+$error = change_discount(
+  {
+    # -1: Indicates a "custom discount"
+    #  0: Indicates to remove any discount
+    # >0: discountnum to apply
+    discountnum => [-1, 0, discountnum],
+
+    # When discountnum is "-1" to indicate custom discount, include
+    # the additional fields:
+    amount      => AMOUNT_DISCOUNT
+    percent     => PERCENTAGE_DISCOUNT
+    months      => 12,
+    setup       => 1, # APPLY TO SETUP
+    _type       => amount/percentage
+  },
+);
+
+
+=cut
+
+sub change_discount {
+  my ($self, $opt) = @_;
+  return "change_discount() called with bad \%opt hashref"
+    unless ref $opt;
+
+  my %opt = %{$opt};
+
+  my @old_discount =
+    qsearch('cust_pkg_discount',{
+      pkgnum   => $self->pkgnum,
+      disabled => '',
+    });
+
+  if ($DEBUG) {
+    warn "change_discount() pkgnum: ".$self->pkgnum." \n";
+    warn "change_discount() \%opt: \n";
+    warn Dumper(\%opt);
+  }
+
+  my @to_be_disabled;
+  my %change = %opt;
+
+  return "change_discount() called with bad discountnum"
+    unless $change{discountnum} =~ /^-?\d+$/;
+
+  if ($change{discountnum} eq 0) {
+    # Removing old discount
+
+    %change = ();
+
+    push @to_be_disabled, @old_discount;
+
+  } else {
+
+    if ( grep { $_->discountnum eq $change{discountnum} } @old_discount ){
+      # Duplicate, disregard this entry
+      %change = ();
+    } else {
+      # Mark any discounts we're replacing
+      push @to_be_disabled, @old_discount;
+    }
+  }
+
+  # If we still have changes queued, create data structures for
+  # insert_discount().
+  my @discount_insert;
+  if (%change) {
+    push @discount_insert, {
+      discountnum         => $change{discountnum},
+      discountnum__type   => $change{_type},
+      discountnum_amount  => $change{amount},
+      discountnum_percent => $change{percent} ? $change{percent} : '0',
+      discountnum_months  => $change{months},
+      discountnum_setup   => $change{setup} ? 'Y' : '',
+    }
+  }
+
+  if ($DEBUG) {
+    warn "change_discount() \% opt before insert \n";
+    warn Dumper \%opt;
+    warn "\@to_be_disabled \n";
+    warn Dumper \@to_be_disabled;
+  }
+
+  # Roll these updates into a transaction
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error;
+
+  # The "waive setup fee" flag has traditionally been handled by setting
+  # $cust_pkg->waive_setup = Y.  This has been appropriately, and separately
+  # handled, and it operates on a different table than cust_pkg_discount,
+  # so the "-2 for waive setup fee" option is not being reimplemented
+  # here.  Perhaps this may change later.
+
+  # Create new discounts
+  for my $insert_discount (@discount_insert) {
+
+    # Set parameters for insert_discount into object, and insert
+    for my $k (keys %{$insert_discount}) {
+      $self->set($k, $insert_discount->{$k});
+    }
+    $error ||= $self->insert_discount();
+  }
+
+  # Disabling old discounts
+  for my $tbd (@to_be_disabled) {
+    unless ($error) {
+      $tbd->set(disabled => 'Y');
+      $error = $tbd->replace();
+    }
+  }
+
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return undef;
+}
+
 =item set_usage USAGE_VALUE_HASHREF 
 
 USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
@@ -6328,4 +6481,3 @@ L<FS::pkg_svc>, schema.html from the base documentation
 =cut
 
 1;
-

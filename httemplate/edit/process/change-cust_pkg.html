@@ -40,6 +40,12 @@ if ( $cgi->param('locationnum') == -1 ) {
   $change{'cust_location'} = $cust_location;
 }
 
+my %discount = (discountnum => $cgi->param('discountnum'));
+if (%discount) {
+  $discount{$_} = $cgi->param("discountnum_$_")
+    for qw(_type amount months percent setup);
+}
+
 my $error;
 my $now = time;
 if (defined($cgi->param('contract_end'))) {
@@ -56,6 +62,7 @@ unless ($error) {
     } else {
       # schedule the change
       $change{'start_date'} = $date;
+      $change{discount} = \%discount if %discount;
       $error = $cust_pkg->change_later(\%change);
     }
   } else {
@@ -74,9 +81,11 @@ unless ($error) {
         %change = ( 'cust_pkg' => $change_to );
       }
     }
-    
+
     # do a package change right now
     my $pkg_or_error = $cust_pkg->change( \%change );
+    $pkg_or_error->change_discount(\%discount)
+      if ref $pkg_or_error && $discount{discountnum} =~ /$-?\d+$/;
     $error = ref($pkg_or_error) ? '' : $pkg_or_error;
   }
 }

@@ -6,6 +6,7 @@
                  'empty_label'  => '(none)',
                  'hashref'      => $hashref,
                  'post_options' => $post_options,
+                 'label_callback' => $label_callback,
                  %opt,
              )
 %>
@@ -22,9 +23,42 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 my $hashref = $opt{hashref} || { 'disabled' => '' };
 
 my $post_options = [];
+
+# If a 'custom' discount is applied to existing cust_pkg,
+# also add that option to the selectbox
+my $pkgnum = $cgi ? $cgi->param('pkgnum') : undef;
+if ($pkgnum) {
+
+  # Does pkgnum have a custom discount?
+  my $cust_pkg_discount = qsearchs(cust_pkg_discount => {
+    disabled => '',
+    pkgnum   => $pkgnum,
+  });
+
+  if ($cust_pkg_discount) {
+    my $discount = qsearchs(discount => {
+      discountnum => $cust_pkg_discount->discountnum,
+      disabled    => 'Y',
+    });
+    if ($discount) {
+      my $descr = $opt{carry_value} eq $discount->discountnum
+        ? $discount->description.'  [Continue existing discount]'
+        : $discount->description;
+      push @$post_options, $discount->discountnum, $descr;
+    }
+  }
+}
+
 push @$post_options,  -1 => 'Custom discount'
   if $curuser->access_right('Custom discount customer package')
   && ! $opt{disable_custom_discount};
 
-</%init>
+my $label_callback = sub {
+  my $rec = shift;
+  if ( $opt{carry_value} eq $rec->discountnum ) {
+    return $rec->description.'  [Continue existing discount]';
+  }
+  return $rec->description;
+};
 
+</%init>

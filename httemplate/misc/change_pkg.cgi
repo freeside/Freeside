@@ -1,5 +1,17 @@
 <& /elements/header-popup.html, mt($title) &>
 
+<SCRIPT TYPE="text/javascript">
+
+  function enable_discount_pkg () {
+    if ( document.DiscountPkgForm.discountnum.selectedIndex > 0 ) {
+      document.DiscountPkgForm.submit.disabled = false;
+    } else {
+      document.DiscountPkgForm.submit.disabled = false;
+    }
+  }
+
+</SCRIPT>
+
 <SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
 <& /elements/error.html &>
 
@@ -86,6 +98,16 @@
       </TR>
 %   }
 
+% if ( $discount_cust_pkg ) {
+<% include('/elements/tr-select-discount.html',
+             'empty_label' => 'Select discount',
+             #'onchange'    => 'enable_discount_pkg()',
+             'cgi'         => $cgi,
+             'carry_value' => $carry_value,
+             'td_width'    => '125',
+             #'setup_only'  => $setup_only,
+          ) %>
+% }
   </TABLE><BR>
 
 % }
@@ -150,6 +172,16 @@ my $part_pkg = $cust_pkg->part_pkg;
 my $title = "Change Package";
 
 my $use_contract_end = $cust_pkg->get('contract_end') ? 1 : 0;
+
+# Pass previous discountnum to change screen
+my $cust_pkg_discount = qsearchs(cust_pkg_discount => {
+  disabled => '',
+  pkgnum   => $cust_pkg->pkgnum,
+});
+my $carry_value =
+  $cust_pkg_discount
+    ? $cust_pkg_discount->discountnum
+    : undef;
 
 # if there's already a package change ordered, preload it
 if ( $cust_pkg->change_to_pkgnum ) {
