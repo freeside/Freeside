@@ -2844,7 +2844,7 @@ sub change_later {
 
         # Apply user-specified discount to new cust_pkg
         $error = $err_or_pkg->change_discount(\%discount)
-          if !$error && %discount && %discount{discountnum} =~ /^-?\d+$/;
+          if !$error && %discount && $discount{discountnum} =~ /^-?\d+$/;
       } else {
         $error = $err_or_pkg;
       }
@@ -2855,7 +2855,7 @@ sub change_later {
 
       # Apply user-specified discount to new cust_pkg
       $error = $change_to->change_discount(\%discount)
-        if !$error && %discount && %discount{discountnum} =~ /^-?\d+$/;
+        if !$error && %discount && $discount{discountnum} =~ /^-?\d+$/;
     }
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -2898,7 +2898,7 @@ sub change_later {
 
   # Apply user-specified discount to new cust_pkg
   $new->change_discount(\%discount)
-    if !$error && %discount && %discount{discountnum} =~ /^-?\d+$/;
+    if !$error && %discount && $discount{discountnum} =~ /^-?\d+$/;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
