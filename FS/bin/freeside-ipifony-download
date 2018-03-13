@@ -5,14 +5,15 @@ use Getopt::Std;
 use Date::Format qw(time2str);
 use File::Temp qw(tempdir);
 use Net::SFTP::Foreign;
+use File::Copy qw(copy);
+use Text::CSV;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 use FS::Conf;
-use File::Copy qw(copy);
-use Text::CSV;
+use FS::Log;
 
-my %opt;
+our %opt;
 getopts('vqNa:P:C:e:', \%opt);
 
 # Product codes that are subject to flat rate E911 charges.  For these 
@@ -105,14 +106,18 @@ if ( $opt{P} =~ /^(\d+)$/ ) {
 
 # for now assume SFTP download as the only method
 my $sftp = sftp_connect($host, $sftpuser, $port);
-die "failed to connect to '$sftpuser\@$host'\n(".$sftp->error.")\n"
-  if $sftp->error;
+if ( $sftp->error ) {
+  my $error = "Connection failed to $sftpuser\@$host: ". $sftp->error.
+              ", giving up.";
+  mylog('critical', $error);
+  die $error;
+}
 
 $sftp->setcwd($path) if $path;
 
 my $files = $sftp->ls('ready', wanted => qr/\.csv$/, names_only => 1);
 if (!@$files) {
-  print STDERR "No charge files found.\n" if $opt{v};
+  mylog('warning',"No charge files found.");
   exit(-1);
 }
 
@@ -122,7 +127,7 @@ my %e911_qty; # custnum => sum of E911-subject quantity
 my %is_e911 = map {$_ => 1} @E911_CODES;
 
 FILE: foreach my $filename (@$files) {
-  print STDERR "Retrieving $filename\n" if $opt{v};
+  mylog('debug', "Retrieving $filename");
   $sftp->get("ready/$filename", "$tmpdir/$filename");
   if($sftp->error) {
     warn "failed to download $filename\n";
@@ -131,7 +136,7 @@ FILE: foreach my $filename (@$files) {
 
   # make sure server archive dir exists
   if ( !$sftp->stat('done') ) {
-    print STDERR "Creating $path/done\n" if $opt{v};
+    mylog('debug',"Creating $path/done");
     $sftp->mkdir('done');
     if($sftp->error) {
       # something is seriously wrong
@@ -146,9 +151,9 @@ FILE: foreach my $filename (@$files) {
 
   #copy to local archive dir
   if ( $opt{a} ) {
-    print STDERR "Copying $tmpdir/$filename to archive dir $opt{a}\n"
-      if $opt{v};
+    mylog('debug', "Copying $tmpdir/$filename to archive dir $opt{a}");
     copy("$tmpdir/$filename", $opt{a});
+    #log too?  what's -a all about anyway?
     warn "failed to copy $tmpdir/$filename to $opt{a}: $!" if $!;
   }
 
@@ -163,7 +168,7 @@ FILE: foreach my $filename (@$files) {
     @hash{@fields} = $csv->fields();
     if ( $hash{custnum} =~ /^cust/ ) {
       # there appears to be a header row
-      print STDERR "skipping header row\n" if $opt{v};
+      mylog('debug', "skipping header row");
       next;
     }
     my $cust_main = 
@@ -172,8 +177,7 @@ FILE: foreach my $filename (@$files) {
       warn "customer #$hash{custnum} not found\n";
       next;
     }
-    print STDERR "Found customer #$hash{custnum}: ".$cust_main->name."\n"
-      if $opt{v};
+    mylog('debug',"Found customer #$hash{custnum}: ".$cust_main->name);
 
     my $amount = sprintf('%.2f',$hash{quantity} * $hash{unit_price});
 
@@ -224,8 +228,7 @@ FILE: foreach my $filename (@$files) {
       }
       $charge_opt{classnum} = $classnum_of{$classname};
     }
-    print STDERR "  Charging $hash{unit_price} * $hash{quantity}\n"
-      if $opt{v};
+    mylog('debug', "  Charging $hash{unit_price} * $hash{quantity}");
     my $error = $cust_main->charge(\%charge_opt);
     if ($error) {
       warn "Error creating charge: $error" if $error;
@@ -268,8 +271,7 @@ foreach my $custnum ( keys (%e911_qty) ) {
 
 $dbh->commit;
 
-if ($opt{v}) {
-  print STDERR "
+mylog('debug', "
 Finished!
   Processed files: @$files
   Created charges: $num_charges
@@ -277,8 +279,7 @@ Finished!
   E911 charges: $num_e911
   E911 lines: $num_lines
   Errors: $num_errors
-";
-}
+");
 
 sub sftp_connect {
   my ($host, $sftpuser, $port) = @_;
@@ -286,7 +287,7 @@ sub sftp_connect {
   my $connection_tries = 1;
 
   while (1) {
-      print STDERR "Connecting to $sftpuser\@$host try number $connection_tries...\n" if $opt{v};
+      mylog('info', "Connecting to $sftpuser\@$host try number $connection_tries...");
       $sftp = Net::SFTP::Foreign->new(
         host      => $host,
         user      => $sftpuser,
@@ -298,13 +299,23 @@ sub sftp_connect {
 
       if ($sftp->error && $connection_tries < 1200) {
         $connection_tries++;
-        print STDERR "Connection failed to $sftpuser\@$host trying again in 60 sec...\n" if $opt{v};
+        mylog('error', "Connection failed to $sftpuser\@$host: ". $sftp->error.
+              ", trying again in 60 sec...");
         sleep 60;
       }
       else { last; }
   }
 
-  return $sftp
+  return $sftp;
+}
+
+our $log;
+sub mylog {
+  my( $level, $message ) = @_;
+  #warn "$message\n" if $opt{v};
+  print STDERR "$message\n" if $opt{v};
+  $log ||= FS::Log->new('freeside-ipifony-download');
+  $log->log(@_);
 }
 
 =head1 NAME
@@ -338,7 +349,8 @@ directory is the one containing the "ready/" and "done/" subdirectories.
 
 =head1 OPTIONAL PARAMETERS
 
--v: Be verbose.
+-v: Be verbose; send debugging information to STDERR in addition to the
+internal log..
 
 -q: Include the quantity and unit price in the charge description.
 
