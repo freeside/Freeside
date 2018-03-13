@@ -104,16 +104,7 @@ if ( $opt{P} =~ /^(\d+)$/ ) {
 }
 
 # for now assume SFTP download as the only method
-print STDERR "Connecting to $sftpuser\@$host...\n" if $opt{v};
-
-my $sftp = Net::SFTP::Foreign->new(
-  host      => $host,
-  user      => $sftpuser,
-  port      => $port,
-  # for now we don't support passwords. use authorized_keys.
-  timeout   => 30,
-  #more      => ($opt{v} ? '-v' : ''),
-);
+my $sftp = sftp_connect($host, $sftpuser, $port);
 die "failed to connect to '$sftpuser\@$host'\n(".$sftp->error.")\n"
   if $sftp->error;
 
@@ -287,6 +278,33 @@ Finished!
   E911 lines: $num_lines
   Errors: $num_errors
 ";
+}
+
+sub sftp_connect {
+  my ($host, $sftpuser, $port) = @_;
+  my $sftp;
+  my $connection_tries = 1;
+
+  while (1) {
+      print STDERR "Connecting to $sftpuser\@$host try number $connection_tries...\n" if $opt{v};
+      $sftp = Net::SFTP::Foreign->new(
+        host      => $host,
+        user      => $sftpuser,
+        port      => $port,
+        # for now we don't support passwords. use authorized_keys.
+        timeout   => 30,
+        #more      => ($opt{v} ? '-v' : ''),
+      );
+
+      if ($sftp->error && $connection_tries < 1200) {
+        $connection_tries++;
+        print STDERR "Connection failed to $sftpuser\@$host trying again in 60 sec...\n" if $opt{v};
+        sleep 60;
+      }
+      else { last; }
+  }
+
+  return $sftp
 }
 
 =head1 NAME
