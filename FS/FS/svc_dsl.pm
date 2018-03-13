@@ -50,15 +50,25 @@ FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
-=item svcnum - Primary key (assigned automatcially for new DSL))
+=item svcnum
 
-=item pushed - Time DSL order pushed to vendor/telco, if applicable
+Primary key (assigned automatcially for new DSL))
 
-=item desired_due_date - Desired Due Date
+=item pushed
 
-=item due_date - Due Date
+Time DSL order pushed to vendor/telco, if applicable
 
-=item vendor_order_id - Vendor/telco DSL order #
+=item desired_due_date
+
+Desired Due Date
+
+=item due_date
+
+Due Date
+
+=item vendor_order_id
+
+Vendor/telco DSL order #
 
 =item vendor_order_type
 
@@ -69,27 +79,45 @@ Vendor/telco DSL order type (e.g. (M)ove, (A)dd, (C)hange, (D)elete, or similar)
 Vendor/telco DSL order status (e.g. (N)ew, (A)ssigned, (R)ejected, (M)revised,
 (C)ompleted, (X)cancelled, or similar)
 
-=item first - End-user first name
+=item first
 
-=item last - End-user last name
+End-user first name
 
-=item company - End-user company name
+=item last
 
-=item phonenum - DSL Telephone Number
+End-user last name
 
-=item gateway_access_number - Gateway access number, if different
+=item company
 
-=item loop_type - Loop-type - vendor/telco-specific
+End-user company name
 
-=item local_voice_provider - Local Voice Provider's name
+=item phonenum
 
-=item circuitnum - Circuit #
+DSL Telephone Number
+
+=item gateway_access_number
+
+Gateway access number, if different
+
+=item loop_type
+
+Loop-type - vendor/telco-specific
+
+=item local_voice_provider
+
+Local Voice Provider's name
+
+=item circuitnum
+
+Circuit #
 
 =item vpi
 
 =item vci
 
-=item rate_band - Rate Band
+=item rate_band
+
+Rate Band
 
 =item isp_chg
 
@@ -101,13 +129,21 @@ Vendor/telco DSL order status (e.g. (N)ew, (A)ssigned, (R)ejected, (M)revised,
 
 Ikano-specific fields, do not use otherwise
 
-=item username - if outsourced PPPoE/RADIUS, username
+=item username
 
-=item password - if outsourced PPPoE/RADIUS, password
+if outsourced PPPoE/RADIUS, username
 
-=item monitored - Order is monitored (auto-pull/sync), either Y or blank
+=item password
 
-=item last_pull - time of last data pull from vendor/telco
+if outsourced PPPoE/RADIUS, password
+
+=item monitored
+
+Order is monitored (auto-pull/sync), either Y or blank
+
+=item last_pull
+
+time of last data pull from vendor/telco
 
 
 =back
