@@ -44,6 +44,14 @@ Tower name
 
 Disabled flag, empty or 'Y'
 
+=item up_rate
+
+Up Rate for towner
+
+=item down_rate
+
+Down Rate for tower
+
 =back
 
 =head1 METHODS
@@ -118,6 +126,8 @@ sub check {
     || $self->ut_floatn('height')
     || $self->ut_floatn('veg_height')
     || $self->ut_alphan('color')
+    || $self->ut_numbern('up_rate')
+    || $self->ut_numbern('down_rate')
   ;
   return $error if $error;
 
