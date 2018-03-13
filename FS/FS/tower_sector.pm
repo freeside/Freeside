@@ -88,6 +88,18 @@ The coverage map, as a PNG.
 
 The coordinate boundaries of the coverage map.
 
+=item title
+
+The sector title.
+
+=item up_rate
+
+Up rate for sector.
+
+=item down_rate
+
+down rate for sector.
+
 =back
 
 =head1 METHODS
@@ -150,6 +162,8 @@ sub check {
     || $self->ut_numbern('downtilt')
     || $self->ut_floatn('sector_range')
     || $self->ut_numbern('margin')
+    || $self->ut_numbern('up_rate')
+    || $self->ut_numbern('down_rate')
     || $self->ut_anything('image')
     || $self->ut_sfloatn('west')
     || $self->ut_sfloatn('east')

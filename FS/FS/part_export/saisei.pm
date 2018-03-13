@@ -24,18 +24,29 @@ Saisei integration for Freeside
 
 This export offers basic svc_broadband provisioning for Saisei.
 
-This is a customer integration with Saisei.  This will setup a rate plan and tie
-the rate plan to a host via the Saisei API when the broadband service is provisioned.
-It will also untie the rate  plan via the API upon unprovisioning of the broadband service.
+This is a customer integration with Saisei.  This will setup a rate plan and tie 
+the rate plan to a host and access point via the Saisei API when the broadband service is provisioned.  
+It will also untie the rate plan via the API upon unprovisioning of the broadband service.
 
-This export will use the broadband service descriptive label for the Saisei rate plan name and
-will use the email from the first contact for the Saisei username that will be
-attached to this rate plan.  It will use the Saisei default Access Point.
+Add a new export and fill out required fields:
+<UL>
+<LI>Hostname or IP - <I>Host name to Saisei API</I></LI>
+<LI>Port - <I>Port number to Saisei API</I></LI>
+<LI>User Name -  <I>Saisei API user name</I></LI>
+<LI>Password - <I>Saisei API password</I></LI>
+</UL>
+Create a broadband service.  The broadband service name will become the Saisei rate plan name.
+Set the upload and download speed, and set the modifier to fixed.
+Set IP Address to required.
+Attach Saisei export to service
 
-Hostname or IP - Host name to Saisei API
-Port - <I>Port number to Saisei API
-User Name -  <I>Saisei API user name
-Password - <I>Saisei API password
+Create a tower and add a sector to that tower.  The sector name will be the name of the access point,
+Make sure you have set an up and down rate for the Tower and Sector.
+
+When you provision the service, enter the ip address associated to this service.
+Select the Tower and Sector for it's access point.
+
+When the service is provisioned it will auto setup the rate plan.
 
 This module also provides generic methods for working through the L</Saisei API>.
 
@@ -58,27 +69,37 @@ tie my %options, 'Tie::IxHash',
   'options'         => \%options,
   'notes'           => <<'END',
 This is a customer integration with Saisei.  This will setup a rate plan and tie 
-the rate plan to a host via the Saisei API when the broadband service is provisioned.  
-It will also untie the rate  plan via the API upon unprovisioning of the broadband service.
-<P>This export will use the broadband service descriptive label for the Saisei rate plan name and
-will use the email from the first contact for the Saisei username that will be
-attached to this rate plan.  It will use the Saisei default Access Point.
+the rate plan to a host and access point via the Saisei API when the broadband service is provisioned.  
+It will also untie the rate plan via the API upon unprovisioning of the broadband service.
 <P>
-Required Fields:
+Add a new export and fill out required fields:
 <UL>
 <LI>Hostname or IP - <I>Host name to Saisei API</I></LI>
 <LI>Port - <I>Port number to Saisei API</I></LI>
 <LI>User Name -  <I>Saisei API user name</I></LI>
 <LI>Password - <I>Saisei API password</I></LI>
 </UL>
+Create a broadband service.  The broadband service name will become the Saisei rate plan name.
+Set the upload and download speed, and set the modifier to fixed.
+Set IP Address to required.
+Attach Saisei export to service
+<P>
+Create a tower and add a sector to that tower.  The sector name will be the name of the access point,
+Make sure you have set an up and down rate for the Tower and Sector.
+<P>
+When you provision the service, enter the ip address associated to this service.
+Select the Tower and Sector for it's access point.
+<P>
+When the service is provisioned it will auto setup the rate plan.
 END
 );
 
 sub _export_insert {
   my ($self, $svc_broadband) = @_;
-  my $rateplan_name = $svc_broadband->{Hash}->{description};
-   $rateplan_name =~ s/\s/_/g;
 
+  my $service_part = FS::Record::qsearchs( 'part_svc', { 'svcpart' => $svc_broadband->{Hash}->{svcpart} } );
+  my $rateplan_name = $service_part->{Hash}->{svc};
+  $rateplan_name =~ s/\s/_/g;
 
   # load needed info from our end
   my $cust_main = $svc_broadband->cust_main;
@@ -99,19 +120,13 @@ sub _export_insert {
   # set rateplan to existing one or newly created one.
   my $rateplan = $existing_rateplan ? $existing_rateplan : $self->api_get_rateplan($rateplan_name);
 
-  my @email = map { $_->emailaddress } FS::Record::qsearch({
-        'table'     => 'cust_contact',
-        'select'    => 'emailaddress',
-        'addl_from' => ' JOIN contact_email USING (contactnum)',
-        'hashref'   => { 'custnum' => $cust_main->{Hash}->{custnum}, },
-    });
-  my $username = $email[0];
-  my $description = $cust_main->{Hash}->{first}." ".$cust_main->{Hash}->{last};
+  my $username = $svc_broadband->{Hash}->{svcnum};
+  my $description = $svc_broadband->{Hash}->{description};
 
   if (!$username) {
     $self->{'__saisei_error'} = 'no username - can not export';
-    warn "No email found $username\n" if $self->option('debug');
-    return;
+    warn "No user $username\n" if $self->option('debug');
+    return $self->api_error;
   }
   else {
     # check for existing user.
@@ -125,12 +140,65 @@ sub _export_insert {
     my $user = $existing_user ? $existing_user : $self->api_get_user($username);
 
     ## add access point ?
- 
-    ## tie host to user
-    $self->api_add_host_to_user($user->{collection}->[0]->{name}, $rateplan->{collection}->[0]->{name}, $svc_broadband->{Hash}->{ip_addr}) unless $self->{'__saisei_error'};
+    my $tower_sector = FS::Record::qsearchs({
+      'table'     => 'tower_sector',
+      'select'    => 'tower.towername,
+                      tower.up_rate as toweruprate,
+                      tower.down_rate as towerdownrate,
+                      tower_sector.sectorname,
+                      tower_sector.up_rate as sectoruprate,
+                      tower_sector.down_rate as sectordownrate ',
+      'addl_from' => 'LEFT JOIN tower USING ( towernum )',
+      'hashref'   => {
+                        'sectornum' => $svc_broadband->{Hash}->{sectornum},
+                     },
+    });
+
+    my $existing_tower_ap;
+    my $tower_name = $tower_sector->{Hash}->{towername};
+    $tower_name =~ s/\s/_/g;
+
+    #check if tower has been set up as an access point.
+    $existing_tower_ap = $self->api_get_accesspoint($tower_name) unless $self->{'__saisei_error'};;
+
+    #if tower does not exist as an access point create it.
+    $self->api_create_accesspoint(
+        $tower_name,
+        $tower_sector->{Hash}->{toweruprate},
+        $tower_sector->{Hash}->{towerdownrate}
+    ) unless $existing_tower_ap;
+
+    my $existing_sector_ap;
+    my $sector_name = $tower_sector->{Hash}->{sectorname};
+    $sector_name =~ s/\s/_/g;
+
+    #check if sector has been set up as an access point.
+    $existing_sector_ap = $self->api_get_accesspoint($sector_name);
+
+    #if sector does not exist as an access point create it.
+    $self->api_create_accesspoint(
+        $sector_name,
+        $tower_sector->{Hash}->{sectoruprate},
+        $tower_sector->{Hash}->{sectordownrate},
+        $tower_name,
+    ) unless $existing_sector_ap;
+
+    # Attach newly created sector to it's tower.
+    $self->api_modify_accesspoint($sector_name, $tower_name) unless ($self->{'__saisei_error'} || $existing_sector_ap);
+
+    # set access point to existing one or newly created one.
+    my $accesspoint = $existing_sector_ap ? $existing_sector_ap : $self->api_get_accesspoint($sector_name);
+
+    ## tie host to user add sector name as access point.
+    $self->api_add_host_to_user(
+      $user->{collection}->[0]->{name},
+      $rateplan->{collection}->[0]->{name},
+      $svc_broadband->{Hash}->{ip_addr},
+      $accesspoint->{collection}->[0]->{name},
+    ) unless $self->{'__saisei_error'};
   }
 
-  return '';
+  return $self->api_error;
 
 }
 
@@ -229,7 +297,7 @@ sub api_call {
 
 =head2 api_error
 
-Returns the error string set by L</PortaOne API> methods,
+Returns the error string set by L</Saisei API> methods,
 or a blank string if most recent call produced no errors.
 
 =cut
@@ -300,14 +368,14 @@ Gets user info for specific access point.
 
 sub api_get_accesspoint {
   my $self = shift;
-  my $accesspoint;
+  my $accesspoint = shift;
 
   my $get_accesspoint = $self->api_call("GET", "/access_points/$accesspoint");
   return if $self->api_error;
-  $self->{'__saisei_error'} = "Did not receive any user info"
+  $self->{'__saisei_error'} = "Did not receive any access point info"
     unless $get_accesspoint;
 
-  return;
+  return $get_accesspoint;
 }
 
 =head2 api_create_rateplan
@@ -397,19 +465,44 @@ Creates a access point.
 =cut
 
 sub api_create_accesspoint {
-  my ($self,$accesspoint) = @_;
+  my ($self,$accesspoint, $uprate, $downrate) = @_;
 
   # this has not been tested, but should work, if needed.
-  #my $new_accesspoint = $self->api_call(
-  #    "PUT", 
-  #    "/access_points/$accesspoint",
-  #    {
-  #      'description' => 'my description',
-  #    },
-  #);
+  my $new_accesspoint = $self->api_call(
+      "PUT",
+      "/access_points/$accesspoint",
+      {
+         'downstream_rate_limit' => $downrate,
+         'upstream_rate_limit' => $uprate,
+      },
+  );
 
-  #$self->{'__saisei_error'} = "Access point not created"
-  #  unless $new_accesspoint; # should never happen
+  $self->{'__saisei_error'} = "Access point not created"
+    unless $new_accesspoint; # should never happen
+  return;
+
+}
+
+=head2 api_modify_accesspoint
+
+Modify a access point.
+
+=cut
+
+sub api_modify_accesspoint {
+  my ($self, $accesspoint, $uplink) = @_;
+
+  my $modified_rateplan = $self->api_call(
+    "PUT",
+    "/access_points/$accesspoint",
+    {
+      'uplink' => $uplink, # name of attached access point
+    },
+  );
+
+  $self->{'__saisei_error'} = "Rate Plan not modified"
+    unless $modified_rateplan; # should never happen
+
   return;
 
 }
@@ -421,7 +514,7 @@ ties host to user, rateplan and default access point.
 =cut
 
 sub api_add_host_to_user {
-  my ($self,$user, $rateplan, $ip) = @_;
+  my ($self,$user, $rateplan, $ip, $accesspoint) = @_;
 
   my $new_host = $self->api_call(
       "PUT", 
@@ -429,6 +522,7 @@ sub api_add_host_to_user {
       {
         'user'      => $user,
         'rate_plan' => $rateplan,
+        'access_point' => $accesspoint,
       },
   );
 
