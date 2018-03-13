@@ -12,6 +12,8 @@
                         'altitude',
                         'height',
                         'veg_height',
+                        'up_rate',
+                        'down_rate',
                         { field             => 'sectornum',
                           type              => 'tower_sector',
                           o2m_table         => 'tower_sector',
@@ -30,6 +32,8 @@
                         'height'          => 'Height (feet)',
                         'veg_height'      => 'Vegetation height (feet)',
                         'color'           => 'Color',
+                        'up_rate'         => 'Up Rate (Kbps)',
+                        'down_rate'       => 'Down Rate (Kbps)',
                       },
 &>
 <%init>
@@ -38,7 +42,8 @@ my $m2_error_callback = sub { # reconstruct the list
   my ($cgi, $object) = @_;
 
   my @fields = qw(
-    sectorname ip_addr height freq_mhz direction width tilt v_width margin sector_range
+    sectorname ip_addr height freq_mhz direction width tilt v_width margin 
+    sector_range up_rate down_rate
   );
 
   map {

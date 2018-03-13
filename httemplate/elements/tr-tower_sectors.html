@@ -1,0 +1,310 @@
+<%shared>
+# kind of a hack...
+my ($export) = FS::tower_sector->part_export;
+my $antenna_types; # will be an ordered hash
+if ($export and $export->can('get_antenna_types')) {
+  $antenna_types = $export->get_antenna_types;
+}
+</%shared>
+<%init>
+my %opt = @_;
+my $tower = $opt{'object'};
+my $towernum = $tower->towernum;
+my $cgi = $opt{'cgi'};
+
+my $tabcounter = 0;
+
+my @fields = qw(
+  sectorname ip_addr height freq_mhz direction width downtilt v_width
+  db_high db_low sector_range
+  power line_loss antenna_gain hardware_typenum up_rate down_rate
+);
+
+my @sectors;
+if ( $cgi->param('error') ) {
+  foreach my $k ($cgi->param) {
+    if ($k =~ /^sectornum\d+$/) {
+      my $sectornum = $cgi->param($k);
+      my $sector = FS::tower_sector->new({
+        'sectornum' => $sectornum,
+        'towernum'  => $towernum,
+        map { $_ => scalar($cgi->param($k.'_'.$_)) } @fields,
+      });
+      push @sectors, $sector if length($sector->sectorname);
+    }
+  }
+} elsif ( $towernum ) {
+  @sectors = $tower->tower_sector;
+} # else new mode, no sectors yet
+
+my $id = $opt{id} || $opt{field} || 'sectornum';
+
+</%init>
+<& tablebreak-tr-title.html, value => 'Sectors' &>
+
+<style>
+  .ui-tabs-nav a {
+    padding: 6px 9px;
+    font-weight: bold;
+  }
+  .ui-tabs-nav li {
+    border-top-left-radius: 0.5em;
+    border-top-right-radius: 0.5em;
+  }
+  .ui-tabs-active li {
+    border-bottom-color: #fff;
+  }
+  .ui-tabs {
+    font-weight: bold;
+  }
+  .ui-tabs label {
+    padding-top: 3px;
+    width: 140px;
+    display: inline-block;
+    text-align: right;
+  }
+  .ui-tabs input, .ui-spinner {
+    border: 1px solid #666;
+    border-radius: 2px;
+    font-size: 13.3px;
+    text-align: right;
+    font-weight: normal;
+    padding: 1px;
+  }
+  .ui-tabs input { /* but not spinner, messes it up */
+    margin-left: 1px;
+    margin-right: 1px;
+  }
+  .ui-tabs input:focus {
+    border-color: #7e0079;
+    background-color: #ffffdd;
+  }
+  .ui-spinner input { /* use the spinner's border and padding */
+    border: none;
+    text-align: left;
+  }
+  .ui-tabs p {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
+</style>
+
+
+<tr>
+  <td colspan=2>
+%# prototypes
+    <div style="display: none">
+<& .tab, id => $id . '_P' &>
+<& .panel, id => $id . '_P' &>
+    </div>
+
+%# main container
+    <div id="<% $id %>_tabs">
+      <ul>
+% foreach my $sector (@sectors) {
+<& .tab, sector => $sector, id => $id . $tabcounter &>
+%   $tabcounter++;
+% }
+      </ul>
+
+% $tabcounter = 0;
+% foreach my $sector (@sectors) {
+<& .panel, sector => $sector, id => $id . $tabcounter &>
+%   $tabcounter++;
+% }
+    </div>
+  </td>
+</tr>
+<script>
+$(function() {
+  var tabcounter = <% $tabcounter %>;
+  var id = <% $id |js_string %>;
+  //create tab bar
+  var tabs = $( '#'+id+'_tabs' ).tabs();
+
+  function changedSectorName() {
+    var this_panel = $(this).closest('div');
+    var this_tab = tabs.find('#' + this_panel.prop('id') + '_tab');
+    // if this is the last panel, make a new one
+    if (this_panel.next().length == 0) {
+      addSector();
+    }
+    // and update the current tab's text with the sector name
+    this_tab.find('a').text($(this).val());
+  }
+
+  var tab_proto = $('#'+id+'_P_tab');
+  var panel_proto = $('#'+id+'_P');
+
+  function addSector() {
+    var new_tab = tab_proto.clone();
+    var new_panel = panel_proto.clone();
+    // replace proto placeholder with the counter value, in all id and
+    // name properties in new_panel and its children
+    new_panel.add( new_panel.find('*') ).each(function() {
+      this.id = this.id.replace('_P', tabcounter);
+      if (this.name) {
+        this.name = this.name.replace('_P', tabcounter);
+      }
+    });
+    tabcounter++;
+    // and set the handler up on it
+    new_panel.find('.input-sectorname').on('change', changedSectorName);
+    
+    // also update the tab itself
+    new_tab.find('a').prop('href', '#' + new_panel.prop('id'));
+    new_tab.prop('id', new_panel.prop('id') + '_tab');
+
+    tabs.append(new_panel);
+    tabs.children('ul:first').append(new_tab);
+
+    tabs.tabs('refresh');
+  }
+
+  $('.dbspinner').spinner({ step: 5 });
+
+  $('.input-sectorname').on('change', changedSectorName);
+  addSector();
+
+});
+</script>
+<%def .tab>
+% my %opt = @_;
+% my $sector = $opt{sector};
+% my $id = $opt{id};
+% my $title = $sector ? $sector->sectorname : mt('Add new');
+      <li id="<% $id %>_tab">
+        <a href="#<% $id %>"><% $title |h %></a>
+      </li>
+</%def>
+<%def .panel>
+% my %opt = @_;
+% my $sector = $opt{sector} || FS::tower_sector->new({});
+% my $id = $opt{id}; # sectornumX
+<div id="<% $id %>">
+% # no id on this one, the panel gets the "sectornumX" id
+  <input type="hidden" name="<% $id %>" value="<% $sector->sectornum |h %>">
+  <p>
+    <label><% emt('Sector name') %></label>
+    <input style="text-align: left"
+           class="input-sectorname"
+           id="<% $id %>_sectorname"
+           name="<% $id %>_sectorname"
+           value="<% $sector->sectorname |h %>">
+
+    <label><% emt('IP address') %></label>
+    <input style="text-align: left"
+           id="<% $id %>_ip_addr"
+           name="<% $id %>_ip_addr"
+           value="<% $sector->ip_addr |h %>">
+  </p>
+  <p>
+    <label for="<% $id %>_height"><% emt('Antenna height') %></label>
+    <input size="3"
+           id="<% $id %>_height"
+           name="<% $id %>_height"
+           value="<% $sector->height |h %>">
+    <% emt('feet above ground') %>
+  </p>
+  <p>
+    <label for="<% $id %>_direction"><% emt('Azimuth') %></label>
+    <input size="3"
+           id="<% $id %>_direction"
+           name="<% $id %>_direction"
+           value="<% $sector->direction |h %>">&deg;
+    <label for="<% $id %>_downtilt"><% emt('Down tilt') %></label>
+    <input size="2"
+           id="<% $id %>_downtilt"
+           name="<% $id %>_downtilt"
+           value="<% $sector->downtilt |h %>">&deg;
+  </p>
+
+  <p>
+    <label for="<% $id %>_freq_mhz"><% emt('Frequency') %></label>
+    <input size="4"
+           id="<% $id %>_freq_mhz"
+           name="<% $id %>_freq_mhz"
+           value="<% $sector->freq_mhz |h %>">
+    <% emt('MHz') %>
+  </p>
+
+  <p>
+    <label for="<% $id %>_power"><% emt('Transmit power') %></label>
+    <input size="3"
+           id="<% $id %>_power"
+           name="<% $id %>_power"
+           value="<% $sector->power |h %>">
+    <% emt('dBm') %><br>
+    <label for="<% $id %>_antenna_gain">+ </label>
+    <input size="3"
+           id="<% $id %>_antenna_gain"
+           name="<% $id %>_antenna_gain"
+           value="<% $sector->antenna_gain |h %>">
+    <% emt('dB antenna gain') %><br>
+    <label for="<% $id %>_line_loss">&ndash; </label>
+    <input size="3"
+           id="<% $id %>_line_loss"
+           name="<% $id %>_line_loss"
+           value="<% $sector->line_loss |h %>">
+    <% emt('dB line loss') %>
+
+% if ( $antenna_types ) {
+  <p>
+    <label for="<% $id %>_hardware_typenum"><% emt('Antenna type') %></label>
+    <& /elements/select.html,
+      field   => $id.'_hardware_typenum',
+      options => [ '', keys %$antenna_types ],
+      labels  => $antenna_types,
+      curr_value => $sector->hardware_typenum,
+    &>
+  </p>
+% }
+% # this next section might not be necessary if you enter an antenna type
+  <p> 
+    <label for="<% $id %>_width"><% emt('Horizontal beam') %></label>
+    <input size="3"
+           id="<% $id %>_width"
+           name="<% $id %>_width"
+           value="<% $sector->width |h %>">&deg;
+    <label for="<% $id %>_v_width"><% emt('Vertical beam') %></label>
+    <input size="2"
+           id="<% $id %>_v_width"
+           name="<% $id %>_v_width"
+           value="<% $sector->v_width |h %>">&deg;
+  </p>
+
+  <label><% emt('Signal margin') %></label>
+  <div style="display: inline-block; vertical-align: top">
+      <input class="dbspinner"
+             size="4"
+             id="<% $id %>_db_high"
+             name="<% $id %>_db_high"
+             value="<% $sector->db_high |h %>">
+      <% emt('dB (high quality)') %>
+      <br>
+
+      <input class="dbspinner"
+             size="4"
+             id="<% $id %>_db_low"
+             name="<% $id %>_db_low"
+             value="<% $sector->db_low |h %>">
+      <% emt('dB (low quality)') %>
+  </div>
+  <p>
+  <label><% emt('Up Rate (Kbps)') %></label>
+    <input style="text-align: left"
+           id="<% $id %>_up_rate"
+           name="<% $id %>_up_rate"
+           value="<% $sector->up_rate |h %>">
+  </p>
+  <p>
+    <label><% emt('Down Rate (Kbps)') %></label>
+    <input style="text-align: left"
+           id="<% $id %>_down_rate"
+           name="<% $id %>_down_rate"
+           value="<% $sector->down_rate |h %>">
+  </p>
+
+</div>
+</%def>
