@@ -3239,7 +3239,7 @@ sub tables_hashref {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
         'pkgpartbatch',  'varchar', 'NULL', $char_d, '', '',
-        'pkg',           'varchar',   '',   $char_d, '', '', 
+        'pkg',           'varchar',   '',   104, '', '', 
         'comment',       'varchar', 'NULL', 2*$char_d, '', '', 
         'promo_code',    'varchar', 'NULL', $char_d, '', '', 
         'freq',          'varchar',   '',   $char_d, '', '', #billing frequency
