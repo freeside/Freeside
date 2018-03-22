@@ -22,6 +22,7 @@ my @contexts = ( qw(
   queue
   upgrade
   upgrade_taxable_billpkgnum
+  freeside-ipifony-download
   freeside-paymentech-upload
   freeside-paymentech-download
 ) );

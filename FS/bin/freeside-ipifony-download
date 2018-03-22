@@ -315,7 +315,7 @@ sub mylog {
   #warn "$message\n" if $opt{v};
   print STDERR "$message\n" if $opt{v};
   $log ||= FS::Log->new('freeside-ipifony-download');
-  $log->log(@_);
+  $log->log(level=>$level, message=>$message);
 }
 
 =head1 NAME
