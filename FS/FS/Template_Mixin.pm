@@ -1196,6 +1196,8 @@ sub print_generic {
 
     my %options = ();
     $options{'section'} = $section if $multisection;
+    $options{'section_with_taxes'} = 1
+      if $conf->exists('invoice_sections_with_taxes');
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
     $options{'no_usage'} = 1 unless $unsquelched;
@@ -1208,6 +1210,8 @@ sub print_generic {
     warn "$me   searching for line items\n"
       if $DEBUG > 1;
 
+    my %section_tax_lines;
+    my %seen_tax_lines;
     foreach my $line_item ( $self->_items_pkg(%options),
                             $self->_items_fee(%options) ) {
 
@@ -1232,7 +1236,54 @@ sub print_generic {
       }
       $line_item->{'ext_description'} ||= [];
 
+      if ( $options{section_with_taxes} && ref $line_item->{pkg_tax} ) {
+        for my $line_tax ( @{$ line_item->{pkg_tax} } ) {
+
+          # It is rarely possible for the same tax record to be presented here
+          # multiple times.  See cust_bill_pkg::_pkg_tax_list for more info
+          next if $seen_tax_lines{ $line_tax->{billpkgtaxlocationnum} };
+          $seen_tax_lines{ $line_tax->{billpkgtaxlocationnum} } = 1;
+
+          $section_tax_lines{ $line_tax->{taxname} } += $line_tax->{amount};
+        }
+      }
+
       push @detail_items, $line_item;
+    }
+
+    # If conf flag invoice_sections_with_taxes:
+    # - Add @detail_items for taxes into each section
+    # - Update section subtotal to include taxes
+    if ( $options{section_with_taxes} && %section_tax_lines ) {
+      for my $taxname ( keys %section_tax_lines ) {
+
+        push @detail_items, {
+          section => $section,
+          amount  => sprintf($money_char."%.2f",$section_tax_lines{$taxname}),
+          description => &$escape_function($taxname),
+        };
+
+        # Append taxes to total.  If line format resembles "$5.00 to $12.00"
+        # append to the second value.
+
+        # $section->{subtotal} = '$5.00 to 12.00'; # for testing:
+        if ($section->{subtotal} =~ /to/) {
+          my @subtotal = split /\s/, $section->{subtotal};
+          $subtotal[2] =~ s/[^\d\.]//g;
+          $subtotal[2] = sprintf(
+            $money_char."%.2f",
+            ( $subtotal[2] + $section_tax_lines{$taxname} )
+          );
+          $section->{subtotal} = join ' ', @subtotal;
+        } else {
+          $section->{subtotal} =~ s/[^\d\.]//g;
+          $section->{subtotal} = sprintf(
+            $money_char . "%.2f",
+            ( $section->{subtotal} + $section_tax_lines{$taxname} )
+          );
+        }
+
+      }
     }
 
     if ( $section->{'description'} ) {
@@ -1335,13 +1386,20 @@ sub print_generic {
         $tax_section->{'description'} = $self->mt($tax_description);
         $tax_section->{'summarized'} = '';
 
-        # append it if it's not already there
-        if ( !grep $tax_section, @sections ) {
+        if ( $conf->exists('invoice_sections_with_taxes')) {
+
+          # remove tax section if taxes are itemized within other sections
+          @sections = grep{ $_ ne $tax_section } @sections;
+
+        } elsif ( !grep $tax_section, @sections ) {
+
+          # append it if it's not already there
           push @sections, $tax_section;
           push @summary_subtotals, $tax_section;
-        }
-      }
 
+        }
+
+      }
     } else {
       unshift @total_items, $total;
     }
@@ -3086,11 +3144,15 @@ sub _items_fee {
     my $desc = $part_fee->itemdesc_locale($self->cust_main->locale);
     # but not escape the base description line
 
+    my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
+      if $options{section_with_taxes};
+
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
         description => $desc,
-        ext_description => \@ext_desc
+        pkg_tax     => \@pkg_tax,
+        ext_description => \@ext_desc,
         # sdate/edate?
       };
   }
@@ -3187,6 +3249,8 @@ location (whichever is defined).
 
 multisection: a flag indicating that this is a multisection invoice,
 which does something complicated.
+
+section_with_taxes:  Look up and include applied taxes for each record
 
 Returns a list of hashrefs, each of which may contain:
 
@@ -3347,6 +3411,9 @@ sub _items_cust_bill_pkg {
         # not normally used, but pass this to the template anyway
         $classname = $part_pkg->classname;
 
+        my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
+          if $opt{section_with_taxes};
+
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
                   || $cust_bill_pkg->setup_show_zero
@@ -3420,6 +3487,7 @@ sub _items_cust_bill_pkg {
             push @{ $s->{ext_description} }, @d;
           } else {
             $s = {
+              billpkgnum      => $cust_bill_pkg->billpkgnum,
               _is_setup       => 1,
               description     => $description,
               pkgpart         => $pkgpart,
@@ -3431,6 +3499,7 @@ sub _items_cust_bill_pkg {
               ext_description => \@d,
               svc_label       => ($svc_label || ''),
               locationnum     => $cust_pkg->locationnum, # sure, why not?
+              pkg_tax         => \@pkg_tax,
             };
           };
 
@@ -3584,6 +3653,7 @@ sub _items_cust_bill_pkg {
               push @{ $r->{ext_description} }, @d;
             } else {
               $r = {
+                billpkgnum      => $cust_bill_pkg->billpkgnum,
                 description     => $description,
                 pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
@@ -3595,6 +3665,7 @@ sub _items_cust_bill_pkg {
                 ext_description => \@d,
                 svc_label       => ($svc_label || ''),
                 locationnum     => $cust_pkg->locationnum,
+                pkg_tax         => \@pkg_tax,
               };
               $r->{'seconds'} = \@seconds if grep {defined $_} @seconds;
             }
@@ -3613,6 +3684,7 @@ sub _items_cust_bill_pkg {
             } elsif ( $amount ) {
               # create a new usage line
               $u = {
+                billpkgnum      => $cust_bill_pkg->billpkgnum,
                 description     => $description,
                 pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
@@ -3622,6 +3694,7 @@ sub _items_cust_bill_pkg {
                 %item_dates,
                 ext_description => \@d,
                 locationnum     => $cust_pkg->locationnum,
+                pkg_tax         => \@pkg_tax,
               };
             } # else this has no usage, so don't create a usage section
           }
@@ -3754,5 +3827,6 @@ sub _items_discounts_avail {
   sort { $b <=> $a } keys %plans;
 
 }
+
 
 1;

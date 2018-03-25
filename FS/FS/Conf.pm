@@ -1599,6 +1599,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'invoice_sections_with_taxes',
+    'section'     => 'invoicing',
+    'description' => 'Include taxes within each section of mutli-section invoices.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'summary_subtotals_method',
     'section'     => 'invoicing',
     'description' => 'How to group line items when calculating summary subtotals.  By default, it will be the same method used for grouping invoice sections.',
@@ -5961,4 +5968,3 @@ and customer address. Include units.',
 );
 
 1;
-
