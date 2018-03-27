@@ -290,6 +290,20 @@ my $widget = new HTML::Widgets::SelectLayers(
     $html .= ' CHECKED' if $part_export->no_suspend eq 'Y';
     $html .= '></TD></TR>';
 
+    foreach my $script ( keys %{$exports->{$layer}{scripts}} ) {
+      $html .= '<TR><TD ALIGN="left" COLSPAN=2>' .
+        include('/elements/progress-init.html',
+              $part_export->exportname,
+              [ $script.'_exportnum', $script.'_script' ],
+              rooturl().'view/svc_export/run_script.cgi',
+              rooturl().'edit/part_export.cgi?'.$part_export->{Hash}->{exportnum},
+              $script,
+        ) .
+        '<INPUT TYPE="hidden" NAME="'.$script.'_exportnum" VALUE="'.$part_export->{Hash}->{exportnum}.'">
+         <INPUT TYPE="hidden" NAME="'.$script.'_script" VALUE="'.$script.'">
+        <A HREF="#" onClick="'.$script.'process();">'.$exports->{$layer}{scripts}{$script}->{html_label}.'</A></TD></TR>';
+    }
+
     $html .= '</TABLE>';
 
     # false laziness with config_element above

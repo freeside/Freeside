@@ -97,13 +97,13 @@ The coordinate boundaries of the coverage map.
 
 The sector title.
 
-=item up_rate
+=item up_rate_limit
 
-Up rate for sector.
+Up rate limit for sector.
 
-=item down_rate
+=item down_rate_limit
 
-down rate for sector.
+down rate limit for sector.
 
 =back
 
@@ -167,8 +167,8 @@ sub check {
     || $self->ut_numbern('downtilt')
     || $self->ut_floatn('sector_range')
     || $self->ut_numbern('margin')
-    || $self->ut_numbern('up_rate')
-    || $self->ut_numbern('down_rate')
+    || $self->ut_numbern('up_rate_limit')
+    || $self->ut_numbern('down_rate_limit')
     || $self->ut_anything('image')
     || $self->ut_sfloatn('west')
     || $self->ut_sfloatn('east')
@@ -271,6 +271,25 @@ sub queue_generate_coverage {
 =back
 
 =head1 SUBROUTINES
+
+=over 4
+
+=item part_export_svc_broadband
+
+Returns all svc_broadband exports.
+
+=cut
+
+sub part_export_svc_broadband {
+  my $info = $FS::part_export::exports{'svc_broadband'} or return;
+  my @exporttypes = map { dbh->quote($_) } keys %$info or return;
+  qsearch({
+    'table'     => 'part_export',
+    'extra_sql' => 'WHERE exporttype IN(' . join(',', @exporttypes) . ')'
+  });
+}
+
+=back
 
 =over 4
 
