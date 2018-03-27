@@ -17,7 +17,7 @@ my $tabcounter = 0;
 my @fields = qw(
   sectorname ip_addr height freq_mhz direction width downtilt v_width
   db_high db_low sector_range
-  power line_loss antenna_gain hardware_typenum up_rate down_rate
+  power line_loss antenna_gain hardware_typenum up_rate_limit down_rate_limit
 );
 
 my @sectors;
@@ -294,16 +294,16 @@ $(function() {
   <p>
   <label><% emt('Up Rate (Kbps)') %></label>
     <input style="text-align: left"
-           id="<% $id %>_up_rate"
-           name="<% $id %>_up_rate"
-           value="<% $sector->up_rate |h %>">
+           id="<% $id %>_up_rate_limit"
+           name="<% $id %>_up_rate_limit"
+           value="<% $sector->up_rate_limit |h %>">
   </p>
   <p>
     <label><% emt('Down Rate (Kbps)') %></label>
     <input style="text-align: left"
-           id="<% $id %>_down_rate"
-           name="<% $id %>_down_rate"
-           value="<% $sector->down_rate |h %>">
+           id="<% $id %>_down_rate_limit"
+           name="<% $id %>_down_rate_limit"
+           value="<% $sector->down_rate_limit |h %>">
   </p>
 
 </div>
