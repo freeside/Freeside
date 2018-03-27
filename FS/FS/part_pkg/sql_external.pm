@@ -146,8 +146,7 @@ sub calc_recur {
 
 sub cutoff_day {
   my( $self, $cust_pkg ) = @_;
-  my $error = SUPER->cutoff_day($cust_pkg);
-  #my $error = FS::part_pkg::flat::cutoff_day( $self, $cust_pkg ));
+  my $error = FS::part_pkg::flat::cutoff_day( $self, $cust_pkg );
   return $error;
 }
 
