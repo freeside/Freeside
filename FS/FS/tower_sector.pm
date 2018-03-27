@@ -99,13 +99,13 @@ The coordinate boundaries of the coverage map.
 
 The sector title.
 
-=item up_rate
+=item up_rate_limit
 
-Up rate for sector.
+Up rate limit for sector.
 
-=item down_rate
+=item down_rate_limit
 
-down rate for sector.
+down rate limit for sector.
 
 =back
 
@@ -260,8 +260,8 @@ sub check {
     || $self->ut_decimaln('antenna_gain')
     || $self->ut_numbern('hardware_typenum')
     || $self->ut_textn('title')
-    || $self->ut_numbern('up_rate')
-    || $self->ut_numbern('down_rate')
+    || $self->ut_numbern('up_rate_limit')
+    || $self->ut_numbern('down_rate_limit')
     # all of these might get relocated as part of coverage refactoring
     || $self->ut_anything('image')
     || $self->ut_sfloatn('west')
@@ -372,6 +372,21 @@ of enabling exports on specific sectors.
 
 sub part_export {
   my $info = $FS::part_export::exports{'tower_sector'} or return;
+  my @exporttypes = map { dbh->quote($_) } keys %$info or return;
+  qsearch({
+    'table'     => 'part_export',
+    'extra_sql' => 'WHERE exporttype IN(' . join(',', @exporttypes) . ')'
+  });
+}
+
+=item part_export_svc_broadband
+
+Returns all svc_broadband exports.
+
+=cut
+
+sub part_export_svc_broadband {
+  my $info = $FS::part_export::exports{'svc_broadband'} or return;
   my @exporttypes = map { dbh->quote($_) } keys %$info or return;
   qsearch({
     'table'     => 'part_export',
