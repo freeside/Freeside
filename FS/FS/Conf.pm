@@ -1578,7 +1578,7 @@ and customer address. Include units.',
   { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
-    'description' => 'Split invoice into sections and label according to package category when enabled.',
+    'description' => 'Split invoice into sections and label according to either package category or location when enabled.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
