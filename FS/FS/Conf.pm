@@ -1583,6 +1583,15 @@ and customer address. Include units.',
     'per_agent'   => 1,
   },
 
+  {
+    'key'         => 'invoice_sections_multilocation',
+    'section'     => 'invoicing',
+    'description' => 'Enable invoice_sections for for any bill with at least this many locations on the bill.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~ /^\d+$/ ? undef : 'Please enter a number' },
+  },
+
   { 
     'key'         => 'invoice_include_aging',
     'section'     => 'invoice_balances',
