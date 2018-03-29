@@ -1804,6 +1804,70 @@ sub upgrade_tax_location {
   '';
 }
 
+sub _pkg_tax_list {
+  # Return an array of hashrefs for each cust_bill_pkg_tax_location
+  # applied to this bill for this cust_bill_pkg.pkgnum.
+  #
+  # ! Important Note:
+  #   In some situations, this list will contain more tax records than the
+  #   ones directly related to $self->billpkgnum.  The returned list contains
+  #   all records, for this bill, charged against this billpkgnum's pkgnum.
+  #
+  #   One must keep this in mind when using data returned by this method.
+  #
+  #   An unaddressed deficiency in the cust_bill_pkg_tax_location model makes
+  #   this necessary:  When a linked-hidden package generates a tax/fee as a row
+  #   in cust_bill_pkg_tax_location, there is not enough information to surmise
+  #   with specificity which billpkgnum row represents the direct parent of the
+  #   the linked-hidden package's tax row.  The closest we can get to this
+  #   backwards reassociation is to use the pkgnum.  Therefore, when multiple
+  #   billpkgnum's appear with the same pkgnum, this method is going to return
+  #   the tax records for ALL of those billpkgnum's, not just $self->billpkgnum.
+  #
+  #   This could be addressed with an update to the model, and to the billing
+  #   routine that generates rows into cust_bill_pkg_tax_location.  Perhaps a
+  #   column, link_billpkgnum or parent_billpkgnum, recording the link. I'm not
+  #   doing that now, because there would be no possible repair of data stored
+  #   historically prior to such a fix.  I need _pkg_tax_list() to not be
+  #   broken for already-generated bills.
+  #
+  #   Any code you write relying on _pkg_tax_list() MUST be aware of, and
+  #   account for, the possible return of duplicated tax records returned
+  #   when method is called on multiple cust_bill_pkg_tax_location rows.
+  #   Duplicates can be identified by billpkgtaxlocationnum column.
+
+  my $self = shift;
+  return unless $self->pkgnum;
+
+  map +{
+      billpkgtaxlocationnum => $_->billpkgtaxlocationnum,
+      billpkgnum            => $_->billpkgnum,
+      taxnum                => $_->taxnum,
+      amount                => $_->amount,
+      taxname               => $_->taxname,
+  },
+  qsearch({
+    table  => 'cust_bill_pkg_tax_location',
+    addl_from => '
+      LEFT JOIN cust_bill_pkg
+	      ON cust_bill_pkg.billpkgnum
+         = cust_bill_pkg_tax_location.taxable_billpkgnum
+    ',
+    select => join( ', ', (qw|
+      cust_bill_pkg.billpkgnum
+      cust_bill_pkg_tax_location.billpkgtaxlocationnum
+      cust_bill_pkg_tax_location.taxnum
+      cust_bill_pkg_tax_location.amount
+    |)),
+    extra_sql =>
+      ' WHERE '.
+      ' cust_bill_pkg.invnum = ' . dbh->quote( $self->invnum ) .
+      ' AND '.
+      ' cust_bill_pkg_tax_location.pkgnum = ' . dbh->quote( $self->pkgnum ),
+  });
+
+}
+
 sub _upgrade_data {
   # Create a queue job to run upgrade_tax_location from January 1, 2012 to 
   # the present date.
@@ -1862,4 +1926,3 @@ from the base documentation.
 =cut
 
 1;
-
