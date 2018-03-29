@@ -293,7 +293,7 @@ my $widget = new HTML::Widgets::SelectLayers(
     foreach my $script ( keys %{$exports->{$layer}{scripts}} ) {
       $html .= '<TR><TD ALIGN="left" COLSPAN=2>' .
         include('/elements/progress-init.html',
-              $part_export->exportname,
+              $part_export->exporttype,
               [ $script.'_exportnum', $script.'_script' ],
               rooturl().'view/svc_export/run_script.cgi',
               rooturl().'edit/part_export.cgi?'.$part_export->{Hash}->{exportnum},
