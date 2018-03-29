@@ -799,7 +799,7 @@ sub export_provisioned_services {
     'table' => 'cust_svc',
     'addl_from' => 'LEFT JOIN svc_broadband USING ( svcnum  ) ',
     'extra_sql' => " WHERE svcpart in ('".$parts."')",
-  });
+  }) unless !$parts;
 
   my $svc_count = scalar @svcs;
 
