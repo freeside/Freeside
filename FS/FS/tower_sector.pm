@@ -1,6 +1,7 @@
 package FS::tower_sector;
 use base qw( FS::Record );
 
+use FS::Record qw(dbh qsearch);
 use Class::Load qw(load_class);
 use File::Path qw(make_path);
 use Data::Dumper;
