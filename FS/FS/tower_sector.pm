@@ -2,7 +2,7 @@ package FS::tower_sector;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::tower;
 use FS::svc_broadband;
 use Class::Load qw(load_class);
