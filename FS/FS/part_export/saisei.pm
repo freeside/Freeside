@@ -5,6 +5,7 @@ use vars qw( @ISA %info );
 use base qw( FS::part_export );
 use Date::Format 'time2str';
 use Cpanel::JSON::XS;
+use Storable qw(thaw);
 use MIME::Base64;
 use REST::Client;
 use Data::Dumper;
@@ -780,7 +781,7 @@ sub process_sector {
 
 sub export_provisioned_services {
   my $job = shift;
-  my $param = shift;
+  my $param = thaw(decode_base64(shift));
 
   my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
   or die "unknown exportnum $param->{export_provisioned_services_exportnum}";
