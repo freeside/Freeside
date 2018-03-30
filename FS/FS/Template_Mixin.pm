@@ -19,7 +19,7 @@ use HTML::Entities;
 use Cwd;
 use FS::UID;
 use FS::Misc qw( send_email );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::Conf;
 use FS::Misc qw( generate_ps generate_pdf );
 use FS::pkg_category;
@@ -936,9 +936,10 @@ sub print_generic {
     if $DEBUG > 1;
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
-  my $multisection = $conf->exists($tc.'sections', $cust_main->agentnum) ||
-                     $conf->exists($tc.'sections_by_location', $cust_main->agentnum);
+  my $multisection = $self->has_sections;
   $invoice_data{'multisection'} = $multisection;
+  my $section_with_taxes = 1
+    if $conf->exists('invoice_sections_with_taxes');
   my $late_sections;
   my $extra_sections = [];
   my $extra_lines = ();
@@ -1201,6 +1202,9 @@ sub print_generic {
     warn "$me   searching for line items\n"
       if $DEBUG > 1;
 
+    my %section_tax_lines;
+    my %seen_tax_lines;
+
     foreach my $line_item ( $self->_items_pkg(%options),
                             $self->_items_fee(%options) ) {
 
@@ -1224,8 +1228,53 @@ sub print_generic {
         $line_item->{'unit_amount'} = $money_char.$line_item->{'unit_amount'};
       }
       $line_item->{'ext_description'} ||= [];
- 
+
+      if ( $section_with_taxes && ref $line_item->{pkg_tax} ) {
+        for my $line_tax ( @{$ line_item->{pkg_tax} } ) {
+
+          # It is rarely possible for the same tax record to be presented here
+          # multiple times.  See cust_bill_pkg::_pkg_tax_list for more info
+          next if $seen_tax_lines{ $line_tax->{billpkgtaxlocationnum} };
+          $seen_tax_lines{ $line_tax->{billpkgtaxlocationnum} } = 1;
+
+          $section_tax_lines{ $line_tax->{taxname} } += $line_tax->{amount};
+        }
+      }
+
       push @detail_items, $line_item;
+    }
+
+    # If conf flag invoice_sections_with_taxes:
+    # - Add @detail_items for taxes into each section
+    # - Update section subtotal to include taxes
+    if ( $section_with_taxes && %section_tax_lines ) {
+      for my $taxname ( keys %section_tax_lines ) {
+
+        push @detail_items, {
+          section => $section,
+          amount  => sprintf($money_char."%.2f",$section_tax_lines{$taxname}),
+          description => &$escape_function($taxname),
+        };
+
+        # Append taxes to total.  If line format resembles "$5.00 to $12.00"
+        # append to the second value.
+        if ($section->{subtotal} =~ /to/) {
+          my @subtotal = split /\s/, $section->{subtotal};
+          $subtotal[2] =~ s/[^\d\.]//g;
+          $subtotal[2] = sprintf(
+            $money_char."%.2f",
+            ( $subtotal[2] + $section_tax_lines{$taxname} )
+          );
+          $section->{subtotal} = join ' ', @subtotal;
+        } else {
+        $section->{subtotal} =~ s/[^\d\.]//g;
+          $section->{subtotal} = sprintf(
+            $money_char . "%.2f",
+            ( $section->{subtotal} + $section_tax_lines{$taxname} )
+          );
+        }
+
+      }
     }
 
     if ( $section->{'description'} ) {
@@ -1328,11 +1377,19 @@ sub print_generic {
         $tax_section->{'description'} = $self->mt($tax_description);
         $tax_section->{'summarized'} = '';
 
-        # append it if it's not already there
-        if ( !grep $tax_section, @sections ) {
+        if ( $conf->exists('invoice_sections_with_taxes')) {
+
+          # remove tax section if taxes are itemized within other sections
+          @sections = grep{ $_ ne $tax_section } @sections;
+
+        } elsif ( !grep $tax_section, @sections ) {
+
+          # append it if it's not already there
           push @sections, $tax_section;
           push @summary_subtotals, $tax_section;
+
         }
+
       }
 
     } else {
@@ -3073,11 +3130,15 @@ sub _items_fee {
     my $desc = $part_fee->itemdesc_locale($self->cust_main->locale);
     # but not escape the base description line
 
+    my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
+      if $self->conf->exists('invoice_sections_with_taxes');
+
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
         description => $desc,
-        ext_description => \@ext_desc
+        pkg_tax     => \@pkg_tax,
+        ext_description => \@ext_desc,
         # sdate/edate?
       };
   }
@@ -3177,6 +3238,8 @@ which does something complicated.
 
 preref_callback: coderef run for each line item, code should return HTML to be
 displayed before that line item (quotations only)
+
+section_with_taxes:  Look up and include applied taxes for each record
 
 Returns a list of hashrefs, each of which may contain:
 
@@ -3313,6 +3376,9 @@ sub _items_cust_bill_pkg {
                           'no_usage'        => $opt{'no_usage'},
                         );
 
+      my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
+        if $self->conf->exists('invoice_sections_with_taxes');
+
       if ( ref($cust_bill_pkg) eq 'FS::quotation_pkg' ) {
         # XXX this should be pulled out into quotation_pkg
 
@@ -3338,6 +3404,7 @@ sub _items_cust_bill_pkg {
             'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
             'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitsetup),
             'quantity'    => $cust_bill_pkg->quantity,
+            'pkg_tax'     => \@pkg_tax,
             'ext_description' => \@details,
             'preref_html' => ( $opt{preref_callback}
                                  ? &{ $opt{preref_callback} }( $cust_bill_pkg )
@@ -3353,6 +3420,7 @@ sub _items_cust_bill_pkg {
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
             'unit_amount' => sprintf("%.2f", $cust_bill_pkg->unitrecur),
             'quantity'    => $cust_bill_pkg->quantity,
+            'pkg_tax'     => \@pkg_tax,
             'ext_description' => \@details,
            'preref_html'  => ( $opt{preref_callback}
                                  ? &{ $opt{preref_callback} }( $cust_bill_pkg )
@@ -3458,6 +3526,7 @@ sub _items_cust_bill_pkg {
               setup_show_zero => $cust_bill_pkg->setup_show_zero,
               unit_amount     => $cust_bill_pkg->unitsetup,
               quantity        => $cust_bill_pkg->quantity,
+              pkg_tax         => \@pkg_tax,
               ext_description => \@d,
               svc_label       => ($svc_label || ''),
               locationnum     => $cust_pkg->locationnum, # sure, why not?
@@ -3618,6 +3687,7 @@ sub _items_cust_bill_pkg {
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 unit_amount     => $unit_amount,
                 quantity        => $cust_bill_pkg->quantity,
+                pkg_tax         => \@pkg_tax,
                 %item_dates,
                 ext_description => \@d,
                 svc_label       => ($svc_label || ''),
@@ -3646,6 +3716,7 @@ sub _items_cust_bill_pkg {
                 amount          => $amount,
                 usage_item      => 1,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
+                pkg_tax         => \@pkg_tax,
                 %item_dates,
                 ext_description => \@d,
                 locationnum     => $cust_pkg->locationnum,
@@ -3792,6 +3863,68 @@ sub _items_discounts_avail {
   } #map
   sort { $b <=> $a } keys %plans;
 
+}
+
+=item has_sections AGENTNUM
+
+Return true if invoice_sections should be enabled for this bill.
+ (Inherited by both cust_bill and cust_bill_void)
+
+Determination:
+* False if not an invoice
+* True always if conf invoice_sections is enabled
+* True always if sections_by_location is enabled
+* True if conf invoice_sections_multilocation > 1,
+  and location_count >= invoice_sections_multilocation
+* Else, False
+
+=cut
+
+sub has_sections {
+  my ($self, $agentnum) = @_;
+
+  return 0 unless $self->invnum > 0;
+
+  $agentnum ||= $self->cust_main->agentnum;
+  return 1 if $self->conf->exists('invoice_sections', $agentnum);
+  return 1 if $self->conf->exists('sections_by_location', $agentnum);
+
+  my $location_min = $self->conf->config(
+    'invoice_sections_multilocation', $agentnum,
+  );
+
+  return 1
+    if $location_min
+    && $self->location_count >= $location_min;
+
+  0;
+}
+
+
+=item location_count
+
+Return the number of locations billed on this invoice
+
+=cut
+
+sub location_count {
+  my ($self) = @_;
+  return 0 unless $self->invnum;
+
+  # SELECT COUNT( DISTINCT cust_pkg.locationnum )
+  # FROM cust_bill_pkg
+  # LEFT JOIN cust_pkg USING (pkgnum)
+  # WHERE invnum = 278
+  #   AND cust_bill_pkg.pkgnum > 0
+
+  my $result = qsearchs({
+    select    => 'COUNT(DISTINCT cust_pkg.locationnum) as location_count',
+    table     => 'cust_bill_pkg',
+    addl_from => 'LEFT JOIN cust_pkg USING (pkgnum)',
+    extra_sql => 'WHERE invnum = '.dbh->quote( $self->invnum )
+               . '  AND cust_bill_pkg.pkgnum > 0'
+  });
+  ref $result ? $result->location_count : 0;
 }
 
 1;

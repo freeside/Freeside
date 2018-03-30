@@ -1708,9 +1708,18 @@ and customer address. Include units.',
   { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
-    'description' => 'Split invoice into sections and label according to package category when enabled.',
+    'description' => 'Split invoice into sections and label according to either package category or location when enabled.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'invoice_sections_multilocation',
+    'section'     => 'invoicing',
+    'description' => 'Enable invoice_sections for for any bill with at least this many locations on the bill.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~ /^\d+$/ ? undef : 'Please enter a number' },
   },
 
   { 
@@ -1726,6 +1735,13 @@ and customer address. Include units.',
     'description' => 'How to group line items on multi-section invoices.',
     'type'        => 'select',
     'select_enum' => [ qw(category location) ],
+  },
+
+  {
+    'key'         => 'invoice_sections_with_taxes',
+    'section'     => 'invoicing',
+    'description' => 'Include taxes within each section of mutli-section invoices.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -6323,4 +6339,3 @@ and customer address. Include units.',
 );
 
 1;
-

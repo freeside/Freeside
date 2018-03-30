@@ -160,6 +160,19 @@ sub cust_location {
   qsearchs( 'cust_location', { 'locationnum' => $self->locationnum }  );
 }
 
+=item taxname
+
+Returns the tax name (for populating the itemdesc field).
+
+=cut
+
+sub taxname {
+  my $self = shift;
+  my $cust_main_county = FS::cust_main_county->by_key($self->taxnum)
+    or return '';
+  $cust_main_county->taxname || 'Tax';
+}
+
 =item desc
 
 Returns a description for this tax line item constituent.  Currently this
@@ -495,4 +508,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-
