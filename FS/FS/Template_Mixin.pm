@@ -19,7 +19,7 @@ use HTML::Entities;
 use Cwd;
 use FS::UID;
 use FS::Misc qw( send_email );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::Conf;
 use FS::Misc qw( generate_ps generate_pdf );
 use FS::pkg_category;
@@ -942,8 +942,6 @@ sub print_generic {
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $self->has_sections;
-  $conf->exists($tc.'sections', $cust_main->agentnum) ||
-                     $conf->exists($tc.'sections_by_location', $cust_main->agentnum);
   $invoice_data{'multisection'} = $multisection;
   my $late_sections;
   my $extra_sections = [];
@@ -3747,6 +3745,68 @@ sub _items_discounts_avail {
   } #map
   sort { $b <=> $a } keys %plans;
 
+}
+
+=item has_sections AGENTNUM
+
+Return true if invoice_sections should be enabled for this bill.
+ (Inherited by both cust_bill and cust_bill_void)
+
+Determination:
+* False if not an invoice
+* True always if conf invoice_sections is enabled
+* True always if sections_by_location is enabled
+* True if conf invoice_sections_multilocation > 1,
+  and location_count >= invoice_sections_multilocation
+* Else, False
+
+=cut
+
+sub has_sections {
+  my ($self, $agentnum) = @_;
+
+  return 0 unless $self->invnum > 0;
+
+  $agentnum ||= $self->cust_main->agentnum;
+  return 1 if $self->conf->exists('invoice_sections', $agentnum);
+  return 1 if $self->conf->exists('sections_by_location', $agentnum);
+
+  my $location_min = $self->conf->config(
+    'invoice_sections_multilocation', $agentnum,
+  );
+
+  return 1
+    if $location_min
+    && $self->location_count >= $location_min;
+
+  0;
+}
+
+
+=item location_count
+
+Return the number of locations billed on this invoice
+
+=cut
+
+sub location_count {
+  my ($self) = @_;
+  return 0 unless $self->invnum;
+
+  # SELECT COUNT( DISTINCT cust_pkg.locationnum )
+  # FROM cust_bill_pkg
+  # LEFT JOIN cust_pkg USING (pkgnum)
+  # WHERE invnum = 278
+  #   AND cust_bill_pkg.pkgnum > 0
+
+  my $result = qsearchs({
+    select    => 'COUNT(DISTINCT cust_pkg.locationnum) as location_count',
+    table     => 'cust_bill_pkg',
+    addl_from => 'LEFT JOIN cust_pkg USING (pkgnum)',
+    extra_sql => 'WHERE invnum = '.dbh->quote( $self->invnum )
+               . '  AND cust_bill_pkg.pkgnum > 0'
+  });
+  ref $result ? $result->location_count : 0;
 }
 
 1;
