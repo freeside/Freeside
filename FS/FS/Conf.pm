@@ -1622,6 +1622,14 @@ and customer address. Include units.',
     'select_enum' => [ qw(category location) ],
   },
 
+
+  {
+    'key'         => 'invoice_sections_with_taxes',
+    'section'     => 'invoicing',
+    'description' => 'Include taxes within each section of mutli-section invoices.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'summary_subtotals_method',
     'section'     => 'invoicing',
