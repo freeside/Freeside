@@ -1581,6 +1581,7 @@ and customer address. Include units.',
     'description' => 'Split invoice into sections and label according to either package category or location when enabled.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
+    'config_bool' => 1,
   },
 
   {
@@ -1612,6 +1613,8 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Include taxes within each section of mutli-section invoices.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
+    'agent_bool'  => 1,
   },
 
   {
