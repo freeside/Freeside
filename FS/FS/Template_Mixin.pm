@@ -299,7 +299,7 @@ before that line item (quotations only)
 
 =item template
 
-Dprecated.  Used as a suffix for a configuration template.  Please 
+Deprecated.  Used as a suffix for a configuration template.  Please 
 don't use this, it deprecated in favor of more flexible alternatives.
 
 =back
@@ -1194,7 +1194,7 @@ sub print_generic {
     my %options = ();
     $options{'section'} = $section if $multisection;
     $options{'section_with_taxes'} = 1
-      if $conf->exists('invoice_sections_with_taxes');
+      if $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum);
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
     $options{'no_usage'} = 1 unless $unsquelched;
@@ -1383,7 +1383,7 @@ sub print_generic {
         $tax_section->{'description'} = $self->mt($tax_description);
         $tax_section->{'summarized'} = '';
 
-        if ( $conf->exists('invoice_sections_with_taxes')) {
+        if ( $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum) ) {
 
           # remove tax section if taxes are itemized within other sections
           @sections = grep{ $_ ne $tax_section } @sections;
@@ -2037,7 +2037,7 @@ sub balance_due_msg {
   my $msg = $self->mt('Balance Due');
   return $msg unless $self->terms; # huh?
   if ( !$self->conf->exists('invoice_show_prior_due_date')
-       or $self->conf->exists('invoice_sections') ) {
+       || $self->has_sections ) {
     # if enabled, the due date is shown with Total New Charges (see 
     # _items_total) and not here
     # (yes, or if invoice_sections is enabled; this is just for compatibility)
@@ -3841,8 +3841,8 @@ sub has_sections {
 
   return 0 unless $self->invnum > 0;
 
-  $agentnum ||= $self->cust_main->agentnum;
-  return 1 if $self->conf->exists('invoice_sections', $agentnum);
+  $agentnum ||= $self->agentnum;
+  return 1 if $self->conf->config_bool('invoice_sections', $agentnum);
   return 1 if $self->conf->exists('sections_by_location', $agentnum);
 
   my $location_min = $self->conf->config(
