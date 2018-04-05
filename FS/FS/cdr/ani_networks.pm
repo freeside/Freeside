@@ -37,42 +37,40 @@ use Time::Local;
     terminating_ocn:4:208:211
   )],
   'import_fields'      => [
-
-    sub { #call_date and time
+    sub {               #call_date and time
      my($cdr, $data, $conf, $param) = @_;
      $data =~ /^(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/ or die "unparsable record_date: $data";
      $cdr->set('calldate', "$2/$3/$1 $4:$5:$6");
+     $cdr->set('startdate', "$2/$3/$1 $4:$5:$6");
     },
-
-    'charged_party',     #bill to number
-    '',    			#translate number
-
-    'src', 			#originating number
-
-    '',    			#originating lata
-    '',    			#originating city
-    '',   			#originating state
-    '',   			#originating country
-
-    'dst', 			#terminating number
-
-    '',    			#terminating lata
-    '',    			#terminating city
-    '',    			#terminating state
-    '',    			#terminating city code
-    '',    			#terminating country
-
-    '',    			#call type
-    '',    			#call transport
-    'accountcode',       #account code
-    '',    			#info digits
-    'duration',    		#duration
-    '',    			#wholesale amount
-    '',    			#cic
-    'src_lrn',    		#originating lrn
-    'dst_lrn',    		#terminating lrn
-    '',    			#originating ocn
-    '',    			#terminating ocn
+    'charged_party',    #bill to number
+    '',                 #translate number
+    'src',              #originating number
+    '',                 #originating lata
+    '',                 #originating city
+    '',                 #originating state
+    '',                 #originating country
+    'dst',              #terminating number
+    '',                 #terminating lata
+    '',                 #terminating city
+    '',                 #terminating state
+    '',                 #terminating city code
+    '',                 #terminating country
+    '',                 #call type
+    '',                 #call transport
+    'accountcode',      #account code
+    '',                 #info digits
+    sub {               #duration
+     my($cdr, $field) = @_;
+     $cdr->set(duration => $field);
+     $cdr->set(billsec  => $field);
+    },
+    '',                 #wholesale amount
+    '',                 #cic
+    'src_lrn',          #originating lrn
+    'dst_lrn',          #terminating lrn
+    '',                 #originating ocn
+    '',                 #terminating ocn
 
   ],
 
