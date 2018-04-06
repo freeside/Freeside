@@ -418,6 +418,8 @@ sub process_block_lookup {
     die $response->status_line unless $response->is_success;
     $data = decode_json($response->content);
     die $data->{error}{message} if $data->{error};
+    #Nothing to insert 
+    last unless (scalar @{$data->{features}} > 0);
 
     foreach my $feature (@{ $data->{features} }) {
       my $geoid = $feature->{attributes}{GEOID}; # the prize
