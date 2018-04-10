@@ -1215,6 +1215,7 @@ my $validate_email = sub { $_[0] =~
     'section'     => 'invoicing',
     'description' => 'Indicates that html and latex invoices should be in summary style and make use of invoice_latexsummary.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
