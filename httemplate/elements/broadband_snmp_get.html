@@ -26,7 +26,7 @@ function broadband_snmp_get (svcnum) {
           if (obj.error) {
             var row = document.createElement('tr');
             var cell = document.createElement('td');
-            cell.colSpan = '2';
+            cell.colSpan = '3';
             cell.innerHTML = obj['error'];
             row.appendChild(cell);
             table.appendChild(row);
@@ -36,6 +36,9 @@ function broadband_snmp_get (svcnum) {
               var value = obj['values'][j];
               var label = (obj['values'].length > 1) ? (value[0] + '.' + value[1]) : obj['label'];
               var cell = document.createElement('td');
+              cell.innerHTML = obj['name'];
+              row.appendChild(cell);
+              cell = document.createElement('td');
               cell.innerHTML = label;
               row.appendChild(cell);
               cell = document.createElement('td');
