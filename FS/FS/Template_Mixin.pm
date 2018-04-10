@@ -831,7 +831,7 @@ sub print_generic {
       $invoice_data{'previous_credits'} = [];
     }
  
-    if ( $conf->exists('invoice_usesummary', $agentnum) ) {
+    if ( $conf->config_bool('invoice_usesummary', $agentnum) ) {
       $invoice_data{'summarypage'} = $summarypage = 1;
     }
 
