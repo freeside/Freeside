@@ -825,7 +825,7 @@ sub print_generic {
         );
     }
 
-    if ( $conf->exists('invoice_usesummary', $agentnum) ) {
+    if ( $conf->config_bool('invoice_usesummary', $agentnum) ) {
       $invoice_data{'summarypage'} = $summarypage = 1;
     }
 
