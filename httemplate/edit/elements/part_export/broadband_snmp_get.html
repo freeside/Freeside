@@ -45,8 +45,11 @@ function receive_mib_get(obj, rownum) {
 </script>
 
 <table bgcolor="#cccccc" border=0 cellspacing=3>
-<TR><TH>Object ID</TH></TR>
+<TR><TH>Object Name</TH><TH>Object ID</TH></TR>
 <TR id="broadband_snmp_get_template">
+  <TD>
+    <INPUT NAME="oid_name" ID="oid_name" SIZE="25">
+  </TD>
   <TD>
     <INPUT NAME="oid" ID="oid" SIZE="54">
     <INPUT TYPE="button" VALUE="..." ID="openselector" onclick="open_select_mib_get(this)">
@@ -54,11 +57,11 @@ function receive_mib_get(obj, rownum) {
 </TR>
 <& /elements/auto-table.html,
   template_row  => 'broadband_snmp_get_template',
-  fieldorder    => ['oid'],
+  fieldorder    => ['oid_name','oid'],
   data          => \@data,
   table         => 'snmp',
 &>
-<INPUT TYPE="hidden" NAME="multi_options" VALUE="snmp_oid">
+<INPUT TYPE="hidden" NAME="multi_options" VALUE="snmp_oid,snmp_oid_name">
 <& foot.html, %opt &>
 <%init>
 my %opt = @_;
@@ -73,11 +76,13 @@ foreach my $field ( qw(snmp_version snmp_community snmp_timeout) ) {
 }
 
 my @oids    = split("\n", $part_export->option('snmp_oid'));
+my @oid_names    = split("\n", $part_export->option('snmp_oid_name'));
 
 my @data;
 while (@oids) {
   my @thisrow = (shift(@oids));
-  push @data, \@thisrow if grep length($_), @thisrow;
+  my $name = shift(@oid_names);
+  push @data, [$name, \@thisrow] if grep length($_), @thisrow;
 }
 
 my $popup_name = 'popup-'.time."-$$-".rand() * 2**32;
