@@ -1190,6 +1190,8 @@ sub print_generic {
 
     my %options = ();
     $options{'section'} = $section if $multisection;
+    $options{'section_with_taxes'} = 1
+      if $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum);
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
     $options{'no_usage'} = 1 unless $unsquelched;
@@ -3131,7 +3133,7 @@ sub _items_fee {
     # but not escape the base description line
 
     my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
-      if $self->conf->exists('invoice_sections_with_taxes');
+      if $options{section_with_taxes};
 
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
@@ -3377,7 +3379,7 @@ sub _items_cust_bill_pkg {
                         );
 
       my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
-        if $self->conf->exists('invoice_sections_with_taxes');
+        if $opt{section_with_taxes};
 
       if ( ref($cust_bill_pkg) eq 'FS::quotation_pkg' ) {
         # XXX this should be pulled out into quotation_pkg
