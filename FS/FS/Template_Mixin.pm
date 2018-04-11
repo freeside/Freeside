@@ -1204,6 +1204,8 @@ sub print_generic {
     $options{'skip_usage'} =
       scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
     $options{'preref_callback'} = $params{'preref_callback'};
+    $options{'disable_line_item_date_ranges'} =
+      $conf->exists('disable_line_item_date_ranges');
 
     warn "$me   searching for line items\n"
       if $DEBUG > 1;
@@ -3434,8 +3436,15 @@ sub _items_cust_bill_pkg {
             || ($discount_show_always and $cust_bill_pkg->unitrecur > 0)
             || $cust_bill_pkg->recur_show_zero;
 
-          $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
-                                                              $agentnum )
+          my $disable_date_ranges =
+               $opt{disable_line_item_date_ranges}
+            || $part_pkg->option('disable_line_item_date_ranges', 1);
+
+          $description .= $cust_bill_pkg->time_period_pretty(
+                            $part_pkg,
+                            $agentnum,
+                            disable_date_ranges => $disable_date_ranges,
+                          )
             if $part_pkg->is_prepaid #for prepaid, "display the validity period
                                      # triggered by the recurring charge freq
                                      # (RT#26274)
@@ -3532,8 +3541,15 @@ sub _items_cust_bill_pkg {
             $description = $self->mt('Usage charges');
           }
 
-          $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
-                                                              $agentnum );
+          my $disable_date_ranges =
+               $opt{disable_line_item_date_ranges}
+            || $part_pkg->option('disable_line_item_date_ranges', 1);
+
+          $description .= $cust_bill_pkg->time_period_pretty(
+                                    $part_pkg,
+                                    $agentnum,
+                                    disable_date_ranges => $disable_date_ranges,
+                          );
 
           my @d = ();
           my @seconds = (); # for display of usage info
