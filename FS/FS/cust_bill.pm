@@ -521,7 +521,13 @@ Returns the line items (see L<FS::cust_bill_pkg>) for this invoice.
 sub cust_bill_pkg {
   my $self = shift;
   qsearch(
-    { 'table'    => 'cust_bill_pkg',
+    { 
+      'select'    => 'cust_bill_pkg.*, pkg_category.categoryname',
+      'table'    => 'cust_bill_pkg',
+      'addl_from' => ' LEFT JOIN cust_pkg     USING ( pkgnum ) '.
+                     ' LEFT JOIN part_pkg     USING ( pkgpart ) '.
+                     ' LEFT JOIN pkg_class    USING ( classnum ) '.
+                     ' LEFT JOIN pkg_category USING ( categorynum ) ',
       'hashref'  => { 'invnum' => $self->invnum },
       'order_by' => 'ORDER BY billpkgnum', #important?  otherwise we could use
                                            # the AUTLOADED FK search.  or should
