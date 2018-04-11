@@ -3277,6 +3277,8 @@ sub _items_cust_bill_pkg {
 
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
 
+  my $agentnum = $self->agentnum;
+
   # for location labels: use default location on the invoice date
   my $default_locationnum;
   if ( $conf->exists('invoice-all_pkg_addresses') ) {
@@ -3473,7 +3475,7 @@ sub _items_cust_bill_pkg {
             || $cust_bill_pkg->recur_show_zero;
 
           $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
-                                                              $self->agentnum )
+                                                              $agentnum )
             if $part_pkg->is_prepaid #for prepaid, "display the validity period
                                      # triggered by the recurring charge freq
                                      # (RT#26274)
@@ -3564,10 +3566,8 @@ sub _items_cust_bill_pkg {
             $description = $self->mt('Usage charges');
           }
 
-          my $part_pkg = $cust_pkg->part_pkg;
-
           $description .= $cust_bill_pkg->time_period_pretty( $part_pkg,
-                                                              $self->agentnum );
+                                                              $agentnum );
 
           my @d = ();
           my @seconds = (); # for display of usage info
