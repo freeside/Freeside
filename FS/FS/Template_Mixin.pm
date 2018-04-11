@@ -2679,7 +2679,13 @@ sub _items_sections {
       foreach my $display ($cust_bill_pkg->cust_bill_pkg_display) {
         next if ( $display->summary && $opt{summary} );
 
-        my $section = $display->section;
+        #my $section = $display->section;
+        #false laziness with the method, but for efficiency inside this loop
+        my $section = $display->get('section');
+        if ( !$section && !$cust_bill_pkg->hidden ) {
+          $section = $cust_bill_pkg->get('categoryname'); #cust_bill->cust_bill_pkg added it (XXX quotations / quotation_section)
+        }
+
         my $type    = $display->type;
         # Set $section = undef if we're sectioning by location and this
         # line item _has_ a location (i.e. isn't a fee).
@@ -3104,6 +3110,8 @@ sub _items_fee {
   my @cust_bill_pkg = grep { $_->feepart } $self->cust_bill_pkg;
   my $escape_function = $options{escape_function};
 
+  my $locale = $self->cust_main->locale;
+
   my @items;
   foreach my $cust_bill_pkg (@cust_bill_pkg) {
     # cache this, so we don't look it up again in every section
@@ -3144,7 +3152,7 @@ sub _items_fee {
           $self->mt('from invoice #[_1] on [_2]', $_, $base_invnums{$_})
         );
     }
-    my $desc = $part_fee->itemdesc_locale($self->cust_main->locale);
+    my $desc = $part_fee->itemdesc_locale($locale);
     # but not escape the base description line
 
     my @pkg_tax = $cust_bill_pkg->_pkg_tax_list
