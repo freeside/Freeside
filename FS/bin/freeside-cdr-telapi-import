@@ -35,6 +35,11 @@ GetOptions(
   "enddate=s"   => \$enddate,
 );
 
+$startdate = str2time($startdate) or die "can't parse start date $startdate\n";
+  $startdate = time2str('%m-%d-%Y', $startdate);
+$enddate = str2time($enddate) or die "can't parse start date $enddate\n";
+  $enddate = time2str('%m-%d-%Y', $enddate);
+
 my $fsuser = $ARGV[-1];
 
 die usage() unless $fsuser;
@@ -65,11 +70,13 @@ print $cfh $page;
 
 seek($cfh,0,0);
 
-  print "Importing batch $cdrbatch\n";
+  warn "Importing batch $cdrbatch\n";
   my $error = FS::cdr::batch_import({
     'batch_namevalue' => $cdrbatch,
     'file'            => $cfh->filename,
     'format'          => 'telapi_'.$type
   });
+
+  warn "Error importing CDR's\n".$error if $error;
 
 exit;
