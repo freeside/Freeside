@@ -1086,7 +1086,7 @@ sub print_generic {
     }
   } else {
     # subtotal sectioning is the same as for the actual invoice sections
-    @summary_subtotals = @sections;
+    @summary_subtotals = grep $_->{subtotal}, @sections;
   }
 
   # Hereafter, push sections to both @sections and @summary_subtotals
