@@ -2713,7 +2713,7 @@ sub _items_svc_phone_sections {
 
 }
 
-=sub _items_usage_class_summary OPTIONS
+=item _items_usage_class_summary OPTIONS
 
 Returns a list of detail items summarizing the usage charges on this 
 invoice.  Each one will have 'amount', 'description' (the usage charge name),
@@ -2762,7 +2762,7 @@ sub _items_usage_class_summary {
   return @l;
 }
 
-=sub _items_previous()
+=item _items_previous()
 
   Returns an array of hashrefs, each hashref representing a line-item on
   the current bill for previous unpaid invoices.
@@ -2896,7 +2896,7 @@ sub _items_previous {
 
 }
 
-=sub _items_previous_total
+=item _items_previous_total
 
   Return sum of amounts from all items returned by _items_previous
   Results will vary based on invoicing conf flags
@@ -2946,7 +2946,7 @@ sub __items_previous_map_invoice {
   }
 }
 
-=sub _items_credits()
+=item _items_credits()
 
   Return array of hashrefs containing credits to be shown as line-items
   when rendering this bill.
@@ -3085,7 +3085,7 @@ sub _items_credits {
   @return;
   }
 
-=sub _items_credits_total
+=item _items_credits_total
 
   Return the total of al items from _items_credits
   Will vary based on invoice display conf flag
@@ -3101,7 +3101,7 @@ sub _items_credits_total {
 
 
 
-=sub _items_credits_postbill()
+=item _items_credits_postbill()
 
   Returns an array of hashrefs for credits where
   - Credit issued after this invoice
@@ -3143,7 +3143,7 @@ sub _items_credits_postbill {
   }} @cust_credit_bill;
 }
 
-=sub _items_payments_postbill()
+=item _items_payments_postbill()
 
   Returns an array of hashrefs for payments where
   - Payment occured after this invoice
@@ -3179,7 +3179,7 @@ sub _items_payments_postbill {
   }} @cust_bill_pay;
 }
 
-=sub _items_payments()
+=item _items_payments()
 
   Return array of hashrefs containing payments to be shown as line-items
   when rendering this bill.
@@ -3297,7 +3297,7 @@ sub _items_payments {
   return @{ $self->get('_items_payments') };
   }
 
-=sub _items_payments_total
+=item _items_payments_total
 
   Return a total of all records returned by _items_payments
   Results vary based on invoicing conf flags
@@ -3354,7 +3354,7 @@ sub __items_payments_make_hashref {
   return @return;
   }
 
-=sub _items_total()
+=item _items_total()
 
   Generate the line-items to be shown on the bill in the "Totals" section
 
