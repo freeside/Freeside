@@ -3240,7 +3240,6 @@ sub _items_payments {
 
   if ( $self->conf->exists('previous_balance-payments_since') ) {
     if ($template eq 'statement') {
-print "\nCASE 3\n";
       # Case 3 (see above)
       # Return payments timestamped between the previous and following bills
 
@@ -3264,7 +3263,7 @@ print "\nCASE 3\n";
     } else {
       # Case 2 (see above)
       # Return payments timestamped between this and the previous bill
-print "\nCASE 2\n";
+
       my $date_start = 0;
       my $date_end = $self->_date;
 
