@@ -14,7 +14,7 @@
 \textbf{Previous Balance}&\textbf{\dollar[@-- $true_previous_balance --@]}\\
 \textbf{Payments}&\textbf{\dollar[@-- $balance_adjustments --@]}\\
 \cline{2-2}
-\textbf{Balance Outstanding}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance -$balance_adjustments) --@]}\\
+\textbf{Balance Outstanding}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance) --@]}\\
 &\\
 \hline
 &\\
@@ -33,7 +33,7 @@
 &\\
 \textbf{\underline{Invoice Summary}} & \\
 & \\
-\textbf{Previous Past Due Charges}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance - $balance_adjustments) --@]}\\
+\textbf{Previous Past Due Charges}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance) --@]}\\
 \textbf{Finance charges on overdue amount}&\textbf{\dollar[@-- $finance_amount --@]}\\
 \textbf{New Charges}&\textbf{\dollar[@-- $current_less_finance --@]}\\
 
