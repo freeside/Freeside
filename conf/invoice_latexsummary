@@ -9,12 +9,9 @@
 \begin{tabular}{lr}
 \hline
 &\\
-\textbf{\underline{Summary of Previous Balance and Payments}} & \\
+\textbf{\underline{Summary of Previous Balance}} & \\
 &\\
-\textbf{Previous Balance}&\textbf{\dollar[@-- $true_previous_balance --@]}\\
-\textbf{Payments}&\textbf{\dollar[@-- $balance_adjustments --@]}\\
-\cline{2-2}
-\textbf{Balance Outstanding}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance) --@]}\\
+\textbf{Previous Balance}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance) --@]}\\
 &\\
 \hline
 &\\
@@ -36,15 +33,11 @@
 \textbf{Previous Past Due Charges}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance) --@]}\\
 \textbf{Finance charges on overdue amount}&\textbf{\dollar[@-- $finance_amount --@]}\\
 \textbf{New Charges}&\textbf{\dollar[@-- $current_less_finance --@]}\\
-
 [@--
-  #false laziness w/invoice_htmlsummary and above
-  foreach my $section ( grep $_->{adjust_section}, @sections ) {
-    $OUT .= '\textbf{'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '}';
-    $OUT .= '&\textbf{'. $section->{'subtotal'}. '}\\\\';
+  if ( $balance_adjustments > 0 ) {
+    $OUT .= '\textbf{Payments and Credits}&\textbf{-\dollar'.$balance_adjustments.'}\\\\'
   }
 --@]
-
 \cline{2-2}
 \textbf{Total Amount Due}&\textbf{\dollar[@-- sprintf('%.2f', $balance) --@]}\\
 &\\
