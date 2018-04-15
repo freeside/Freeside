@@ -1191,7 +1191,8 @@ sub print_generic {
     my %options = ();
     $options{'section'} = $section if $multisection;
     $options{'section_with_taxes'} = 1
-      if $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum);
+      if $multisection
+      && $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum);
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
     $options{'no_usage'} = 1 unless $unsquelched;
