@@ -134,7 +134,7 @@
       my $columncount = $unitprices ? 5 : 3;
       foreach my $section ( grep { !$summary || $_->{description} ne $finance_section } @sections ) {
         if ($section->{'pretotal'} && !$summary) {
-          $OUT .= '</table>' if $notfirst;
+          $OUT .= '</table>' if $notfirst++;
           $OUT .=
             '<table width="100%"><tr><td>'.
             '<p align="right"><b><font size="+1">'.
@@ -145,7 +145,10 @@
             '</td></tr>';
         }
         unless ($section->{'summarized'}) {
-          $OUT .= '</table>' if ( $notfirst || $section->{'pretotal'} && !$summary );
+          if ( $notfirst || $section->{'pretotal'} && !$summary ) {
+            $OUT .= '</table>';
+            $notfirst = 1;
+          }
           $OUT .= '<table><tr><td>';
           $OUT .= '<p class="allcaps"><b>';
           my $sectionhead;
@@ -292,9 +295,6 @@
             '<p>';
           $OUT .= '</td></tr>';
         }
-
-        $notfirst++;
-
       }
 
       my $style = 'border-top: 3px solid #000000;';
