@@ -1219,6 +1219,17 @@ sub print_generic {
     foreach my $line_item ( $self->_items_pkg(%options),
                             $self->_items_fee(%options) ) {
 
+      # When bill is sectioned by location, fees may be displayed within the
+      # appropriate location section.  Suppress this fee from the taxes/fees
+      # end section, so it doesn't appear to be charged twice and make the
+      # subtotals seem incorrect
+      next
+        if $line_item->{locationnum}
+        && ref $options{section}
+        && !exists $options{section}->{locationnum}
+        && $self->has_sections
+        && $conf->config($tc.'sections_method') eq 'location';
+
       warn "$me     adding line item ".
            join(', ', map "$_=>".$line_item->{$_}, keys %$line_item). "\n"
         if $DEBUG > 1;
