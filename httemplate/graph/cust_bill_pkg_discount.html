@@ -20,7 +20,10 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
+my $include_waived_setup = $cgi->param('include_waived_setup') || 0;
+
 my $link = "${p}search/cust_bill_pkg_discount.html?";
+$link .= "include_waived_setup=Y&" if $include_waived_setup;
 my $bottom_link = $link;
 
 #XXX or virtual
@@ -35,7 +38,8 @@ my $title = $sel_agent ? $sel_agent->agent.' ' : '';
 $title .= 'Discount Overview';
 
 
-my $hue = 0;
+#my $hue = 0; # Start with illegible yellow-on-white
+my $hue = 255; # Start with red-on-white
 #my $hue_increment = 170;
 #my $hue_increment = 145;
 my $hue_increment = 125;
@@ -56,7 +60,10 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
   #foreach my $pkg_class ( @pkg_class ) {
 
-      push @items, 'cust_bill_pkg_discount';
+      push @items,
+        $include_waived_setup
+        ? 'cust_bill_pkg_discount_or_waived'
+        : 'cust_bill_pkg_discount';
 
       push @labels,
         ( $sel_agent ? '' : $agent->agent.' ' );
