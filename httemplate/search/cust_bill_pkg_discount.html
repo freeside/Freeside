@@ -38,7 +38,7 @@ Parameters:
         if ( $_[0]->pkgdiscountnum ) {
             # Standard discount, not a waived setup fee
             my $discount = qsearchs('discount',{
-                pkgdiscountnum => $_[0]->pkgdiscountnum
+                discountnum => $_[0]->discountnum
             });
             return $discount->description;
         } else {
@@ -71,9 +71,7 @@ Parameters:
     sub {
       my $row = shift;
       if ($row->pkgdiscountnum) {
-        $row->setuprecur eq 'setup'
-          ? 'Setup'
-          : sprintf( '%.2f', $row->months ),
+        return sprintf( '%.2f', $row->months );
       } else {
         return 'Setup';
       }
@@ -144,7 +142,6 @@ my @select = (qw(
 
   cust_main.custnum
 
-  cust_pkg_discount.setuprecur
   cust_pkg_discount.discountnum
   cust_pkg.waive_setup),
 
