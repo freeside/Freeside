@@ -38,7 +38,7 @@ Parameters:
         if ( $_[0]->pkgdiscountnum ) {
             # Standard discount, not a waived setup fee
             my $discount = qsearchs('discount',{
-                pkgdiscountnum => $_[0]->pkgdiscountnum
+                discountnum => $_[0]->discountnum
             });
             return $discount->description;
         } else {
