@@ -294,13 +294,15 @@ sub payment_gateway {
     }
   }
 
-  my $cardtype = '';
-  if ( $options{method} eq 'ECHECK' ) { $cardtype = 'ACH'; }
+  my $cardtype_search = "AND cardtype != 'ACH'";
+  $cardtype_search = "AND cardtype = 'ACH'" if $options{method} eq 'ECHECK';
 
   my $override =
-     qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
-                                         cardtype => $cardtype,      } )
-  || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum } );
+      qsearchs({
+        "table" => 'agent_payment_gateway',
+        "hashref" => { agentnum => $self->agentnum, },
+        "extra_sql" => $cardtype_search,
+      });
 
   my $payment_gateway = FS::payment_gateway->by_key_or_default(
     gatewaynum => $override ? $override->gatewaynum : '',
