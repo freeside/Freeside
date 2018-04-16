@@ -228,7 +228,11 @@ if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
 }
 
 # Filter: Include waived setup fees
-if ( !$cgi->param('include_waived_setup') ) {
+if ( $cgi->param('include_waived_setup') ) {
+  # Filter a hidden fee attached to a package with a waived setup fee from
+  # causing the waived-fee for that package to be double-counted
+  push @where, 'cust_bill_pkg.pkgpart_override IS NULL';
+} else {
   push @where, "cust_bill_pkg_discount.pkgdiscountnum IS NOT NULL";
 }
 
