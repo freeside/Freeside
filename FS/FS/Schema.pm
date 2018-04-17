@@ -5909,6 +5909,7 @@ sub tables_hashref {
         'path',           'varchar',     '', 2*$char_d, '', '',
         '_date',                   @date_type,          '', '',
         'render_seconds',     'int', 'NULL',        '', '', '',
+        'pid',                'int', 'NULL',        '', '', '',
       ],
       'primary_key'  => 'lognum',
       'unique'       => [],
