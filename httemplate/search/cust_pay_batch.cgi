@@ -114,7 +114,7 @@ $count_query = 'SELECT COUNT(*) FROM cust_pay_batch ' .
 
 $sql_query = {
   'table'     => 'cust_pay_batch',
-  'select'    => 'cust_pay_batch.*, cust_main.*, cust_pay.paynum',
+  'select'    => 'cust_pay_batch.*, cust_pay.paynum',
   'hashref'   => {},
   'addl_from' => 'LEFT JOIN pay_batch USING ( batchnum ) '.
                  'LEFT JOIN cust_main USING ( custnum ) '.
