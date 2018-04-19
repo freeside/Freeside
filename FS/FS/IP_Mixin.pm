@@ -130,6 +130,10 @@ sub assign_ip_addr {
   my $self = shift;
   my %opt = @_;
 
+  #otherwise we'll get the same assignment for concurrent identical calls
+  # this will serialize them
+  $_->lock_table foreach @subclasses;
+
   my @blocks;
   my $na = $self->NetAddr;
 
