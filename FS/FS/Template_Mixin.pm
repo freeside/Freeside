@@ -933,7 +933,9 @@ sub print_generic {
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $self->has_sections;
-  $invoice_data{'multisection'} = $multisection;
+  if ( $multisection ) {
+    $invoice_data{multisection} = $conf->config($tc.'sections_method') || 1;
+  }
   my $late_sections;
   my $extra_sections = [];
   my $extra_lines = ();
