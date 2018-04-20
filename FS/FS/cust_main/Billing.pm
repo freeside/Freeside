@@ -1030,7 +1030,6 @@ sub _make_lines {
     
     warn "    bill setup\n" if $DEBUG > 1;
 
-    unless ( $cust_pkg->waive_setup ) {
         $lineitems++;
 
         $setup = eval { $cust_pkg->calc_setup( $time, \@details, \%setup_param ) };
@@ -1050,7 +1049,6 @@ sub _make_lines {
           $setup_billed_currency = delete $setup_param{'billed_currency'};
           $setup_billed_amount   = delete $setup_param{'billed_amount'};
         }
-    }
 
     if ( $cust_pkg->get('setup') ) {
       # don't change it
