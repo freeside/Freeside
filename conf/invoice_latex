@@ -447,6 +447,63 @@
   }
 
 --@]
+[@--
+
+  my @location_summary_sections =
+    grep {
+      ref $_->{location}
+      && $_->{locationnum}
+      && $_->{description}
+      && $_->{description} ne $finance_section
+    } @sections;
+  if ( $multisection eq 'location' && scalar(@location_summary_sections) > 1 ) {
+
+$OUT .= '
+      \hline
+      \section*{}
+      \captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}
+      \ifthenelse{\equal{\thepage}{1}}{\setlength{\LTextracouponspace}{\extracouponspace}}{\setlength{\LTextracouponspace}{0pt}}
+
+      \begin{longtable}{cllllllr}
+      \caption*{ '. emt('Summary of New Charges by Location') .' }
+      \\\\
+
+      \hline
+      \rule{0pt}{2.5ex}
+      \makebox[1.4cm]{} &
+      \multicolumn{6}{l}{
+        \truncate{13.0cm}{\textbf{'. emt('Location') .'}}
+      } &
+      \makebox[1.6cm][r]{\textbf{'. emt('Amount') .'}} \\\\
+      \hline
+
+      \endfirsthead
+      \multicolumn{7}{r}{\rule{0pt}{2.5ex}'. emt('Continued from previous page') .'}
+      \\
+      \FShead
+      \endhead
+      \multicolumn{7}{r}{\rule{0pt}{2.5ex}'. emt('Continued on next page...') .'}
+      \\
+      \endfoot
+      \hline
+      \endlastfoot
+      \hline
+    ';
+
+    for my $section (@location_summary_sections) {
+      $OUT.= '
+        \rule{0pt}{2.5ex}
+        \makebox[1.4cm]{} &
+        \multicolumn{6}{l}{
+          \truncate{12.0cm}{\textbf{'. $section->{description} .'}}
+        } &
+        \makebox[1.6cm][r]{\textbf{'. $section->{subtotal} .'}} \\\\
+      ';
+    }
+
+    $OUT .= '\end{longtable}';
+  }
+--@]
 \vfill
 \begin{minipage}[t]{\textwidth}
   [@-- length($summary)
