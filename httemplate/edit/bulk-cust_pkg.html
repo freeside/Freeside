@@ -19,24 +19,18 @@ function areyousure() {
 }
 </SCRIPT>
 <FORM NAME="OneTrueForm">
-% #false laziness with bulk-cust_svc.html
-%  $cgi->param('pkgpart') =~ /^(\d+)$/
-%    or die "illegal pkgpart: ". $cgi->param('pkgpart');
-%
-%  my $old_pkgpart = $1;
-%  my $src_part_pkg = qsearchs('part_pkg', { 'pkgpart' => $old_pkgpart } )
-%    or die "unknown pkgpart: $old_pkgpart";
-%
 
+% foreach my $src_part_pkg (@src_part_pkg) {
+  <INPUT NAME="old_pkgpart" TYPE="hidden" VALUE="<% $src_part_pkg->pkgpart %>">
+  Change <B><% $src_part_pkg->pkg_comment |h %></B><BR>
+% }
 
-<INPUT NAME="old_pkgpart" TYPE="hidden" VALUE="<% $old_pkgpart %>">
-Change <B><% $src_part_pkg->pkg_comment %></B><BR>
-
+<BR>
 to new package definition
 <SELECT NAME="new_pkgpart">
 % foreach my $dest_part_pkg ( qsearch('part_pkg', { 'disabled' => '' } ) ) {
 
-  <OPTION VALUE="<% $dest_part_pkg->pkgpart %>"><% $dest_part_pkg->pkgpart %>: <% $dest_part_pkg->pkg %>
+  <OPTION VALUE="<% $dest_part_pkg->pkgpart %>"><% $dest_part_pkg->pkgpart %>: <% $dest_part_pkg->pkg |h %>
 % } 
 
 </SELECT>
@@ -56,5 +50,19 @@ to new package definition
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @src_part_pkg = ();
+foreach my $pkgpart ( $cgi->multi_param('pkgpart') ) {
+
+  $pkgpart =~ /^(\d+)$/
+    or die "illegal pkgpart: $pkgpart";
+
+  my $old_pkgpart = $1;
+  my $src_part_pkg = qsearchs('part_pkg', { 'pkgpart' => $old_pkgpart } )
+    or die "unknown pkgpart: $old_pkgpart";
+
+  push @src_part_pkg, $src_part_pkg;
+
+}
 
 </%init>
