@@ -3179,11 +3179,10 @@ sub process_bulk_cust_pkg {
   my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
 
-  my $old_part_pkg = qsearchs('part_pkg', 
-                              { pkgpart => $param->{'old_pkgpart'} });
   my $new_part_pkg = qsearchs('part_pkg',
                               { pkgpart => $param->{'new_pkgpart'} });
-  die "Must select a new package type\n" unless $new_part_pkg;
+  die "Must select a new package definition\n" unless $new_part_pkg;
+
   #my $keep_dates = $param->{'keep_dates'} || 0;
   my $keep_dates = 1; # there is no good reason to turn this off
 
@@ -3198,7 +3197,14 @@ sub process_bulk_cust_pkg {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my @cust_pkgs = qsearch('cust_pkg', { 'pkgpart' => $param->{'old_pkgpart'} } );
+  my @old_pkgpart = ref($param->{'old_pkgpart'}) ? @{ $param->{'old_pkgpart'} }
+                                                 : $param->{'old_pkgpart'};
+
+  my @cust_pkgs = qsearch({
+                    'table' => 'cust_pkg',
+                    'extra_sql' => ' WHERE pkgpart IN ('.
+                                       join(',', @old_pkgpart). ')',
+                  });
 
   my $i = 0;
   foreach my $old_cust_pkg ( @cust_pkgs ) {

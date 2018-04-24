@@ -4,7 +4,7 @@
   html_foot => include('elements/checkbox-foot.html',
                   actions => [
                     { label   => 'Edit selected packages',
-                      action  => 'popup_package_edit()',
+                      onclick => 'popup_package_edit()',
                     },
                     { submit  => 'Delete selected packages',
                       confirm => 'Really delete these packages?'
@@ -50,7 +50,7 @@ false.
 <BR>
 % foreach my $action (@$actions) {
 %   if ( $action->{onclick} ) {
-<INPUT TYPE="button" <% $action->{name} %> onclick="<% $opt{onclick} %>"\
+<INPUT TYPE="button" <% $action->{name} %> onclick="<% $action->{onclick} %>"\
   VALUE="<% $action->{label} |h%>">
 %   } elsif ( $action->{submit} ) {
 <INPUT TYPE="submit" <% $action->{name} %> <% $action->{confirm} %>\
