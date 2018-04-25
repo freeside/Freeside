@@ -24,38 +24,33 @@ Saisei integration for Freeside
 
 This export offers basic svc_broadband provisioning for Saisei.
 
-This is a customer integration with Saisei.  This will setup a rate plan and tie 
-the rate plan to a host and access point via the Saisei API when the broadband service is provisioned.  
-It will also untie the rate plan via the API upon unprovisioning of the broadband service.
+This is a customer integration with Saisei.  This will set up a rate plan and tie
+the rate plan to a host and the access point via the Saisei API when the broadband service is provisioned.
+It will also untie the host from the rate plan, setting it to the default rate plan via the API upon unprovisioning of the broadband service.
 
 This will create and modify the rate plans at Saisei as soon as the broadband service attached to this export is created or modified.
-This will also create and modify a access point at Saisei as soon as the tower is created or modified.
+This will also create and modify an access point at Saisei as soon as the tower is created or modified.
 
 To use this export, follow the below instructions:
 
-Add a new export and fill out required fields:
-
-Hostname or IP - <I>Host name to Saisei API
-User Name -  <I>Saisei API user name
-Password - <I>Saisei API password
-
-Create a broadband service.  The broadband service name will become the Saisei rate plan name.
+Create a new service definition and set the table to svc_broadband.  The service name will become the Saisei rate plan name.
 Set the upload and download speed for the service. This is required to be able to export the service to Saisei.
-Attach above created Saisei export to this broadband service.
+Attach this Saisei export to this service.
 
 Create a tower and add a sector to that tower.  The sector name will be the name of the access point,
-Make sure you have set the up and down rate limit for the Tower and Sector.  This is required to be able to export the access point.
+Make sure you have set the up and down rate limit for the tower and the sector.  This is required to be able to export the access point.
+The tower and sector will be set up as access points at Saisei upon the creation of the tower or sector.  They will be modified at Saisei when modified in freeside.
+Each sector will be attached to its tower access point using the Saisei uplink field.
 
-Create a package for the above created broadband service, and order this package for a customer.
+Create a package for the above created service, and order this package for a customer.
 
-When you provision the service, enter the ip address associated to this service and select the Tower and Sector for it's access point.
+Provision the service, making sure to enter the IP address associated with this service and select the tower and sector for it's access point.
 This provisioned service will then be exported as a host to Saisei.
 
-when you un provision this service, the host entry at Saisei will be deleted.
+Unprovisioning this service will set the host entry at Saisei to the default rate plan with the user and access point set to <none>.
 
-When setting this up, if you wish to export your allready provisioned services, make sure the broadband service has this export attached and
-on export edit screen there will be a link to export Provisioned Services attached to this export.  Clicking on that will export all services 
-not currently exported to Saisei.
+After this export is set up and attached to a service, you can export the already provisioned services by clicking the link Export provisioned services attached to this export.
+Clicking on this link will export all services attached to this export not currently exported to Saisei.
 
 This module also provides generic methods for working through the L</Saisei API>.
 
@@ -65,16 +60,16 @@ tie my %scripts, 'Tie::IxHash',
   'export_provisioned_services'  => { component => '/elements/popup_link.html',
                                       label     => 'Export provisioned services',
                                       description => 'will export provisioned services of part service with Saisei export attached.',
-                                      html_label => '<b>Export Provisioned Services attached to this export.</b>',
+                                      html_label => '<b>Export provisioned services attached to this export.</b>',
                                     },
 ;
 
 tie my %options, 'Tie::IxHash',
   'port'             => { label => 'Port',
                           default => 5000 },
-  'username'         => { label => 'User Name',
+  'username'         => { label => 'Saisei API User Name',
                           default => '' },
-  'password'         => { label => 'Password',
+  'password'         => { label => 'Saisei API Password',
                           default => '' },
   'debug'            => { type => 'checkbox',
                           label => 'Enable debug warnings' },
@@ -86,52 +81,47 @@ tie my %options, 'Tie::IxHash',
   'options'         => \%options,
   'scripts'         => \%scripts,
   'notes'           => <<'END',
-This is a customer integration with Saisei.  This will setup a rate plan and tie 
-the rate plan to a host and access point via the Saisei API when the broadband service is provisioned.  
-It will also untie the rate plan via the API upon unprovisioning of the broadband service.
+This is a customer integration with Saisei.  This will set up a rate plan and tie
+the rate plan to a host and the access point via the Saisei API when the broadband service is provisioned.
+It will also untie the host from the rate plan, setting it to the default rate plan via the API upon unprovisioning of the broadband service.
 <P>
 This will create and modify the rate plans at Saisei as soon as the broadband service attached to this export is created or modified.
-This will also create and modify a access point at Saisei as soon as the tower is created or modified.
+This will also create and modify an access point at Saisei as soon as the tower is created or modified.
 <P>
 To use this export, follow the below instructions:
 <P>
 <OL>
 <LI>
-Add a new export and fill out required fields:
-<UL>
-<LI>Hostname or IP - <I>Host name to Saisei API</I></LI>
-<LI>Port - <I>Port number to Saisei API</I></LI>
-<LI>User Name -  <I>Saisei API user name</I></LI>
-<LI>Password - <I>Saisei API password</I></LI>
-</UL>
-</LI>
-<P>
-<LI>
-Create a broadband service.  The broadband service name will become the Saisei rate plan name.
+Create a new service definition and set the table to svc_broadband.  The service name will become the Saisei rate plan name.
 Set the upload and download speed for the service. This is required to be able to export the service to Saisei.
-Attach above created Saisei export to this broadband service.
+Attach this Saisei export to this service.
 </LI>
 <P>
 <LI>
 Create a tower and add a sector to that tower.  The sector name will be the name of the access point,
-Make sure you have set the up and down rate limit for the Tower and Sector.  This is required to be able to export the access point.
+Make sure you have set the up and down rate limit for the tower and the sector.  This is required to be able to export the access point.
+The tower and sector will be set up as access points at Saisei upon the creation of the tower or sector.  They will be modified at Saisei when modified in freeside.
+Each sector will be attached to its tower access point using the Saisei uplink field.
 </LI>
 <P>
 <LI>
-Create a package for the above created broadband service, and order this package for a customer.
+Create a package for the above created service, and order this package for a customer.
 </LI>
 <P>
 <LI>
-When you provision the service, enter the ip address associated to this service and select the Tower and Sector for it's access point.
+Provision the service, making sure to enter the IP address associated with this service and select the tower and sector for it's access point.
 This provisioned service will then be exported as a host to Saisei.
 <P>
-when you un provision this service, the host entry at Saisei will be deleted.
+Unprovisioning this service will set the host entry at Saisei to the default rate plan with the user and access point set to <i>none</i>.
+</LI>
+<P>
+<LI>
+After this export is set up and attached to a service, you can export the already provisioned services by clicking the link <b>Export provisioned services attached to this export</b>.
+Clicking on this link will export all services attached to this export not currently exported to Saisei.
 </LI>
 </OL>
 <P>
-When setting this up, if you wish to export your allready provisioned services, make sure the broadband service has this export attached and
-on export edit screen there will be a link to export Provisioned Services attached to this export.  Clicking on that will export all services 
-not currently exported to Saisei.
+
 END
 );
 
@@ -238,7 +228,7 @@ sub _export_delete {
   $rateplan_name =~ s/\s/_/g;
   my $username = $svc_broadband->{Hash}->{svcnum};
 
-  ## tie host to user
+  ## untie host to user
   $self->api_delete_host_to_user($username, $rateplan_name, $svc_broadband->{Hash}->{ip_addr}) unless $self->{'__saisei_error'};
 
   return '';
@@ -685,7 +675,8 @@ sub api_add_host_to_user {
 
 =head2 api_delete_host_to_user
 
-unties host to user and rateplan.
+unties host from user and rateplan.
+this will set the host entry at Saisei to the default rate plan with the user and access point set to <none>.
 
 =cut
 
