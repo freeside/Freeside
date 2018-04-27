@@ -88,7 +88,7 @@ my $cancel_date = 'select max(cancel) from cust_pkg where cust_pkg.custnum = cus
 my $cancel_reason = 'select reason.reason from cust_pkg
 	left join cust_pkg_reason on (cust_pkg.pkgnum = cust_pkg_reason.pkgnum)
 	left join reason on (cust_pkg_reason.reasonnum = reason.reasonnum)
-	where cust_pkg.custnum = cust_main.custnum and cust_pkg_reason.date = ('.$cancel_date.')
+	where cust_pkg.custnum = cust_main.custnum and cust_pkg_reason.date = ('.$cancel_date.') limit 1
 ';
 
 my @header = ( '#', 'Name', 'Address', 'Phone', 'Email', 'Active Date', 'Cancelled Date', 'Reason', 'Active Days' );
