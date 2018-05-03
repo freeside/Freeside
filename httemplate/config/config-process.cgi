@@ -75,7 +75,7 @@
         configCell.innerHTML = <% $value |js_string %>;
 %     } elsif ( $type eq 'select-sub' && ! $i->multiple ) {
         configCell.innerHTML =
-          <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +
+          <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %> + ': ' +
           <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
 %     } else {
         //alert('unknown type <% $type %>');
@@ -164,7 +164,7 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     or ( $type =~ /^select(-(sub|part_svc|part_pkg|pkg_class|agent))?$/
          || $i->multiple )
   ) {
-    if ( scalar(@{[ $cgi->param($i->key.$n) ]}) ) {
+    if ( scalar(@{[ $cgi->param($i->key.$n) ]}) && $cgi->param($i->key.$n) ne '' ) {
       my $error = &{$i->validate}([ $cgi->param($i->key.$n) ], $n) if $i->validate;
       push @error, $error if $error;
       $conf->set($i->key, join("\n", @{[ $cgi->param($i->key.$n) ]} ), $agentnum);
