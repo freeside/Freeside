@@ -1715,6 +1715,13 @@ and customer address. Include units.',
     'description' => 'Template to use for manual payment receipts.',
     %msg_template_options,
   },
+
+  {
+    'key'         => 'payment_receipt_msgnum_auto',
+    'section'     => 'notification',
+    'description' => 'Automatic payments will cause a post-payment to use a message template for automatic payment receipts rather than a post payment statement.',
+    %msg_template_options,
+  },
   
   {
     'key'         => 'payment_receipt_from',
