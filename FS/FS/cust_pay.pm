@@ -752,31 +752,21 @@ sub send_receipt {
       my %substitutions = ();
       $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
 
-      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
-      unless ($msg_template) {
-        warn "send_receipt could not load msg_template";
-        return;
-      }
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
 
-      my $cust_msg = $msg_template->prepare(
+      $error = $queue->insert(
+        FS::msg_template->by_key($msgnum)->prepare(
           'cust_main'     => $cust_main,
           'object'        => $self,
           'from_config'   => 'payment_receipt_from',
           'substitutions' => \%substitutions,
-          'msgtype'       => 'receipt',
+        ),
+        'msgtype' => 'receipt', # override msg_template's default
       );
-      $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
-      if ($error) {
-        warn "send_receipt: $error";
-        return;
-      }
-
-      my $queue = new FS::queue {
-        'job'     => 'FS::cust_msg::process_send',
-        'paynum'  => $self->paynum,
-        'custnum' => $cust_main->custnum,
-      };
-      $error = $queue->insert( $cust_msg->custmsgnum );
 
     }
     else {
