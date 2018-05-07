@@ -1253,6 +1253,11 @@ sub _make_lines {
         }
     }
 
+    if ($cust_pkg->waive_setup && $part_pkg->plan eq "prorate") {
+      $lineitems++;
+      $setup = 0 if $part_pkg->prorate_setup($cust_pkg, $time);
+    }
+
     $cust_pkg->setfield('setup', $time)
       unless $cust_pkg->setup;
           #do need it, but it won't get written to the db
