@@ -189,8 +189,16 @@ die "access denied"
 
 my @fields = fields('cdr');
 push @fields, 'ratename';
+push @fields, map "cdr_termination.$_", qw( rated_price rated_seconds rated_minutes rated_granularity status svcnum );
+
 my $labels = FS::cdr->table_info->{'fields'};
 $labels->{ratename} = 'Rate plan';
+$labels->{'cdr_termination.rated_price'} = 'Termination rated price';
+$labels->{'cdr_termination.rated_seconds'} = 'Termination rated seconds';
+$labels->{'cdr_termination.rated_minutes'} = 'Termination rated minutes';
+$labels->{'cdr_termination.rated_granularity'} = 'Termination rated granularity';
+$labels->{'cdr_termination.status'} = 'Termination status';
+$labels->{'cdr_termination.svcnum'} = 'Termination service';
 
 my $conf = new FS::Conf;
 my $default_phone_countrycode =
