@@ -118,26 +118,22 @@ sub calc_setup {
 
   return 0 if $self->prorate_setup($cust_pkg, $sdate);
 
-  if (!$cust_pkg->waive_setup) {
-    my $i = 0;
-    my $count = $self->option( 'additional_count', 'quiet' ) || 0;
-    while ($i < $count) {
-      push @$details, $self->option( 'additional_info' . $i++ );
-    }
-
-    my $charge = $self->base_setup($cust_pkg, $sdate, $details);
-
-    my $discount = 0;
-    if ( $charge > 0 ) {
-      $param->{'setup_charge'} = $charge;
-      $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
-      delete $param->{'setup_charge'};
-    }
-
-    return sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
+  my $i = 0;
+  my $count = $self->option( 'additional_count', 'quiet' ) || 0;
+  while ($i < $count) {
+    push @$details, $self->option( 'additional_info' . $i++ );
   }
 
-  return;
+  my $charge = $self->base_setup($cust_pkg, $sdate, $details);
+
+  my $discount = 0;
+  if ( $charge > 0 ) {
+    $param->{'setup_charge'} = $charge;
+    $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+    delete $param->{'setup_charge'};
+  }
+
+  sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
 
 }
 
