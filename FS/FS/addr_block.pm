@@ -6,6 +6,7 @@ use FS::Record qw( qsearchs qsearch dbh );
 use FS::router;
 use FS::addr_range;
 use FS::svc_broadband;
+use FS::svc_acct;
 use FS::Conf;
 use FS::IP_Mixin;
 use NetAddr::IP;
