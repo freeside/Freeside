@@ -203,6 +203,18 @@ sub svc_broadband {
   return qsearch('svc_broadband', { blocknum => $self->blocknum });
 }
 
+=item svc_acct
+
+Returns a list of FS::svc_broadband objects associated
+with this object.
+
+=cut
+
+sub svc_acct {
+  my $self = shift;
+  return qsearch('svc_acct', { blocknum => $self->blocknum });
+}
+
 =item NetAddr
 
 Returns a NetAddr::IP object for this block's address and netmask.
