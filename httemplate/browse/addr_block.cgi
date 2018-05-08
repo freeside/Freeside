@@ -17,12 +17,13 @@
                           '',
                         ],
      'fields'        => [ 'NetAddr',
-                          sub { my $block = shift;
-                                my $router = $block->router;
+                          sub { my $b = shift;
+                                my $router = $b->router;
                                 my $result = '';
                                 if ($router) {
-                                  $result .= $router->routername. ' (';
-                                  $result .= scalar($block->svc_broadband). ' services)';
+                                  $result .= $router->routername. ' ('.
+                                    scalar($b->svc_broadband). ' broadband, '.
+                                    scalar($b->svc_acct). ' account services)';
                                 }
                                 $result;
                               },
