@@ -11,6 +11,7 @@ use Fcntl qw(:flock); #for spool_csv
 use Cwd;
 use List::Util qw(min max sum);
 use Date::Format;
+use DateTime;
 use File::Temp 0.14;
 use HTML::Entities;
 use Storable qw( freeze thaw );
@@ -449,6 +450,27 @@ sub previous_bill {
   $self->get('previous_bill');
 }
 
+=item following_bill
+
+Returns the customer's invoice that follows this one
+
+=cut
+
+sub following_bill {
+  my $self = shift;
+  if (!$self->get('following_bill')) {
+    $self->set('following_bill', qsearchs({
+      table   => 'cust_bill',
+      hashref => {
+        custnum => $self->custnum,
+        invnum  => { op => '>', value => $self->invnum },
+      },
+      order_by => 'ORDER BY invnum ASC LIMIT 1',
+    }));
+  }
+  $self->get('following_bill');
+}
+
 =item previous
 
 Returns a list consisting of the total previous balance for this customer, 
@@ -858,6 +880,35 @@ sub owed {
   $balance = sprintf( "%.2f", $balance);
   $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
   $balance;
+}
+
+=item owed_on_invoice
+
+Returns the amount to be displayed as the "Balance Due" on this
+invoice.  Amount returned depends on conf flags for invoicing
+
+See L<FS::cust_bill::owed> for the true amount currently owed
+
+=cut
+
+sub owed_on_invoice {
+  my $self = shift;
+
+  #return $self->owed()
+  #  unless $self->conf->exists('previous_balance-payments_since')
+
+  # Add charges from this invoice
+  my $owed = $self->charged();
+
+  # Add carried balances from previous invoices
+  #   If previous items aren't to be displayed on the invoice,
+  #   _items_previous() is aware of this and responds appropriately.
+  $owed += $_->{amount} for $self->_items_previous();
+
+  # Subtract payments and credits displayed on this invoice
+  $owed -= $_->{amount} for $self->_items_payments(), $self->_items_credits();
+
+  return $owed;
 }
 
 sub owed_pkgnum {
@@ -1649,6 +1700,9 @@ sub print_csv {
   my $format = lc($opt{'format'});
 
   my $time = $opt{'time'} || time;
+
+  $self->set('_template', $opt{template})
+    if exists $opt{template};
 
   my $tracctnum = ''; #leaking out from billco-specific sections :/
   if ( $format eq 'billco' ) {
@@ -2708,207 +2762,784 @@ sub _items_usage_class_summary {
   return @l;
 }
 
+=sub _items_previous()
+
+  Returns an array of hashrefs, each hashref representing a line-item on
+  the current bill for previous unpaid invoices.
+
+  keys for each previous_item:
+  - amount (see notes)
+  - pkgnum
+  - description
+  - invnum
+  - _date
+
+  Payments and credits shown on this invoice may vary based on configuraiton.
+
+  when conf flag previous_balance-payments_since is set:
+    This method works backwards to rebuild the invoice as a snapshot in time.
+    The invoice displayed will have the balances owed, and payments made,
+    reflecting the state of the account at the time of invoice generation.
+
+=cut
+
 sub _items_previous {
+
   my $self = shift;
-  my $conf = $self->conf;
-  my $cust_main = $self->cust_main;
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-  my @b = ();
-  foreach ( @pr_cust_bill ) {
-    my $date = $conf->exists('invoice_show_prior_due_date')
-               ? 'due '. $_->due_date2str('short')
-               : $self->time2str_local('short', $_->_date);
-    push @b, {
-      'description' => $self->mt('Previous Balance, Invoice #'). $_->invnum. " ($date)",
-      #'pkgpart'     => 'N/A',
-      'pkgnum'      => 'N/A',
-      'amount'      => sprintf("%.2f", $_->owed),
-    };
+
+  # simple memoize
+  if ($self->get('_items_previous')) {
+    return sort { $a->{_date} <=> $b->{_date} }
+         values %{ $self->get('_items_previous') };
   }
-  @b;
 
-  #{
-  #    'description'     => 'Previous Balance',
-  #    #'pkgpart'         => 'N/A',
-  #    'pkgnum'          => 'N/A',
-  #    'amount'          => sprintf("%10.2f", $pr_total ),
-  #    'ext_description' => [ map {
-  #                                 "Invoice ". $_->invnum.
-  #                                 " (". time2str("%x",$_->_date). ") ".
-  #                                 sprintf("%10.2f", $_->owed)
-  #                         } @pr_cust_bill ],
+  # Gets the customer's current balance and outstanding invoices.
+  my ($prev_balance, @open_invoices) = $self->previous;
 
-  #};
+  my %invoices = map {
+    $_->invnum => $self->__items_previous_map_invoice($_)
+  } @open_invoices;
+
+  # Which credits and payments displayed on the bill will vary based on
+  # conf flag previous_balance-payments_since.
+  my @credits  = $self->_items_credits();
+  my @payments = $self->_items_payments();
+
+
+  if ($self->conf->exists('previous_balance-payments_since')) {
+    # For each credit or payment, determine which invoices it was applied to.
+    # Manipulate data displayed so the invoice displayed appears as a
+    # snapshot in time... with previous balances and balance owed displayed
+    # as they were at the time of invoice creation.
+
+    my @credits_postbill = $self->_items_credits_postbill();
+    my @payments_postbill = $self->_items_payments_postbill();
+
+    my %pmnt_dupechk;
+    my %cred_dupechk;
+
+    # Each section below follows this pattern on a payment/credit
+    #
+    # - Dupe check, avoid adjusting for the same item twice
+    # - If invoice being adjusted for isn't in our list, add it
+    # - Adjust the invoice balance to refelct balnace without the
+    #   credit or payment applied
+    #
+
+    # Working with payments displayed on this bill
+    for my $pmt_hash (@payments) {
+      my $pmt_obj = qsearchs('cust_pay', {paynum => $pmt_hash->{paynum}});
+      for my $cust_bill_pay ($pmt_obj->cust_bill_pay) {
+        next if exists $pmnt_dupechk{$cust_bill_pay->billpaynum};
+        $pmnt_dupechk{$cust_bill_pay->billpaynum} = 1;
+
+        my $invnum = $cust_bill_pay->invnum;
+
+        $invoices{$invnum} = $self->__items_previous_get_invoice($invnum)
+          unless exists $invoices{$invnum};
+
+        $invoices{$invnum}->{amount} += $cust_bill_pay->amount;
+      }
+    }
+
+    # Working with credits displayed on this bill
+    for my $cred_hash (@credits) {
+      my $cred_obj = qsearchs('cust_credit', {crednum => $cred_hash->{crednum}});
+      for my $cust_credit_bill ($cred_obj->cust_credit_bill) {
+        next if exists $cred_dupechk{$cust_credit_bill->creditbillnum};
+        $cred_dupechk{$cust_credit_bill->creditbillnum} = 1;
+
+        my $invnum = $cust_credit_bill->invnum;
+
+        $invoices{$invnum} = $self->__items_previous_get_invoice($invnum)
+          unless exists $invoices{$invnum};
+
+        $invoices{$invnum}->{amount} += $cust_credit_bill->amount;
+      }
+    }
+
+    # Working with both credits and payments which are not displayed
+    # on this bill, but which have affected this bill's balances
+    for my $postbill (@payments_postbill, @credits_postbill) {
+
+      if ($postbill->{billpaynum}) {
+        next if exists $pmnt_dupechk{$postbill->{billpaynum}};
+        $pmnt_dupechk{$postbill->{billpaynum}} = 1;
+      } elsif ($postbill->{creditbillnum}) {
+        next if exists $cred_dupechk{$postbill->{creditbillnum}};
+        $cred_dupechk{$postbill->{creditbillnum}} = 1;
+      } else {
+        die "Missing creditbillnum or billpaynum";
+      }
+
+      my $invnum = $postbill->{invnum};
+
+      $invoices{$invnum} = $self->__items_previous_get_invoice($invnum)
+        unless exists $invoices{$invnum};
+
+      $invoices{$invnum}->{amount} += $postbill->{amount};
+    }
+
+    # Make sure current invoice doesn't appear in previous items
+    delete $invoices{$self->invnum}
+      if exists $invoices{$self->invnum};
+
+  }
+
+  # Make sure amount is formatted as a dollar string
+  # (Formatting should happen on the template side, but is not?)
+  $invoices{$_}->{amount} = sprintf('%.2f',$invoices{$_}->{amount})
+    for keys %invoices;
+
+  $self->set('_items_previous', \%invoices);
+  return sort { $a->{_date} <=> $b->{_date} } values %invoices;
+
 }
 
-sub _items_credits {
-  my( $self, %opt ) = @_;
-  my $trim_len = $opt{'trim_len'} || 40;
+=sub _items_previous_total
 
-  my @b;
-  #credits
-  my @objects;
+  Return sum of amounts from all items returned by _items_previous
+  Results will vary based on invoicing conf flags
+
+=cut
+
+sub _items_previous_total {
+  my $self = shift;
+  my $tot = 0;
+  $tot += $_->{amount} for $self->_items_previous();
+  return $tot;
+}
+
+sub __items_previous_get_invoice {
+  # Helper function for _items_previous
+  #
+  # Read a record from cust_bill, return a hash of it's information
+  my ($self, $invnum) = @_;
+  die "Incorrect usage of __items_previous_get_invoice()" unless $invnum;
+
+  my $cust_bill = qsearchs('cust_bill', {invnum => $invnum});
+  return $self->__items_previous_map_invoice($cust_bill);
+}
+
+sub __items_previous_map_invoice {
+  # Helper function for _items_previous
+  #
+  # Transform a cust_bill object into a simple hash reference of the type
+  # required by _items_previous
+  my ($self, $cust_bill) = @_;
+  die "Incorrect usage of __items_previous_map_invoice" unless ref $cust_bill;
+
+  my $date = $self->conf->exists('invoice_show_prior_due_date')
+           ? 'due '.$cust_bill->due_date2str('short')
+           : $self->time2str_local('short', $cust_bill->_date);
+
+  return {
+    invnum => $cust_bill->invnum,
+    amount => $cust_bill->owed,
+    pkgnum => 'N/A',
+    _date  => $cust_bill->_date,
+    description => join(' ',
+      $self->mt('Previous Balance, Invoice #'),
+      $cust_bill->invnum,
+      "($date)"
+    ),
+  }
+}
+
+=sub _items_credits()
+
+  Return array of hashrefs containing credits to be shown as line-items
+  when rendering this bill.
+
+  keys for each credit item:
+  - crednum: id of payment
+  - amount: payment amount
+  - description: line item to be displayed on the bill
+
+  This method has three ways it selects which credits to display on
+  this bill:
+
+  1) Default Case: No Conf flag for 'previous_balance-payments_since'
+
+     Returns credits that have been applied to this bill only
+
+  2) Case:
+       Conf flag set for 'previous_balance-payments_since'
+
+     List all credits that have been recorded during the time period
+     between the timestamps of the last invoice and this invoice
+
+  3) Case:
+        Conf flag set for 'previous_balance-payments_since'
+        $opt{'template'} eq 'statement'
+
+    List all payments that have been recorded between the timestamps
+    of the previous invoice and the following invoice.
+
+     This is used to give the customer a receipt for a payment
+     in the form of their last bill with the payment amended.
+
+     I am concerned with this implementation, but leaving in place as is
+     If this option is selected, while viewing an older bill, the old bill
+     will show ALL future credits for future bills, but no charges for
+     future bills.  Somebody could be misled into believing they have a
+     large account credit when they don't.  Also, interrupts the chain of
+     invoices as an account history... the customer could have two invoices
+     in their fileing cabinet, for two different dates, both with a line item
+     for the same duplicate credit.  The accounting is technically accurate,
+     but somebody could easily become confused and think two credits were
+     made, when really those two line items on two different bills represent
+     only a single credit
+
+=cut
+
+sub _items_credits {
+
+  my $self= shift;
+
+  # Simple memoize
+  return @{$self->get('_items_credits')} if $self->get('_items_credits');
+
+  my %opt = @_;
+  my $template = $opt{template} || $self->get('_template');
+  my $trim_len = $opt{template} || $self->get('trim_len') || 40;
+
+  my @return;
+  my @cust_credit_objs;
+
   if ( $self->conf->exists('previous_balance-payments_since') ) {
-    if ( $opt{'template'} eq 'statement' ) {
-      # then the current bill is a "statement" (i.e. an invoice sent as
-      # a payment receipt)
-      # and in that case we want to see payments on or after THIS invoice
-      @objects = qsearch('cust_credit', {
-          'custnum' => $self->custnum,
-          '_date'   => {op => '>=', value => $self->_date},
-      });
+    if ($template eq 'statement') {
+      # Case 3 (see above)
+      # Return credits timestamped between the previous and following bills
+
+      my $previous_bill  = $self->previous_bill;
+      my $following_bill = $self->following_bill;
+
+      my $date_start = ref $previous_bill  ? $previous_bill->_date  : 0;
+      my $date_end   = ref $following_bill ? $following_bill->_date : undef;
+
+      my %query = (
+        table => 'cust_credit',
+        hashref => {
+          custnum => $self->custnum,
+          _date => { op => '>=', value => $date_start },
+        },
+      );
+      $query{extra_sql} = " AND _date <= $date_end " if $date_end;
+
+      @cust_credit_objs = qsearch(\%query);
+
     } else {
-      my $date = 0;
-      $date = $self->previous_bill->_date if $self->previous_bill;
-      @objects = qsearch('cust_credit', {
-          'custnum' => $self->custnum,
-          '_date'   => {op => '>=', value => $date},
+      # Case 2 (see above)
+      # Return credits timestamps between this and the previous bills
+
+      my $date_start = 0;
+      my $date_end = $self->_date;
+
+      my $previous_bill = $self->previous_bill;
+      if (ref $previous_bill) {
+        $date_start = $previous_bill->_date;
+      }
+
+      @cust_credit_objs = qsearch({
+        table => 'cust_credit',
+        hashref => {
+          custnum => $self->custnum,
+          _date => {op => '>=', value => $date_start},
+        },
+        extra_sql => " AND _date <= $date_end ",
       });
     }
+
   } else {
-    @objects = $self->cust_credited;
+    # Case 1 (see above)
+    # Return only credits that have been applied to this bill
+
+    @cust_credit_objs = $self->cust_credited;
+
   }
 
-  foreach my $obj ( @objects ) {
+  # Translate objects into hashrefs
+  foreach my $obj ( @cust_credit_objs ) {
     my $cust_credit = $obj->isa('FS::cust_credit') ? $obj : $obj->cust_credit;
+    my %r_obj = (
+      amount       => sprintf('%.2f',$cust_credit->amount),
+      crednum      => $cust_credit->crednum,
+      _date        => $cust_credit->_date,
+      creditreason => $cust_credit->reason,
+    );
 
     my $reason = substr($cust_credit->reason, 0, $trim_len);
     $reason .= '...' if length($reason) < length($cust_credit->reason);
     $reason = " ($reason) " if $reason;
 
-    push @b, {
-      #'description' => 'Credit ref\#'. $_->crednum.
-      #                 " (". time2str("%x",$_->cust_credit->_date) .")".
-      #                 $reason,
-      'description' => $self->mt('Credit applied').' '.
-                       $self->time2str_local('short', $obj->_date). $reason,
-      'amount'      => sprintf("%.2f",$obj->amount),
-    };
+    $r_obj{description} = join(' ',
+      $self->mt('Credit applied'),
+      $self->time2str_local('short', $cust_credit->_date),
+      $reason,
+    );
+
+    push @return, \%r_obj;
+  }
+  $self->set('_items_credits',\@return);
+  @return;
   }
 
-  @b;
+=sub _items_credits_total
 
+  Return the total of al items from _items_credits
+  Will vary based on invoice display conf flag
+
+=cut
+
+sub _items_credits_total {
+  my $self = shift;
+  my $tot = 0;
+  $tot += $_->{amount} for $self->_items_credits();
+  return $tot;
 }
+
+
+
+=sub _items_credits_postbill()
+
+  Returns an array of hashrefs for credits where
+  - Credit issued after this invoice
+  - Credit applied to an invoice before this invoice
+
+  Returned hashrefs are of the format returned by _items_credits()
+
+=cut
+
+sub _items_credits_postbill {
+  my $self = shift;
+
+  my @cust_credit_bill = qsearch({
+    table   => 'cust_credit_bill',
+    select  => join(', ',qw(
+      cust_credit_bill.creditbillnum
+      cust_credit_bill._date
+      cust_credit_bill.invnum
+      cust_credit_bill.amount
+    )),
+    addl_from => ' LEFT JOIN cust_credit'.
+                 ' ON (cust_credit_bill.crednum = cust_credit.crednum) ',
+    extra_sql => ' WHERE cust_credit.custnum     = '.$self->custnum.
+                 ' AND   cust_credit_bill._date  > '.$self->_date.
+                 ' AND   cust_credit_bill.invnum < '.$self->invnum.' ',
+#! did not investigate why hashref doesn't work for this join query
+#    hashref => {
+#      'cust_credit.custnum'     => {op => '=', value => $self->custnum},
+#      'cust_credit_bill._date'  => {op => '>', value => $self->_date},
+#      'cust_credit_bill.invnum' => {op => '<', value => $self->invnum},
+#    },
+  });
+
+  return map {{
+    _date         => $_->_date,
+    invnum        => $_->invnum,
+    amount        => $_->amount,
+    creditbillnum => $_->creditbillnum,
+  }} @cust_credit_bill;
+}
+
+=sub _items_payments_postbill()
+
+  Returns an array of hashrefs for payments where
+  - Payment occured after this invoice
+  - Payment applied to an invoice before this invoice
+
+  Returned hashrefs are of the format returned by _items_payments()
+
+=cut
+
+sub _items_payments_postbill {
+  my $self = shift;
+
+  my @cust_bill_pay = qsearch({
+    table    => 'cust_bill_pay',
+    select => join(', ',qw(
+      cust_bill_pay.billpaynum
+      cust_bill_pay._date
+      cust_bill_pay.invnum
+      cust_bill_pay.amount
+    )),
+    addl_from => ' LEFT JOIN cust_bill'.
+                 ' ON (cust_bill_pay.invnum = cust_bill.invnum) ',
+    extra_sql => ' WHERE cust_bill.custnum     = '.$self->custnum.
+                 ' AND   cust_bill_pay._date   > '.$self->_date.
+                 ' AND   cust_bill_pay.invnum  < '.$self->invnum.' ',
+  });
+
+  return map {{
+    _date      => $_->_date,
+    invnum     => $_->invnum,
+    amount     => $_->amount,
+    billpaynum => $_->billpaynum,
+  }} @cust_bill_pay;
+}
+
+=sub _items_payments()
+
+  Return array of hashrefs containing payments to be shown as line-items
+  when rendering this bill.
+
+  keys for each payment item:
+  - paynum: id of payment
+  - amount: payment amount
+  - description: line item to be displayed on the bill
+
+  This method has three ways it selects which payments to display on
+  this bill:
+
+  1) Default Case: No Conf flag for 'previous_balance-payments_since'
+
+     Returns payments that have been applied to this bill only
+
+  2) Case:
+       Conf flag set for 'previous_balance-payments_since'
+
+     List all payments that have been recorded between the timestamps
+     of the previous invoice and this invoice
+
+  3) Case:
+        Conf flag set for 'previous_balance-payments_since'
+        $opt{'template'} eq 'statement'
+
+     List all payments that have been recorded between the timestamps
+     of the previous invoice and the following invoice.
+
+     I am concerned with this implementation, but leaving in place as is
+     If this option is selected, while viewing an older bill, the old bill
+     will show ALL future payments for future bills, but no charges for
+     future bills.  Somebody could be misled into believing they have a
+     large account credit when they don't.  Also, interrupts the chain of
+     invoices as an account history... the customer could have two invoices
+     in their fileing cabinet, for two different dates, both with a line item
+     for the same duplicate payment.  The accounting is technically accurate,
+     but somebody could easily become confused and think two payments were
+     made, when really those two line items on two different bills represent
+     only a single payment.
+
+=cut
 
 sub _items_payments {
+
   my $self = shift;
+
+  # Simple memoize
+  return @{$self->get('_items_payments')} if $self->get('_items_payments');
+
   my %opt = @_;
+  my $template = $opt{template} || $self->get('_template');
 
-  my @b;
-  my $detailed = $self->conf->exists('invoice_payment_details');
-  my @objects;
+  my @return;
+  my @cust_pay_objs;
+
+  my $c_invoice_payment_details = $self->conf->exists('invoice_payment_details');
+
   if ( $self->conf->exists('previous_balance-payments_since') ) {
-    # then show payments dated on/after the previous bill...
-    if ( $opt{'template'} eq 'statement' ) {
-      # then the current bill is a "statement" (i.e. an invoice sent as
-      # a payment receipt)
-      # and in that case we want to see payments on or after THIS invoice
-      @objects = qsearch('cust_pay', {
-          'custnum' => $self->custnum,
-          '_date'   => {op => '>=', value => $self->_date},
-      });
+    if ($template eq 'statement') {
+print "\nCASE 3\n";
+      # Case 3 (see above)
+      # Return payments timestamped between the previous and following bills
+
+      my $previous_bill  = $self->previous_bill;
+      my $following_bill = $self->following_bill;
+
+      my $date_start = ref $previous_bill  ? $previous_bill->_date  : 0;
+      my $date_end   = ref $following_bill ? $following_bill->_date : undef;
+
+      my %query = (
+        table => 'cust_pay',
+        hashref => {
+          custnum => $self->custnum,
+          _date => { op => '>=', value => $date_start },
+        },
+      );
+      $query{extra_sql} = " AND _date <= $date_end " if $date_end;
+
+      @cust_pay_objs = qsearch(\%query);
+
     } else {
-      # the normal case: payments on or after the previous invoice
-      my $date = 0;
-      $date = $self->previous_bill->_date if $self->previous_bill;
-      @objects = qsearch('cust_pay', {
-        'custnum' => $self->custnum,
-        '_date'   => {op => '>=', value => $date},
+      # Case 2 (see above)
+      # Return payments timestamped between this and the previous bill
+print "\nCASE 2\n";
+      my $date_start = 0;
+      my $date_end = $self->_date;
+
+      my $previous_bill = $self->previous_bill;
+      if (ref $previous_bill) {
+        $date_start = $previous_bill->_date;
+      }
+
+      @cust_pay_objs = qsearch({
+        table => 'cust_pay',
+        hashref => {
+          custnum => $self->custnum,
+          _date => {op => '>=', value => $date_start},
+        },
+        extra_sql => " AND _date <= $date_end ",
       });
-      # and before the current bill...
-      @objects = grep { $_->_date < $self->_date } @objects;
     }
+
   } else {
-    @objects = $self->cust_bill_pay;
+    # Case 1 (see above)
+    # Return payments applied only to this bill
+
+    @cust_pay_objs = $self->cust_bill_pay;
+
   }
 
-  foreach my $obj (@objects) {
-    my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
-    my $desc = $self->mt('Payment received').' '.
-               $self->time2str_local('short', $cust_pay->_date );
-    $desc .= $self->mt(' via ') .
-             $cust_pay->payby_payinfo_pretty( $self->cust_main->locale )
-      if $detailed;
-
-    push @b, {
-      'description' => $desc,
-      'amount'      => sprintf("%.2f", $obj->amount )
-    };
+  $self->set(
+    '_items_payments',
+    [ $self->__items_payments_make_hashref(@cust_pay_objs) ]
+  );
+  return @{ $self->get('_items_payments') };
   }
 
-  @b;
+=sub _items_payments_total
 
+  Return a total of all records returned by _items_payments
+  Results vary based on invoicing conf flags
+
+=cut
+
+sub _items_payments_total {
+  my $self = shift;
+  my $tot = 0;
+  $tot += $_->{amount} for $self->_items_payments();
+  return $tot;
 }
+
+sub __items_payments_make_hashref {
+  # Transform a FS::cust_pay object into a simple hashref for invoice
+  my ($self, @cust_pay_objs) = @_;
+  my $c_invoice_payment_details = $self->conf->exists('invoice_payment_details');
+  my @return;
+
+  for my $obj (@cust_pay_objs) {
+
+    # In case we're passed FS::cust_bill_pay (or something else?)
+    # Below, we use $obj to render amount rather than $cust_apy.
+    #   If we were passed cust_bill_pay objs, then:
+    #   $obj->amount represents the amount applied to THIS invoice
+    #   $cust_pay->amount represents the total payment, which may have
+    #       been applied accross several invoices.
+    # If we were passed cust_bill_pay objects, then the conf flag
+    # previous_balance-payments_since is NOT set, so we should not
+    # present any payments not applied to this invoice.
+    my $cust_pay = $obj->isa('FS::cust_pay') ? $obj : $obj->cust_pay;
+
+    my %r_obj = (
+      _date   => $cust_pay->_date,
+      amount  => sprintf("%.2f", $obj->amount),
+      paynum  => $cust_pay->paynum,
+      payinfo => $cust_pay->payby_payinfo_pretty(),
+      description => join(' ',
+        $self->mt('Payment received'),
+        $self->time2str_local('short', $cust_pay->_date),
+      ),
+    );
+
+    if ($c_invoice_payment_details) {
+      $r_obj{description} = join(' ',
+        $r_obj{description},
+        $self->mt('via'),
+        $cust_pay->payby_payinfo_pretty($self->cust_main->locale),
+    );
+    }
+
+    push @return, \%r_obj;
+    }
+  return @return;
+  }
+
+=sub _items_total()
+
+  Generate the line-items to be shown on the bill in the "Totals" section
+
+  Returns a list of hashrefs, each with the keys:
+  - total_item: description field
+  - total_amount: dollar-formatted number amount
+
+  Information presented by this method varies based on Conf
+
+  Conf previous_balance-payments_due
+  - default, flag not set
+      Only transactions that were applied to this bill bill be
+      displayed and calculated intothe total.  If items exist in
+      the past-due section, those items will disappear from this
+      invoice if they have been paid off.
+
+  - previous_balance-payments_due flag is set
+      Transactions occuring after the timestsamp of this
+      invoice are not reflected on invoice line items
+
+      Only payments/credits applied between the previous invoice
+      and this one are displayed and calculated into the total
+
+  - previous_balance-payments_due && $opt{template} eq 'statement'
+      Same as above, except payments/credits occuring before the date
+      of the following invoice are also displayed and calculated into
+      the total
+
+  Conf previous_balance-exclude_from_total
+  - default, flag not set
+      The "Totals" section contains a single line item.
+      The dollar amount of this line items is a sum of old and new charges
+  - previous_balance-exclude_from_total flag is set
+      The "Totals" section contains two line items.
+      One for previous balance, one for new charges
+  !NOTE: Avent virtualization flag 'disable_previous_balance' can
+      override the global conf flag previous_balance-exclude_from_total
+
+  Conf invoice_show_prior_due_date
+  - default, flag not set
+    Total line item in the "Totals" section does not mention due date
+  - invoice_show_prior_due_date flag is set
+    Total line item in the "Totals" section includes either the due
+    date of the invoice, or the specified invoice terms
+    ? Not sure why this is called "Prior" due date, since we seem to be
+      displaying THIS due date...
+=cut
 
 sub _items_total {
   my $self = shift;
   my $conf = $self->conf;
 
-  my @items;
-  my ($pr_total) = $self->previous;
-  my ($previous_charges_desc, $new_charges_desc, $new_charges_amount);
+  my $c_multi_line_total = 0;
+  $c_multi_line_total    = 1
+    if $conf->exists('previous_balance-exclude_from_total')
+    && $self->enable_previous();
 
-  if ( $conf->exists('previous_balance-exclude_from_total') ) {
-    # if enabled, specifically add a line for the previous balance total
-    $previous_charges_desc = $self->mt(
-      $conf->config('previous_balance-text') || 'Previous Balance'
-    );
+  my @line_items;
+  my $invoice_charges  = $self->charged();
 
-    # then return separate lines for previous balance and total new charges
-    if ( $pr_total ) {
-      push @items,
-        { total_item    => $previous_charges_desc,
-          total_amount  => sprintf('%.2f',$pr_total)
-        };
-    }
-  }
+  # _items_previous() is aware of conf flags
+  my $previous_balance = 0;
+  $previous_balance += $_->{amount} for $self->_items_previous();
 
-  if (   $conf->exists('previous_balance-exclude_from_total')
-      or !$self->enable_previous ) {
-    # show new charges only
+  my $total_charges;
+  my $total_descr;
 
-    $new_charges_desc = $self->mt(
+  if ( $previous_balance && $c_multi_line_total ) {
+    # previous balance, new charges on separate lines
+
+    push @line_items, {
+      total_amount => sprintf('%.2f',$previous_balance),
+      total_item   => $self->mt(
+        $conf->config('previous_balance-text') || 'Previous Balance'
+      ),
+    };
+
+    $total_charges = $invoice_charges;
+    $total_descr   = $self->mt(
       $conf->config('previous_balance-text-total_new_charges')
        || 'Total New Charges'
     );
 
-    $new_charges_amount = $self->charged;
-
-  } else {
-    # show new charges + previous invoice total
-
-    $new_charges_desc = $self->mt('Total Charges');
-    if ( $self->enable_previous ) {
-      $new_charges_amount = sprintf('%.2f', $self->charged + $pr_total);
     } else {
-      $new_charges_amount = sprintf('%.2f', $self->charged);
-    }
-
+    # previous balance and new charges combined into a single total line
+    $total_charges = $invoice_charges + $previous_balance;
+    $total_descr = $self->mt('Total Charges');
   }
 
   if ( $conf->exists('invoice_show_prior_due_date') ) {
     # then the due date should be shown with Total New Charges,
     # and should NOT be shown with the Balance Due message.
+
     if ( $self->due_date ) {
-      # localize the "Please pay by" message and the date itself
-      # (grammar issues with this, yeah)
-      $new_charges_desc .= ' - ' . $self->mt('Please pay by') . ' ' .
-                           $self->due_date2str('short');
+      $total_descr = join(' ',
+        $total_descr,
+        '-',
+        $self->mt('Please pay by'),
+        $self->due_date2str('short')
+      );
     } elsif ( $self->terms ) {
-      # phrases like "due on receipt" should be localized
-      $new_charges_desc .= ' - ' . $self->mt($self->terms);
+      $total_descr = join(' ',
+        $total_descr,
+        '-',
+        $self->mt($self->terms)
+      );
     }
   }
 
-  push @items,
-    { total_item    => $new_charges_desc,
-      total_amount  => $new_charges_amount,
+  push @line_items, {
+    total_amount => sprintf('%.2f', $total_charges),
+    total_item   => $total_descr,
     };
 
-  @items;
+  return @line_items;
 }
 
+=item _items_aging_balances
 
+  Returns an array of aged balance amounts from a given epoch timestamp.
+
+  The time of day is ignored for this calculation, so that slight differences
+  on the generation time of an invoice doesn't determine which column an
+  aged balance falls into.
+
+  Will not include any balances dated after the given timestamp in
+  the calculated totals
+
+  usage:
+  @aged_balances = $b->_items_aging_balances( $b->_date )
+
+  @aged_balances = (
+    under30d,
+    30d-60d,
+    60d-90d,
+    over90d
+  )
+
+=cut
+
+sub _items_aging_balances {
+  my ($self, $basetime) = @_;
+  die "Incorrect usage of _items_aging_balances()" unless ref $self;
+
+  $basetime = $self->_date unless $basetime;
+  my @aging_balances = (0, 0, 0, 0);
+  my @open_invoices = $self->_items_previous();
+  my $d30 = 2592000; # 60 * 60 * 24 * 30,
+  my $d60 = 5184000; # 60 * 60 * 24 * 60,
+  my $d90 = 7776000; # 60 * 60 * 24 * 90
+
+  # Move the clock back on our given day to 12:00:01 AM
+  my $dt_basetime = DateTime->from_epoch(epoch => $basetime);
+  my $dt_12am = DateTime->new(
+    year   => $dt_basetime->year,
+    month  => $dt_basetime->month,
+    day    => $dt_basetime->day,
+    hour   => 0,
+    minute => 0,
+    second => 1,
+  )->epoch();
+
+  # set our epoch breakpoints
+  $_ = $dt_12am - $_ for $d30, $d60, $d90;
+
+  # grep the aged balances
+  for my $oinv (@open_invoices) {
+    if ($oinv->{_date} <= $basetime && $oinv->{_date} > $d30) {
+      # If post invoice dated less than 30days ago
+      $aging_balances[0] += $oinv->{amount};
+    } elsif ($oinv->{_date} <= $d30 && $oinv->{_date} > $d60) {
+      # If past invoice dated between 30-60 days ago
+      $aging_balances[1] += $oinv->{amount};
+    } elsif ($oinv->{_date} <= $d60 && $oinv->{_date} > $d90) {
+      # If past invoice dated between 60-90 days ago
+      $aging_balances[2] += $oinv->{amount};
+    } else {
+      # If past invoice dated 90+ days ago
+      $aging_balances[3] += $oinv->{amount};
+    }
+  }
+
+  return map{ sprintf('%.2f',$_) } @aging_balances;
+}
 
 =item has_call_details
 

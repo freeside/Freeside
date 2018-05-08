@@ -344,6 +344,8 @@ sub print_generic {
   $templatefile .= "_$template"
     if length($template) && $conf->exists($templatefile."_$template");
 
+  $self->set('_template',$template);
+
   # the base template
   my @invoice_template = map "$_\n", $conf->config($templatefile)
     or die "cannot load config data $templatefile";
@@ -692,18 +694,34 @@ sub print_generic {
   $invoice_data{'barcode_cid'} = $params{'barcode_cid'}
     if $params{'barcode_cid'};
 
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
-  #my $balance_due = $self->owed + $pr_total - $cr_total;
-  my $balance_due = $self->owed;
-  if ( $self->enable_previous ) {
-    $balance_due += $pr_total;
-  }
-  # otherwise the previous balance is not shown, so including it in the
-  # balance due is just confusing
 
-  # the sum of amount owed on all invoices
-  # (this is used in the summary & on the payment coupon)
+  # re: rt:78190
+  #   using owed_on_invoice() instead of owed() here for $balance_due
+  #   using _items_previous_total() instead of ->previous() for $pr_total
+  #
+  #   owed_on_invoice() is aware of configuration flags that affect how an
+  #     invoice is rendered.  May not return actual current balance. Will
+  #     return balance appropriate for the invoice being rendered, based
+  #     on which past due items, current charges, and future payments are
+  #     displayed.
+  #
+  #   Going forward, usage of owed(), or bypassing cust_bill helper methods
+  #     when generating invoice lines may lead to incorrect or misleading
+  #     math on invoices.
+  #
+  #   Helper methods that are aware of invoicing conf flags:
+  #   - owed_on_invoice          # use instead of owed()
+  #   - _items_previous()        # use instead of previous()
+  #   - _items_credits()         # use instead of cust_credit()
+  #   - _items_payments()
+  #   - _items_total()
+  #   - _items_previous_total()  # use instead of previous()
+  #   - _items_payments_total()
+  #   - _items_credits_total()   # use instead of cust_credit()
+
+  my $pr_total    = $self->_items_previous_total();
+
+  my $balance_due = $self->owed_on_invoice();
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
   # flag telling this invoice to have a first-page summary
@@ -717,124 +735,97 @@ sub print_generic {
     # summary formats
     $invoice_data{'last_bill'} = {};
  
-    my $last_bill = $self->previous_bill;
-    if ( $last_bill ) {
+    #    my $last_bill = $self->previous_bill;
+    # if ( $last_bill ) {
 
-      # "balance_date_range" unfortunately is unsuitable for this, since it
-      # cares about application dates.  We want to know the sum of all 
-      # _top-level transactions_ dated before the last invoice.
-      #
-      # still do this for the "Previous Balance" line of the summary block
-      my @sql =
-        map "$_ WHERE _date <= ? AND custnum = ?", (
-          "SELECT      COALESCE( SUM(charged), 0 ) FROM cust_bill",
-          "SELECT -1 * COALESCE( SUM(amount),  0 ) FROM cust_credit",
-          "SELECT -1 * COALESCE( SUM(paid),    0 ) FROM cust_pay",
-          "SELECT      COALESCE( SUM(refund),  0 ) FROM cust_refund",
+    # Populate template stash for previous balance and payments
+    if ($pr_total) {
+      # Used on summary page as "Previous Balance"
+      $invoice_data{'true_previous_balance'} = sprintf("%.2f", $pr_total);
+
+      # Used on summary page as "Payments"
+      $invoice_data{'balance_adjustments'} = sprintf("%.2f",
+        $self->_items_payments_total() + $self->_items_credits_total()
         );
 
-      # the customer's current balance immediately after generating the last 
-      # bill
-
-      my $last_bill_balance = $last_bill->charged;
-      foreach (@sql) {
-        my $delta = FS::Record->scalar_sql(
-          $_,
-          $last_bill->_date - 1,
-          $self->custnum,
-        );
-        $last_bill_balance += $delta;
-      }
-
-      $last_bill_balance = sprintf("%.2f", $last_bill_balance);
-
-      warn sprintf("LAST BILL: INVNUM %d, DATE %s, BALANCE %.2f\n\n",
-        $last_bill->invnum,
-        $self->time2str_local('%D', $last_bill->_date),
-        $last_bill_balance
-      ) if $DEBUG > 0;
-      # ("true_previous_balance" is a terrible name, but at least it's no
-      # longer stored in the database)
-      $invoice_data{'true_previous_balance'} = $last_bill_balance;
-
-      # Now, get all applications of credits/payments dated on or after the
-      # previous bill, to invoices before the current bill. (The
-      # credit/payment date restriction prevents these from intersecting
-      # the "Previous Balance" set.)
-      # These are "adjustments". The past due balance will be shown as
-      # Previous Balance - Adjustments.
-      my $adjustments = 0;
-      @sql = map {
-        "SELECT COALESCE(SUM(y.amount),0) FROM $_ JOIN cust_bill USING (invnum)
-         WHERE cust_bill._date < ?
-           AND x._date >= ?
-           AND cust_bill.custnum = ?"
-        } "cust_credit AS x JOIN cust_credit_bill y USING (crednum)",
-          "cust_pay    AS x JOIN cust_bill_pay    y USING (paynum)"
-      ;
-      foreach (@sql) {
-        my $delta = FS::Record->scalar_sql(
-          $_,
-          $self->_date,
-          $last_bill->_date,
-          $self->custnum,
-        );
-        $adjustments += $delta;
-      }
-      $invoice_data{'balance_adjustments'} = sprintf("%.2f", $adjustments);
-
-      warn sprintf("BALANCE ADJUSTMENTS: %.2f\n\n",
-                   $invoice_data{'balance_adjustments'}
-      ) if $DEBUG > 0;
-
-      # the sum of amount owed on all previous invoices
-      # ($pr_total is used elsewhere but not as $previous_balance)
+      # Used in invoice template as "Previous Balance"
       $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
 
-      $invoice_data{'last_bill'}{'_date'} = $last_bill->_date; #unformatted
-      my (@payments, @credits);
-      # for formats that itemize previous payments
-      foreach my $cust_pay ( qsearch('cust_pay', {
-                              'custnum' => $self->custnum,
-                              '_date'   => { op => '>=',
-                                             value => $last_bill->_date }
-                             } ) )
-      {
-        next if $cust_pay->_date > $self->_date;
-        push @payments, {
-            '_date'       => $cust_pay->_date,
-            'date'        => $self->time2str_local('long', $cust_pay->_date, $format),
-            'payinfo'     => $cust_pay->payby_payinfo_pretty,
-            'amount'      => sprintf('%.2f', $cust_pay->paid),
-        };
-        # not concerned about applications
+      # $invoice_data{last_bill}{_date}:
+      # Not used in default templates, but may be in use by someone
+      #
+      # ! May be a problem field if they are using it... this field
+      #   stores the date of the previous invoice... it is possible to
+      #   carry a balance, but have the immediately previous invoice paid off.
+      #   In this case, this field might be presenting bad data?  Not
+      #   altering the problematic behavior, because someone might be
+      #   expecting this bad behavior in their templates for some other
+      #   purpose, such as a "your last bill was dated %_date%"
+      my $last_bill = $self->previous_bill;
+      $invoice_data{'last_bill'}{'_date'}
+        = ref $last_bill
+        ? $last_bill->_date()
+        : undef;
+
+      # $invoice_data{previous_payments}
+      # Not used in default templates, but may be in use by someone
+      #
+      # Returns an array of hrefs representing payments, each with keys:
+      #  - _date:       epoch timestamp
+      #  - date:        text formatted date
+      #  - amount:      money formatted amount string
+      #  - payinfo:     string from payby_payinfo_pretty()
+      #  - paynum:      id for cust_pay
+      #  - description: Text description for bill line item
+      #
+      my @payments = $self->_items_payments();
+      $invoice_data{previous_payments} = \@payments;
+
+      # $invoice_data{previous_credits}
+      # Not used in default templates, but may be in use by someone
+      #
+      # Returns an array of hrefs representing credits, each with keys:
+      #  - _date:        epoch timestamp
+      #  - date:         text formatted date
+      #  - amount:       money formatted amount string
+      #  - crednum:      id for cust_credit
+      #  - description:  Text description for bill line item
+      #  - creditreason: reason() from cust_credit
+      #
+      my @credits = $self->_items_credits();
+      $invoice_data{previous_credits} = \@credits;
+
+      # Populate formatted date field
+      for my $pmt_href (@payments, @credits) {
+        $pmt_href->{date} = $self->time2str_local(
+          'long',
+          $pmt_href->{_date},
+          $format
+        );
       }
-      foreach my $cust_credit ( qsearch('cust_credit', {
-                              'custnum' => $self->custnum,
-                              '_date'   => { op => '>=',
-                                             value => $last_bill->_date }
-                             } ) )
-      {
-        next if $cust_credit->_date > $self->_date;
-        push @credits, {
-            '_date'       => $cust_credit->_date,
-            'date'        => $self->time2str_local('long', $cust_credit->_date, $format),
-            'creditreason'=> $cust_credit->reason,
-            'amount'      => sprintf('%.2f', $cust_credit->amount),
-        };
-      }
-      $invoice_data{'previous_payments'} = \@payments;
-      $invoice_data{'previous_credits'}  = \@credits;
+
     } else {
-      # there is no $last_bill
+      # There are no outstanding invoices    = YAPH
       $invoice_data{'true_previous_balance'} =
       $invoice_data{'balance_adjustments'}   =
       $invoice_data{'previous_balance'}      = '0.00';
-      $invoice_data{'previous_payments'} = [];
+      $invoice_data{'previous_payments'}     =
       $invoice_data{'previous_credits'} = [];
     }
- 
-    if ( $conf->config_bool('invoice_usesummary', $agentnum) ) {
+
+    # Condencing a lot of debug staements here
+    if ($DEBUG) {
+      warn "\$invoice_data{$_}: $invoice_data{$_}"
+        for qw(
+          true_previous_balance
+          balance_adjustments
+          previous_balance
+          previous_payments
+          previous_credits
+        );
+    }
+
+    if ( $conf->exists('invoice_usesummary', $agentnum) ) {
       $invoice_data{'summarypage'} = $summarypage = 1;
     }
 
@@ -970,11 +961,21 @@ sub print_generic {
                                             sprintf('%.2f', $pr_total),
                            'summarized'  => '', #why? $summarypage ? 'Y' : '',
                          };
-    $previous_section->{posttotal} = '0 / 30 / 60 / 90 days overdue '. 
-      join(' / ', map { $cust_main->balance_date_range(@$_) }
-                  $self->_prior_month30s
-          )
-      if $conf->exists('invoice_include_aging');
+
+    # Include balance aging line and template variables
+    my @aged_balances = $self->_items_aging_balances();
+    ( $invoice_data{aged_balance_current},
+      $invoice_data{aged_balance_30d},
+      $invoice_data{aged_balance_60d},
+      $invoice_data{aged_balance_90d}
+    ) = @aged_balances;
+
+    if ($conf->exists('invoice_include_aging')) {
+      $previous_section->{posttotal} = sprintf(
+        '0 / 30 / 60 / 90 days overdue %.2f / %.2f / %.2f / %.2f',
+        @aged_balances,
+      );
+    }
 
   } else {
     # otherwise put them in the main section
@@ -1131,7 +1132,7 @@ sub print_generic {
 
   }
 
-  if ( @pr_cust_bill && $self->enable_previous ) {
+  if ( $pr_total && $self->enable_previous ) {
     push @buf, ['','-----------'];
     push @buf, [ $self->mt('Total Previous Balance'),
                  $money_char. sprintf("%10.2f", $pr_total) ];
@@ -1552,7 +1553,7 @@ sub print_generic {
                                                #  ? $self->charged +
                                                #    $self->billing_balance
                                                #  :
-                                                   $self->owed + $pr_total
+                                                   $balance_due
                                       )
           );
         if ( $multisection && !$adjust_section->{sort_weight} ) {
@@ -1598,7 +1599,7 @@ sub print_generic {
       $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
       $total->{'total_amount'} =
         &$embolden_function(
-          $other_money_char. sprintf('%.2f', $self->owed + $pr_total)
+          $other_money_char. sprintf('%.2f', $balance_due)
         );
       my $last_section = pop @sections;
       $last_section->{'posttotal'} = $total->{'total_item'}. ' '.
@@ -1783,22 +1784,6 @@ sub notice_name { '('.shift->table.')'; }
 # this is not supposed to happen
 sub template_conf { warn "bare FS::Template_Mixin::template_conf";
   'invoice_';
-}
-
-# helper routine for generating date ranges
-sub _prior_month30s {
-  my $self = shift;
-  my @ranges = (
-   [ 1,       2592000 ], # 0-30 days ago
-   [ 2592000, 5184000 ], # 30-60 days ago
-   [ 5184000, 7776000 ], # 60-90 days ago
-   [ 7776000, 0       ], # 90+   days ago
-  );
-
-  map { [ $_->[0] ? $self->_date - $_->[0] - 1 : '',
-          $_->[1] ? $self->_date - $_->[1] - 1 : '',
-      ] }
-  @ranges;
 }
 
 =item print_ps HASHREF | [ TIME [ , TEMPLATE ] ]
