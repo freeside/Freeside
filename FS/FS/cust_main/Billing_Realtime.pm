@@ -1193,6 +1193,7 @@ sub _realtime_bop_result {
               "resolved - error updating status for paypendingnum ".
               $cust_pay_pending->paypendingnum. ": $cpp_done_err \n";
       warn $e;
+      #XXX internal system log $e (what's going on?)
       $perror = "$e ($perror)";
     }
 
