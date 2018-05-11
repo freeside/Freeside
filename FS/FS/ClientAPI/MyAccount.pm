@@ -935,6 +935,7 @@ sub payment_info {
   $return{paybatch} = $return{payunique};  #back compat
 
   $return{credit_card_surcharge_percentage} = $conf->config('credit-card-surcharge-percentage', $cust_main->agentnum);
+  $return{credit_card_surcharge_flatfee} = $conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum);
 
   return { 'error' => '',
            %return,
