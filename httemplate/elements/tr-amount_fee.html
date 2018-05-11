@@ -94,6 +94,9 @@ if ( $amount > 0 ) {
   $amount += $amount * $opt{'surcharge_percentage'}/100
     if $opt{'surcharge_percentage'} > 0;
 
+  $amount += $opt{'surcharge_flatfee'}
+    if $opt{'surcharge_flatfee'} > 0;
+
   $amount = sprintf("%.2f", $amount);
 }
 
