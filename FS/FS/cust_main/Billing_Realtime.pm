@@ -421,6 +421,8 @@ sub realtime_bop {
     $options{amount} = $amount;
   }
 
+  return '' unless $options{amount} > 0;
+
   # set fields from passed cust_payby
   _bop_cust_payby_options(\%options);
 
@@ -454,16 +456,24 @@ sub realtime_bop {
     if $conf->config('credit-card-surcharge-percentage', $self->agentnum)
     && $options{method} eq 'CC';
 
+  my $cc_surcharge_flat = 0;
+  $cc_surcharge_flat = $conf->config('credit-card-surcharge-flatfee', $self->agentnum)
+    if $conf->config('credit-card-surcharge-flatfee', $self->agentnum)
+    && $options{method} eq 'CC';
+
   # always add cc surcharge if called from event 
-  if($options{'cc_surcharge_from_event'} && $cc_surcharge_pct > 0) {
-      $cc_surcharge = $options{'amount'} * $cc_surcharge_pct / 100;
+  if($options{'cc_surcharge_from_event'} && ($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0)) {
+    if ($options{'amount'} > 0) {
+      $cc_surcharge = ($options{'amount'} * ($cc_surcharge_pct / 100)) + $cc_surcharge_flat;
       $options{'amount'} += $cc_surcharge;
       $options{'amount'} = sprintf("%.2f", $options{'amount'}); # round (again)?
+    }
   }
-  elsif($cc_surcharge_pct > 0) { # we're called not from event (i.e. from a 
-                                 # payment screen), so consider the given 
-				 # amount as post-surcharge
-    $cc_surcharge = $options{'amount'} - ($options{'amount'} / ( 1 + $cc_surcharge_pct/100 ));
+  elsif($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0) {
+    # we're called not from event (i.e. from a
+    # payment screen), so consider the given
+		# amount as post-surcharge
+    $cc_surcharge = $options{'amount'} - (($options{'amount'} - $cc_surcharge_flat) / ( 1 + $cc_surcharge_pct/100 )) if $options{'amount'} > 0;
   }
   
   $cc_surcharge = sprintf("%.2f",$cc_surcharge) if $cc_surcharge > 0;
