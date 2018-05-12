@@ -22,7 +22,7 @@
              ? scalar($conf->config('credit-card-surcharge-percentage', $cust_main->agentnum))
              : 0
          ),
-       'surcharge_flatfee:Q' =>
+       'surcharge_flatfee' =>
          ( $payby eq 'CARD'
              ? scalar($conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum))
              : 0
