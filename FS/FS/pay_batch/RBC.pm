@@ -174,6 +174,11 @@ $name = 'RBC';
       die "invalid branch/routing number '$aba'\n";
     }
 
+    ## set custname to business name if business checking or savings account is used otherwise leave as first and last name.
+    my $custname = $cust_pay_batch->cust_main->first . ' ' . $cust_pay_batch->cust_main->last;
+    $custname = $cust_pay_batch->cust_main->company
+      if (($cust_pay_batch->{Hash}->{paytype} eq "Business checking" || $cust_pay_batch->{Hash}->{paytype} eq "Business savings") && $cust_pay_batch->cust_main->company);
+
     $i++;
     sprintf("%06u", $i).
     'D'.
@@ -189,8 +194,7 @@ $name = 'RBC';
     sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
     time2str("%Y%j", time + 86400).
-    sprintf("%-30.30s", encode('utf8', $cust_pay_batch->cust_main->first . ' ' .
-                     $cust_pay_batch->cust_main->last)).
+    sprintf("%-30.30s", encode('utf8', $custname)).
     'E'. # English
     ' '.
     sprintf("%-15s", $shortname).
