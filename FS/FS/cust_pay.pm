@@ -662,80 +662,21 @@ sub send_receipt {
        || ! $cust_bill
      )
   {
-    my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
-    if ( $msgnum ) {
-
-      my %substitutions = ();
-      $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
-
-      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
-      unless ($msg_template) {
-        warn "send_receipt could not load msg_template";
-        return;
-      }
-
-      my $cust_msg = $msg_template->prepare(
-          'cust_main'     => $cust_main,
-          'object'        => $self,
-          'from_config'   => 'payment_receipt_from',
-          'substitutions' => \%substitutions,
-          'msgtype'       => 'receipt',
+      $error = $self->send_message_receipt(
+        'cust_main' => $cust_main,
+        'cust_bill' => $opt->{cust_bill},
+        'msgnum'    => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
       );
-      $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
-      if ($error) {
-        warn "send_receipt: $error";
-        return;
-      }
-
-      my $queue = new FS::queue {
-        'job'     => 'FS::cust_msg::process_send',
-        'paynum'  => $self->paynum,
-        'custnum' => $cust_main->custnum,
-      };
-      $error = $queue->insert( $cust_msg->custmsgnum );
-
-    } else {
-
-      warn "payment_receipt is on, but no payment_receipt_msgnum\n";
-
-    }
-
   #not manual and no noemail flag (here or on the customer)
   } elsif ( ! $opt->{'noemail'} && ! $cust_main->invoice_noemail ) {
 
     # check to see if they want to send specific message template as receipt for auto payments
-    my $msgnum = $conf->config('payment_receipt_msgnum_auto', $cust_main->agentnum);
-    if ( $msgnum ) {
-
-      my %substitutions = ();
-      $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
-
-      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
-      unless ($msg_template) {
-        warn "send_receipt could not load msg_template";
-        return;
-      }
-
-      my $cust_msg = $msg_template->prepare(
-          'cust_main'     => $cust_main,
-          'object'        => $self,
-          'from_config'   => 'payment_receipt_from',
-          'substitutions' => \%substitutions,
-          'msgtype'       => 'receipt',
+    if ( $conf->config('payment_receipt_msgnum_auto', $cust_main->agentnum) ) {
+      $error = $self->send_message_receipt(
+        'cust_main' => $cust_main,
+        'cust_bill' => $opt->{cust_bill},
+        'msgnum'    => $conf->config('payment_receipt_msgnum_auto', $cust_main->agentnum),
       );
-      $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
-      if ($error) {
-        warn "send_receipt: $error";
-        return;
-      }
-
-      my $queue = new FS::queue {
-        'job'     => 'FS::cust_msg::process_send',
-        'paynum'  => $self->paynum,
-        'custnum' => $cust_main->custnum,
-      };
-      $error = $queue->insert( $cust_msg->custmsgnum );
-
     }
     else {
       my $queue = new FS::queue {
@@ -764,8 +705,62 @@ sub send_receipt {
 
 
   }
-  
+
   warn "send_receipt: $error\n" if $error;
+}
+
+=item send_message_receipt
+
+sends out a message receipt.
+send_message_receipt($cust_main, $msgnum);
+
+=cut
+
+sub send_message_receipt {
+  my ($self, %opt) = @_;
+  my $cust_main = $opt{'cust_main'};
+  my $cust_bill = $opt{'cust_bill'};
+  my $msgnum = $opt{'msgnum'};
+  my $error = '';
+
+    if ( $msgnum ) {
+
+      my %substitutions = ();
+      $substitutions{invnum} = $cust_bill->invnum if $cust_bill;
+#      $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
+
+      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
+      unless ($msg_template) {
+        warn "send_receipt could not load msg_template";
+        return;
+      }
+
+      my $cust_msg = $msg_template->prepare(
+          'cust_main'     => $cust_main,
+          'object'        => $self,
+          'from_config'   => 'payment_receipt_from',
+          'substitutions' => \%substitutions,
+          'msgtype'       => 'receipt',
+      );
+      $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
+      if ($error) {
+        warn "send_receipt: $error";
+        return $error;
+      }
+
+      my $queue = new FS::queue {
+        'job'     => 'FS::cust_msg::process_send',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert( $cust_msg->custmsgnum );
+
+    } else {
+      warn "payment_receipt is on, but no payment_receipt_msgnum\n";
+      $error = "payment_receipt is on, but no payment_receipt_msgnum";
+    }
+
+  return $error;
 }
 
 =item cust_bill_pay
