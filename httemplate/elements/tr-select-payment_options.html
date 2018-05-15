@@ -91,6 +91,7 @@ Example:
         	document.getElementById('invoice_row').style.display = 'none';
           document.getElementById('<% $opt{prefix} %>invoice').value = 'select';
           document.getElementById('amount').value = amount.toFixed(2);
+          document.getElementById('amount').disabled = false;
           if (document.getElementById('ajax_surcharge_cell')) {
             document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
           }
@@ -115,6 +116,7 @@ Example:
         else {
         	document.getElementById('payment_amount_row').style.display = 'block';
           document.getElementById('amount').value = amount.toFixed(2);
+          document.getElementById('amount').disabled = false;
           if (document.getElementById('ajax_surcharge_cell')) {
             document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
           }
