@@ -1052,6 +1052,11 @@ sub _make_lines {
         }
     }
 
+    if ($cust_pkg->waive_setup && $part_pkg->plan eq "prorate") {
+      $lineitems++;
+      $setup = 0 if $part_pkg->prorate_setup($cust_pkg, $time);
+    }
+
     if ( $cust_pkg->get('setup') ) {
       # don't change it
     } elsif ( $cust_pkg->get('start_date') ) {
