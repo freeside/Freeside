@@ -664,6 +664,7 @@ sub send_receipt {
        || ! $cust_bill
      )
   {
+
     $error = $self->send_message_receipt(
         'cust_main'      => $cust_main,
         'cust_bill'      => $opt->{cust_bill},
@@ -716,7 +717,13 @@ sub send_receipt {
 =item send_message_receipt
 
 sends out a message receipt.
-send_message_receipt($cust_main, $msgnum);
+$error = $self->send_message_receipt(
+        'cust_main'      => $cust_main,
+        'cust_bill'      => $opt->{cust_bill},
+        'cust_pkg'       => $opt->{cust_pkg},
+        'invoicing_list' => @invoicing_list,
+        'msgnum'         => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
+      );
 
 =cut
 
@@ -733,6 +740,11 @@ sub send_message_receipt {
 
       my %substitutions = ();
       $substitutions{invnum} = $cust_bill->invnum if $cust_bill;
+
+      my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
+      unless ($msg_template) {
+        return "send_receipt could not load msg_template";
+      }
 
       my $queue = new FS::queue {
         'job'     => 'FS::Misc::process_send_email',
@@ -754,8 +766,7 @@ sub send_message_receipt {
         TYPE   => 'ARRAY',
         SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
       ) or do {
-        warn "can't create payment receipt template: $Text::Template::ERROR";
-        return '';
+        return "can't create payment receipt template: $Text::Template::ERROR";
       };
 
       my $payby = $self->payby;
@@ -800,8 +811,7 @@ sub send_message_receipt {
         'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
       );  
     } else {
-      warn "payment_receipt is on, but no payment_receipt_msgnum\n";
-      $error = "payment_receipt is on, but no payment_receipt_msgnum";
+      $error = "payment_receipt is on, but no payment_receipt_msgnum\n";
     }
 
   return $error;
