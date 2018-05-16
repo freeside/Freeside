@@ -712,7 +712,11 @@ sub send_receipt {
 =item send_message_receipt
 
 sends out a message receipt.
-send_message_receipt($cust_main, $msgnum);
+$error = $self->send_message_receipt(
+        'cust_main' => $cust_main,
+        'cust_bill' => $opt->{cust_bill},
+        'msgnum'    => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
+      );
 
 =cut
 
@@ -727,7 +731,6 @@ sub send_message_receipt {
 
       my %substitutions = ();
       $substitutions{invnum} = $cust_bill->invnum if $cust_bill;
-#      $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
 
       my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
       unless ($msg_template) {
