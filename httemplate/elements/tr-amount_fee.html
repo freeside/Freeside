@@ -32,7 +32,7 @@
            <INPUT TYPE="hidden" NAME="surcharge_percentage" ID="surcharge_percentage" VALUE="<% $surcharge_percentage %>">
            <INPUT TYPE="hidden" NAME="surcharge_flatfee" ID="surcharge_flatfee" VALUE="<% $surcharge_flatfee %>">
       </TD><TD ID="ajax_surcharge_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
-           <FONT SIZE="+1">A credit card surcharge of <% $money_char. sprintf('%.2f', ($amount * $surcharge_percentage) + $surcharge_flatfee) %> is included in this payment</FONT>
+           <FONT SIZE="+1">A credit card surcharge of <% $money_char. sprintf('%.2f', $surcharge) %> is included in this payment</FONT>
 %        }
       </TD></TR></TABLE>
     </TD>
