@@ -128,13 +128,12 @@ sub calc_setup {
 
   my $discount = 0;
   if ( $charge > 0 ) {
-    $param->{'setup_charge'} = $charge;
-    $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
-    delete $param->{'setup_charge'};
+      $param->{'setup_charge'} = $charge;
+      $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+      delete $param->{'setup_charge'};
   }
 
   sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
-
 }
 
 sub base_setup {

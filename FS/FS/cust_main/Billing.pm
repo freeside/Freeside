@@ -1027,10 +1027,10 @@ sub _make_lines {
              || $cust_pkg->expire > $cmp_time )
      )
   {
-
+    
     warn "    bill setup\n" if $DEBUG > 1;
 
-    unless ($cust_pkg->waive_setup) {
+    unless ( $cust_pkg->waive_setup ) {
         $lineitems++;
 
         $setup = eval { $cust_pkg->calc_setup( $time, \@details, \%setup_param ) };
