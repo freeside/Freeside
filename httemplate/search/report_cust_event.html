@@ -5,11 +5,9 @@
 %>
 
     <FORM ACTION="cust_event.html" METHOD="GET">
-    <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-      <TR>
-        <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
-      </TR>
+    <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+    <TABLE CLASS="fsinnerbox">
 
       <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
 
