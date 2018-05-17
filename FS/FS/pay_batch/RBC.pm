@@ -177,7 +177,7 @@ $name = 'RBC';
     ## set custname to business name if business checking or savings account is used otherwise leave as first and last name.
     my $custname = $cust_pay_batch->cust_main->first . ' ' . $cust_pay_batch->cust_main->last;
     $custname = $cust_pay_batch->cust_main->company
-      if (($cust_pay_batch->{Hash}->{paytype} eq "Business checking" || $cust_pay_batch->{Hash}->{paytype} eq "Business savings") && $cust_pay_batch->cust_main->company);
+      if (($cust_pay_batch->cust_main->paytype eq "Business checking" || $cust_pay_batch->cust_main->paytype eq "Business savings") && $cust_pay_batch->cust_main->company);
 
     $i++;
     sprintf("%06u", $i).
