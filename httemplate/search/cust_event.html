@@ -134,6 +134,12 @@ my $trigger_link = sub {
     my $pkgnum = $cust_event->tablenum;
     my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
     [ "${p}view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#cust_pkg", 'tablenum' ];
+  } elsif ( $eventtable eq 'cust_pay' ) {
+    [ "${p}view/$eventtable.html?paynum=", 'tablenum' ];
+  } elsif ( $eventtable eq 'cust_statement' ) {
+    [ "${p}view/$eventtable.html?", 'tablenum' ];
+  } elsif ( $eventtable eq 'cust_pay_batch' ) {
+    [ "${p}search/cust_pay_batch.cgi?batchnum=", 'cust_pay_batch_batchnum' ];
   } else {
     [ "${p}view/$eventtable.cgi?", 'tablenum' ];
   }
@@ -199,6 +205,7 @@ my $sql_query = {
                     'part_event.*',
                     #'cust_bill.custnum',
                     #'cust_bill._date AS cust_bill_date',
+                    'cust_pay_batch.batchnum AS cust_pay_batch_batchnum',
                     'cust_main.custnum AS cust_main_custnum',
                     FS::UI::Web::cust_sql_fields(),
                   ),
