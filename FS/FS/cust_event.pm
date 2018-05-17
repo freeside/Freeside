@@ -323,11 +323,16 @@ sub join_sql {
 
   "
        JOIN part_event USING ( eventpart )
+
   LEFT JOIN cust_bill ON ( eventtable = 'cust_bill' AND tablenum = invnum  )
   LEFT JOIN cust_pkg  ON ( eventtable = 'cust_pkg'  AND tablenum = pkgnum  )
   LEFT JOIN cust_pay  ON ( eventtable = 'cust_pay'  AND tablenum = paynum  )
+  LEFT JOIN cust_pay_batch ON ( eventtable = 'cust_pay_batch' AND tablenum = paybatchnum )
+  LEFT JOIN cust_statement ON ( eventtable = 'cust_statement' AND tablenum = cust_statement.statementnum )
+
   LEFT JOIN cust_svc  ON ( eventtable = 'svc_acct'  AND tablenum = svcnum  )
   LEFT JOIN cust_pkg AS cust_pkg_for_svc ON ( cust_svc.pkgnum = cust_pkg_for_svc.pkgnum )
+
   LEFT JOIN cust_main ON (
        ( eventtable = 'cust_main' AND tablenum = cust_main.custnum )
     OR ( eventtable = 'cust_bill' AND cust_bill.custnum = cust_main.custnum )
