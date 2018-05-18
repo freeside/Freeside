@@ -1346,26 +1346,35 @@ sub print_generic {
   #$tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
   #$tax_section->{'sort_weight'} = $tax_weight;
 
+  my $invoice_sections_with_taxes = $conf->config_bool(
+    'invoice_sections_with_taxes', $cust_main->agentnum
+  );
+
   foreach my $tax ( @items_tax ) {
 
-    $taxtotal += $tax->{'amount'};
 
     my $description = &$escape_function( $tax->{'description'} );
     my $amount      = sprintf( '%.2f', $tax->{'amount'} );
 
     if ( $multisection ) {
+      if ( !$invoice_sections_with_taxes ) {
 
-      push @detail_items, {
-        ext_description => [],
-        ref          => '',
-        quantity     => '',
-        description  => $description,
-        amount       => $money_char. $amount,
-        product_code => '',
-        section      => $tax_section,
-      };
+        $taxtotal += $tax->{'amount'};
 
+        push @detail_items, {
+          ext_description => [],
+          ref          => '',
+          quantity     => '',
+          description  => $description,
+          amount       => $money_char. $amount,
+          product_code => '',
+          section      => $tax_section,
+        };
+
+      }
     } else {
+
+      $taxtotal += $tax->{'amount'};
 
       push @total_items, {
         'total_item'   => $description,
@@ -1402,8 +1411,10 @@ sub print_generic {
 
         if ( $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum) ) {
 
-          # remove tax section if taxes are itemized within other sections
-          @sections = grep{ $_ ne $tax_section } @sections;
+          # If all tax items are displayed in location/category sections,
+          # remove the empty tax section
+          @sections = grep{ $_ ne $tax_section } @sections
+            unless grep{ $_->{section} eq $tax_section } @detail_items;
 
         } elsif ( !grep $tax_section, @sections ) {
 
@@ -3122,17 +3133,31 @@ sub _items_fee {
       warn "fee definition not found for line item #".$cust_bill_pkg->billpkgnum."\n";
       next;
     }
-    if ( exists($options{section}) and exists($options{section}{category}) )
-    {
-      my $categoryname = $options{section}{category};
-      # then filter for items that have that section
-      if ( $part_fee->categoryname ne $categoryname ) {
-        warn "skipping fee '".$part_fee->itemdesc."'--not in section $categoryname\n" if $DEBUG;
-        next;
-      }
-    } # otherwise include them all in the main section
-    # XXX what to do when sectioning by location?
-    
+
+    # If _items_fee is called while building a sectioned invoice,
+    #   - invoice_sections_method: category
+    #     Skip fee records that do not match the section category.
+    #   - invoice_sections_method: location
+    #     Skip fee records always for location sections.
+    #     The fee records will be presented in the tax/fee section instead.
+    if (
+      exists( $options{section} )
+      and
+      (
+        (
+          exists( $options{section}{category} )
+          and
+          $part_fee->categoryname ne $options{section}{category}
+        )
+        or
+        exists( $options{section}{location})
+      )
+    ) {
+      warn "skipping fee '".$part_fee->itemdesc.
+           "'--not in section $options{section}{category}\n" if $DEBUG;
+      next;
+    }
+
     my @ext_desc;
     my %base_invnums; # invnum => invoice date
     foreach ($cust_bill_pkg->cust_bill_pkg_fee) {
