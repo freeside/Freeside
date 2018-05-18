@@ -365,8 +365,10 @@ sub void {
     return $error;
   }
 
+  #more efficiently than below, because there could be lots
+  $self->void_cust_bill_pkg_detail($reprocess_cdrs);
+
   foreach my $table (qw(
-    cust_bill_pkg_detail
     cust_bill_pkg_display
     cust_bill_pkg_discount
     cust_bill_pkg_tax_location
@@ -374,17 +376,13 @@ sub void {
     cust_tax_exempt_pkg
     cust_bill_pkg_fee
   )) {
-    my %delete_args = ();
-    $delete_args{'reprocess_cdrs'} = $reprocess_cdrs
-      if $table eq 'cust_bill_pkg_detail';
-
     foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
 
       my $vclass = 'FS::'.$table.'_void';
       my $void = $vclass->new( {
         map { $_ => $linked->get($_) } $linked->fields
       });
-      my $error = $void->insert || $linked->delete(%delete_args);
+      my $error = $void->insert || $linked->delete;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -403,6 +401,40 @@ sub void {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
+
+}
+
+sub void_cust_bill_pkg_detail {
+  my( $self, $reprocess_cdrs ) = @_;
+
+  my $from_cust_bill_pkg_detail =
+    'FROM cust_bill_pkg_detail WHERE billpkgnum = ?';
+  my $where_detailnum =
+    "WHERE detailnum IN ( SELECT detailnum $from_cust_bill_pkg_detail )";
+
+  if ( $reprocess_cdrs ) {
+    #well, technically this could have been on other invoices / termination
+    # partners... separate flag?
+    $self->scalar_sql(
+      "DELETE FROM cdr_termination
+         WHERE acctid IN ( SELECT acctid FROM cdr $where_detailnum )
+      ",
+      $self->billpkgnum
+    );
+  }
+
+  my $setstatus = $reprocess_cdrs ? ', freesidestatus = NULL' : '';
+  $self->scalar_sql(
+    "UPDATE cdr SET detailnum = NULL $setstatus $where_detailnum",
+    $self->billpkgnum
+  );
+
+  $self->scalar_sql("INSERT INTO cust_bill_pkg_detail_void
+                       SELECT * $from_cust_bill_pkg_detail",
+                    $self->billpkgnum
+                   );
+
+  $self->scalar_sql("DELETE $from_cust_bill_pkg_detail", $self->billpkgnum);
 
 }
 
@@ -716,6 +748,7 @@ Returns the customer (L<FS::cust_main> object) for this line item.
 =cut
 
 sub cust_main {
+  carp "->cust_main called" if $DEBUG;
   # required for cust_main_Mixin equivalence
   # and use cust_bill instead of cust_pkg because this might not have a 
   # cust_pkg
