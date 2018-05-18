@@ -4080,6 +4080,27 @@ sub name {
   $name;
 }
 
+=item batch_payment_payname
+
+Returns a name string for this customer, either "cust_batch_payment->payname" or "First Last" or "Company,
+based on if a company name exists and is the account being used a business account.
+
+=cut
+
+sub batch_payment_payname {
+  my $self = shift;
+  my $cust_pay_batch = shift;
+  my $name;
+
+  if ($cust_pay_batch->{Hash}->{payby} eq "CARD") { $name = $cust_pay_batch->payname; }
+  else { $name = $self->first .' '. $self->last; }
+
+  $name = $self->company
+    if (($cust_pay_batch->{Hash}->{paytype} eq "Business checking" || $cust_pay_batch->{Hash}->{paytype} eq "Business savings") && $self->company);
+
+  $name;
+}
+
 =item service_contact
 
 Returns the L<FS::contact> object for this customer that has the 'Service'
