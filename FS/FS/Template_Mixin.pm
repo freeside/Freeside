@@ -3196,6 +3196,7 @@ sub _items_fee {
 
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
+        billpkgnum  => $cust_bill_pkg->billpkgnum,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
         description => $desc,
         pkg_tax     => \@pkg_tax,
