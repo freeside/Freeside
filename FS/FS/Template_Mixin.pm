@@ -1396,6 +1396,14 @@ sub print_generic {
       $other_money_char. sprintf('%.2f', $self->charged - $taxtotal );
 
     if ( $multisection ) {
+
+      if ( $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum) ) {
+        # If all tax items are displayed in location/category sections,
+        # remove the empty tax section
+        @sections = grep{ $_ ne $tax_section } @sections
+          unless grep{ $_->{section} eq $tax_section } @detail_items;
+      }
+
       if ( $taxtotal > 0 ) {
         # there are taxes, so prepare the section to be displayed.
         # $taxtotal already includes any line items that were already in the
@@ -1409,14 +1417,7 @@ sub print_generic {
         $tax_section->{'description'} = $self->mt($tax_description);
         $tax_section->{'summarized'} = '';
 
-        if ( $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum) ) {
-
-          # If all tax items are displayed in location/category sections,
-          # remove the empty tax section
-          @sections = grep{ $_ ne $tax_section } @sections
-            unless grep{ $_->{section} eq $tax_section } @detail_items;
-
-        } elsif ( !grep $tax_section, @sections ) {
+        if ( !grep $tax_section, @sections ) {
 
           # append it if it's not already there
           push @sections, $tax_section;
