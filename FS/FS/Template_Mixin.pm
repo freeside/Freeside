@@ -1417,13 +1417,12 @@ sub print_generic {
         $tax_section->{'description'} = $self->mt($tax_description);
         $tax_section->{'summarized'} = '';
 
-        if ( !grep $tax_section, @sections ) {
+        # append tax section unless it's already there
+        push @sections, $tax_section
+          unless grep {$_ eq $tax_section} @sections;
 
-          # append it if it's not already there
-          push @sections, $tax_section;
-          push @summary_subtotals, $tax_section;
-
-        }
+        push @summary_subtotals, $tax_section
+          unless grep {$_ eq $tax_section} @summary_subtotals;
 
       }
     } else {
