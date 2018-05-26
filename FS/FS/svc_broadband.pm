@@ -134,6 +134,7 @@ sub table_info {
                          #select_table => 'radius_group',
                          #select_key   => 'groupnum',
                          #select_label => 'groupname',
+                         disable_select => 1,
                          disable_inventory => 1,
                          multiple => 1,
                        },
@@ -523,4 +524,3 @@ FS::part_svc, schema.html from the base documentation.
 =cut
 
 1;
-
