@@ -371,6 +371,13 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                      )
                   ],
   'weight' => 41,
+  'validate' => sub {
+    # Validation function for FS::part_pkg::check_options()
+    my $options = shift;
+    return "Please choose a Rate Plan for use with selected Rating Method"
+      if $options->{rating_method} eq 'prefix' &&  !$options->{ratenum};
+    return;
+  },
 );
 
 sub price_info {
@@ -754,4 +761,3 @@ sub hide_svc_detail {
 
 
 1;
-

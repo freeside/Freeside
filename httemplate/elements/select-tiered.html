@@ -126,6 +126,7 @@ my $tiers = $opt{tiers} or die "no tiers defined";
 
 my $json = JSON::XS->new();
 $json->canonical;
+$json->allow_nonref(1);
 
 my $i;
 for( $i = 0; $i < @$tiers; $i++ ) {
