@@ -888,7 +888,7 @@ my $validate_email = sub { $_[0] =~
 
   {
     'key'         => 'credit-card-surcharge-flatfee',
-    'section'     => 'credit_cards',
+    'section'     => 'billing',
     'description' => 'Add a credit card surcharge to invoices, as a flat fee.',
     'type'        => 'text',
     'per_agent'   => 1,
