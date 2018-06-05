@@ -454,6 +454,10 @@ sub upgrade_data {
     #mark certain taxes as system-maintained,
     # and fix whitespace
     'cust_main_county' => [],
+
+    #upgrade part_event_condition_option agentnum to a multiple hash value
+    'part_event_condition_option' =>[],
+
   ;
 
   \%hash;
