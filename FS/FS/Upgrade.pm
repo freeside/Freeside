@@ -501,6 +501,9 @@ sub upgrade_data {
     #'compliance solutions' -> 'compliance_solutions'
     'tax_rate' => [],
     'tax_rate_location' => [],
+
+    #upgrade part_event_condition_option agentnum to a multiple hash value
+    'part_event_condition_option' =>[],
   ;
 
   \%hash;
