@@ -2210,7 +2210,11 @@ sub _h_statement {
   "INSERT INTO h_". $self->table. " ( ".
       join(', ', qw(history_date history_user history_action), @fields ).
     ") VALUES (".
-      join(', ', $time, dbh->quote(getotaker()), dbh->quote($action), @values).
+      join(', ', $time,
+                 dbh->quote($FS::CurrentUser::CurrentUser->username),
+                 dbh->quote($action),
+                 @values
+      ).
     ")"
   ;
 }
