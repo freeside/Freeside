@@ -146,14 +146,23 @@ sub _upgrade_data { #class method
   unless ( FS::upgrade_journal->is_done('agentnum_to_hash') ) {
 
     foreach my $condition_option (qsearch('part_event_condition_option', { optionname => 'agentnum', })) {
+      my %options;
       my $optionvalue = $condition_option->get("optionvalue");
       if ($optionvalue eq 'HASH' ) { next; }
-      else {
-        my $options = {"$optionvalue" => '1',};
-        $condition_option->optionvalue(ref($options));
-        my $error = $condition_option->replace($options);
-        die $error if $error;
+      elsif ($optionvalue eq '') {
+        foreach my $agent (qsearch('agent', {})) {
+          $options{$agent->agentnum} = '1';
+        }
+
       }
+      else {
+        $options{$optionvalue} = '1';
+      }
+
+      $condition_option->optionvalue(ref(\%options));
+      my $error = $condition_option->replace(\%options);
+      die $error if $error;
+
     }
 
     FS::upgrade_journal->set_done('agentnum_to_hash');
