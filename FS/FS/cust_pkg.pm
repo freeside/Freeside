@@ -2487,6 +2487,12 @@ sub change {
     $keep_dates = 0;
     $hash{'last_bill'} = '';
     $hash{'bill'} = '';
+
+    # Optionally, carry over the next bill date from the changed cust_pkg
+    # so an invoice isn't generated until the customer's usual billing date
+    if ( $self->part_pkg->option('prorate_defer_change_bill', 1) ) {
+      $hash{bill} = $self->bill;
+    }
   }
 
   if ( $keep_dates ) {
