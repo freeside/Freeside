@@ -1727,11 +1727,17 @@ sub update_payby {
      $p->{'payinfo'} = $payinfo1. '@'. $payinfo2;
    }
 
+  # Perform update within a transaction
+  local $FS::UID::AutoCommit = 0;
+
   my $cust_payby = qsearchs('cust_payby', {
                               'custnum'      => $custnum,
                               'custpaybynum' => $p->{'custpaybynum'},
                            })
     or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
+
+  my $cust_main = qsearchs( 'cust_main', {custnum => $cust_payby->custnum} )
+    or return { 'error' => 'unknown custnum '.$cust_payby->custnum };
 
   foreach my $field (
     qw( weight payby payinfo paycvv paydate payname paystate paytype payip )
@@ -1741,9 +1747,22 @@ sub update_payby {
   }
 
   my $error = $cust_payby->replace;
+
+  if (!$error) {
+    my $is_changed = 0;
+    for my $field ( qw/ss stateid/ ) {
+      next if !exists $p->{$field} || $p->{$field} =~ /^x/i;
+      $cust_main->set( $field, $p->{$field} );
+      $is_changed = 1;
+    }
+    $error = $cust_main->replace if $is_changed;
+  }
+
   if ( $error ) {
+    dbh->rollback;
     return { 'error' => $error };
   } else {
+    dbh->commit;
     return { 'custpaybynum' => $cust_payby->custpaybynum };
   }
   
