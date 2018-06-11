@@ -276,11 +276,8 @@ sub change_bill {
   }
 
   return $payment_info if ( $payment_info->{'error'} );
-  my $customer_info = customer_info(
-      mask_ss      => 1,
-      mask_stateid => 1,
-      session_id   => $session_id,
-  );
+  my $customer_info =
+    customer_info( 'session_id' => $session_id );
   return {
     %$payment_info,
     %$customer_info,
@@ -1328,3 +1325,5 @@ sub include {
                     );
 
 }
+
+
