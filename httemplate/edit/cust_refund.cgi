@@ -34,7 +34,7 @@
 %  }
 
   <BR>Payment
-  <% ntable("#cccccc", 2) %>
+  <TABLE class="fsinnerbox">
 
     <TR>
       <TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">$<% $cust_pay->paid %></TD>
@@ -85,7 +85,8 @@
 
 
 <BR>Refund
-<% ntable("#cccccc", 2) %>
+
+<TABLE class="fsinnerbox">
 
   <TR>
     <TD ALIGN="right">Date</TD>
@@ -102,9 +103,23 @@
       <TD ALIGN="right">Check #</TD>
       <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
     </TR>
+    </TABLE>
 % }
 %  elsif ($payby eq 'CHEK') {
 %
+<SCRIPT TYPE="text/javascript">
+  function cust_payby_changed (what) {
+    var custpaybynum = what.options[what.selectedIndex].value
+    if ( custpaybynum == '' || custpaybynum == '0' ) {
+       //what.form.payinfo.disabled = false;
+       $('#cust_payby').slideDown();
+    } else {
+       //what.form.payinfo.value = '';
+       //what.form.payinfo.disabled = true;
+       $('#cust_payby').slideUp();
+    }
+  }
+</SCRIPT>
 % my @cust_payby = ();
 % if ( $payby eq 'CARD' ) {
 %   @cust_payby = $cust_main->cust_payby('CARD','DCRD');
@@ -123,10 +138,30 @@
      'onchange'   => 'cust_payby_changed(this)',
 &>
     <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+    </TABLE>
+<P>
+<DIV ID="cust_payby"
+  <% $custpaybynum ? 'STYLE="display:none"'
+                   : ''
+  %>
+>
+<TABLE class="fsinnerbox">
+
+<& /elements/cust_payby_new.html,
+     'cust_payby' => \@cust_payby,
+     'curr_value' => $custpaybynum,
+&>
+
+</TABLE>
+</DIV>
+
 %  } else {
     <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
+    </TABLE>
 % }
 
+<P>
+<TABLE class="fsinnerbox">
 <& /elements/tr-select-reason.html,
               'field'          => 'reasonnum',
               'reason_class'   => 'F',

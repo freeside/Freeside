@@ -71,6 +71,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
   ( $month, $year ) = $cust_payby->paydate_mon_year;
   $payname = $cust_payby->payname;
+  $cgi->param(-name=>"paytype", -value=>$cust_payby->paytype) unless $cgi->param("paytype");
 
 } else {
 
@@ -192,8 +193,9 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   my $refund = "$1$2";
   $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
   my $paynum = $1;
-  my $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
-  $options{'paydate'} = $paydate if $paydate =~ /^\d{2,4}-\d{1,2}-01$/;
+  my $paydate;
+  if ($cust_payby->paydate) { $paydate = "$year-$month-01"; }
+  else { $paydate = "2037-12-01"; }
 
   if ( $cgi->param('batch') ) {
 
@@ -201,7 +203,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
                                      'payby'    => $payby,
                                      'amount'   => $refund,
                                      'payinfo'  => $payinfo,
-                                     'paydate'  => "$year-$month-01",
+                                     'paydate'  => $paydate,
                                      'payname'  => $payname,
                                      'paycode'  => 'C',
                                      map { $_ => scalar($cgi->param($_)) }
