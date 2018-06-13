@@ -156,6 +156,8 @@ tie my %rights, 'Tie::IxHash',
     'View package definition costs', #NEWNEW
     'Change package start date',
     'Change package contract end date',
+    'Unmask customer DL',
+    'Unmask customer SSN',
   ],
   
   ###
