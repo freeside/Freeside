@@ -600,6 +600,8 @@ sub customer_info_short {
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
     }
+    $return{$_} = $cust_main->masked($_) for qw/ss stateid/;
+
     #maybe a little more expensive, but it should be cached by now
     for (@location_editable_fields) {
       $return{$_} = $cust_main->bill_location->get($_);
@@ -3880,4 +3882,3 @@ sub _custoragent_session_custnum {
 }
 
 1;
-
