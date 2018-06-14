@@ -3139,7 +3139,9 @@ sub _items_fee {
   my @cust_bill_pkg = grep { $_->feepart } $self->cust_bill_pkg;
   my $escape_function = $options{escape_function};
 
-  my $locale = $self->cust_main->locale;
+  my $locale = $self->quotationnum
+             ? $self->prospect_main->locale
+             : $self->cust_main->locale;
 
   my @items;
   foreach my $cust_bill_pkg (@cust_bill_pkg) {
