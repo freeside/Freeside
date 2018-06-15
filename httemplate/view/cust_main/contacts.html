@@ -29,9 +29,20 @@
     <TD COLSPAN=5><% $cust_main->contact |h %></TD>
 %   if ( $conf->exists('show_ss') ) {
     <TH ALIGN="right"><% mt('SS#') |h %></TH>
-    <TD><% $conf->exists('unmask_ss')
-                              ? $cust_main->ss
-                              : $cust_main->masked('ss') || '&nbsp;' %></TD>
+    <TD>
+      <span id="ss_span" style="white-space:nowrap;">
+      <% $conf->exists('unmask_ss')
+           ? $cust_main->ss
+           : $cust_main->masked('ss') || '&nbsp;' %>
+%   if ( !$conf->exists('unmask_ss') && $FS::CurrentUser::CurrentUser->access_right('Unmask customer SSN')) {
+      <& /elements/link-replace_element_text.html, {
+           target_id    => 'ss_span',
+           replace_text => $cust_main->ss,
+           element_type => 'span'
+      } &>
+%   }
+      </span>
+    </TD>
 %   }
   </TR>
 %   if ( $conf->exists('cust_main-enable_spouse') and
@@ -172,7 +183,18 @@
 
 <TR>
     <TH ALIGN="right"><% $stateid_label %></TH>
-    <TD><% $cust_main->masked('stateid') || '&nbsp' %></TD>
+    <TD>
+      <span id="stateid_span" style="white-space:nowrap;">
+      <% $cust_main->masked('stateid') || '&nbsp' %>
+%   if ( $FS::CurrentUser::CurrentUser->access_right('Unmask customer DL')) {
+      <& /elements/link-replace_element_text.html, {
+           target_id => 'stateid_span',
+           replace_text => $cust_main->stateid,
+           element_type => 'span'
+      } &>
+%   }
+      </span>
+    </TD>
     <TH ALIGN="right"><% $stateid_state_label %></TH>
     <TD><% $cust_main->stateid_state || '&nbsp' %></TD>
   </TR>

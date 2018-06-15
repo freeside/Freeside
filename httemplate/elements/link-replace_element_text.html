@@ -1,0 +1,45 @@
+<%doc>
+
+Display a link with javascript to replace text within a element.
+
+Usage:
+
+<& /elements/link-replace_element_text.html, {
+      target_id    => 'input_id',
+      replace_text => 'hello',
+
+      element_type => 'input', # Uses jquery val()  method to replace text
+      element_type => 'div',   # Uses jquery text() method to replace text
+
+      href  => ...
+      style => ...
+      class => ...
+   }
+&>
+
+</%doc>
+<a href="<% $param{href} %>"
+   style="<% $param{style} %>"
+% if ($param{class}) {
+   class="<% $param{class} %>"
+% }
+   onClick="$('#<% $param{target_id} %>').<% $param{jmethod} %>('<% $param{replace_text} |h %>');">&#x25C1;</a>
+<%init>
+
+die "template call requires a parameter hashref" unless ref $_[0];
+
+# Defaults that can be overridden in param hashref
+my %param = (
+    target_id    => 'SPECIFY_AN_INPUT_ELEMENT_ID',
+    replace_text => 'REPLACEMENT_TEXT_FOR_INPUT_ELEMENT',
+    element_type => 'input',
+
+    link_text    => '%#x25C1;', # ◁
+    href         => 'javascript:void(0)',
+    style        => 'text-decoration:none;',
+    class        => undef,
+
+    %{ $_[0] },
+);
+$param{jmethod} = $param{element_type} eq 'input' ? 'val' : 'text';
+</%init>
