@@ -34,7 +34,11 @@
       <% $conf->exists('unmask_ss')
            ? $cust_main->ss
            : $cust_main->masked('ss') || '&nbsp;' %>
-%   if ( !$conf->exists('unmask_ss') && $FS::CurrentUser::CurrentUser->access_right('Unmask customer SSN')) {
+%   if (
+%         $cust_main->ss
+%         && !$conf->exists('unmask_ss')
+%         && $FS::CurrentUser::CurrentUser->access_right('Unmask customer SSN')
+%   ) {
       <& /elements/link-replace_element_text.html, {
            target_id    => 'ss_span',
            replace_text => $cust_main->ss,
@@ -186,7 +190,10 @@
     <TD>
       <span id="stateid_span" style="white-space:nowrap;">
       <% $cust_main->masked('stateid') || '&nbsp' %>
-%   if ( $FS::CurrentUser::CurrentUser->access_right('Unmask customer DL')) {
+%   if (
+%         $cust_main->stateid
+%         && $FS::CurrentUser::CurrentUser->access_right('Unmask customer DL')
+%   ) {
       <& /elements/link-replace_element_text.html, {
            target_id => 'stateid_span',
            replace_text => $cust_main->stateid,

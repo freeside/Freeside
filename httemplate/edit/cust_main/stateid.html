@@ -3,7 +3,7 @@
   <TH ALIGN="right"><% $stateid_label %></TH>
   <TD>
     <INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>" SIZE=12 ID="stateid">
-% if ( $FS::CurrentUser::CurrentUser->access_right( 'Unmask customer DL' )) {
+% if ( $stateid && $FS::CurrentUser::CurrentUser->access_right( 'Unmask customer DL' )) {
     <& /elements/link-replace_element_text.html, {target_id => 'stateid', replace_text => $cust_main->stateid} &>
 % }
   </TD>
