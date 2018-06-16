@@ -3,7 +3,8 @@
 <DIV STYLE="display: inline-block" ID="<% $field %>_input">
   <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
 % if (
-%   ref $unmask_field
+%   $value
+%   && ref $unmask_field
 %   && !$unmask_field->{unmask_ss}
 %   && $FS::CurrentUser::CurrentUser->access_right( $unmask_field->{access_right} )
 % ) {
