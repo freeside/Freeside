@@ -295,7 +295,7 @@ sub payment_gateway {
   }
 
   my $cardtype_search = "AND ( cardtype IS NULL OR cardtype <> 'ACH')";
-  $cardtype_search = "AND cardtype = 'ACH'" if $options{method} eq 'ECHECK';
+  $cardtype_search = "AND ( cardtype IS NULL OR cardtype = 'ACH' )" if $options{method} eq 'ECHECK';
 
   my $override =
       qsearchs({
