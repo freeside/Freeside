@@ -487,7 +487,7 @@ sub email_search_result {
       if (!@classes) {
         @classes = ( 'invoice' );
       }
-      my @to = $cust_main->contact_list_email(@classes);
+      my @to = $to ? split(',', $to) : $cust_main->contact_list_email(@classes);
       next if !@to;
 
       %message = (

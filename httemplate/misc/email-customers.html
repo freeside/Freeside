@@ -46,7 +46,6 @@ should be used to set msgnum or from/subject/html_body cgi params
 <INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
 <INPUT TYPE="hidden" NAME="popup" VALUE="<% $popup %>">
 <INPUT TYPE="hidden" NAME="url" VALUE="<% $url | h %>">
-<INPUT TYPE="hidden" NAME="emailtovoice_contact" VALUE="<% scalar($cgi->param('emailtovoice_contact')) |h %>">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% scalar($cgi->param('custnum')) |h %>">
 
 % if ( $cgi->param('action') eq 'send' ) { 
@@ -72,6 +71,7 @@ should be used to set msgnum or from/subject/html_body cgi params
 
     <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
     <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% scalar($cgi->param('msgnum')) %>">
+    <INPUT TYPE="hidden" NAME="emailtovoice_contact" VALUE="<% scalar $cgi->param('emailtovoice_contact') |h %>">
 %   if ( $msg_template ) {
       <% include('/elements/tr-fixed.html',
                    'label'      => 'Template:',
@@ -172,7 +172,7 @@ Template:
    <div>
      <INPUT TYPE="checkbox" NAME="emailtovoice"  ID="emailtovoice" VALUE="ON" onclick="toggleDiv(this)">Email to voice
    </div>
-   <div id="emailtovoicediv" style="display:none";>
+   <div id="emailtovoicediv" style="display:none">
 
       <& /elements/select-cust_phone.html,
                'cust_num'     => $cgi->param('custnum'),
@@ -277,6 +277,7 @@ my $agent_virt_agentnum = $cgi->param('agent_virt_agentnum') || '';
 
 my $popup = $cgi->param('popup');
 my $url   = $cgi->param('url');
+if (!$url && $cgi->param('custnum')) { $url = $fsurl."view/cust_main.cgi?".$cgi->param('custnum'); }
 my $pdest = { 'message' => "Notice sent" };
 $pdest->{'url'} = $cgi->param('url') if $url;
 
@@ -347,21 +348,37 @@ if ( $cgi->param('action') eq 'preview' ) {
     my %message = $msg_template->prepare(%msgopts);
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
+}
+
+if ($cgi->param('action')) {
 
   # contact_class_X params in preview
-  foreach my $param ( $cgi->param ) {
-    if ($cgi->param('emailtovoice_contact')) {
+  if ($cgi->param('emailtovoice_contact')) {
       $email_to = $cgi->param('emailtovoice_contact') . '@' . $send_to_domain;
       push @contact_classnum, 'emailtovoice';
       push @contact_classname, $email_to;
-    }
-    if ( $param =~ /^contact_class_(\w+)$/ ) {
-      push @contact_classnum, $1;
-      if ( $1 eq 'invoice' ) {
+  }
+  elsif ($cgi->param('to_contact_classnum')) {
+    foreach my $c (split(/,/, $cgi->param('to_contact_classnum'))) {
+      push @contact_classnum, $c;
+      if ( $c eq 'invoice' ) {
         push @contact_classname, 'Invoice recipients';
       } else {
-        my $contact_class = FS::contact_class->by_key($1);
+        my $contact_class = FS::contact_class->by_key($c);
         push @contact_classname, encode_entities($contact_class->classname);
+      }
+    }
+  }
+  else {
+    foreach my $param ( $cgi->param ) {
+      if ( $param =~ /^contact_class_(\w+)$/ ) {
+        push @contact_classnum, $1;
+        if ( $1 eq 'invoice' ) {
+          push @contact_classname, 'Invoice recipients';
+        } else {
+          my $contact_class = FS::contact_class->by_key($1);
+          push @contact_classname, encode_entities($contact_class->classname);
+        }
       }
     }
   }
