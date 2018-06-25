@@ -250,7 +250,7 @@ sub next_free_addr {
     $selfaddr->addr,
     $selfaddr->network->addr,
     $selfaddr->broadcast->addr,
-    FS::IP_Mixin->used_addresses($self)
+    FS::IP_Mixin->used_addresses_in_block($self)
   );
 
   # just do a linear search of the block
