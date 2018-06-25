@@ -3,7 +3,8 @@ use base 'FS::IP_Mixin';
 
 use strict;
 use NEXT;
-use FS::Record qw(qsearchs qsearch);
+use Carp qw(croak carp);
+use FS::Record qw(qsearchs qsearch dbh);
 use FS::Conf;
 use FS::router;
 use FS::part_svc_router;
@@ -90,6 +91,9 @@ sub svc_ip_check {
 }
 
 sub _used_addresses {
+
+  # Returns all addresses in use.  Does not filter with $block. ref:f197bdbaa1
+
   my ($class, $block, $exclude) = @_;
   my $ip_field = $class->table_info->{'ip_field'}
     or return ();
@@ -105,6 +109,69 @@ sub _used_addresses {
         hashref   => \%hash,
         extra_sql => " AND $ip_field != '0e0'",
     });
+}
+
+sub _used_addresses_in_block {
+  my ($class, $block) = @_;
+
+  croak "_used_addresses_in_block() requires an FS::addr_block parameter"
+    unless ref $block && $block->isa('FS::addr_block');
+
+  my $ip_field = $class->table_info->{'ip_field'};
+  if ( !$ip_field ) {
+    carp "_used_addresses_in_block() skipped, no ip_field";
+    return;
+  }
+
+  my $block_na = $block->NetAddr;
+
+  my $octets;
+  if ($block->ip_netmask >= 24) {
+    $octets = 3;
+  } elsif ($block->ip_netmask >= 16) {
+    $octets = 2;
+  } elsif ($block->ip_netmask >= 8) {
+    $octets = 1;
+  }
+
+  #  e.g.
+  # SELECT ip_addr
+  # FROM svc_broadband
+  # WHERE ip_addr != ''
+  #   AND ip_addr != '0e0'
+  #   AND ip_addr LIKE '10.0.2.%';
+  #
+  # For /24, /16 and /8 this approach is fast, even when svc_broadband table
+  # contains 650,000+ ip records.  For other allocations, this approach is
+  # not speedy, but usable.
+  #
+  # Note: A use case like this would could greatly benefit from a qsearch()
+  #       parameter to bypass FS::Record objects creation and just
+  #       return hashrefs from DBI.  200,000 hashrefs are many seconds faster
+  #       than 200,000 FS::Record objects
+  my %qsearch = (
+      table     => $class->table,
+      select    => $ip_field,
+      hashref   => { $ip_field => { op => '!=', value => '' }},
+      extra_sql => " AND $ip_field != '0e0' ",
+  );
+  if ( $octets ) {
+    my $block_str = join('.', (split(/\D/, $block_na->first))[0..$octets-1]);
+    $qsearch{extra_sql} .= " AND $ip_field LIKE ".dbh->quote("${block_str}.%");
+  }
+
+  if ( $block->ip_netmask % 8 ) {
+    # Some addresses returned by qsearch may be outside the network block,
+    # so each ip address is tested to be in the block before it's returned.
+    return
+      grep { $block_na->contains( NetAddr::IP->new( $_ ) ) }
+      map { $_->$ip_field }
+      qsearch( \%qsearch );
+  }
+
+  return
+    map { $_->$ip_field }
+    qsearch( \%qsearch );
 }
 
 sub _is_used {
