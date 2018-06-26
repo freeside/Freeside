@@ -209,7 +209,7 @@ sub cidr {
 
 =item free_addrs
 
-Returns a sorted list of free addresses in the block.
+Returns an aref sorted list of free addresses in the block.
 
 =cut
 
@@ -221,7 +221,11 @@ sub free_addrs {
     FS::IP_Mixin->used_addresses_in_block($self),
     FS::Conf->new()->config('exclude_ip_addr');
 
-  grep { !exists $used_addr_map{$_} } map { $_->addr } $self->NetAddr->hostenum;
+  [
+    grep { !exists $used_addr_map{$_} }
+    map { $_->addr }
+    $self->NetAddr->hostenum
+  ];
 }
 
 =item next_free_addr
