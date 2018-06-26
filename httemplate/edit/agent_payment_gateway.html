@@ -18,9 +18,12 @@ Use gateway <SELECT NAME="gatewaynum">
 
   <OPTION VALUE="<% $payment_gateway->gatewaynum %>"><% $payment_gateway->gateway_module %> (<% $payment_gateway->gateway_username %>)
 % } 
-
 </SELECT>
-<BR><BR>
+<BR>
+
+<INPUT TYPE="checkbox" NAME="cardtype" VALUE="ACH"> for ACH only.
+<BR>
+<BR>
 
 <INPUT TYPE="submit" VALUE="Add gateway override">
 </FORM>
