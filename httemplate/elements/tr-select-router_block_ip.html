@@ -2,34 +2,110 @@
 var manual_addr_routernum = <% encode_json(\%manual_addr_routernum) %>;
 var ip_addr_curr_value = <% $opt{'ip_addr'} |js_string %>;
 var blocknum_curr_value = <% $opt{'blocknum'} |js_string %>;
-function update_ip_addr(obj, i) {
-  var routernum = document.getElementById('router_select_0').value;
-  var select_blocknum = document.getElementById('router_select_1');
-  var blocknum = select_blocknum.value;
-  var input_ip_addr = document.getElementById('input_ip_addr');
+
+function update_ip_addr() {
+  var routernum = $('#router_select_0').val();
+  var blocknum  = $('#router_select_1').val();
+  var e_input_ip_addr = $('#input_ip_addr');
+  var e_router_select_1 = $('#router_select_1');
+
+  <% # Is block is automatically selected for this router? %>
   if ( manual_addr_routernum[routernum] == 'Y' ) {
-%# hide block selection and default ip address to its previous value
-    select_blocknum.style.display = 'none';
-    input_ip_addr.value = ip_addr_curr_value;
-  }
-  else {
-%# the reverse
-    select_blocknum.style.display = '';
-%# default ip address to null, unless the router/block are set to the 
-%# previous value, in which case default it to current value
+    show_ip_input();
+    hide_ip_select();
+    e_router_select_1.hide();
+    e_input_ip_addr.val( ip_addr_curr_value );
+  } else {
+    e_router_select_1.show();
+    e_input_ip_addr.attr('placeholder', <% mt('(automatic)') | js_string %> );
     if ( routernum == router_curr_values[0] &&
-         blocknum  == router_curr_values[1] ) {
-      input_ip_addr.value = ip_addr_curr_value;
+         blocknum == router_curr_values[1] ) {
+      e_input_ip_addr.val( ip_addr_curr_value );
     } else {
-      input_ip_addr.value = <% mt('(automatic)') |js_string %>;
+      e_input_ip_addr.val('');
     }
   }
+  show_or_hide_toggle_ip();
+  populate_ip_select();
 }
-function clearhint_ip_addr (what) {
-  if ( what.value == <% mt('(automatic)') |js_string %> )
-    what.value = '';
+
+function toggle_ip_input() {
+  if ( $('#input_ip_addr').is(':hidden') ) {
+    show_ip_input();
+  } else {
+    show_ip_select();
+  }
 }
+
+function show_ip_input() {
+  $('#input_ip_addr').show();
+  $('#select_ip_addr').hide();
+  depopulate_ip_select();
+}
+
+function show_ip_select() {
+  var e_input_ip_addr = $('#input_ip_addr');
+  var e_select_ip_addr = $('#select_ip_addr');
+
+  e_select_ip_addr.width( e_input_ip_addr.width() );
+  e_input_ip_addr.hide();
+  e_select_ip_addr.show();
+  populate_ip_select();
+}
+
+function populate_ip_select() {
+  depopulate_ip_select();
+  var e = $('#select_ip_addr');
+  var blocknum = $('#router_select_1').val();
+
+  var opts = [ '<option value="">loading...</option>' ];
+  e.html(opts.join(''));
+
+% if ( $opt{ip_addr} ) {
+  opts = [
+    '<option value="<% $opt{ip_addr} |h %>"><% $opt{ip_addr} |h %></option>',
+    '<option value="">-----------</option>'
+  ];
+% } else {
+  opts = [ '<option value=""><% mt('(automatic)') |h %></option>' ];
+% }
+  if ( blocknum && $.isNumeric(blocknum) && ! e.is(':hidden')) {
+    $.getJSON(
+      '<% $p %>json/free_addresses_in_block.json.html',
+      {blocknum: blocknum},
+      function(ip_json) {
+        $.each( ip_json, function(idx, val) {
+          opts.push(
+            '<option' + (val == ip_addr_curr_value ? 'selected' : '') + '>'
+            + val
+            + '</option>'
+          );
+        });
+        e.html(opts.join(''));
+      }
+    );
+  }
+}
+
+function depopulate_ip_select() {
+  $('#select_ip_addr').children().remove();
+}
+
+function propogate_ip_select() {
+  $('#input_ip_addr').val( $('#select_ip_addr').val() );
+}
+
+function show_or_hide_toggle_ip() {
+  if ( $('#router_select_1').val() ) {
+    $('#toggle_ip').show();
+  } else {
+    show_ip_input();
+    $('#toggle_ip').hide();
+  }
+}
+
 </script>
+
 <& /elements/tr-td-label.html, label => ($opt{'label'} || 'Router'), required => $opt{'required'} &>
 <td>
   <& /elements/select-tiered.html, prefix => 'router_', tiers => [
@@ -58,14 +134,20 @@ function clearhint_ip_addr (what) {
 </td></tr>
 <& /elements/tr-td-label.html, label => ($opt{'ip_addr_label'} || 'IP address'), required => $opt{'ip_addr_required'} &>
 <td>
-% #warn Dumper \%fixed;
 % if ( exists $fixed{$ip_field} ) {
   <input type="hidden" id="input_ip_addr" name="<% $ip_field %>" 
     value="<% $opt{'ip_addr'} |h%>"><% $opt{'ip_addr'} || '' %>
 % }
 % else {
-  <input type="text" id="input_ip_addr" name="<% $ip_field %>" 
-  value="<% $opt{'ip_addr'} |h%>" onfocus="clearhint_ip_addr(this)">
+    <input type="text"
+           id="input_ip_addr"
+           name="<% $ip_field %>"
+           value="<% $opt{'ip_addr'} | h %>"
+           onfocus="clearhint_ip_addr(this)">
+    <select id="select_ip_addr" style="display: none;" onChange='javascript:propogate_ip_select();'>
+      <option><% mt('loading') |h %>...</option>
+    </select>
+    <button type="button" onClick='javascript:toggle_ip_input();' id="toggle_ip" style="display: none;">&#9660;</button>
 % }
 </td> </tr>
 <script type="text/javascript">
