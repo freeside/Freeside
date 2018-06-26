@@ -218,7 +218,7 @@ sub free_addrs {
 
   my %used_addr_map =
     map {$_ => 1}
-    FS::IP_Mixin->used_addresses_in_block($self),
+    FS::IP_Mixin->used_addresses($self),
     FS::Conf->new()->config('exclude_ip_addr');
 
   [
@@ -254,7 +254,7 @@ sub next_free_addr {
     $selfaddr->addr,
     $selfaddr->network->addr,
     $selfaddr->broadcast->addr,
-    FS::IP_Mixin->used_addresses_in_block($self)
+    FS::IP_Mixin->used_addresses($self)
   );
 
   # just do a linear search of the block

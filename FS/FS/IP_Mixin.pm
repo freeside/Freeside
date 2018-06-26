@@ -268,45 +268,27 @@ sub router {
   FS::router->by_key($self->routernum);
 }
 
-=item used_addresses [ BLOCK ]
+=item used_addresses [ FS::addr_block ]
 
-Returns a list of all addresses that are in use by a service.  If called as an
-instance method, excludes that instance from the search.
+Returns a list of all addresses in use within the given L<FS::addr_block>.
 
-Does not filter by block, will return ALL used addresses. ref:f197bdbaa1
+If called as an instance method, excludes that instance from the search.
 
 =cut
 
 sub used_addresses {
-  my $self = shift;
-  my $block = shift;
-  return ( map { $_->_used_addresses($block, $self) } @subclasses );
-}
-
-sub _used_addresses {
-  my $class = shift;
-  die "$class->_used_addresses not implemented";
-}
-
-=item used_addresses_in_block [ FS::addr_block ]
-
-Returns a list of all addresses in use within the given L<FS::addr_block>
-
-=cut
-
-sub used_addresses_in_block {
   my ($self, $block) = @_;
 
   (
     $block->ip_gateway ? $block->ip_gateway : (),
     $block->NetAddr->broadcast->addr,
-    map { $_->_used_addresses_in_block($block, $self ) } @subclasses
+    map { $_->_used_addresses($block, $self ) } @subclasses
   );
 }
 
-sub _used_addresses_in_block {
+sub _used_addresses {
   my $class = shift;
-  die "$class->_used_addresses_in_block not implemented";
+  die "$class->_used_addresses not implemented";
 }
 
 =item is_used ADDRESS

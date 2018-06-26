@@ -91,37 +91,20 @@ sub svc_ip_check {
 }
 
 sub _used_addresses {
+  my ($class, $block, $exclude_svc) = @_;
 
-  # Returns all addresses in use.  Does not filter with $block. ref:f197bdbaa1
-
-  my ($class, $block, $exclude) = @_;
-  my $ip_field = $class->table_info->{'ip_field'}
-    or return ();
-  # if the service doesn't have an ip_field, then it has no IP addresses 
-  # in use, yes? 
-
-  my %hash = ( $ip_field => { op => '!=', value => '' } );
-  #$hash{'blocknum'} = $block->blocknum if $block;
-  $hash{'svcnum'} = { op => '!=', value => $exclude->svcnum } if ref $exclude;
-  map { my $na = $_->NetAddr; $na ? $na->addr : () }
-    qsearch({
-        table     => $class->table,
-        hashref   => \%hash,
-        extra_sql => " AND $ip_field != '0e0'",
-    });
-}
-
-sub _used_addresses_in_block {
-  my ($class, $block) = @_;
-
-  croak "_used_addresses_in_block() requires an FS::addr_block parameter"
+  croak "_used_addresses() requires an FS::addr_block parameter"
     unless ref $block && $block->isa('FS::addr_block');
 
   my $ip_field = $class->table_info->{'ip_field'};
   if ( !$ip_field ) {
-    carp "_used_addresses_in_block() skipped, no ip_field";
+    carp "_used_addresses() skipped, no ip_field";
     return;
   }
+
+  my %qsearch = ( $ip_field => { op => '!=', value => '' });
+  $qsearch{svcnum} = { op => '!=', value => $exclude_svc->svcnum }
+    if ref $exclude_svc && $exclude_svc->svcnum;
 
   my $block_na = $block->NetAddr;
 
@@ -152,7 +135,7 @@ sub _used_addresses_in_block {
   my %qsearch = (
       table     => $class->table,
       select    => $ip_field,
-      hashref   => { $ip_field => { op => '!=', value => '' }},
+      hashref   => \%qsearch,
       extra_sql => " AND $ip_field != '0e0' ",
   );
   if ( $octets ) {
