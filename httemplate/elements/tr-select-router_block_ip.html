@@ -71,7 +71,7 @@ function populate_ip_select() {
 % }
   if ( blocknum && $.isNumeric(blocknum) && ! e.is(':hidden')) {
     $.getJSON(
-      '<% $p %>json/free_addresses_in_block.json.html',
+      '<% $p %>misc/xmlhttp-free_addresses_in_block.json.html',
       {blocknum: blocknum},
       function(ip_json) {
         $.each( ip_json, function(idx, val) {
