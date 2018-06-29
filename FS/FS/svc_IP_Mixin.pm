@@ -132,7 +132,7 @@ sub _used_addresses {
   #       parameter to bypass FS::Record objects creation and just
   #       return hashrefs from DBI.  200,000 hashrefs are many seconds faster
   #       than 200,000 FS::Record objects
-  my %qsearch = (
+  my %qsearch_param = (
       table     => $class->table,
       select    => $ip_field,
       hashref   => \%qsearch,
@@ -140,7 +140,8 @@ sub _used_addresses {
   );
   if ( $octets ) {
     my $block_str = join('.', (split(/\D/, $block_na->first))[0..$octets-1]);
-    $qsearch{extra_sql} .= " AND $ip_field LIKE ".dbh->quote("${block_str}.%");
+    $qsearch_param{extra_sql}
+      .= " AND $ip_field LIKE ".dbh->quote("${block_str}.%");
   }
 
   if ( $block->ip_netmask % 8 ) {
@@ -154,7 +155,7 @@ sub _used_addresses {
 
   return
     map { $_->$ip_field }
-    qsearch( \%qsearch );
+    qsearch( \%qsearch_param );
 }
 
 sub _is_used {
