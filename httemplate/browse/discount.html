@@ -1,10 +1,9 @@
 <% include( 'elements/browse.html',
                  'title'       => 'Discounts',
                  'name'        => 'discounts',
-                 'menubar'     => [ 'Add a new discount' =>
-                                      $p.'edit/discount.html',
-                                  ],
-                 'query'       => { 'table' => 'discount', },
+                 'menubar'     => \@menubar,
+                 'query'       => \%query,
+                 'order_by_sql' => { description => 'discountnum' },
                  'count_query' => 'SELECT COUNT(*) FROM discount',
                  'disableable' => 1,
                  'disabled_statuspos' => 1,
@@ -13,9 +12,7 @@
                                     'classname',
                                     'description',
                                   ],
-                 'links'       => [ $link,
-                                    $link,
-                                  ],
+                 'links'       => \@links
              )
 %>
 <%init>
@@ -23,6 +20,24 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $link = [ "${p}edit/discount.html?", 'discountnum' ];
+my @links = (
+  [ "${p}edit/discount.html?", 'discountnum' ],
+  [ "${p}edit/discount_class.html?", 'classnum' ],
+);
+
+# Fixes disableable, because discount and discount_class tables
+# both contain a 'disabled' column
+local $FS::Record::qsearch_qualify_columns = 1;
+
+my %query = (
+  select => 'discount.*, discount_class.*',
+  table => 'discount',
+  addl_from => 'LEFT JOIN discount_class USING(classnum)',
+);
+
+my @menubar = (
+  'Add a new discount' => $p.'edit/discount.html',
+  'Discount classes' => $p.'browse/discount_class.html',
+);
 
 </%init>
