@@ -94,6 +94,15 @@ sub ip_check {
     $self->ip_addr('');
   }
 
+  # strip user-entered leading 0's from IPv4 addresses
+  # Parsers like NetAddr::IP interpret them as octal instead of decimal
+  $self->ip_addr(
+    join( '.', (
+        map{ int($_) }
+        split( /\./, $self->ip_addr )
+    ))
+  ) if $self->ip_addr =~ /\./ && $self->ip_addr =~ /[\.^]0/;
+
   if ( $self->ip_addr
        and !$self->router
        and $self->conf->exists('auto_router') ) {

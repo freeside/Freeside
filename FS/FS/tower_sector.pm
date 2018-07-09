@@ -247,7 +247,7 @@ sub check {
     $self->ut_numbern('sectornum')
     || $self->ut_number('towernum', 'tower', 'towernum')
     || $self->ut_text('sectorname')
-    || $self->ut_textn('ip_addr')
+    || $self->ut_ip46n('ip_addr')
     || $self->ut_floatn('height')
     || $self->ut_numbern('freq_mhz')
     || $self->ut_numbern('direction')
@@ -480,4 +480,3 @@ L<FS::tower>, L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-
