@@ -105,7 +105,7 @@
     </TR>
     </TABLE>
 % }
-%  elsif ($payby eq 'CHEK') {
+% elsif ($payby eq 'CHEK' || $payby eq 'CARD') {
 %
 <SCRIPT TYPE="text/javascript">
   function cust_payby_changed (what) {
@@ -132,14 +132,35 @@
 % my $custpaybynum = length(scalar($cgi->param('custpaybynum')))
 %                      ? scalar($cgi->param('custpaybynum'))
 %                      : scalar(@cust_payby) && $cust_payby[0]->custpaybynum;
-<& /elements/tr-select-cust_payby.html,
+
+% if ($cust_pay) {
+  <INPUT TYPE="hidden" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10>
+% }
+% else {
+  <& /elements/tr-select-cust_payby.html,
      'cust_payby' => \@cust_payby,
      'curr_value' => $custpaybynum,
      'onchange'   => 'cust_payby_changed(this)',
-&>
-    <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+  &>
+% }
+
+% if ( $conf->exists("batch-enable")
+%      || grep $payby eq $_, $conf->config('batch-enable_payby')
+% ) {
+%     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
+          <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+%     } else {
+        <TR>
+          <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="batch" VALUE="1" ID="batch" <% ($batchnum || $batch) ? 'checked' : '' %> ></TD>
+          <TH ALIGN="left">&nbsp;&nbsp;&nbsp;<% mt('Add to current batch') |h %></TH>
+        </TR>
+%     }
+% }
+
     </TABLE>
 <P>
+
+%   if ( !$cust_pay ) {
 <DIV ID="cust_payby"
   <% $custpaybynum ? 'STYLE="display:none"'
                    : ''
@@ -147,13 +168,14 @@
 >
 <TABLE class="fsinnerbox">
 
-<& /elements/cust_payby_new.html,
-     'cust_payby' => \@cust_payby,
-     'curr_value' => $custpaybynum,
-&>
+    <& /elements/cust_payby_new.html,
+        'cust_payby' => \@cust_payby,
+        'curr_value' => $custpaybynum,
+    &>
 
 </TABLE>
 </DIV>
+%   } # end if cust_pay
 
 %  } else {
     <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
@@ -194,16 +216,18 @@ my $payby   = $cgi->param('payby');
 my $payinfo = $cgi->param('payinfo');
 my $reason  = $cgi->param('reason');
 my $link    = $cgi->param('popup') ? 'popup' : '';
+my $batch   = $cgi->param('batch');
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->refund_access_right($payby);
 
-my( $paynum, $cust_pay ) = ( '', '' );
+my( $paynum, $cust_pay, $batchnum ) = ( '', '', '' );
 if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   $paynum = $1;
   $cust_pay = qsearchs('cust_pay', { paynum=>$paynum } )
     or die "unknown payment # $paynum";
   $refund ||= $cust_pay->unrefunded;
+  $batchnum = $cust_pay->batchnum;
   if ( $custnum ) {
     die "payment # $paynum is not for specified customer # $custnum"
       unless $custnum == $cust_pay->custnum;
