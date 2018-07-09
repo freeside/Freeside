@@ -1530,7 +1530,7 @@ sub realtime_refund_bop {
  
     my $payment_gateway =
       $self->agent->payment_gateway( 'method'  => $options{method} );
-    my( $processor, $login, $password, $namespace ) =
+    ( $processor, $login, $password, $namespace ) =
       map { my $method = "gateway_$_"; $payment_gateway->$method }
         qw( module username password namespace );
 
