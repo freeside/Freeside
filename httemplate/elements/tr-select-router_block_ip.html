@@ -4,8 +4,8 @@ var ip_addr_curr_value = <% $opt{'ip_addr'} |js_string %>;
 var blocknum_curr_value = <% $opt{'blocknum'} |js_string %>;
 
 function update_ip_addr() {
-  var routernum = $('#router_select_0').val();
-  var blocknum  = $('#router_select_1').val();
+  var routernum = $('#router_select_0').val() || "";
+  var blocknum  = $('#router_select_1').val() || "";
   var e_input_ip_addr = $('#input_ip_addr');
   var e_router_select_1 = $('#router_select_1');
 
