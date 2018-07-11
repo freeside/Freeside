@@ -526,6 +526,20 @@ sub upgrade_data {
 
     #upgrade part_event_condition_option agentnum to a multiple hash value
     'part_event_condition_option' =>[],
+
+    #fix ip format
+    'svc_circuit' => [],
+
+    #fix ip format
+    'svc_hardware' => [],
+
+    #fix ip format
+    'svc_pbx' => [],
+
+    #fix ip format
+    'tower_sector' => [],
+
+
   ;
 
   \%hash;
@@ -736,4 +750,3 @@ Sure.
 =cut
 
 1;
-

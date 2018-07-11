@@ -515,6 +515,11 @@ sub _upgrade_data {
     #next SVC;
   }
 
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'svc_broadband', 'svcnum', 'ip_addr',
+  );
+
   '';
 }
 

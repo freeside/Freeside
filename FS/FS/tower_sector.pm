@@ -327,6 +327,17 @@ sub process_generate_coverage {
   die $error if $error;
 }
 
+sub _upgrade_data {
+
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'tower_sector', 'sectornum', 'ip_addr',
+  );
+
+  '';
+
+}
+
 =head1 BUGS
 
 =head1 SEE ALSO

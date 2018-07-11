@@ -387,6 +387,17 @@ sub sum_cdrs {
   qsearchs ( $psearch->{query} );
 }
 
+sub _upgrade_data {
+
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'svc_pbx', 'svcnum', 'ip_addr',
+  );
+
+  '';
+
+}
+
 =back
 
 =head1 BUGS
@@ -399,4 +410,3 @@ L<FS::cust_pkg>, schema.html from the base documentation.
 =cut
 
 1;
-
