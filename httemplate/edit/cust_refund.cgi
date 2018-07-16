@@ -85,7 +85,6 @@
 
 
 <BR>Refund
-
 <% ntable("#cccccc", 2) %>
 
   <TR>
@@ -175,9 +174,6 @@ if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   }
 }
 die "no custnum or paynum specified!" unless $custnum;
-
-my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
-die "unknown custnum $custnum" unless $cust_main;
 
 my $_date = time;
 

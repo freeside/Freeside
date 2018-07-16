@@ -21,8 +21,6 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Refund payment')
       || $FS::CurrentUser::CurrentUser->access_right('Post refund');
 
-my $conf = new FS::Conf;
-
 $cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
 my $custnum = $1;
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
@@ -62,12 +60,7 @@ if ( $error ) {
   my $refund = "$1$2";
   $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
   my $paynum = $1;
-  #my $paydate;
   my $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
-  #unless ($paynum) {
-  #  if ($cust_payby->paydate) { $paydate = "$year-$month-01"; }
-  #  else { $paydate = "2037-12-01"; }
-  #}
 
   if ( $cgi->param('batch') ) {
     $paydate = "2037-12-01" unless $paydate;

@@ -230,5 +230,10 @@ $name = 'RBC';
   },
 );
 
+## this format can handle credit transactions
+sub can_handle_credits {
+  1;
+}
+
 1;
 
