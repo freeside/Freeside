@@ -420,8 +420,9 @@ my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
 my %deleteable = map { $_ => 1 } @deleteable;
 
 my @sections = (qw(
-    required billing invoicing notification UI API self-service ticketing
-    network_monitoring username password session shell BIND telephony
+    required billing invoicing notification email_to_voice_services UI 
+    API self-service ticketing network_monitoring username password 
+    session shell BIND telephony
   ), '', 'deprecated'
 );
 

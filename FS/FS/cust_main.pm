@@ -2790,7 +2790,7 @@ sub batch_card {
   } );
 
   foreach (qw( address1 address2 city state zip country latitude longitude
-               payby payinfo paydate payname ))
+               payby payinfo paydate payname paycode paytype ))
   {
     $options{$_} = '' unless exists($options{$_});
   }
@@ -2822,6 +2822,7 @@ sub batch_card {
     'exp'      => $options{paydate}  || $self->paydate,
     'payname'  => $options{payname}  || $self->payname,
     'amount'   => $amount,                         # consolidating
+    'paycode'  => $options{paycode}  || '',
   } );
   
   $cust_pay_batch->paybatchnum($old_cust_pay_batch->paybatchnum)

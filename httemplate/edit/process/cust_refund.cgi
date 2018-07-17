@@ -42,18 +42,58 @@ if ( $error ) {
 } elsif ( $payby =~ /^(CARD|CHEK)$/ ) { 
   my %options = ();
   my $bop = $FS::payby::payby2bop{$1};
+
+  my %payby2fields = (
+  'CARD' => [ qw( address1 address2 city county state zip country ) ],
+  'CHEK' => [ qw( ss paytype paystate stateid stateid_state ) ],
+  );
+  my %type = ( 'CARD' => 'credit card',
+             'CHEK' => 'electronic check (ACH)',
+             );
+
+##
+# now run the refund
+##
+
   $cgi->param('refund') =~ /^(\d*)(\.\d{2})?$/
     or die "illegal refund amount ". $cgi->param('refund');
   my $refund = "$1$2";
   $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
   my $paynum = $1;
   my $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
-  $options{'paydate'} = $paydate if $paydate =~ /^\d{2,4}-\d{1,2}-01$/;
-  $error = $cust_main->realtime_refund_bop( $bop, 'amount' => $refund,
+
+  if ( $cgi->param('batch') ) {
+    $paydate = "2037-12-01" unless $paydate;
+    $error ||= $cust_main->batch_card(
+                                     'payby'    => $payby,
+                                     'amount'   => $refund,
+                                     #'payinfo'  => $payinfo,
+                                     #'paydate'  => $paydate,
+                                     #'payname'  => $payname,
+                                     'paycode'  => 'C',
+                                     map { $_ => scalar($cgi->param($_)) }
+                                       @{$payby2fields{$payby}}
+                                   );
+    errorpage($error) if $error;
+
+    my %hash = map {
+      $_, scalar($cgi->param($_))
+    } fields('cust_refund');
+
+    my $new = new FS::cust_refund ( { 'paynum' => $paynum,
+                                      %hash,
+                                  } );
+    $error = $new->insert;
+
+  # if not a batch refund run realtime.
+  } else {
+    $options{'paydate'} = $paydate if $paydate =~ /^\d{2,4}-\d{1,2}-01$/;
+    $error = $cust_main->realtime_refund_bop( $bop, 'amount' => $refund,
                                                   'paynum' => $paynum,
                                                   'reasonnum' => $reasonnum,
                                                   %options );
-} else {
+  }
+} else { # run cash refund.
   my %hash = map {
     $_, scalar($cgi->param($_))
   } fields('cust_refund');

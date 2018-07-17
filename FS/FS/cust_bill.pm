@@ -2925,15 +2925,11 @@ sub _items_total {
     }
 
   }
-
-  if ( $conf->exists('invoice_show_prior_due_date') ) {
+  if ( $conf->exists('invoice_show_prior_due_date') && !$conf->exists('invoice_omit_due_date') ) {
     # then the due date should be shown with Total New Charges,
     # and should NOT be shown with the Balance Due message.
     if ( $self->due_date ) {
-      # localize the "Please pay by" message and the date itself
-      # (grammar issues with this, yeah)
-      $new_charges_desc .= ' - ' . $self->mt('Please pay by') . ' ' .
-                           $self->due_date2str('short');
+      $new_charges_desc .= $self->invoice_pay_by_msg;
     } elsif ( $self->terms ) {
       # phrases like "due on receipt" should be localized
       $new_charges_desc .= ' - ' . $self->mt($self->terms);

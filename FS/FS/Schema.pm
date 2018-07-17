@@ -1909,6 +1909,7 @@ sub tables_hashref {
         'amount',   @money_type, '', '', 
         'status',   'varchar', 'NULL', $char_d, '', '', 
         'error_message',   'varchar', 'NULL', $char_d, '', '',
+        'paycode',       'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'paybatchnum',
       'unique' => [],

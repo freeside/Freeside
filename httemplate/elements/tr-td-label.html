@@ -1,4 +1,12 @@
-<TR>
+<%doc>
+
+Actually <TR> <TH> $label </TH>
+
+Note that this puts the 'label' argument into the document verbatim, with no
+escaping or localization.
+
+</%doc>
+<TR id="<% $opt{'id'} %>_row" <% $row_style %>>
 
   <TD ALIGN  = "right"
       VALIGN = "<% $opt{'valign'} || 'top' %>"
@@ -13,6 +21,8 @@ my %opt = @_;
 my $style = 'padding-top: 3px';
 $style .= '; '. $opt{'cell_style'}
   if $opt{'cell_style'};
+
+my $row_style = 'style="visibility:collapse;"' if $opt{'hide_onload'};
 
 my $required = $opt{'required'} ? '<font color="#ff0000">*</font>&nbsp;' : '';
 

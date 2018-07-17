@@ -1012,6 +1012,14 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'email-to-voice_domain',
+    'section'     => 'email_to_voice_services',
+    'description' => 'The domain name that phone numbers will be attached to for sending email to voice emails via a 3rd party email to voice service.  You will get this domain from your email to voice service provider.  This is utilized on the email customer page or when using the email to voice billing event action.  There you will be able to select the phone number for the email to voice service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'next-bill-ignore-time',
     'section'     => 'billing',
     'description' => 'Ignore the time portion of next bill dates when billing, matching anything from 00:00:00 to 23:59:59 on the billing day.',

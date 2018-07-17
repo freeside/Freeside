@@ -1,0 +1,31 @@
+<SELECT NAME="<% $opt{'field_name'} %>" ID="<% $opt{'field_name'} %>">
+
+     <OPTION VALUE="" selected="selected">Select a phone number
+
+% foreach $p (@$phone_types) {
+	<OPTION VALUE="<% $phones_formatted{$p} %>"><% $p |h%> (<% $cust_phones->$p |h %>)		
+%}
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+my $cust_num     = $opt{'cust_num'};
+my $phone_types  = $opt{'phone_types'};
+my $format 	  = $opt{'format'};
+
+my $cust_phones = qsearchs('cust_main', { 'custnum' => $cust_num })
+  or die 'unknown custnum' . $cust_num;
+
+my %phones_formatted = map {
+	$_ => format_phone_number($cust_phones->$_, $format)
+} @$phone_types;
+
+sub format_phone_number {
+	my ($n, $f) = @_;
+	if ($f eq 'xxxxxxxxxx') { $n =~ s/-//g; }	
+	return $n;
+}
+
+</%init>
