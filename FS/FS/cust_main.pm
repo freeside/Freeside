@@ -2814,6 +2814,11 @@ sub batch_card {
     'country'  => $options{country}  || $loc->country,
     'payby'    => $options{payby}    || $self->payby,
     'payinfo'  => $options{payinfo}  || $self->payinfo,
+    'paymask'  => ( $options{payinfo}
+                      ? FS::payinfo_Mixin->mask_payinfo( $options{payby},
+                                                         $options{payinfo} )
+                      : $self->paymask
+                  ),
     'exp'      => $options{paydate}  || $self->paydate,
     'payname'  => $options{payname}  || $self->payname,
     'amount'   => $amount,                         # consolidating
