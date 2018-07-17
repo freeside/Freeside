@@ -1282,6 +1282,11 @@ sub Customers {
 
       $self->{'Customers'} = $self->MemberOf->Clone;
 
+      $self->{'Customers'}->Limit( FIELD    => 'Base',
+                                   OPERATOR => 'STARTSWITH',
+                                   VALUE    => 'fsck.com-rt://%/ticket/',
+                                 );
+
       for my $fstable (qw(cust_main cust_svc)) {
 
         $self->{'Customers'}->Limit(
