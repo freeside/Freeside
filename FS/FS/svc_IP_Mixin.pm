@@ -80,7 +80,7 @@ sub svc_ip_check {
   my $error = $self->ip_check;
   return $error if $error;
   if ( my $router = $self->router ) {
-    if ( grep { $_->routernum eq $router->routernum } $self->allowed_routers ) {
+    if ( grep { $_->routernum == $router->routernum } $self->allowed_routers ) {
       return '';
     } else {
       return 'Router '.$router->routername.' not available for this service';
