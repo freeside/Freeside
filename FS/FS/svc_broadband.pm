@@ -110,12 +110,12 @@ sub table_info {
       'speed_down'  => 'Download speed (Kbps)',
       'speed_up'    => 'Upload speed (Kbps)',
       'ip_addr'     => 'IP address',
-      'blocknum'    => 
-      { 'label' => 'Address block',
-                         'type'  => 'select',
-                         'select_table' => 'addr_block',
-                          'select_key'   => 'blocknum',
-                         'select_label' => 'cidr',
+      'blocknum'    => {
+                         'label'             => 'Address block',
+                         'type'              => 'select',
+                         'select_table'      => 'addr_block',
+                          'select_key'       => 'blocknum',
+                         'select_label'      => 'cidr',
                          'disable_inventory' => 1,
                        },
      'plan_id' => 'Service Plan Id',
