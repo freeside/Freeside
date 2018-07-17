@@ -247,7 +247,7 @@ sub check {
     $self->ut_numbern('sectornum')
     || $self->ut_number('towernum', 'tower', 'towernum')
     || $self->ut_text('sectorname')
-    || $self->ut_textn('ip_addr')
+    || $self->ut_ip46n('ip_addr')
     || $self->ut_floatn('height')
     || $self->ut_numbern('freq_mhz')
     || $self->ut_numbern('direction')
@@ -471,6 +471,17 @@ sub process_generate_coverage {
   die $error if $error;
 }
 
+sub _upgrade_data {
+
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'tower_sector', 'sectornum', 'ip_addr',
+  );
+
+  '';
+
+}
+
 =head1 BUGS
 
 =head1 SEE ALSO
@@ -480,4 +491,3 @@ L<FS::tower>, L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-

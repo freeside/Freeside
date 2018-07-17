@@ -1881,7 +1881,29 @@ sub _pkg_tax_list {
   #   Duplicates can be identified by billpkgtaxlocationnum column.
 
   my $self = shift;
-  return unless $self->pkgnum;
+
+  my $search_selector;
+  if ( $self->pkgnum ) {
+
+    # For taxes applied to normal billing items
+    $search_selector =
+      ' cust_bill_pkg_tax_location.pkgnum = '
+      . dbh->quote( $self->pkgnum );
+
+  } elsif ( $self->feepart ) {
+
+    # For taxes applied to fees, when the fee is not attached to a package
+    # i.e. late fees, billing events fees
+    $search_selector =
+      ' cust_bill_pkg_tax_location.taxable_billpkgnum = '
+      . dbh->quote( $self->billpkgnum );
+
+  } else {
+    warn "_pkg_tax_list() unhandled case breaking taxes into sections";
+    warn "_pkg_tax_list() $_: ".$self->$_
+      for qw(pkgnum billpkgnum feepart);
+    return;
+  }
 
   map +{
       billpkgtaxlocationnum => $_->billpkgtaxlocationnum,
@@ -1907,7 +1929,7 @@ sub _pkg_tax_list {
       ' WHERE '.
       ' cust_bill_pkg.invnum = ' . dbh->quote( $self->invnum ) .
       ' AND '.
-      ' cust_bill_pkg_tax_location.pkgnum = ' . dbh->quote( $self->pkgnum ),
+      $search_selector
   });
 
 }

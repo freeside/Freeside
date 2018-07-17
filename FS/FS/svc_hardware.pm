@@ -245,6 +245,17 @@ sub display_hw_addr {
     join(':', $self->hw_addr =~ /../g) : $self->hw_addr)
 }
 
+sub _upgrade_data {
+
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'svc_hardware', 'svcnum', 'ip_addr',
+  );
+
+  '';
+
+}
+
 =back
 
 =head1 SEE ALSO
@@ -254,4 +265,3 @@ L<FS::Record>, L<FS::svc_Common>, schema.html from the base documentation.
 =cut
 
 1;
-

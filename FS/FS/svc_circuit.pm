@@ -236,6 +236,17 @@ sub search_sql_addl_from {
   'LEFT JOIN circuit_type USING ( typenum )';
 }
 
+sub _upgrade_data {
+
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'svc_circuit', 'svcnum', 'endpoint_ip_addr',
+  );
+
+  '';
+
+}
+
 =back
 
 =head1 SEE ALSO
@@ -245,4 +256,3 @@ L<FS::Record>
 =cut
 
 1;
-

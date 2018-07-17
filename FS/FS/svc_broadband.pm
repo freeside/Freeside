@@ -134,6 +134,7 @@ sub table_info {
                          #select_table => 'radius_group',
                          #select_key   => 'groupnum',
                          #select_label => 'groupname',
+                         disable_select => 1,
                          disable_inventory => 1,
                          multiple => 1,
                        },
@@ -501,6 +502,11 @@ sub _upgrade_data {
     #next SVC;
   }
 
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'svc_broadband', 'svcnum', 'ip_addr',
+  );
+
   '';
 }
 
@@ -523,4 +529,3 @@ FS::part_svc, schema.html from the base documentation.
 =cut
 
 1;
-

@@ -90,6 +90,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
   ( $month, $year ) = $cust_payby->paydate_mon_year;
   $payname = $cust_payby->payname;
+  $cgi->param(-name=>"paytype", -value=>$cust_payby->paytype) unless $cgi->param("paytype");
 
 } else {
 
@@ -208,6 +209,10 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
 my $error = '';
 my $paynum = '';
+my $paydate;
+if ($cust_payby->paydate) { $paydate = "$year-$month-01"; }
+else { $paydate = "2037-12-01"; }
+
 if ( $cgi->param('batch') ) {
 
   $error = 'Prepayment discounts not supported with batched payments' 
@@ -217,7 +222,7 @@ if ( $cgi->param('batch') ) {
                                      'payby'    => $payby,
                                      'amount'   => $amount,
                                      'payinfo'  => $payinfo,
-                                     'paydate'  => "$year-$month-01",
+                                     'paydate'  => $paydate,
                                      'payname'  => $payname,
                                      map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}

@@ -2881,11 +2881,9 @@ to 127.0.0.1.
 sub ut_ip {
   my( $self, $field ) = @_;
   $self->setfield($field, '127.0.0.1') if $self->getfield($field) eq '::1';
-  $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
-    or return "Illegal (IP address) $field: ". $self->getfield($field);
-  for ( $1, $2, $3, $4 ) { return "Illegal (IP address) $field" if $_ > 255; }
-  $self->setfield($field, "$1.$2.$3.$4");
-  '';
+  return "Illegal (IP address) $field: ".$self->getfield($field)
+    unless $self->getfield($field) =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  $self->ut_ip46($field);
 }
 
 =item ut_ipn COLUMN
@@ -2913,7 +2911,17 @@ Check/untaint IPv4 or IPv6 address.
 
 sub ut_ip46 {
   my( $self, $field ) = @_;
-  my $ip = NetAddr::IP->new($self->getfield($field))
+  my $ip_addr = $self->getfield( $field );
+
+  # strip user-entered leading 0's from IPv4 addresses
+  # Parsers like NetAddr::IP interpret them as octal instead of decimal
+  $ip_addr = join( '.', (
+        map{ int($_) }
+        split( /\./, $ip_addr )
+    )
+  ) if $ip_addr =~ /\./ && $ip_addr =~ /[\.^]0/;
+
+  my $ip = NetAddr::IP->new( $ip_addr )
     or return "Illegal (IP address) $field: ".$self->getfield($field);
   $self->setfield($field, lc($ip->addr));
   return '';

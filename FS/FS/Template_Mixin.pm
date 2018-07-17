@@ -1346,26 +1346,35 @@ sub print_generic {
   #$tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
   #$tax_section->{'sort_weight'} = $tax_weight;
 
+  my $invoice_sections_with_taxes = $conf->config_bool(
+    'invoice_sections_with_taxes', $cust_main->agentnum
+  );
+
   foreach my $tax ( @items_tax ) {
 
-    $taxtotal += $tax->{'amount'};
 
     my $description = &$escape_function( $tax->{'description'} );
     my $amount      = sprintf( '%.2f', $tax->{'amount'} );
 
     if ( $multisection ) {
+      if ( !$invoice_sections_with_taxes ) {
 
-      push @detail_items, {
-        ext_description => [],
-        ref          => '',
-        quantity     => '',
-        description  => $description,
-        amount       => $money_char. $amount,
-        product_code => '',
-        section      => $tax_section,
-      };
+        $taxtotal += $tax->{'amount'};
 
+        push @detail_items, {
+          ext_description => [],
+          ref          => '',
+          quantity     => '',
+          description  => $description,
+          amount       => $money_char. $amount,
+          product_code => '',
+          section      => $tax_section,
+        };
+
+      }
     } else {
+
+      $taxtotal += $tax->{'amount'};
 
       push @total_items, {
         'total_item'   => $description,
@@ -1387,6 +1396,14 @@ sub print_generic {
       $other_money_char. sprintf('%.2f', $self->charged - $taxtotal );
 
     if ( $multisection ) {
+
+      if ( $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum) ) {
+        # If all tax items are displayed in location/category sections,
+        # remove the empty tax section
+        @sections = grep{ $_ ne $tax_section } @sections
+          unless grep{ $_->{section} eq $tax_section } @detail_items;
+      }
+
       if ( $taxtotal > 0 ) {
         # there are taxes, so prepare the section to be displayed.
         # $taxtotal already includes any line items that were already in the
@@ -1400,18 +1417,12 @@ sub print_generic {
         $tax_section->{'description'} = $self->mt($tax_description);
         $tax_section->{'summarized'} = '';
 
-        if ( $conf->config_bool('invoice_sections_with_taxes', $cust_main->agentnum) ) {
+        # append tax section unless it's already there
+        push @sections, $tax_section
+          unless grep {$_ eq $tax_section} @sections;
 
-          # remove tax section if taxes are itemized within other sections
-          @sections = grep{ $_ ne $tax_section } @sections;
-
-        } elsif ( !grep $tax_section, @sections ) {
-
-          # append it if it's not already there
-          push @sections, $tax_section;
-          push @summary_subtotals, $tax_section;
-
-        }
+        push @summary_subtotals, $tax_section
+          unless grep {$_ eq $tax_section} @summary_subtotals;
 
       }
     } else {
@@ -2262,8 +2273,7 @@ sub generate_email {
       warn "$me generating plain text invoice"
         if $DEBUG;
 
-      # 'print_text' argument is no longer used
-      @text = map Encode::encode_utf8($_), $self->print_text(\%args);
+      @text = $self->print_text(\%args);
 
     } else {
 
@@ -2279,7 +2289,11 @@ sub generate_email {
     'Encoding'    => 'quoted-printable',
     'Charset'     => 'UTF-8',
     #'Encoding'    => '7bit',
-    'Data'        => \@text,
+    'Data'        => [
+      map
+        { Encode::encode('UTF-8', $_, Encode::FB_WARN | Encode::LEAVE_SRC ) }
+        @text
+    ],
     'Disposition' => 'inline',
   );
 
@@ -2358,7 +2372,11 @@ sub generate_email {
                          '    </title>',
                          '  </head>',
                          '  <body bgcolor="#e8e8e8">',
-                         Encode::encode_utf8($html),
+                         Encode::encode(
+                           'UTF-8',
+                           $html,
+                           Encode::FB_WARN | Encode::LEAVE_SRC
+                         ),
                          '  </body>',
                          '</html>',
                        ],
@@ -3121,7 +3139,9 @@ sub _items_fee {
   my @cust_bill_pkg = grep { $_->feepart } $self->cust_bill_pkg;
   my $escape_function = $options{escape_function};
 
-  my $locale = $self->cust_main->locale;
+  my $locale = $self->cust_main
+             ? $self->cust_main->locale
+             : $self->prospect_main->locale;
 
   my @items;
   foreach my $cust_bill_pkg (@cust_bill_pkg) {
@@ -3134,16 +3154,30 @@ sub _items_fee {
       warn "fee definition not found for line item #".$cust_bill_pkg->billpkgnum."\n";
       next;
     }
-    if ( exists($options{section}) and exists($options{section}{category}) )
-    {
-      my $categoryname = $options{section}{category};
-      # then filter for items that have that section
-      if ( $part_fee->categoryname ne $categoryname ) {
-        warn "skipping fee '".$part_fee->itemdesc."'--not in section $categoryname\n" if $DEBUG;
-        next;
-      }
-    } # otherwise include them all in the main section
-    # XXX what to do when sectioning by location?
+
+    # If _items_fee is called while building a sectioned invoice,
+    #   - invoice_sections_method: category
+    #     Skip fee records that do not match the section category.
+    #   - invoice_sections_method: location
+    #     Skip fee records always for location sections.
+    #     The fee records will be presented in the tax/fee section instead.
+    if (
+      exists( $options{section} )
+      and
+      (
+        (
+          exists( $options{section}{category} )
+          and
+          $part_fee->categoryname ne $options{section}{category}
+        )
+        or
+        exists( $options{section}{location})
+      )
+    ) {
+      warn "skipping fee '".$part_fee->itemdesc.
+           "'--not in section $options{section}{category}\n" if $DEBUG;
+      next;
+    }
 
     my @ext_desc;
     my %base_invnums; # invnum => invoice date
@@ -3171,6 +3205,7 @@ sub _items_fee {
 
     push @items,
       { feepart     => $cust_bill_pkg->feepart,
+        billpkgnum  => $cust_bill_pkg->billpkgnum,
         amount      => sprintf('%.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
         description => $desc,
         pkg_tax     => \@pkg_tax,

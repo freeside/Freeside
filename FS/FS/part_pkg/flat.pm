@@ -57,6 +57,12 @@ tie my %contract_years, 'Tie::IxHash', (
                                     'the customer\'s next bill date',
                           'type' => 'checkbox',
                         },
+    'prorate_defer_change_bill' => {
+                          'name' => 'When synchronizing, defer bill for '.
+                                    'package changes until the customer\'s '.
+                                    'next bill date',
+                          'type' => 'checkbox',
+                        },
     'prorate_round_day' => {
                           'name' => 'When synchronizing, round the prorated '.
                                     'period',
@@ -87,7 +93,8 @@ tie my %contract_years, 'Tie::IxHash', (
   },
   'fieldorder' => [ qw( recur_temporality 
                         start_1st
-                        sync_bill_date prorate_defer_bill prorate_round_day
+                        sync_bill_date prorate_defer_bill
+                        prorate_defer_change_bill prorate_round_day
                         suspend_bill unsuspend_adjust_bill
                         bill_recur_on_cancel
                         bill_suspend_as_cancel

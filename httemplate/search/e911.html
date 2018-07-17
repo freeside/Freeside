@@ -1,6 +1,23 @@
+<%doc>
+
+  E911 Fee Report
+
+  Finds billing totals for a given pkgpart where the bill item matches
+  cust_pkg.pkgpart or cust_bill_pkg.pkgpart_override columns.
+
+  Given date range, filter by when the invoice was paid.
+
+  * E911 access lines - SUM(cust_bill_pkg.quantity)
+  * Total fees charged - SUM(cust_bill_pay_pkg.amount)
+  * Fee payments collected - SUM(cust_bill_pkg.setup) + SUM(cust_bill_pkg.recur)
+
+  * Administrative fee (1%) - 1% of Fee Payments Collected
+  * Amount due - 99% of Fee Payments Collected
+
+</%doc>
 % if ( $row ) {
-%# pretty minimal report
 <& /elements/header.html, 'E911 Fee Report' &>
+
 <& /elements/table-grid.html &>
 <STYLE TYPE="text/css">
 table.grid TD:first-child { font-weight: normal }
@@ -8,27 +25,27 @@ table.grid TD { font-weight: bold;
                 text-align: right;
                 padding: 1px 2px }
 </STYLE>
+
   <TR><TH COLSPAN=2><% $legend %></TH></TR>
   <TR>
-    <TD>E911 access lines:</TD>
-    <TD><% $row->{quantity} || 0 %></TD>
+    <TD><% mt('E911 access lines') %>:</TD>
+    <TD><% $report{e911_access_lines} %></TD>
   </TR>
   <TR>
-    <TD>Total fees charged: </TD>
-    <TD><% $money_char.sprintf('%.2f', $row->{charged_amount}) %></TD>
+    <TD><% mt('Total fees charged') %>: </TD>
+    <TD><% $money_char.$report{fees_charged} %></TD>
   </TD>
   <TR>
-    <TD>Fee payments collected: </TD>
-    <TD><% $money_char.sprintf('%.2f', $row->{paid_amount}) %></TD>
+    <TD><% mt('Fee payments collected') %>: </TD>
+    <TD><% $money_char.$report{fees_collected} %></TD>
   </TR>
   <TR>
-    <TD>Administrative fee (1%): </TD>
-    <TD><% $money_char.sprintf('%.2f', $row->{paid_amount} * $admin_fee) %></TD>
+    <TD><% mt('Administrative fee') %> (1%): </TD>
+    <TD><% $money_char.$report{admin_fee} %></TD>
   </TR>
   <TR>
-    <TD>Amount due: </TD>
-    <TD><% $money_char.sprintf('%.2f', $row->{paid_amount} * (1-$admin_fee) ) %>
-    </TD>
+    <TD><% mt('Amount due') %>: </TD>
+    <TD><% $money_char.$report{e911_amount_due} %></TD>
   </TR>
 </TABLE>
 <& /elements/footer.html &>
@@ -37,6 +54,8 @@ table.grid TD { font-weight: bold;
 <& /elements/errorpage.html &>
 % }
 <%init>
+
+our $DEBUG;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
@@ -56,56 +75,89 @@ my $agentnum = $1;
 # package classes, etc.), do NOT simply loop through this and do a 
 # bazillion scalar_sql queries.  Use a properly grouped aggregate query.
 
-my $select = 'SELECT cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity, '.
-'cust_bill_pkg.setup, SUM(cust_bill_pay_pkg.amount) AS paid_amount';
+my $sql_statement = "
+  SELECT
+    sum(cust_bill_pkg.quantity) as quantity,
+    sum(cust_bill_pay_pkg.amount) as amount,
+    sum(cust_bill_pkg.setup) as setup,
+    sum(cust_bill_pkg.recur) as recur
 
-my $from = 'FROM cust_pkg
-  JOIN cust_bill_pkg      USING (pkgnum)
-  JOIN cust_bill          USING (invnum)
-  LEFT JOIN cust_bill_pay_pkg  USING (billpkgnum)
-  LEFT JOIN cust_bill_pay      USING (billpaynum)
-';
-# going by payment application date here, which should be
-# max(invoice date, payment date)
-my $where = "WHERE cust_pkg.pkgpart = $pkgpart
-AND ( (cust_bill_pay._date >= $begin AND cust_bill_pay._date < $end)
-      OR cust_bill_pay.paynum IS NULL )";
-
+  FROM cust_pkg
+    LEFT JOIN cust_bill_pkg      USING (pkgnum)
+    LEFT JOIN cust_bill_pay_pkg  USING (billpkgnum)
+    LEFT JOIN cust_bill_pay      USING (billpaynum)
+";
 if ( $agentnum ) {
-  $from .= '  JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)';
-  $where .= "\n AND cust_main.agentnum = $agentnum";
+  $sql_statement .= "
+      LEFT JOIN cust_main          USING (custnum)
+    WHERE
+      cust_main.agentnum = ?
+      AND ";
+} else {
+  $sql_statement .= "
+    WHERE
+  "
+}
+$sql_statement .= "
+    ( cust_bill_pkg.pkgpart_override = ? OR cust_pkg.pkgpart = ? )
+    AND (
+      ( cust_bill_pay._date >= ? AND cust_bill_pay._date < ? )
+      OR cust_bill_pay.paynum IS NULL
+    );
+";
+
+# Preserving this oddball, unexplained epoch substitution
+$end = '' if $end == 4294967295;
+
+my @bind_values = (
+    $agentnum ? $agentnum : (),
+    $pkgpart,
+    $pkgpart,
+    $begin || 0,
+    $end || time(),
+);
+
+if ( $DEBUG ) {
+  warn "\$sql_statement: $sql_statement\n";
+  warn "\@bind_values: ".join(', ',@bind_values)."\n";
 }
 
-my $subquery = "$select $from $where
-GROUP BY cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity";
-# This has one row for each E911 line item that has any payments applied.
-# Fields are the billpkgnum of the item (currently unused), the number of
-# E911 charges, and the total amount paid (always > 0).
-
-# now sum those rows.
-my $sql = "SELECT SUM(quantity) AS quantity, SUM(setup) AS charged_amount,
-SUM(paid_amount) AS paid_amount FROM ($subquery) AS paid_fees"; # no grouping
-
-my $sth = dbh->prepare($sql);
-$sth->execute;
+my $sth = dbh->prepare( $sql_statement );
+$sth->execute( @bind_values ) || die $sth->errstr;
 my $row = $sth->fetchrow_hashref;
 
-my $admin_fee = 0.01; # 1% admin fee, allowed in Texas
+my %report = (
+  e911_access_lines => $row->{quantity} || 0,
 
-$end = '' if $end == 4294967295;
-my $legend = '';
-if ( $agentnum ) {
-  $legend = FS::agent->by_key($agentnum)->agent . ', ';
-}
-if ( $begin and $end ) {
-  $legend .= time2str('%h %o %Y', $begin) . '&mdash;' .
-             time2str('%h %o %Y', $end);
+  fees_charged => sprintf(
+    "%.2f",
+    ( $row->{setup} + $row->{recur} ) || 0,
+  ),
+
+  fees_collected => sprintf(
+    "%.2f",
+    ( $row->{amount} || 0 ),
+  ),
+);
+
+# Does everybody use this 1% admin fee?  Should this be configurable?
+$report{admin_fee} = sprintf( "%.2f", $report{fees_collected} * 0.01 );
+$report{e911_amount_due} = $report{fees_collected} - $report{admin_fee};
+
+my $begin_text =
+  $begin
+    ? DateTime->from_epoch(epoch => $begin)->mdy('/')
+    : mt('Anytime');
+
+my $end_text =  DateTime->from_epoch(epoch => ( $end || time ))->mdy('/');
+
+my $legend = FS::agent->by_key($agentnum)->agent . ', ' if $agentnum;
+if ( $begin && $end ) {
+  $legend .= "$begin_text &#x2194; $end_text";
 } elsif ( $begin ) {
-  $legend .= time2str('after %h %o %Y', $begin);
-} elsif ( $end ) {
-  $legend .= time2str('before %h %o %Y', $end);
+  $legend .= mt('After')." $begin_text";
 } else {
-  $legend .= 'any time';
+  $legend .= mt('Through')." $end_text"
 }
-$legend = ucfirst($legend);
+
 </%init>

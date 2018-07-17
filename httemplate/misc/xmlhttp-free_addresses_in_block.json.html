@@ -1,0 +1,18 @@
+<%doc>
+  Return a json array containing all free ip addresses within a given block
+  Unless block is larger than /24 - Does somebody really want to populate
+  65k addresses into a HTML selectbox?
+</%doc>
+<% encode_json($json) %>\
+<%init>
+
+my $json = [];
+
+my $blocknum = $cgi->param('blocknum');
+
+my $addr_block = qsearchs( addr_block => { blocknum => $blocknum });
+
+$json = $addr_block->free_addrs
+  if ref $addr_block && $addr_block->ip_netmask >= 24;
+
+</%init>
