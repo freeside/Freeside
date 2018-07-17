@@ -138,6 +138,11 @@ sub batch_card {
     'country'  => $options{country}  || $loc->country,
     'payby'    => $options{payby}    || $cust_payby->payby,
     'payinfo'  => $options{payinfo}  || $cust_payby->payinfo,
+    'paymask'  => ( $options{payinfo}
+                      ? FS::payinfo_Mixin->mask_payinfo( $options{payby},
+                                                         $options{payinfo} )
+                      : $cust_payby->paymask
+                  ),
     'exp'      => $options{paydate}  || $cust_payby->paydate,
     'payname'  => $options{payname}  || $cust_payby->payname,
     'paytype'  => $options{paytype}  || $cust_payby->paytype,
