@@ -10,6 +10,9 @@ it could be updated to fork on client connections.
 When an e-mail is delivered, the TO and FROM are printed to STDOUT.
 The TO, FROM and MSG are saved to a file in $message_save_dir
 
+Open a saved .eml file with Mozilla Thunderbird (or other mail clients)
+to review e-mail with all html/pdf attachments
+
 =cut
 
 use strict;
@@ -33,21 +36,21 @@ while(my $conn = $server->accept()) {
 
   $client->process || next;
 
-  open my $fh, '>', $message_save_dir.'/'.time().'.txt'
+  open my $fh, '>', $message_save_dir.'/'.time().'.eml'
     or die "error: $!";
 
   for my $f (qw/TO FROM/) {
 
       if (ref $client->{$f} eq 'ARRAY') {
         print "$f: $_\n" for @{$client->{$f}};
-        print $fh "$f: $_\n" for @{$client->{$f}};
+        # print $fh "$f: $_\n" for @{$client->{$f}};
       } else {
         print "$f: $client->{$f}\n";
-        print $fh "$f: $client->{$f}\n";
+        # print $fh "$f: $client->{$f}\n";
       }
 
   }
-  print $fh "\n\n$client->{MSG}\n";
+  print $fh "$client->{MSG}\n";
   print "\n";
   close $fh;
 }
