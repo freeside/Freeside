@@ -5,7 +5,6 @@
 % if (
 %   $value
 %   && ref $unmask_field
-%   && !$unmask_field->{unmask_ss}
 %   && $FS::CurrentUser::CurrentUser->access_right( $unmask_field->{access_right} )
 % ) {
   <& /elements/link-replace_element_text.html, {
@@ -28,7 +27,6 @@
           target_id    => 'ss',
           replace_text => $cust_main->ss,
           access_right => 'Unmask customer SSN',
-          unmask_ss    => $conf->exists('unmask_ss'),
         } &>
 % } else  {
         <INPUT TYPE="hidden" NAME="ss" VALUE="<% $ss %>">
@@ -63,7 +61,7 @@ my $agentnum = $cust_main->agentnum if $cust_main->custnum;
 my $conf = FS::Conf->new;
 my $ss;
 
-if ( $cgi->param('error') or $conf->exists('unmask_ss') ) {
+if ( $cgi->param('error') ) {
   $ss = $cust_main->ss;
 } else {
   $ss = $cust_main->masked('ss');
