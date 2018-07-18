@@ -153,7 +153,7 @@ If you need to continue using the old Form 477 report, turn on the
 
   # boolean+text previous_balance-exclude_from_total is now two separate options
   my $total_new_charges = $conf->config('previous_balance-exclude_from_total');
-  if (length($total_new_charges) > 0) {
+  if ( defined $total_new_charges && length($total_new_charges) > 0 ) {
     $conf->set('previous_balance-text-total_new_charges', $total_new_charges);
     $conf->set('previous_balance-exclude_from_total', '');
   }
@@ -174,8 +174,8 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('unsuspendauto');
   }
 
-  if ($conf->config('cust-fields') =~ / \| Payment Type/) {
-    my $cust_fields = $conf->config('cust-fields');
+  my $cust_fields = $conf->config('cust-fields');
+  if ( defined $cust_fields && $cust_fields =~ / \| Payment Type/ ) {
     # so we can potentially use 'Payment Types' or somesuch in the future
     $cust_fields =~ s/ \| Payment Type( \|)/$1/;
     $cust_fields =~ s/ \| Payment Type$//;
