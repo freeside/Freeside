@@ -2193,7 +2193,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'unmask_ss',
-    'section'     => 'e-checks',
+    'section'     => 'deprecated',
     'description' => "Don't mask social security numbers in the web interface.",
     'type'        => 'checkbox',
   },
