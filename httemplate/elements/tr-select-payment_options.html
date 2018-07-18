@@ -5,9 +5,9 @@ Example:
   include( '/elements/tr-select-payment_options.html',
 
     #opt - most get used in /elements/tr-amount-fee
-    'custnum'              => 4,     # customer number needed for selecting invoices
+    'cust_main'            => $cust_main,     # custmain needed for selecting invoices
     'prefix'               => 'pre', # prefix to fields and row ID's
-    'amount'               => 1,     # payment amount
+    'amount'               => 1,     # payment amount optional, if no amount will grab balance due from cust_main
     'process-pkgpart'      => scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
     'process-display'      => scalar($conf->config('manual_process-display')),
     'process-skip_first'   => $conf->exists('manual_process-skip_first'),
@@ -26,39 +26,57 @@ Example:
 
 </%doc>
 
-  <TR STYLE="display:block">
-    <TH ALIGN="right"><% mt('Payment options') |h %></TH>
-    <TD COLSPAN=7>
+  <TR ID="payment_option_row">
+    <TH ALIGN="right"><% mt('What would you like to pay') |h %></TH>
+    <TD>
      <SELECT
   	  ID       = "<% $opt{prefix} %>payment_option"
   	  NAME     = "<% $opt{prefix} %>payment_option"
   	  onChange = "<% $opt{prefix} %>payment_option_changed(this)"
   	  <% $opt{disabled} %>
-	>
-  		<OPTION VALUE="select">Select payment option</OPTION>
-  		<OPTION VALUE="<% $opt{amount} %>">Pay full balance</OPTION>
-  		<OPTION VALUE="invoice">Pay specific invoice</OPTION>
+	   >
+      <OPTION VALUE="select">Select the amount you would like to pay</OPTION>
+      <% ($amount > 0) ? '<OPTION VALUE="'.$amount.'">Pay full balance</OPTION>' : '' %>
+      <% (@open_invoices) ? '<OPTION VALUE="invoice">Pay specific invoice</OPTION>' : '' %>
       <OPTION VALUE="specific">Pay specific amount</OPTION>
-	</SELECT>	
+	   </SELECT>
     </TD>
   </TR>
 
   <& /elements/tr-select-invoice.html,
-       'custnum' => $opt{custnum},
-       'prefix'  => $opt{prefix},
+       'cust_main' => $cust_main,
+       'status'    => 'open',
+       'prefix'    => $opt{prefix},
   &>
 
   <& /elements/tr-amount_fee.html,
-       'row_style'  => 'STYLE="display:none;"',
+       'amount'     => $amount,
+       'custnum'    => $custnum,
        %opt
   &>
 
   <SCRIPT TYPE="text/javascript">
 
+      $('#payment_option_row').<% $payment_option_row %>();
+      $('#payment_amount_row').<% $payment_amount_row %>();
+
+      if($('#payment_amount_row').is(':visible')) {
+        var surcharge;
+        var amount = document.getElementById('amount').value;
+
+        if ((document.getElementById('surcharge_percentage') || document.getElementById('surcharge_flatfee')) && amount > 0) {
+          surcharge = (+amount * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
+        }
+        else { surcharge = 0; }
+        if (document.getElementById('ajax_surcharge_cell')) {
+          document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
+        }
+      }
+
       function <% $opt{prefix} %>payment_option_changed(what) {
 
         var surcharge;
-        if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_percentage')) {
+        if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_flatfee')) {
           surcharge = (+what.value * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
         }
         else { surcharge = 0; }
@@ -66,32 +84,43 @@ Example:
         document.getElementById('amount').disabled = true;
 
         if ( what.value == 'select' ) {
-        	document.getElementById('payment_amount_row').style.display = 'none';
-        	document.getElementById('invoice_row').style.display = 'none';
-          document.getElementById('<% $opt{prefix} %>invoice').value = 'select';
-        	document.getElementById('amount').value = '';
+          $('#payment_amount_row').hide();
+          $('#invoice_row').hide();
+          $("#<% $opt{prefix} %>invoice").val('select');
+          $('#amount').val('');
         }
         else if ( what.value == 'invoice' ) {
-        	document.getElementById('payment_amount_row').style.display = 'none';
-        	document.getElementById('invoice_row').style.display = 'block';
-        	document.getElementById('amount').value = '';
+          $('#payment_amount_row').hide();
+          $('#invoice_row').show();
+          $('#apply_box_row').hide();
+          $('#apply_box').val('yes');
+          $("#<% $opt{prefix} %>payment_option option[value='select']").remove();
+          var selectExists = ($("#<% $opt{prefix} %>invoice option[value='select']").length > 0);
+          if(!selectExists) {
+            $("#<% $opt{prefix} %>invoice").prepend("<option value='select'>Select an invoice to pay</option>");
+            $("#<% $opt{prefix} %>invoice").val($('option:first', "#<% $opt{prefix} %>invoice").val());
+          }
+          $('#amount').val('');
         }
         else if ( what.value == 'specific' ) {
-          document.getElementById('payment_amount_row').style.display = 'block';
-          document.getElementById('invoice_row').style.display = 'none';
-          document.getElementById('<% $opt{prefix} %>invoice').value = 'select';
-          document.getElementById('amount').value = '0.00';
+          $('#payment_amount_row').show();
+          $('#invoice_row').hide();
+          $('#apply_box_row').show();
+          $("#<% $opt{prefix} %>payment_option option[value='select']").remove();
+          $('#amount').val('0.00');
           document.getElementById('amount').disabled = false;
           if (document.getElementById('ajax_surcharge_cell')) {
             document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>0.00 is included in this payment</FONT>';
           }
         }
         else {
-        	document.getElementById('payment_amount_row').style.display = 'block';
-        	document.getElementById('invoice_row').style.display = 'none';
-          document.getElementById('<% $opt{prefix} %>invoice').value = 'select';
-          document.getElementById('amount').value = amount.toFixed(2);
-          document.getElementById('amount').disabled = false;
+          $('#payment_amount_row').show();
+          $('#invoice_row').hide();
+          $('#apply_box_row').hide();
+          $('#apply_box').val('yes');
+          $("#<% $opt{prefix} %>payment_option option[value='select']").remove();
+          $('#amount').val(amount.toFixed(2));
+          document.getElementById('amount').disabled = true;
           if (document.getElementById('ajax_surcharge_cell')) {
             document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
           }
@@ -102,21 +131,21 @@ Example:
       function <% $opt{prefix} %>invoice_select_changed(what) {
 
         var surcharge;
-        if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_percentage')) {
+        if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_flatfee')) {
           surcharge = (+what.value * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
         }
         else { surcharge = 0; }
         var amount = +what.value + +surcharge;
 
         if ( what.value == 'select' ) {
-          alert("we have select");
-        	document.getElementById('payment_amount_row').style.display = 'none';
-        	document.getElementById('amount').value = '';
+          $('#payment_amount_row').hide();
+          $('#amount').val('');
         }
         else {
-        	document.getElementById('payment_amount_row').style.display = 'block';
-          document.getElementById('amount').value = amount.toFixed(2);
-          document.getElementById('amount').disabled = false;
+          $('#payment_amount_row').show();
+          $("#<% $opt{prefix} %>invoice option[value='select']").remove();
+          $('#amount').val(amount.toFixed(2));
+          document.getElementById('amount').disabled = true;
           if (document.getElementById('ajax_surcharge_cell')) {
             document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
           }
@@ -129,6 +158,20 @@ Example:
 <%init>
 
 my %opt = @_;
+
+my $cust_main = $opt{'cust_main'};
+my $amount = $opt{'amount'} ? $opt{'amount'} : $cust_main->balance;
+my $custnum = $cust_main->custnum;
+
+my @open_invoices = $cust_main->open_cust_bill;
+
+my $payment_option_row = "show";
+my $payment_amount_row = "hide";
+
+unless ($amount > 0 && @open_invoices) {
+  $payment_option_row = "hide";
+  $payment_amount_row = "show";
+}
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
