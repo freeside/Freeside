@@ -13,8 +13,7 @@
 <TABLE class="fsinnerbox">
 
   <& /elements/tr-select-payment_options.html,
-       'custnum'            => $cust_main->custnum,
-       'amount'             => $balance,
+       'cust_main'          => $cust_main,
        'process-pkgpart'    => 
           scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
        'process-display'    => scalar($conf->config('manual_process-display')),
@@ -102,6 +101,11 @@ function change_batch_checkbox () {
        $('#cust_payby').slideUp();
     }
   }
+
+  function enableAmountField() {
+    document.getElementById('amount').disabled = false;
+  }
+
 </SCRIPT>
 
 % #can't quite handle CARD/CHEK on the same page yet, but very close
@@ -144,8 +148,48 @@ function change_batch_checkbox () {
 </DIV>
 
 <BR>
-<INPUT TYPE="submit" NAME="process" VALUE="<% mt('Process payment') |h %>">
+<INPUT TYPE="submit" NAME="process" ID="process" VALUE="<% mt('Process payment') |h %>" disabled="disabled" onclick="enableAmountField()">
 </FORM>
+
+<SCRIPT TYPE="text/javascript">
+
+$(document).ready(function (){
+    validate();
+    $('<% $validate_select_fields %>').change(validate);
+    $('<% $validate_input_fields %>').keyup(validate);
+});
+
+function validate(){
+    if (
+      $('#amount').val() > 0 && (
+        ( $('#custpaybynum').val() > 0 ) ||
+% if ($payby eq "CHEK") {
+        ( $('input[name=payinfo1]').val().length > 0 &&
+          $('input[name=payinfo2]').val().length > 0 &&
+          $('input[name=payname]').val().length > 0  &&
+          $('select[name=paytype]').val().length > 0
+        )
+% }
+% elsif ($payby eq "CARD") {
+        ( $('input[name=payinfo]').val().length > 0 &&
+          $('input[name=paycvv]').val().length > 0 &&
+          $('input[name=payname]').val().length > 0 &&
+          $('#city').val().length > 0 &&
+          $('#city').val().length > 0 &&
+          $('#state').val().length > 0 &&
+          $('#country').val().length > 0
+        )
+% }
+      )
+     ) {
+        $("#process").prop("disabled", false);
+    }
+    else {
+        $("#process").prop("disabled", true);
+    }
+}
+
+</SCRIPT>
 
 <& /elements/footer-cust_main.html &>
 <%once>
@@ -173,6 +217,17 @@ my %type = ( 'CARD' => 'credit card',
 $cgi->param('payby') =~ /^(CARD|CHEK)$/
   or die "unknown payby ". $cgi->param('payby');
 my $payby = $1;
+
+my $validate_select_fields = "#payment_option, #invoice, #custpaybynum, ";
+my $validate_input_fields  = "#amount, input[name=payname], ";
+if ($payby eq "CHEK") {
+  $validate_input_fields  .= "input[name=payinfo1], input[name=payinfo2]";
+  $validate_select_fields .= "select[name=paytype] ";
+}
+elsif ($payby eq "CARD") {
+  $validate_input_fields  .= "input[name=payinfo], input[name=paycvv], input[name=address1], #city, #zip";
+  $validate_select_fields .= "#state, #country ";
+}
 
 $cgi->param('custnum') =~ /^(\d+)$/
   or die "illegal custnum ". $cgi->param('custnum');
