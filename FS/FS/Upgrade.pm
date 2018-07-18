@@ -192,6 +192,19 @@ If you need to continue using the old Form 477 report, turn on the
       $lh->maketext($_) if length($_);
     }
   }
+
+  unless ( FS::upgrade_journal->is_done('deprecate_unmask_ss') ) {
+    if ( $conf->config_bool( 'unmask_ss' )) {
+      warn "'unmask_ssn' deprecated from global configuration\n";
+      for my $access_group ( qsearch( access_group => {} )) {
+        $access_group->grant_access_right( 'Unmask customer SSN' );
+        warn " - 'Unmask customer SSN' access right granted to '" .
+             $access_group->groupname . "' employee group\n";
+      }
+    }
+    FS::upgrade_journal->set_done('deprecate_unmask_ss');
+  }
+
 }
 
 sub upgrade_overlimit_groups {
