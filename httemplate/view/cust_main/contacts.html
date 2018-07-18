@@ -31,12 +31,9 @@
     <TH ALIGN="right"><% mt('SS#') |h %></TH>
     <TD>
       <span id="ss_span" style="white-space:nowrap;">
-      <% $conf->exists('unmask_ss')
-           ? $cust_main->ss
-           : $cust_main->masked('ss') || '&nbsp;' %>
+      <% $cust_main->masked('ss') || '&nbsp;' %>
 %   if (
 %         $cust_main->ss
-%         && !$conf->exists('unmask_ss')
 %         && $FS::CurrentUser::CurrentUser->access_right('Unmask customer SSN')
 %   ) {
       <& /elements/link-replace_element_text.html, {
