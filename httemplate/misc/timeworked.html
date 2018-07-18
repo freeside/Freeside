@@ -117,8 +117,8 @@ foreach my $id ( map { /^transactionid(\d+)$/; $1; }
         grep { $_->Resolver->{'fstable'} eq 'cust_main' }
         grep { $_->Scheme eq 'freeside' } 
         map  { $_->TargetURI } 
-        grep {    $_->BaseURI->Scheme     eq 'fsck.com-rt'
-               && $_->BaseURI->ObjectType eq 'ticket'
+        grep {    $_->BaseURI->Scheme eq 'fsck.com-rt'
+               && $_->BaseURI->Resolver->ObjectType eq 'ticket'
              }
           @{ $ticket->_Links('Base')->ItemsArrayRef } 
       ];
