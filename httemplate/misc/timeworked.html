@@ -113,12 +113,15 @@ foreach my $id ( map { /^transactionid(\d+)$/; $1; }
     $ticket->Load($ticketmap{$id});
     $ticket{$ticketmap{$id}} = $ticket->Subject;
     $customers{$ticketmap{$id}} =
-                            [ map  { $_->Resolver->AsString }
-                              grep { $_->Resolver->{'fstable'} eq 'cust_main' }
-                              grep { $_->Scheme eq 'freeside' } 
-                              map  { $_->TargetURI } 
-                                @{ $ticket->_Links('Base')->ItemsArrayRef } 
-                            ];
+      [ map  { $_->Resolver->AsString }
+        grep { $_->Resolver->{'fstable'} eq 'cust_main' }
+        grep { $_->Scheme eq 'freeside' } 
+        map  { $_->TargetURI } 
+        grep {    $_->BaseURI->Scheme     eq 'fsck_com_rt'
+               && $_->BaseURI->ObjectType eq 'ticket'
+             }
+          @{ $ticket->_Links('Base')->ItemsArrayRef } 
+      ];
                             
   }
 }
