@@ -15,9 +15,13 @@ foreach my $cust_main (
 
   my $custnum = $cust_main->custnum;
 
+  my $paydate = $cust_main->paydate;
+
   my $paymask = FS::Record->scalar_sql(qq[
-    SELECT paymask FROM h_cust_main WHERE custnum = $custnum AND history_action = 'replace_old' AND paymask IS NOT NULL AND paymask != 'N/A (tokenized)' ORDER BY historynum desc LIMIT 1
+    SELECT paymask FROM h_cust_main WHERE custnum = $custnum AND history_action = 'replace_old' AND paymask IS NOT NULL AND paymask != 'N/A (tokenized)' AND paydate = '$paydate' ORDER BY historynum desc LIMIT 1
   ]);
+
+  next unless length($paymask);
 
   #dbh->do(
   print
