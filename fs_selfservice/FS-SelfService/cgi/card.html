@@ -9,7 +9,7 @@
         <TD>
           <SELECT NAME="month">
             <%= for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) {
-                  $OUT .= '<OPTION'. ($_ == $month ? ' SELECTED' : ''). ">$_\n";
+                  $OUT .= '<OPTION'. ($_ == $month ? ' SELECTED' : ''). " VALUE='$_'>$_\n";
             } %>
           </SELECT>
         </TD>
@@ -17,7 +17,7 @@
         <TD>
           <SELECT NAME="year">
             <%= my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) {
-                  $OUT .= '<OPTION'. ($_ == $year ? ' SELECTED' : ''). ">$_\n";
+                  $OUT .= '<OPTION'. ($_ == $year ? ' SELECTED' : ''). " VALUE='$_'>$_\n";
             } %>
           </SELECT>
         </TD>
