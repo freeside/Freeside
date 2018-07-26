@@ -623,9 +623,9 @@ sub payment_results {
   $cgi->param('paycvv') =~ /^\s*(.{0,4})\s*$/ or die "illegal CVV2";
   my $paycvv = $1;
 
-  $cgi->param('month') =~ /^(\d{2})$/ or die "illegal month";
+  $cgi->param('month') =~ /^(\d{2})/ or die "illegal month";
   my $month = $1;
-  $cgi->param('year') =~ /^(\d{4})$/ or die "illegal year";
+  $cgi->param('year') =~ /^(\d{4})/ or die "illegal year";
   my $year = $1;
 
   $cgi->param('payname') =~ /^(.{0,80})$/ or die "illegal payname";
@@ -1222,5 +1222,3 @@ sub include {
                     );
 
 }
-
-
