@@ -11,6 +11,7 @@
                   'header'      => \@header,
                   'fields'      => \@fields,
                   'links'       => \@links,
+                  'disable_maxselect' => '1',
 
 &>
 <%init>
@@ -84,7 +85,11 @@ my $active_pkg_sql = 'select pkgnum from cust_pkg where cust_pkg.custnum = cust_
 
 ## sql to get the first active date, last cancel date, and last reason.
 my $active_date = 'select min(setup) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\'';
-my $cancel_date = 'select max(cancel) from cust_pkg where cust_pkg.custnum = cust_main.custnum';
+
+## set cancel date range here
+my($beginning_date, $ending_date) = FS::UI::Web::parse_beginning_ending($cgi, '');
+my $cancel_date = 'select max(cancel) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\' and (cancel >= '.$beginning_date.' and cancel <= '.$ending_date.')';
+
 my $cancel_reason = 'select reason.reason from cust_pkg
 	left join cust_pkg_reason on (cust_pkg.pkgnum = cust_pkg_reason.pkgnum)
 	left join reason on (cust_pkg_reason.reasonnum = reason.reasonnum)
