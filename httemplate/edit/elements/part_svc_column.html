@@ -15,6 +15,7 @@ To be called from part_svc.cgi.
 # don't allow the 'inventory' flags (M, A) to be chosen for 
 # fields that aren't free-text
 my $inv_sub = sub { $_[0]->{disable_inventory} || $_[0]->{type} ne 'text' };
+
 tie my %flag, 'Tie::IxHash',
   ''  => { 'desc' => 'No default', 'condition' => sub { 0 } },
   'D' => { 'desc' => 'Default', 
@@ -37,6 +38,9 @@ tie my %flag, 'Tie::IxHash',
          },
   'H' => { 'desc' => 'Select from hardware class',
            'condition' => sub { $_[0]->{type} ne 'select-hardware' },
+         },
+  'P' => { 'desc' => 'From package FCC 477 information',
+           'condition' => sub { $_[0]->{type} ne 'fcc_477_speed' }, # get values from package fcc 477 information
          },
   'X' => { 'desc' => 'Excluded',
            'condition' => sub { 1 }, # obsolete
@@ -202,6 +206,20 @@ my %communigate_fields = (
 %       $mode = 'hardware';
 %       $multiple = 0;
 %     }
+%
+%     if ( $def->{'type'} eq 'fcc_477_speed' ) {
+%       if ($field eq 'speed_up') {
+          <SPAN ID="<% $name %>_select">
+            upstream speed
+            <INPUT TYPE="hidden" ID="<% $name %>_select" NAME="<% $name %>_classnum" VALUE="up">
+          </SPAN>
+%       } elsif ($field eq 'speed_down') {
+          <SPAN ID="<% $name %>_select">
+            downstream speed
+            <INPUT TYPE="hidden" ID="<% $name %>_select" NAME="<% $name %>_classnum" VALUE="down">
+          </SPAN>
+%       }
+%     } else {
       <& /elements/select-table.html,
           'field'       => $name.'_classnum',
           'id'          => $name.'_select',
@@ -211,6 +229,7 @@ my %communigate_fields = (
           'empty_label' => "Select $mode class",
           'multiple'    => $multiple,
       &>
+%     }
 %   }
     </TD>
     <TD>

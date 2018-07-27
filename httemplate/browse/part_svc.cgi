@@ -251,6 +251,7 @@ my %flag = (
   'A' => 'Automatically filled in from inventory',
   'H' => 'Selected from hardware class',
   'X' => 'Excluded',
+  'P' => 'From package 477 information',
 );
 
 my %search;
