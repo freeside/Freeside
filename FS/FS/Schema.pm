@@ -3324,6 +3324,9 @@ sub tables_hashref {
         'suid',                    'int', 'NULL',        '', '', '',
         'shared_svcnum',           'int', 'NULL',        '', '', '',
         'serviceid',           'varchar', 'NULL',        64, '', '',#srvexport/reportfields
+        'speed_test_up',           'int', 'NULL',        '', '', '',
+        'speed_test_down',         'int', 'NULL',        '', '', '',
+        'speed_test_latency',      'int', 'NULL',        '', '', '',
       ],
       'primary_key' => 'svcnum',
       'unique'      => [ [ 'ip_addr' ], [ 'mac_addr' ] ],

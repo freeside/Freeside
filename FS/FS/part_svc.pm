@@ -869,10 +869,10 @@ sub process {
               map {
                     my $f = $svcdb.'__'.$_;
                     my $flag = $param->{ $f.'_flag' } || ''; #silence warnings
-                    if ( $flag =~ /^[MAH]$/ ) {
+                    if ( $flag =~ /^[MAHP]$/ ) {
                       $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
-		    if ( ( $flag =~ /^[MAHS]$/ or $_ eq 'usergroup' )
+		    if ( ( $flag =~ /^[MAHSP]$/ or $_ eq 'usergroup' )
                          and ref($param->{ $f }) ) {
                       $param->{ $f } = join(',', @{ $param->{ $f } });
 		    }

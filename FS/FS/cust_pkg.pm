@@ -5969,6 +5969,24 @@ sub fcc_477_count {
 
 }
 
+=item fcc_477_record
+
+Returns a fcc_477 record based on option name.
+
+=cut
+
+sub fcc_477_record {
+  my ($self, $option_name) = @_;
+
+  my $fcc_record = qsearchs({
+    'table'     => 'part_pkg_fcc_option',
+    'hashref'   => { 'pkgpart' => $self->{Hash}->{pkgpart}, 'fccoptionname' => $option_name, },
+  });
+
+  return ( $fcc_record );
+
+}
+
 =item tax_locationnum_sql
 
 Returns an SQL expression for the tax location for a package, based

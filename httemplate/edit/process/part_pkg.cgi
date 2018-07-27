@@ -9,6 +9,7 @@
               'edit_ext'          => 'cgi',
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
+              'update_svc'        => $update_svc,
               'process_locale'    => 'pkg',
               'process_m2m'       => \@process_m2m,
           )
@@ -156,6 +157,37 @@ my $args_callback = sub {
 
   @args;
 
+};
+
+## update services upon package change.
+my $update_svc = sub {
+  my $cgi = shift @_;
+  my $new = shift @_;
+  my %args = @_;
+  my $error;
+
+  my @svcs = $new->pkg_svc();
+
+  foreach my $svc_part(@svcs) {
+    my @part_svc_column = qsearch('part_svc_column',{ 'svcpart' => $svc_part->{Hash}->{svcpart}, 'columnflag' => 'P' });
+
+    if ($svc_part->{Hash}->{svcdb} eq "svc_broadband" && (keys $args{fcc_options}) && @part_svc_column ) {
+      ## find provisioned services to update
+      my @svc_svcdb = qsearch({
+        'table'     => 'svc_broadband',
+        'select'    => 'svc_broadband.*, cust_svc.svcpart',
+        'addl_from' => 'LEFT JOIN cust_svc USING (svcnum) LEFT JOIN cust_pkg USING (pkgnum)',
+        'extra_sql' => " WHERE cust_svc.svcpart = '".$svc_part->{Hash}->{svcpart}."' AND cust_pkg.pkgpart = '".$svc_part->{Hash}->{pkgpart}."'",
+      });
+      foreach my $svc (@svc_svcdb) {
+        #my $svc_new = $svc;
+        $svc->{Hash}->{speed_down} = $args{fcc_options}->{broadband_downstream} * 1000;
+        $svc->{Hash}->{speed_up} = $args{fcc_options}->{broadband_upstream} * 1000;
+        $error = $svc->replace();
+      }
+    }
+  }
+  return $error;
 };
 
 my $redirect_callback = sub {

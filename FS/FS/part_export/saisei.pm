@@ -129,9 +129,7 @@ END
 sub _export_insert {
   my ($self, $svc_broadband) = @_;
 
-  my $service_part = FS::Record::qsearchs( 'part_svc', { 'svcpart' => $svc_broadband->{Hash}->{svcpart} } );
-  my $rateplan_name = $service_part->{Hash}->{svc};
-  $rateplan_name =~ s/\s/_/g;
+  my $rateplan_name = $self->get_rateplan_name($svc_broadband);
 
   # check for existing rate plan
   my $existing_rateplan;
@@ -218,15 +216,15 @@ sub _export_insert {
 
 sub _export_replace {
   my ($self, $svc_broadband) = @_;
+  $self->_export_insert($svc_broadband);
   return '';
 }
 
 sub _export_delete {
   my ($self, $svc_broadband) = @_;
 
-  my $service_part = FS::Record::qsearchs( 'part_svc', { 'svcpart' => $svc_broadband->{Hash}->{svcpart} } );
-  my $rateplan_name = $service_part->{Hash}->{svc};
-  $rateplan_name =~ s/\s/_/g;
+  my $rateplan_name = $self->get_rateplan_name($svc_broadband);
+
   my $username = $svc_broadband->{Hash}->{svcnum};
 
   ## untie host to user
@@ -248,25 +246,49 @@ sub _export_unsuspend {
 sub export_partsvc {
   my ($self, $svc_part) = @_;
 
-  my $rateplan_name = $svc_part->{Hash}->{svc};
-  $rateplan_name =~ s/\s/_/g;
-  my $speeddown = $svc_part->{Hash}->{svc_broadband__speed_down};
-  my $speedup = $svc_part->{Hash}->{svc_broadband__speed_up};
+  my $fcc_477_speeds;
+  if ($svc_part->{Hash}->{svc_broadband__speed_down} eq "down" || $svc_part->{Hash}->{svc_broadband__speed_up} eq "up") {
+    for my $type (qw( down up )) {
+      my $speed_type = "broadband_".$type."stream";
+      foreach my $pkg_svc (FS::Record::qsearch({
+        'table'     => 'pkg_svc',
+        'select'    => 'pkg_svc.*, part_pkg_fcc_option.fccoptionname, part_pkg_fcc_option.optionvalue',
+        'addl_from' => ' LEFT JOIN part_pkg_fcc_option USING (pkgpart) ',
+        'extra_sql' => " WHERE pkg_svc.svcpart = ".$svc_part->{Hash}->{svcpart}." AND pkg_svc.quantity > 0 AND part_pkg_fcc_option.fccoptionname = '".$speed_type."'",
+      })) { $fcc_477_speeds->{
+        $pkg_svc->{Hash}->{pkgpart}}->{$speed_type} = $pkg_svc->{Hash}->{optionvalue} * 1000 unless !$pkg_svc->{Hash}->{optionvalue}; }
+    }
+  }
+  else {
+    $fcc_477_speeds->{1}->{broadband_downstream} = $svc_part->{Hash}->{"svc_broadband__speed_down"};
+    $fcc_477_speeds->{1}->{broadband_upstream} = $svc_part->{Hash}->{"svc_broadband__speed_up"};
+  }
 
-  my $temp_svc = $svc_part->{Hash};
-  my $svc_broadband = {};
-  map { if ($_ =~ /^svc_broadband__(.*)$/) { $svc_broadband->{Hash}->{$1} = $temp_svc->{$_}; }  } keys %$temp_svc;
+  foreach my $key (keys %$fcc_477_speeds) {
 
-  # check for existing rate plan
-  my $existing_rateplan;
-  $existing_rateplan = $self->api_get_rateplan($rateplan_name) unless $self->{'__saisei_error'};
+    $svc_part->{Hash}->{speed_down} = $fcc_477_speeds->{$key}->{broadband_downstream};
+    $svc_part->{Hash}->{speed_up} = $fcc_477_speeds->{$key}->{broadband_upstream};
+    $svc_part->{Hash}->{svc_broadband__speed_down} = $fcc_477_speeds->{$key}->{broadband_downstream};
+    $svc_part->{Hash}->{svc_broadband__speed_up} = $fcc_477_speeds->{$key}->{broadband_upstream};
 
-  # Modify the existing rate plan with new service data.
-  $self->api_modify_existing_rateplan($svc_broadband, $rateplan_name) unless ($self->{'__saisei_error'} || !$existing_rateplan);
+    my $temp_svc = $svc_part->{Hash};
+    my $svc_broadband = {};
+    map { if ($_ =~ /^svc_broadband__(.*)$/) { $svc_broadband->{Hash}->{$1} = $temp_svc->{$_}; }  } keys %$temp_svc;
 
-  # if no existing rate plan create one and modify it.
-  $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan;
-  $self->api_modify_rateplan($svc_part, $rateplan_name) unless ($self->{'__saisei_error'} || $existing_rateplan);
+    my $rateplan_name = $self->get_rateplan_name($svc_broadband, $svc_part->{Hash}->{svc});
+
+    # check for existing rate plan
+    my $existing_rateplan;
+    $existing_rateplan = $self->api_get_rateplan($rateplan_name) unless $self->{'__saisei_error'};
+
+    # Modify the existing rate plan with new service data.
+    $self->api_modify_existing_rateplan($svc_broadband, $rateplan_name) unless ($self->{'__saisei_error'} || !$existing_rateplan);
+
+    # if no existing rate plan create one and modify it.
+    $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan;
+    $self->api_modify_rateplan($svc_part, $rateplan_name) unless ($self->{'__saisei_error'} || $existing_rateplan);
+
+  }
 
   return $self->api_error;
 
@@ -309,6 +331,19 @@ sub export_tower_sector {
   }
 
   return $self->api_error;
+}
+
+## creates the rateplan name
+sub get_rateplan_name {
+  my ($self, $svc_broadband, $svc_name) = @_;
+
+  my $service_part = FS::Record::qsearchs( 'part_svc', { 'svcpart' => $svc_broadband->{Hash}->{svcpart} } ) unless $svc_name;
+  my $service_name = $svc_name ? $svc_name : $service_part->{Hash}->{svc};
+
+  my $rateplan_name = $service_name . " " . $svc_broadband->{Hash}->{speed_down} . "-" . $svc_broadband->{Hash}->{speed_up};
+  $rateplan_name =~ s/\s/_/g;
+
+  return $rateplan_name;
 }
 
 =head1 Saisei API

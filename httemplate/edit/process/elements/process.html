@@ -89,6 +89,9 @@ Example:
    # for use with tables that are FS::option_Common (among other things)
    'args_callback' => sub { my( $cgi, $object ) = @_; },
 
+   # if no errors after package insert or replace will update services attached to package.
+   'update_svc' => sub { my( $cgi, $object ) = @_; },
+
    'debug' => 1, #turns on debugging output
 
    #agent virtualization
@@ -436,6 +439,12 @@ foreach my $value ( @values ) {
         warn "uploaded as $1\n";
       }
     }
+  }
+
+  if ( !$error and $opt{'update_svc'} ) {
+    my @args = ();
+    @args = &{ $opt{'args_callback'} }( $cgi, $new ) if $opt{'args_callback'};
+   $error = &{ $opt{'update_svc'} }( $cgi, $new, @args );
   }
 
   if ( $error ) {
