@@ -2514,6 +2514,11 @@ use MIME::Base64;
 sub postal_mail_fsinc {
   my ( $self, %opt ) = @_;
 
+  if ( $FS::Misc::DISABLE_PRINT ) {
+    warn 'postal_mail_fsinc() disabled by $FS::Misc::DISABLE_PRINT' if $DEBUG;
+    return;
+  }
+
   my $url = 'https://ws.freeside.biz/print';
 
   my $cust_main = $self->cust_main;

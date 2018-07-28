@@ -1402,6 +1402,11 @@ See L</print_csv> for a description of the output format.
 sub send_csv {
   my($self, %opt) = @_;
 
+  if ( $FS::Misc::DISABLE_ALL_NOTICES ) {
+    warn 'send_csv() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
+
   #create file(s)
 
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
@@ -1477,6 +1482,11 @@ in the ICS format.
 
 sub spool_csv {
   my($self, %opt) = @_;
+
+  if ( $FS::Misc::DISABLE_ALL_NOTICES ) {
+    warn 'spool_csv() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
 
   my $time = $opt{'time'} || time;
   my $cust_main = $self->cust_main;
