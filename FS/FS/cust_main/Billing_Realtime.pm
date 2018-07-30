@@ -1078,9 +1078,11 @@ sub _realtime_bop_result {
 	  }
 
 	  my $cust_pkg;
+    my $cc_surcharge_text = 'Credit Card Surcharge';
+    $cc_surcharge_text = $conf->config('credit-card-surcharge-text', $self->agentnum) if $conf->exists('credit-card-surcharge-text', $self->agentnum);
 	  my $charge_error = $self->charge({
 				    'amount' 	=> $options{'cc_surcharge'},
-				    'pkg' 	=> 'Credit Card Surcharge',
+				    'pkg' 	=> $cc_surcharge_text,
 				    'setuptax'  => 'Y',
 				    'cust_pkg_ref' => \$cust_pkg,
 				});
