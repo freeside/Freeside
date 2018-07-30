@@ -895,6 +895,14 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'credit-card-surcharge-text',
+    'section'     => 'credit_cards',
+    'description' => 'Text for the credit card surcharge invoice line.  If not set, it will default to Credit Card Surcharge.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'discount-show-always',
     'section'     => 'billing',
     'description' => 'Generate a line item on an invoice even when a package is discounted 100%',
