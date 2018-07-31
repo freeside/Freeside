@@ -36,6 +36,7 @@ Import a file containing customer packages.
         <OPTION VALUE="svc_acct">Account service
         <OPTION VALUE="svc_acct-agent_custid">Account service with agent_custid
         <OPTION VALUE="svc_acct-locationnum">Account service with existing location
+        <OPTION VALUE="svc_broadband">Broadband service
         <OPTION VALUE="svc_phone">Phone service
         <OPTION VALUE="svc_phone-agent_custid">Phone service with agent_custid
         <OPTION VALUE="svc_phone-locationnum">Phone service with existing location
@@ -103,6 +104,9 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>Account service with existing location</b> format has the following field order: <i>custnum<%$req%>, locationnum, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
+<BR><BR>
+
+<b>Broadband service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, ip_addr<%$req%>, description, routernum, blocknum, sectornum, speed_up, speed_down</i>
 <BR><BR>
 
 <b>Phone service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>

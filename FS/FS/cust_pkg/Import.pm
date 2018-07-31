@@ -105,6 +105,7 @@ my %formatfields = (
   'default'      => [],
   'all_dates'    => [],
   'svc_acct'     => [qw( username _password domsvc )],
+  'svc_broadband' => [qw( ip_addr description routernum blocknum sectornum speed_up speed_down )],
   'svc_phone'    => [qw( countrycode phonenum sip_password pin )],
   'svc_external' => [qw( id title )],
   'location'     => [qw( address1 address2 city state zip country )],
