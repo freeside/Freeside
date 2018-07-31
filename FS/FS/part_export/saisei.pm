@@ -830,7 +830,7 @@ sub export_provisioned_services {
   my $svc_count = scalar @svcs;
 
   my %status = {};
-  for (my $c=10; $c <=100; $c=$c+10) { $status{int($svc_count * ($c/100))} = $c; }
+  for (my $c=1; $c <=100; $c=$c+1) { $status{int($svc_count * ($c/100))} = $c; }
 
   my $process_count=0;
   foreach my $svc (@svcs) {
