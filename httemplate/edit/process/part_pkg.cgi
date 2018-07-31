@@ -168,6 +168,7 @@ my $update_svc = sub {
 
   my @svcs = $new->pkg_svc();
 
+## update broadband services getting their up and down speeds from package fcc_477 options
   foreach my $svc_part(@svcs) {
     my @part_svc_column = qsearch('part_svc_column',{ 'svcpart' => $svc_part->{Hash}->{svcpart}, 'columnflag' => 'P' });
 
@@ -180,7 +181,7 @@ my $update_svc = sub {
         'extra_sql' => " WHERE cust_svc.svcpart = '".$svc_part->{Hash}->{svcpart}."' AND cust_pkg.pkgpart = '".$svc_part->{Hash}->{pkgpart}."'",
       });
       foreach my $svc (@svc_svcdb) {
-        #my $svc_new = $svc;
+        next if ($svc->{Hash}->{speed_down} == $args{fcc_options}->{broadband_downstream} * 1000 && $svc->{Hash}->{speed_up} == $args{fcc_options}->{broadband_upstream} * 1000);
         $svc->{Hash}->{speed_down} = $args{fcc_options}->{broadband_downstream} * 1000;
         $svc->{Hash}->{speed_up} = $args{fcc_options}->{broadband_upstream} * 1000;
         $error = $svc->replace();
