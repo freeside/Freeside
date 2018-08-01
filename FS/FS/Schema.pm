@@ -2736,6 +2736,7 @@ sub tables_hashref {
         'country',          'char',     '',       2, '', '', 
         'payby',            'char',     '',       4, '', '',
         'payinfo',       'varchar', 'NULL',     512, '', '', 
+        #'paymask',       'varchar', 'NULL', $char_d, '', '',
         #'exp',          @date_type,                  '', '',
         'exp',           'varchar', 'NULL',      11, '', '', 
         'payname',       'varchar', 'NULL', $char_d, '', '', 
