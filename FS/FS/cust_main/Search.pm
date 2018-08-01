@@ -95,6 +95,7 @@ sub smart_search {
 
     #cust_main phone numbers and contact phone number
     push @cust_main, qsearch( {
+      'select'  => 'cust_main.*',
       'table'   => 'cust_main',
       'hashref' => { %options },
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
@@ -131,6 +132,7 @@ sub smart_search {
   if ( $search =~ /@/ ) { #email address from cust_main_invoice and contact_email
 
     push @cust_main, qsearch( {
+      'select'  => 'cust_main.*',
       'table'   => 'cust_main',
       'hashref' => { %options },
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
@@ -282,7 +284,7 @@ sub smart_search {
       #cust_main and contacts
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
-        'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+        'select'    => 'cust_main.*',
         'hashref'   => { %options },
         'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
         'addl_from' => ' left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
@@ -314,7 +316,7 @@ sub smart_search {
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
-      'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+      'select'    => 'cust_main.*',
       'hashref'   => { %options },
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
       'addl_from' => 'left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
