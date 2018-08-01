@@ -156,8 +156,8 @@ sub table_info {
                              disable_inventory => 1,
                            },
       'serviceid' => 'Torrus serviceid', #but is should be hidden
-      'speed_test_up'      => 'Speed test download (Kbps)',
-      'speed_test_down'    => 'Speed test upload (Kbps)',
+      'speed_test_up'      => { 'label' => 'Speed test upload (Kbps)' },
+      'speed_test_down'    => { 'label' => 'Speed test download (Kbps)' },
       'speed_test_latency' => 'Speed test latency (ms)',
     },
   };
@@ -364,6 +364,8 @@ sub check {
     || $self->ut_textn('description')
     || $self->ut_numbern('speed_up')
     || $self->ut_numbern('speed_down')
+    || $self->ut_numbern('speed_test_up')
+    || $self->ut_numbern('speed_test_down')
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
     || $self->ut_hexn('auth_key')
