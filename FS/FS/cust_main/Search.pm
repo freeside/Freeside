@@ -407,6 +407,7 @@ sub smart_search {
       if ( $conf->exists('address1-search') && length($value) >= $min_len ) {
 
         push @cust_main, qsearch( {
+          select    => 'cust_main.*',
           table     => 'cust_main',
           addl_from => 'JOIN cust_location USING (custnum)',
           extra_sql => 'WHERE '.
