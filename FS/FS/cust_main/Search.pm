@@ -464,6 +464,7 @@ sub smart_search {
     my $mask_search = FS::payinfo_Mixin->mask_payinfo('CARD', $card_search);
 
     push @cust_main, qsearch({
+      'select'    => 'cust_main.*',
       'table'     => 'cust_main',
       'addl_from' => ' JOIN cust_payby USING (custnum)',
       'hashref'   => {},
