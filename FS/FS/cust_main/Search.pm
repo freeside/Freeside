@@ -95,8 +95,11 @@ sub smart_search {
 
     #cust_main phone numbers and contact phone number
     push @cust_main, qsearch( {
-      'table'   => 'cust_main',
-      'hashref' => { %options },
+      'select'    => 'cust_main.*',
+      'table'     => 'cust_main',
+      'addl_from' => ' left join cust_contact  using (custnum) '.
+                     ' left join contact_phone using (contactnum) ',
+      'hashref'   => { %options },
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                      ' ( '.
                          join(' OR ', map "$_ = '$phonen'",
@@ -105,15 +108,14 @@ sub smart_search {
                           " OR phonenum = '$phonenum' ".
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
-      'addl_from' => ' left join cust_contact using (custnum) left join contact_phone using (contactnum) ',
     } );
 
     unless ( @cust_main || $phonen =~ /x\d+$/ ) { #no exact match
       #try looking for matches with extensions unless one was specified
 
       push @cust_main, qsearch( {
-        'table'   => 'cust_main',
-        'hashref' => { %options },
+        'table'     => 'cust_main',
+        'hashref'   => { %options },
         'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                        ' ( '.
                            join(' OR ', map "$_ LIKE '$phonen\%'",
@@ -131,8 +133,12 @@ sub smart_search {
   if ( $search =~ /@/ ) { #email address from cust_main_invoice and contact_email
 
     push @cust_main, qsearch( {
-      'table'   => 'cust_main',
-      'hashref' => { %options },
+      'select'    => 'cust_main.*',
+      'table'     => 'cust_main',
+      'addl_from' => ' left join cust_main_invoice using (custnum) '.
+                     ' left join cust_contact      using (custnum) '.
+                     ' left join contact_email     using (contactnum) ',
+      'hashref'   => { %options },
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                      ' ( '.
                          join(' OR ', map "$_ = '$search'",
@@ -140,7 +146,6 @@ sub smart_search {
                              ).
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
-      'addl_from' => ' left join cust_main_invoice using (custnum) left join cust_contact using (custnum) left join contact_email using (contactnum) ',
     } );
 
   # custnum search (also try agent_custid), with some tweaking options if your
@@ -282,11 +287,12 @@ sub smart_search {
 
       #cust_main and contacts
       push @cust_main, qsearch( {
+        'select'    => 'cust_main.*',
         'table'     => 'cust_main',
-        'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+        'addl_from' => ' left join cust_contact using (custnum) '.
+                       ' left join contact using (contactnum) ',
         'hashref'   => { %options },
         'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
-        'addl_from' => ' left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
       } );
 
       # or it just be something that was typed in... (try that in a sec)
@@ -314,11 +320,12 @@ sub smart_search {
       if $conf->exists('address1-search');
 
     push @cust_main, qsearch( {
+      'select'    => 'cust_main.*',
       'table'     => 'cust_main',
-      'select'    => 'cust_main.*, cust_contact.*, contact.contactnum, contact.last as contact_last, contact.first as contact_first, contact.title',
+      'addl_from' => ' left join cust_contact using (custnum) '.
+                     ' left join contact using (contactnum) ',
       'hashref'   => { %options },
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
-      'addl_from' => 'left join cust_contact on cust_main.custnum = cust_contact.custnum left join contact using (contactnum) ',
     } );
 
     #no exact match, trying substring/fuzzy
