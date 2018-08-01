@@ -350,7 +350,7 @@ sub table_info {
                          type  => 'text',
                          disable_inventory => 1,
                          disable_select => 1,
-                         disable_part_svc_column => 1,
+                         #disable_part_svc_column => 1,
                        },
         'upbytes'   => { label => 'Upload',
                          type  => 'text',
