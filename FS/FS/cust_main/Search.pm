@@ -231,9 +231,9 @@ sub smart_search {
     #doesn't throw a wrench in the works)
 
     push @cust_main, qsearch( {
-        'table'     => 'cust_main',
-        'hashref'   => { %options },
-        'extra_sql' => 
+      'table'     => 'cust_main',
+      'hashref'   => { %options },
+      'extra_sql' => 
         ( keys(%options) ? ' AND ' : ' WHERE ' ).
         join(' AND ',
           " LOWER(first)   = ". dbh->quote(lc($first)),
@@ -241,7 +241,7 @@ sub smart_search {
           " LOWER(company) = ". dbh->quote(lc($company)),
           $agentnums_sql,
         ),
-      } ),
+    } );
 
     #contacts?
     # probably not necessary for the "something a browser remembered" case
