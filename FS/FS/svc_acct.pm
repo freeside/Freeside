@@ -350,6 +350,15 @@ sub table_info {
                          disable_select => 1, #UI wonky, pry works otherwise
                        },
         'sectornum' => 'Tower sector',
+        'routernum' => 'Router/block',
+        'blocknum'  => {
+                         'label' => 'Address block',
+                         'type'  => 'select',
+                         'select_table' => 'addr_block',
+                          'select_key'   => 'blocknum',
+                         'select_label' => 'cidr',
+                         'disable_inventory' => 1,
+                       },
         'usergroup' => {
                          label => 'RADIUS groups',
                          type  => 'select-radius_group.html',
