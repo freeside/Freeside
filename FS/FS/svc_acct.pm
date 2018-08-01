@@ -1980,6 +1980,9 @@ sub _op_usage {
 
   return '' unless $amount;
 
+  return ''
+    if $self->cust_svc->part_svc->part_svc_column($column)->columnflag eq 'F';
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
