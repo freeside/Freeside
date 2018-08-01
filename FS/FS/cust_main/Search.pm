@@ -210,6 +210,7 @@ sub smart_search {
       # probably the Right Thing: return customers that have any associated
       # locations matching the string, not just bill/ship location
       push @cust_main, qsearch( {
+        'select'    => 'cust_main.*',
         'table'     => 'cust_main',
         'addl_from' => ' JOIN cust_location USING (custnum) ',
         'hashref'   => { %options, },
