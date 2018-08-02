@@ -213,7 +213,7 @@ my $update_svc = sub {
   foreach my $svc_part(@svcs) {
     my @part_svc_column = qsearch('part_svc_column',{ 'svcpart' => $svc_part->{Hash}->{svcpart}, 'columnflag' => 'P' });
 
-    if ($svc_part->{Hash}->{svcdb} eq "svc_broadband" && (keys $args{fcc_options}) && @part_svc_column ) {
+    if ($svc_part->{Hash}->{svcdb} eq "svc_broadband" && (keys %{ $args{fcc_options} }) && @part_svc_column ) {
       ## find provisioned services to update
       my @svc_svcdb = qsearch({
         'table'     => 'svc_broadband',
