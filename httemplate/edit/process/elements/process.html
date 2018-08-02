@@ -280,7 +280,7 @@ foreach my $value ( @values ) {
     }
 
     if ( $opt{'post_new_object_callback'} ) {
-      &{ $opt{'post_new_object_callback'} }( $cgi, $new );
+      $error ||= &{ $opt{'post_new_object_callback'} }( $cgi, $new );
     }
 
     if ( $opt{'agent_virt'} ) {
