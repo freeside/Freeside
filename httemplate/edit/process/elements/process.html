@@ -80,7 +80,11 @@ Example:
    'precheck_callback' => sub { my( $cgi ) = @_; },
 
    #after the new object is created
+   #return an error string or empty for no error
    'post_new_object_callback' => sub { my( $cgi, $object ) = @_; },
+
+   #run right before replacing (not run for inserts)
+   'edit_callback' => sub { my( $new, $old ) = @_; },
 
    #after everything's inserted
    'noerror_callback' => sub { my( $cgi, $object ) = @_; },
