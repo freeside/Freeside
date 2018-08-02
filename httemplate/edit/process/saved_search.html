@@ -10,6 +10,8 @@ my $callback = sub {
   $obj->usernum( $FS::CurrentUser::CurrentUser->usernum );
   # if this would change it from its existing owner, replace_check
   # will refuse
+
+  ''; #no error
 };
 
 </%init>
