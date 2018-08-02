@@ -10,18 +10,32 @@ my $dbh = adminsuidsetup($user);
 
 my $fcc_up_speed = "(select part_pkg_fcc_option.optionvalue from part_pkg_fcc_option where fccoptionname = 'broadband_upstream' and pkgpart = cust_pkg.pkgpart) AS fcc477_upstream";
 my $fcc_down_speed = "(select part_pkg_fcc_option.optionvalue from part_pkg_fcc_option where fccoptionname = 'broadband_downstream' and pkgpart = cust_pkg.pkgpart) AS fcc477_downstream";
+
 foreach my $rec (qsearch({
-	'select'    => 'svc_broadband.*, cust_svc.svcpart, cust_pkg.pkgpart, '.$fcc_up_speed.', '.$fcc_down_speed,
-	'table'     => 'svc_broadband',
-	'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum ) LEFT JOIN cust_pkg USING ( pkgnum )',
+  'select'    => 'svc_broadband.*, cust_svc.svcpart, cust_pkg.pkgpart, '.$fcc_up_speed.', '.$fcc_down_speed,
+  'table'     => 'svc_broadband',
+  'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum ) LEFT JOIN cust_pkg USING ( pkgnum )',
 })) {
   $rec->{Hash}->{speed_test_up} = $rec->{Hash}->{speed_up};
   $rec->{Hash}->{speed_test_down} = $rec->{Hash}->{speed_down};
   $rec->{Hash}->{speed_up} = $rec->{Hash}->{fcc477_upstream} * 1000;
   $rec->{Hash}->{speed_down} = $rec->{Hash}->{fcc477_downstream} * 1000;
-  $rec->replace();
+
+  my $sql = "UPDATE svc_broadband set
+               speed_up = $rec->{Hash}->{speed_up},
+               speed_down = $rec->{Hash}->{speed_down},
+               speed_test_up = $rec->{Hash}->{speed_test_up},
+               speed_test_down = $rec->{Hash}->{speed_test_down}
+             WHERE svcnum = $rec->{Hash}->{svcnum}";
+
   warn "Fixing broadband service speeds for service ".$rec->{Hash}->{svcnum}."-".$rec->{Hash}->{description}."\n";
+
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
 }
+
+$dbh->commit;
 
 warn "Completed fixing broadband service speeds!\n";
 
