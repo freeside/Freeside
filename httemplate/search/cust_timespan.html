@@ -101,8 +101,6 @@ my @fields = ( 'custnum', 'custname', $location_sub, 'daytime', $email_sub, 'act
 my @links = ( $customer_link, $customer_link, '', '', '', '', '', '', '' );
 my @select = (
 	'cust_main.*',
-	'cust_location.*',
-	'part_pkg.*',
 	"(select to_char((select to_timestamp((".$active_date."))), 'Mon DD YYYY')) AS active_date",
 	"(select to_char((select to_timestamp((".$cancel_date."))), 'Mon DD YYYY')) AS cancel_date",
 	"($cancel_reason) AS cancel_reason",
