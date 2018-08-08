@@ -39,6 +39,8 @@ my $cust_main = qsearchs({
   'extra_sql' => ' AND '. $curuser->agentnums_sql,
 }) or die "unknown custnum $custnum";
 
+my $invoice = ($cgi->param('invoice') =~ /^(\d+)$/) ? $cgi->param('invoice') : '';
+
 $cgi->param('amount') =~ /^\s*(\d*(\.\d\d)?)\s*$/
   or errorpage("illegal amount ". $cgi->param('amount'));
 my $amount = $1;
@@ -224,6 +226,7 @@ if ( $cgi->param('batch') ) {
                                      'payinfo'  => $payinfo,
                                      'paydate'  => $paydate,
                                      'payname'  => $payname,
+                                     'invnum'   => $invoice,
                                      map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}
                                    );
@@ -246,6 +249,7 @@ if ( $cgi->param('batch') ) {
     'discount_term' => $discount_term,
     'no_auto_apply' => ($cgi->param('apply') eq 'never') ? 'Y' : '',
     'no_invnum'     => 1,
+    'invnum'        => $invoice,
     map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;

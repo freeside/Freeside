@@ -131,11 +131,12 @@ Example:
       function <% $opt{prefix} %>invoice_select_changed(what) {
 
         var surcharge;
+        var invdue = document.getElementById("<% $opt{prefix} %>inv" + what.value);
         if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_flatfee')) {
-          surcharge = (+what.value * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
+          surcharge = (+invdue.value * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
         }
         else { surcharge = 0; }
-        var amount = +what.value + +surcharge;
+        var amount = +invdue.value + +surcharge;
 
         if ( what.value == 'select' ) {
           $('#payment_amount_row').hide();

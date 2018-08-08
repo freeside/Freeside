@@ -26,10 +26,14 @@ Example:
   		<OPTION VALUE="select">Select an invoice to pay</OPTION>
 %         foreach my $record (@invoices) {
 %            my $read_date = time2str("%b %o, %Y", $record->_date);
-            <OPTION VALUE="<% $record->charged %>"><% $record->invnum %> (<% $read_date %>) - <% $record->charged %></OPTION>	
+%             $hidden .= '<INPUT TYPE="hidden" ID="inv'.$record->invnum.'" NAME="inv'.$record->invnum.'" VALUE="'.$record->owed.'">';
+            <OPTION VALUE="<% $record->invnum %>"><% $record->invnum %> (<% $read_date %>) - <% $record->owed %></OPTION>
 %         }
 
-	</SELECT>	
+	</SELECT>
+
+  <% $hidden %>
+
     </TD>
   </TR>
 
@@ -37,6 +41,7 @@ Example:
 
 my %opt = @_;
 my $status = $opt{'status'} ? $opt{'status'} : 'all';
+my $hidden;
 
 my @invoices;
 if ($status eq "all") { @invoices = $opt{'cust_main'}->cust_bill; }
