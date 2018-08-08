@@ -55,7 +55,8 @@ sub batch_card {
     return;
   }
   
-  my $invnum = delete $options{invnum};
+  #my $invnum = delete $options{invnum};
+  my $invnum = $options{invnum};
 
   #pay fields should all come from either cust_payby or options, not both
   #  in theory, could just pass payby, and use it to select cust_payby,
