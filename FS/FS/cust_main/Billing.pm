@@ -1,6 +1,7 @@
 package FS::cust_main::Billing;
 
 use strict;
+use feature 'state';
 use vars qw( $conf $DEBUG $me );
 use Carp;
 use Data::Dumper;
@@ -170,11 +171,8 @@ sub bill_and_collect {
 
   # In a batch tax environment, do not run collection if any pending 
   # invoices were created.  Collection will run after the next tax batch.
-  my $tax = FS::TaxEngine->new;
-  if ( $tax->info->{batch} and 
-       qsearch('cust_bill', { custnum => $self->custnum, pending => 'Y' })
-     )
-  {
+  state $is_batch_tax = FS::TaxEngine->new->info->{batch} ? 1 : 0;
+  if ( $is_batch_tax && $self->pending_invoice_count ) {
     warn "skipped collection for custnum ".$self->custnum.
          " due to pending invoices\n" if $DEBUG;
   } elsif ( $conf->exists('cancelled_cust-noevents')

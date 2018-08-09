@@ -5694,6 +5694,16 @@ sub process_bill_and_collect {
   $cust_main->bill_and_collect( %$param );
 }
 
+=item pending_invoice_count
+
+Return number of cust_bill with pending=Y for this customer
+
+=cut
+
+sub pending_invoice_count {
+  FS::cust_bill->count( 'custnum = '.shift->custnum."AND pending = 'Y'" );
+}
+
 #starting to take quite a while for big dbs
 #   (JRNL: journaled so it only happens once per database)
 # - seq scan of h_cust_main (yuck), but not going to index paycvv, so
