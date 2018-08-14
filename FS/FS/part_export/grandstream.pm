@@ -7,6 +7,7 @@ use MIME::Base64;
 use Tie::IxHash;
 use IPC::Run qw(run);
 use FS::CGI qw(rooturl);
+use Carp qw(carp);
 
 $DEBUG = 0;
 
@@ -49,6 +50,12 @@ sub rebless { shift; }
 
 sub gs_create_config {
   my($self, $mac, %opt) = (@_);
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'gs_create_config() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
 
   eval "use Net::SCP;";
   die $@ if $@;
@@ -130,6 +137,12 @@ sub gs_create {
 
 sub gs_delete {
   my($self, $mac) = (shift, shift);
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'gs_delete() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
 
   $mac = sprintf('%012s', lc($mac));
 
