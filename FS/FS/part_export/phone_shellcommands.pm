@@ -5,6 +5,7 @@ use vars qw(@ISA %info);
 use Tie::IxHash;
 use String::ShellQuote;
 use FS::part_export;
+use Carp qw(carp);
 
 @ISA = qw(FS::part_export);
 
@@ -102,6 +103,12 @@ sub _export_command {
   my ( $self, $action, $svc_phone, %addl_vars) = @_;
   my $command = $self->option($action);
   return '' if $command =~ /^\s*$/;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "_export_command($action) suppressed by noexport_hack"
+      if $self->option('debug');
+    return;
+  }
 
   #set variable for the command
   no strict 'vars';
