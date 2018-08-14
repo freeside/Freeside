@@ -10,6 +10,7 @@ use FS::Record qw(qsearch qsearchs dbh);
 use FS::part_export;
 use FS::svc_dsl;
 use Data::Dumper;
+use Carp qw(carp);
 
 @ISA = qw(FS::part_export);
 $me= '[' .  __PACKAGE__ . ']';
@@ -678,7 +679,13 @@ sub _export_delete {
 
 sub export_expire {
   my($self, $svc_dsl, $date) = (shift, shift, shift);
-  
+
+  if ( $FS::svc_Common::noexport_hack ) {
+      carp 'export_expire() suppressed by noexport_hack'
+        if $self->option('debug');
+      return;
+  }
+
   return 'Invalid operation - Import Mode is enabled' if $self->import_mode;
 
   my $result = $self->valid_order($svc_dsl,'expire');
