@@ -7,6 +7,7 @@ use Tie::IxHash;
 use Date::Format qw( time2str );
 use Regexp::Common qw( URI );
 use REST::Client;
+use Carp qw(carp);
 
 $me = '[FS::part_export::netsapiens]';
 
@@ -392,6 +393,12 @@ sub _export_unsuspend {
 sub export_device_insert {
   my( $self, $svc_phone, $phone_device ) = (shift, shift, shift);
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_device_insert() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
+
   my $domain = $self->ns_domain($svc_phone);
   my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
@@ -425,6 +432,12 @@ sub export_device_insert {
 
 sub export_device_delete {
   my( $self, $svc_phone, $phone_device ) = (shift, shift, shift);
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_device_delete() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
 
   my $ns = $self->ns_device_command(
     'DELETE', $self->ns_device($svc_phone, $phone_device),
