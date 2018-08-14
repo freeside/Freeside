@@ -133,7 +133,7 @@ our %info = (
 END
 );
 
-sub export_insert {
+sub _export_insert {
   my($self, $svc_x) = (shift, shift);
 
   my $role = $self->svc_role($svc_x);
@@ -162,7 +162,7 @@ sub export_insert {
   '';
 }
 
-sub export_replace {
+sub _export_replace {
   my ($self, $svc_new, $svc_old) = @_;
   my $role = $self->svc_role($svc_new);
   my $error;
@@ -175,7 +175,7 @@ sub export_replace {
   '';
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc_x) = (shift, shift);
   my $role = $self->svc_role($svc_x);
   if ( $role eq 'subacct' ) {
@@ -204,7 +204,7 @@ sub export_delete {
   '';
 }
 
-sub export_suspend {
+sub _export_suspend {
   my $self = shift;
   my $svc_x = shift;
   my $role = $self->svc_role($svc_x);
@@ -215,7 +215,7 @@ sub export_suspend {
   '';
 }
 
-sub export_unsuspend {
+sub _export_unsuspend {
   my $self = shift;
   my $svc_x = shift;
   my $role = $self->svc_role($svc_x);

@@ -105,7 +105,7 @@ sub replace {
   '';
 }
 
-sub export_insert {
+sub _export_insert {
   my $self = shift;
   my $svc = shift;
   my $cust_pkg = $svc->cust_svc->cust_pkg;
@@ -290,7 +290,7 @@ sub export_insert {
   '';
 }
 
-sub export_delete {
+sub _export_delete {
   my $self = shift;
   my $svc = shift;
 
@@ -376,7 +376,7 @@ sub export_delete {
   '';
 }
 
-sub export_replace {
+sub _export_replace {
   my $self = shift;
   my $new = shift;
   my $old = shift || $self->replace_old;
@@ -421,7 +421,7 @@ sub export_replace {
   '';
 }
 
-sub export_suspend {
+sub _export_suspend {
   my $self = shift;
   my $svc = shift;
 
@@ -446,7 +446,7 @@ sub export_suspend {
   $error || '';
 }
 
-sub export_unsuspend {
+sub _export_unsuspend {
   my $self = shift;
   my $svc = shift;
 

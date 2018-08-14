@@ -47,7 +47,7 @@ sub client {
   return $self->get('client');
 }
 
-sub export_insert {
+sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
 
   my %location_hash = $svc_phone->location_hash;
@@ -98,7 +98,7 @@ sub export_insert {
   '';
 }
 
-sub export_replace {
+sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
 
   # except when changing the phone number, exactly like export_insert;
@@ -109,7 +109,7 @@ sub export_replace {
   $self->export_insert($new);
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc_phone) = (shift, shift);
 
   if ($self->option('debug')) {

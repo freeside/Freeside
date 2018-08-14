@@ -41,7 +41,7 @@ service types, create another export instance.</p>
 '
 );
 
-sub export_insert {
+sub _export_insert {
   my ($self, $svc) = @_;
   my $result = $self->request_user_edit(
     'Add'   => 1,
@@ -54,7 +54,7 @@ sub export_insert {
   $result;
 }
 
-sub export_replace {
+sub _export_replace {
   my ($self, $new, $old) = @_;
   if ($new->email ne $old->email) {
     return $old->export_delete || $new->export_insert;
@@ -70,7 +70,7 @@ sub export_replace {
   );
 }
 
-sub export_suspend {
+sub _export_suspend {
   my ($self, $svc) = @_;
   $self->request_user_edit(
     'Modify'  => 1,
@@ -79,7 +79,7 @@ sub export_suspend {
   );
 }
 
-sub export_unsuspend {
+sub _export_unsuspend {
   my ($self, $svc) = @_;
   $self->request_user_edit(
     'Modify'  => 1,
@@ -88,7 +88,7 @@ sub export_unsuspend {
   );
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc) = @_;
   $self->request_user_edit(
     'ConfirmDelete' => 1,

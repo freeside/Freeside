@@ -87,7 +87,7 @@ sub app {
   return;
 }
 
-sub export_insert {
+sub _export_insert {
   my $self = shift;
   my $new = shift;
   my $app = $self->app;
@@ -134,7 +134,7 @@ sub export_insert {
   }
 }
 
-sub export_delete {
+sub _export_delete {
   my $self = shift;
   my $old = shift;
   my $app = $self->app;
@@ -160,7 +160,7 @@ sub export_delete {
   }
 }
 
-sub export_replace {
+sub _export_replace {
   my $self = shift;
   my ($new, $old) = @_;
   my $app = $self->app;
@@ -222,7 +222,7 @@ sub export_replace {
   }
 }
 
-sub export_suspend {
+sub _export_suspend {
   my $self = shift;
   my $svc = shift;
   my $unsuspend = shift || 0;
@@ -243,7 +243,7 @@ sub export_suspend {
   return;
 }
 
-sub export_unsuspend {
+sub _export_unsuspend {
   my ($self, $svc) = @_;
   $self->export_suspend($svc, 1);
 }

@@ -131,7 +131,7 @@ sub check_svc { # check the service for validity
   '';
 }
 
-sub export_insert {
+sub _export_insert {
   my($self, $svc_x) = (shift, shift);
 
   my $error = $self->check_svc($svc_x);
@@ -294,7 +294,7 @@ sub insert_trunk {
   }
 }
 
-sub export_replace {
+sub _export_replace {
   my ($self, $svc_new, $svc_old) = @_;
 
   my $error = $self->check_svc($svc_new);
@@ -412,7 +412,7 @@ sub replace_gateway {
   }
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc_x) = (shift, shift);
 
   my $role = $self->svc_role($svc_x)
