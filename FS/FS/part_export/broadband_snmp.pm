@@ -62,27 +62,27 @@ svc_broadband fields may be prefixed with <b>$new_</b> and <b>$old_</b>
 END
 );
 
-sub export_insert {
+sub _export_insert {
   my $self = shift;
   $self->export_command('insert', @_);
 }
 
-sub export_delete {
+sub _export_delete {
   my $self = shift;
   $self->export_command('delete', @_);
 }
 
-sub export_replace {
+sub _export_replace {
   my $self = shift;
   $self->export_command('replace', @_);
 }
 
-sub export_suspend {
+sub _export_suspend {
   my $self = shift;
   $self->export_command('suspend', @_);
 }
 
-sub export_unsuspend {
+sub _export_unsuspend {
   my $self = shift;
   $self->export_command('unsuspend', @_);
 }

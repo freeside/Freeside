@@ -69,7 +69,7 @@ value, or a list of fixed values, for the sip_server field.</P>
 END
 );
 
-sub export_insert {
+sub _export_insert {
   my($self, $svc_phone) = (shift, shift);
   local $SIG{__DIE__};
   try {
@@ -100,7 +100,7 @@ sub export_insert {
   };
 }
 
-sub export_replace {
+sub _export_replace {
   my ($self, $new, $old) = @_;
   # we only export the IP address and the phone number,
   # neither of which we can change in place.
@@ -111,7 +111,7 @@ sub export_replace {
   '';
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc_phone) = (shift, shift);
   local $SIG{__DIE__};
   try {

@@ -69,7 +69,7 @@ will be applied to the attached NAS record.
 
 =cut
 
-sub export_insert {
+sub _export_insert {
   my $self = shift;
   my $svc_broadband = shift;
   my %hash = (
@@ -103,7 +103,7 @@ sub export_insert {
   return;
 }
 
-sub export_delete {
+sub _export_delete {
   my $self = shift;
   my $svc_broadband = shift;
   my $svcnum = $svc_broadband->svcnum;
@@ -118,7 +118,7 @@ sub export_delete {
   return;
 }
 
-sub export_replace {
+sub _export_replace {
   my $self = shift;
   my ($new_svc, $old_svc) = (shift, shift);
 
