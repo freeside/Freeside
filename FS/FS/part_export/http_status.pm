@@ -8,6 +8,7 @@ use URI::Escape;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use Email::Valid;
+use Carp qw(carp);
 
 tie my %options, 'Tie::IxHash',
   'url' => { label => 'URL', },
@@ -52,6 +53,12 @@ sub _export_delete  { '' };
 
 sub export_getstatus {
   my( $self, $svc_x, $htmlref, $hashref ) = @_;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_getstatus() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
 
   my $url;
   my $urlopt = $self->option('url');
@@ -131,6 +138,12 @@ sub export_setstatus_listdel {
 sub export_setstatus_listX {
   my( $self, $svc_x, $action, $list, $address_item ) = @_;
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_setstatus_listX() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
+
   my $option;
   if ( $list =~ /^[WA]/i ) { #Whitelist/Allow
     $option = 'whitelist_';
@@ -182,6 +195,12 @@ sub export_setstatus_vacationdel {
 sub export_setstatus_vacationX {
   my( $self, $svc_x, $action, $hr ) = @_;
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_setstatus_vacationX() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
+
   my $option = 'vacation_'. $action. '_url';
 
   my $subject = uri_escape($hr->{subject});
@@ -214,7 +233,5 @@ sub export_setstatus_vacationX {
   die $response->code. ' '. $response->message if $response->is_error;
 
 }
-
-1;
 
 1;
