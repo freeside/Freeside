@@ -7,6 +7,7 @@ use String::ShellQuote;
 use Net::OpenSSH;
 use FS::part_export;
 use FS::Record qw( qsearch qsearchs );
+use Carp qw(carp);
 
 @ISA = qw(FS::part_export);
 
@@ -267,6 +268,12 @@ sub _export_unsuspend {
 sub export_pkg_change {
   my( $self, $svc_acct, $new_cust_pkg, $old_cust_pkg ) = @_;
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_pkg_change() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
+
   my @fields = qw( pkgnum pkgpart agent_pkgid ); #others?
   my @date_fields = qw( order_date start_date setup bill last_bill susp adjourn
                         resume cancel uncancel expire contract_end );
@@ -291,6 +298,13 @@ sub export_pkg_change {
 
 sub _export_command_or_super {
   my($self, $action) = (shift, shift);
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "_export_command_or_super($action) suppressed by noexport_hack"
+      if $self->option('debug');
+    return;
+  }
+
   if ( $self->option($action) =~ /^\s*$/ ) {
     my $method = "SUPER::_export_$action";
     $self->$method(@_);
@@ -302,6 +316,12 @@ sub _export_command_or_super {
 sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "_export_command($action) suppressed by noexport_hack"
+      if $self->option('debug');
+    return;
+  }
 
   return '' if $command =~ /^\s*$/;
   my $stdin = $self->option($action."_stdin");
