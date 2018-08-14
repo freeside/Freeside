@@ -9,6 +9,7 @@ use MIME::Base64;
 use REST::Client;
 use Data::Dumper;
 use FS::Conf;
+use Carp qw(carp);
 
 =pod
 
@@ -261,6 +262,12 @@ sub _export_unsuspend {
 sub export_partsvc {
   my ($self, $svc_part) = @_;
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_partsvc() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
+
   my $fcc_477_speeds;
   if ($svc_part->{Hash}->{svc_broadband__speed_down} eq "down" || $svc_part->{Hash}->{svc_broadband__speed_up} eq "up") {
     for my $type (qw( down up )) {
@@ -311,6 +318,12 @@ sub export_partsvc {
 
 sub export_tower_sector {
   my ($self, $tower) = @_;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_tower_sector() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
 
   #modify tower or create it.
   my $tower_name = $tower->{Hash}->{towername};
