@@ -554,15 +554,19 @@ sub default_export_machine {
   die "no default export hostname for export ".$self->exportnum;
 }
 
-#these should probably all go away, just let the subclasses define em
-
 =item export_insert SVC_OBJECT
 
 =cut
 
+# Do not overload!  Overload _export_insert instead
+
 sub export_insert {
   my $self = shift;
   #$self->rebless;
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "export_insert() suppressed by noexport_hack" if $DEBUG;
+    return;
+  }
   $self->_export_insert(@_);
 }
 
@@ -579,9 +583,15 @@ sub export_insert {
 
 =cut
 
+# Do not overload!  Overload _export_replace instead
+
 sub export_replace {
   my $self = shift;
   #$self->rebless;
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "export_replace() suppressed by noexport_hack" if $DEBUG;
+    return;
+  }
   $self->_export_replace(@_);
 }
 
@@ -589,9 +599,15 @@ sub export_replace {
 
 =cut
 
+# Do not overload!  Overload _export_delete instead
+
 sub export_delete {
   my $self = shift;
   #$self->rebless;
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "export_delete() suppressed by noexport_hack" if $DEBUG;
+    return;
+  }
   $self->_export_delete(@_);
 }
 
@@ -599,9 +615,15 @@ sub export_delete {
 
 =cut
 
+# Do not overload!  Overload _export_suspend instead
+
 sub export_suspend {
   my $self = shift;
   #$self->rebless;
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "export_suspend() suppressed by noexport_hack" if $DEBUG;
+    return;
+  }
   $self->_export_suspend(@_);
 }
 
@@ -609,9 +631,15 @@ sub export_suspend {
 
 =cut
 
+# Do not overload!  Overload _export_unsuspend instead
+
 sub export_unsuspend {
   my $self = shift;
   #$self->rebless;
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "export_unsuspend() suppressed by noexport_hack" if $DEBUG;
+    return;
+  }
   $self->_export_unsuspend(@_);
 }
 
