@@ -8,7 +8,7 @@ use FS::Record qw( dbh qsearch qsearchs str2time_sql str2time_sql_closing );
 use FS::part_export;
 use FS::svc_acct;
 use FS::export_svc;
-use Carp qw( cluck );
+use Carp qw( carp cluck );
 use NEXT;
 use Net::OpenSSH;
 
@@ -489,6 +489,12 @@ sub suspended_usergroups {
 }
 
 sub sqlradius_insert { #subroutine, not method
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_insert() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my( $table, $username, %attributes ) = @_;
 
@@ -527,6 +533,12 @@ sub sqlradius_insert { #subroutine, not method
 }
 
 sub sqlradius_usergroup_insert { #subroutine, not method
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_usergroup_insert() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my $username = shift;
   my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
@@ -565,6 +577,12 @@ sub sqlradius_usergroup_insert { #subroutine, not method
 }
 
 sub sqlradius_usergroup_delete { #subroutine, not method
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_usergroup_delete() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my $username = shift;
   my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
@@ -582,6 +600,12 @@ sub sqlradius_usergroup_delete { #subroutine, not method
 }
 
 sub sqlradius_rename { #subroutine, not method
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_rename() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my($new_username, $old_username) = (shift, shift);
   my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
@@ -595,6 +619,12 @@ sub sqlradius_rename { #subroutine, not method
 }
 
 sub sqlradius_attrib_delete { #subroutine, not method
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_attrib_delete() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my( $table, $username, @attrib ) = @_;
 
@@ -609,6 +639,12 @@ sub sqlradius_attrib_delete { #subroutine, not method
 }
 
 sub sqlradius_delete { #subroutine, not method
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_delete() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my $username = shift;
   my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
@@ -883,6 +919,12 @@ sub usage_sessions {
 sub update_svc {
   my $self = shift;
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'update_svc() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
+
   my $conf = new FS::Conf;
 
   my $fdbh = dbh;
@@ -1048,6 +1090,13 @@ sub export_nas_replace { shift->export_nas_action('replace', @_); }
 sub export_nas_action {
   my $self = shift;
   my ($action, $new, $old) = @_;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp "export_nas_action($action) suppressed by noexport_hack"
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
+
   # find the NAS in the target table by its name
   my $nasname = ($action eq 'replace') ? $old->nasname : $new->nasname;
   my $nasnum = $new->nasnum;
@@ -1061,6 +1110,12 @@ sub export_nas_action {
 }
 
 sub sqlradius_nas_insert {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_nas_insert() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
   my $nas = qsearchs('nas', { nasnum => $opt{'nasnum'} })
@@ -1075,6 +1130,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?)');
 }
 
 sub sqlradius_nas_delete {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_nas_delete() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
   my $sth = $dbh->prepare('DELETE FROM nas WHERE nasname = ?');
@@ -1082,6 +1143,12 @@ sub sqlradius_nas_delete {
 }
 
 sub sqlradius_nas_replace {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_nas_replace() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
   my $nas = qsearchs('nas', { nasnum => $opt{'nasnum'} })
@@ -1157,6 +1224,12 @@ sub export_attr_action {
 }
 
 sub sqlradius_attr_insert {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_attr_insert() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
 
@@ -1180,6 +1253,12 @@ sub sqlradius_attr_insert {
 }
 
 sub sqlradius_attr_delete {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_attr_delete() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
 
@@ -1231,6 +1310,12 @@ sub export_group_replace {
 }
 
 sub sqlradius_group_replace {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_group_replace() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my $usergroup = shift;
   $usergroup =~ /^(rad)?usergroup$/
@@ -1271,6 +1356,12 @@ Note this is NOT the opposite of sqlradius_connect.
 =cut
 
 sub sqlradius_user_disconnect {
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'sqlradius_user_disconnect() suppressed by noexport_hack' if $DEBUG;
+    return;
+  }
+
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
   # get list of nas
