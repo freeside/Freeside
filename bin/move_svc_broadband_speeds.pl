@@ -16,10 +16,10 @@ foreach my $rec (qsearch({
   'table'     => 'svc_broadband',
   'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum ) LEFT JOIN cust_pkg USING ( pkgnum )',
 })) {
-  $rec->{Hash}->{speed_test_up} = $rec->{Hash}->{speed_up};
-  $rec->{Hash}->{speed_test_down} = $rec->{Hash}->{speed_down};
-  $rec->{Hash}->{speed_up} = $rec->{Hash}->{fcc477_upstream} * 1000;
-  $rec->{Hash}->{speed_down} = $rec->{Hash}->{fcc477_downstream} * 1000;
+  $rec->{Hash}->{speed_test_up} = $rec->{Hash}->{speed_up} ? $rec->{Hash}->{speed_up} : "null";
+  $rec->{Hash}->{speed_test_down} = $rec->{Hash}->{speed_down} ? $rec->{Hash}->{speed_down} : "null";
+  $rec->{Hash}->{speed_up} = $rec->{Hash}->{fcc477_upstream} ? $rec->{Hash}->{fcc477_upstream} * 1000 : "null";
+  $rec->{Hash}->{speed_down} = $rec->{Hash}->{fcc477_downstream} ? $rec->{Hash}->{fcc477_downstream} * 1000 : "null";
 
   my $sql = "UPDATE svc_broadband set
                speed_up = $rec->{Hash}->{speed_up},
