@@ -211,14 +211,20 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
 my $error = '';
 my $paynum = '';
-my $paydate;
-if ($cust_payby->paydate) { $paydate = "$year-$month-01"; }
-else { $paydate = "2037-12-01"; }
 
 if ( $cgi->param('batch') ) {
 
   $error = 'Prepayment discounts not supported with batched payments' 
     if $discount_term;
+
+  # Invalid payment expire dates are replaced with 2037-12-01 (why?)
+  my $paydate = "${year}-${month}-01";
+  {
+    use DateTime;
+    local $@;
+    eval { DateTime->new({ year => $year, month => $month, day => 1 }) };
+    $paydate = '2037-12-01' if $@;
+  }
 
   $error ||= $cust_main->batch_card(
                                      'payby'    => $payby,
