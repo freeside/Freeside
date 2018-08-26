@@ -1,13 +1,19 @@
+<%doc>
+
+Hmm, this is now entirely redundant with edit/cust_main/contacts_new.html, and
+this one isn't being maintained well.  :/
+
+</%doc>
 <& elements/edit.html,
-     'name_singular'   => 'customer contacts', #yes, we're editing all of them
-     'table'           => 'cust_main',
-     'post_url'        => popurl(1). 'process/cust_main-contacts.html',
-     'no_pkey_display' => 1,
-     'labels'          => {
-                            'contactnum'  => ' ', #'Contact',
-                            #'locationnum' => '&nbsp;',
-                          },
-     'fields'          => [
+     'name_singular'    => 'customer contacts', #yes, we're editing all of them
+     'table'            => 'cust_main',
+     'post_url'         => popurl(1). 'process/cust_main-contacts.html',
+     'no_pkey_display'  => 1,
+     'labels'           => {
+                             'contactnum'  => ' ', #'Contact',
+                             #'locationnum' => '&nbsp;',
+                           },
+     'fields'           => [
        { 'field'             => 'contactnum',
          'type'              => 'contact',
          'colspan'           => 6,
@@ -18,11 +24,12 @@
          'm2_error_callback' => $m2_error_callback,
        },
      ],
-     #'new_callback'    => $new_callback,
-     #'edit_callback'   => $edit_callback,
-     #'error_callback'  => $error_callback,
-     'agent_virt'      => 1,
-     'menubar'         => [], #remove "view all" link
+     #'new_callback'     => $new_callback,
+     #'edit_callback'    => $edit_callback,
+     #'error_callback'   => $error_callback,
+     'agent_virt'       => 1,
+     'html_table_class' => 'fsinnerbox',
+     'menubar'          => [], #remove "view all" link
 
      #XXX it would be nice if this could instead be after the error but before
      # the table
@@ -77,7 +84,7 @@ my $m2_error_callback = sub {
   my($cgi, $object) = @_;
 
   #process_o2m fields in process/cust_main-contacts.html
-  my @fields = qw( first last title comment );
+  my @fields = FS::contact->cgi_contact_fields;
   my @gfields = ( '', map "_$_", @fields );
 
   map {
