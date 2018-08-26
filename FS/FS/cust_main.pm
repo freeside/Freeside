@@ -2145,6 +2145,10 @@ sub check {
       if !$import
       && !$ignore_expired_card 
       && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
+
+    if ( my $error = $self->ut_daten('paydate') ) {
+      return $error;
+    }
   }
 
   if ( $self->payname eq '' && $self->payby !~ /^(CHEK|DCHK)$/ &&
