@@ -27,15 +27,12 @@ Example:
 >
 
 % unless ( $opt{'disable_empty'} ) {
-  <OPTION VALUE=""<% $opt{state} eq '' ? ' SELECTED' : '' %>><% $opt{empty_label} %>
+  <OPTION VALUE=""<% $opt{state} eq '' ? ' SELECTED' : '' %>><% $opt{empty_label} %></OPTION>
 % }
 
 % foreach my $state ( keys %states ) { 
-
-  <OPTION VALUE="<% $state |h %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' |h %>
-
+  <OPTION VALUE="<% $state |h %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' |h %></OPTION>
 % } 
-
 
 </SELECT>
 

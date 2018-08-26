@@ -100,11 +100,11 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   # use new info
   ##
 
-  $cgi->param('year') =~ /^(\d+)$/
+  $cgi->param('year') =~ /^(\d{4})/
     or errorpage("illegal year ". $cgi->param('year'));
   $year = $1;
 
-  $cgi->param('month') =~ /^(\d+)$/
+  $cgi->param('month') =~ /^(\d{2})/
     or errorpage("illegal month ". $cgi->param('month'));
   $month = $1;
 
