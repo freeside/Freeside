@@ -921,7 +921,87 @@ sub _upgrade_data {
   local $ignore_expired_card = 1;
   local $ignore_invalid_card = 1;
   $class->upgrade_set_cardtype;
+  $class->_upgrade_data_paydate_edgebug;
 
+}
+
+=item _upgrade_data_paydate_edgebug
+
+Correct bad data injected into payment expire date column by Edge browser bug
+
+The month and year values may have an extra character injected into form POST
+data by Edge browser.  It was possible for some bad month values to slip
+past data validation.
+
+If the stored value was out of range, it was causing payments screen to crash.
+We can detect and fix this by dropping the second digit.
+
+If the stored value is is 11 or 12, it's possible the user inputted a 1.  In
+this case, the payment method will fail to authorize, but the record will
+not cause crashdumps for being out of range.
+
+In short, check for any expiration month > 12, and drop the extra digit
+
+=cut
+
+sub _upgrade_data_paydate_edgebug {
+  my $journal_label = 'cust_payby_paydate_edgebug';
+  return if FS::upgrade_journal->is_done( $journal_label );
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  for my $row (
+    FS::Record::qsearch(
+      cust_payby => { paydate => { op => '!=', value => '' }}
+    )
+  ) {
+    next unless $row->ut_daten('paydate');
+
+    # paydate column stored in database has failed date validation
+    my $bad_paydate = $row->paydate;
+
+    my @date = split /[\-\/]/, $bad_paydate;
+    @date = @date[2,0,1] if $date[2] > 1900;
+
+    # Only autocorrecting when month > 12 - notify operator
+    unless ( $date[1] > 12 ) {
+      die sprintf(
+        'Unable to correct bad paydate stored in cust_payby row '.
+        'custpaybynum(%s) custnum(%s) paydate(%s)',
+        $row->custpaybynum,
+        $row->custnum,
+        $bad_paydate,
+      );
+    }
+
+    $date[1] = substr( $date[1], 0, 1 );
+    $row->paydate( join('-', @date ));
+
+    if ( my $error = $row->replace ) {
+      die sprintf(
+        'Failed to autocorrect bad paydate stored in cust_payby row '.
+        'custpaybynum(%s) custnum(%s) paydate(%s) - error: %s',
+        $row->custpaybynum,
+        $row->custnum,
+        $bad_paydate,
+        $error
+      );
+    }
+
+    warn sprintf(
+      'Autocorrected bad paydate stored in cust_payby row '.
+      "custpaybynum(%s) custnum(%s) old-paydate(%s) new-paydate(%s)\n",
+      $row->custpaybynum,
+      $row->custnum,
+      $bad_paydate,
+      $row->paydate,
+    );
+
+  }
+
+  FS::upgrade_journal->set_done( $journal_label );
+  dbh->commit unless $oldAutoCommit;
 }
 
 =head1 BUGS
