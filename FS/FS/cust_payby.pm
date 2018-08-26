@@ -315,7 +315,7 @@ sub check {
     #encrypted #|| $self->ut_textn('payinfo')
     #encrypted #|| $self->ut_textn('paycvv')
 #    || $self->ut_textn('paymask') #XXX something
-    #later #|| $self->ut_textn('paydate')
+    || $self->ut_daten('paydate')
     || $self->ut_numbern('paystart_month')
     || $self->ut_numbern('paystart_year')
     || $self->ut_numbern('payissue')
