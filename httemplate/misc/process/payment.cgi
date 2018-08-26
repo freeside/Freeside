@@ -42,11 +42,11 @@ if ( $cgi->param('fee') =~ /^\s*(\d*(\.\d\d)?)\s*$/ ) {
   $amount = sprintf('%.2f', $amount + $fee);
 }
 
-$cgi->param('year') =~ /^(\d+)$/
+$cgi->param('year') =~ /^(\d{4})/
   or errorpage("illegal year ". $cgi->param('year'));
 my $year = $1;
 
-$cgi->param('month') =~ /^(\d+)$/
+$cgi->param('month') =~ /^(\d{2})/
   or errorpage("illegal month ". $cgi->param('month'));
 my $month = $1;
 

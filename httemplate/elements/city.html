@@ -132,14 +132,14 @@ function <% $pre %>county_changed(what, callback) {}
     >
 
 %   unless ( $opt{'disable_empty'} ) {
-      <OPTION VALUE="" <% $opt{city} eq '' ? 'SELECTED' : '' %>><% $opt{empty_label} %>
+      <OPTION VALUE="" <% $opt{city} eq '' ? 'SELECTED' : '' %>><% $opt{empty_label} %></OPTION>
 %   }
 
 %   foreach my $city ( @cities ) {
 
       <OPTION VALUE="<% $city |h %>"
               <% $city eq $opt{city} ? 'SELECTED' : '' %>
-      ><% $city eq $opt{empty_data_value} ? $opt{empty_data_label} : $city %>
+      ><% $city eq $opt{empty_data_value} ? $opt{empty_data_label} : $city %></OPTION>
 
 %   }
 

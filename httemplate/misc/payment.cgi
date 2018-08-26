@@ -59,9 +59,8 @@
             <TH><% mt('Exp.') |h %></TH>
             <TD>
               <SELECT NAME="month">
-% for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { 
-
-                  <OPTION<% $_ == $month ? ' SELECTED' : '' %>><% $_ %>
+% for ( map{ sprintf('%02d',$_) } (1..12) ) {
+                  <OPTION VALUE="<% $_ %>"<% $_ == $month ? ' SELECTED' : '' %>><% $_ %></OPTION>
 % } 
 
               </SELECT>
@@ -70,8 +69,7 @@
             <TD>
               <SELECT NAME="year">
 % my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) { 
-
-                  <OPTION<% $_ == $year ? ' SELECTED' : '' %>><% $_ %>
+                  <OPTION VALUE="<% $_ %>"<% $_ == $year ? ' SELECTED' : '' %>><% $_ %></OPTION>
 % } 
 
               </SELECT>

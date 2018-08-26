@@ -83,11 +83,11 @@ Example:
 %                   || ( $value eq $pre_opt );
     <OPTION VALUE="<% $pre_opt %>"
             <% $selected ? 'SELECTED' : '' %>
-    ><% $pre_label %>
+    ><% $pre_label %></OPTION>
 % } 
 
 % unless ( $opt{'multiple'} || $opt{'disable_empty'} ) {
-    <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
+    <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %></OPTION>
 % }
 
 % # XXX fix this eventually, when we have time to test it
@@ -117,7 +117,7 @@ Example:
           ? &{ $opt{'label_callback'} }( $record )
           : $record->$name_col()
         |h
-     %>
+     %></OPTION>
 % } 
 
 % while ( @post_options ) { 
@@ -127,7 +127,7 @@ Example:
 %                  || ( $value eq $post_opt );
     <OPTION VALUE="<% $post_opt %>"
             <% $selected ? 'SELECTED' : '' %>
-    ><% $post_label %>
+    ><% $post_label %></OPTION>
 % } 
 
 </SELECT>
