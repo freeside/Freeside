@@ -3,16 +3,15 @@
 <% $empty ? '<OPTION VALUE="">' : '' %>
 % foreach ( 1 .. 12 ) { 
 
-   <OPTION<% $_ == $mon ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $mon[$_-1] %>
+   <OPTION<% $_ == $mon ? ' SELECTED' : '' %> VALUE="<% sprintf('%02d', $_) %>"><% $mon[$_-1] %></OPTION>
 % } 
-
 
 </SELECT>/<SELECT NAME="<% $prefix %>_year" SIZE="1" <% $disabled%>>
 
 <% $empty ? '<OPTION VALUE="">' : '' %>
 % for ( $start_year .. $end_year ) { 
 
-   <OPTION<% $_ == $year ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $_ %>
+   <OPTION<% $_ == $year ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $_ %></OPTION>
 % } 
 
 </SELECT>

@@ -4,7 +4,6 @@
 %   my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
 %   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
 %   my $location = $cust_main->bill_location;
-
     <TR>
       <TH ALIGN="right"><% mt('Card number') |h %></TH>
       <TD COLSPAN=7>
@@ -15,21 +14,17 @@
             <TH><% mt('Exp.') |h %></TH>
             <TD>
               <SELECT NAME="month">
-% for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { 
-
-                  <OPTION<% $_ == $month ? ' SELECTED' : '' %>><% $_ %>
+% for my $mm ( map{ sprintf( '%02d', $_ ) } (1..12) ) {
+                  <OPTION value="<% $mm %>"<% $mm == $month ? ' SELECTED' : '' %>><% $mm %></OPTION>
 % } 
-
               </SELECT>
             </TD>
             <TD> / </TD>
             <TD>
               <SELECT NAME="year">
-% my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) { 
-
-                  <OPTION<% $_ == $year ? ' SELECTED' : '' %>><% $_ %>
+% my @a = localtime; for my $yyyy ( $a[5]+1900 .. $a[5]+1915 ) {
+                  <OPTION value="<% $yyyy %>"<% $yyyy == $year ? ' SELECTED' : '' %>><% $yyyy %></OPTION>
 % } 
-
               </SELECT>
             </TD>
           </TR>
@@ -162,7 +157,7 @@
     <% mt('as') |h %>
     <SELECT NAME="weight">
 %     for ( 1 .. 1+scalar(grep { $_->payby =~ /^(CARD|CHEK)$/ } @cust_payby) ) {
-        <OPTION VALUE="<%$_%>"><% mt( $weight{$_} ) |h %>
+        <OPTION VALUE="<%$_%>"><% mt( $weight{$_} ) |h %></OPTION>
 %     }
     </SELECT>
 % } else {
