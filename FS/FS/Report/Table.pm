@@ -1115,7 +1115,7 @@ sub calculate_churn_cust {
                                                       as suspended,
            SUM((s_active = 0 and s_suspended > 0 and e_active > 0)::int)
                                                       as resumed,
-           SUM((s_active > 0 and e_active = 0 and e_suspended = 0)::int)
+           SUM((e_active = 0 and e_cancelled > s_cancelled)::int)
                                                       as cancelled
     FROM ($cust_sql) AS x
   ";
