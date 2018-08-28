@@ -315,7 +315,6 @@ sub check {
     #encrypted #|| $self->ut_textn('payinfo')
     #encrypted #|| $self->ut_textn('paycvv')
 #    || $self->ut_textn('paymask') #XXX something
-    || $self->ut_daten('paydate')
     || $self->ut_numbern('paystart_month')
     || $self->ut_numbern('paystart_year')
     || $self->ut_numbern('payissue')
@@ -545,6 +544,9 @@ sub check {
     }
     return $error if $error;
   }
+
+  $error = $self->ut_daten('paydate');
+  return $error if $error;
 
   $self->SUPER::check;
 }
