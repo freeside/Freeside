@@ -4,6 +4,19 @@ Hmm, this is now entirely redundant with edit/cust_main/contacts_new.html, and
 this one isn't being maintained well.  :/
 
 </%doc>
+
+  <SCRIPT>
+function checkPasswordValidation(fieldid)  {
+  var validationResult = document.getElementById(fieldid+'_result').innerHTML;
+  if (validationResult.match(/Password valid!/)) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+</SCRIPT>
+
 <& elements/edit.html,
      'name_singular'    => 'customer contacts', #yes, we're editing all of them
      'table'            => 'cust_main',
