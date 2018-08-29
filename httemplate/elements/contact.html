@@ -62,7 +62,6 @@
                 <OPTION VALUE="<% $value eq 'Y' ? 'Y' : 'E' %>" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
 %               if ( $value eq 'Y' && $self_base_url ) {
                   <OPTION VALUE="R">Re-email
-                  <OPTION VALUE="P"><% $pwd_change_label %>
 %               }
 %             }
             </SELECT>
@@ -203,8 +202,5 @@ foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
 $label{'comment'} = 'Comment';
 
 my @fields = $opt{'name_only'} ? qw( first last ) : keys %label;
-
-my $pwd_change_label = 'Change Password';
-$pwd_change_label = 'Setup Password' unless $contact->_password;
 
 </%init>
