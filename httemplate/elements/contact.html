@@ -71,12 +71,10 @@
                    placeholder = "<% $value |h %>"
             >
 %           my $contactnum = $curr_value ? $curr_value : '0';
-            <& '/elements/validate_password.html',
-             'fieldid'    => "changepw".$id."_password",
-             'svcnum'     => '',
-             'contactnum' => $contactnum,
-             'submitid'   => "submit",
-           &>
+
+            <SCRIPT>
+              add_password_validation('<% "changepw".$id."_password" %>', 'submit', '', '<% $contactnum %>');
+            </SCRIPT>
 
             <SCRIPT TYPE="text/javascript">
                     var selfService = document.getElementById("<%$id%>_selfservice_access").value;

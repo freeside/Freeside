@@ -1,14 +1,16 @@
 <SCRIPT>
-function checkPasswordValidation(fieldid)  {
-  var validationResult = document.getElementById(fieldid+'_result').innerHTML;
-  if (validationResult.match(/Password valid!/)) {
-    return true;
+  function checkPasswordValidation(fieldid)  {
+    var validationResult = document.getElementById(fieldid+'_result').innerHTML;
+    if (validationResult.match(/Password valid!/)) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
-  }
-}
 </SCRIPT>
+
+<& '/elements/validate_password_js.html', &>
 
 <& elements/edit.html,
      'name_singular'    => 'customer contacts', #yes, we're editing all of them

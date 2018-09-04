@@ -6,6 +6,7 @@
 % my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
 %     my $bgcolor = $bgcolor2;
+%     my $count = 0;
 <TR>
   <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Type</TH>
   <TH CLASS="grid" ALIGN="left" BGCOLOR="#cccccc">Contact</TH>
@@ -29,6 +30,16 @@
             Enabled
 %#            <FONT SIZE="-1"><A HREF="XXX">disable</A>
 %#                            <A HREF="XXX">re-email</A></FONT>
+            <FONT SIZE="-1">
+              <& /elements/change_password.html,
+                'contact_num'      => $contact->contactnum,
+                'custnum'          => $contact->custnum,
+                'no_label_display' => '',
+                'label'            => 'change password',
+                'curr_value'       => '',
+                'pre_pwd_field_label' => 'contact'.$count.'_',
+              &>
+            </FONT>
 %         } else {
             Disabled
 %#            <FONT SIZE="-1"><A HREF="XXX">enable</A></FONT>
@@ -51,6 +62,7 @@
 %      } else {
 %        $bgcolor = $bgcolor1;
 %      }
+%     $count++;
 %   }
 </TABLE>
 <%once>
@@ -64,5 +76,6 @@ my( $cust_main ) = @_;
 #my $conf = new FS::Conf;
 
 my @contacts = $cust_main->cust_contact;
+my $display = scalar(@contacts) > 0;
 
 </%init>
