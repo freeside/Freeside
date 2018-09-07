@@ -51,6 +51,13 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $conf = new FS::Conf;
 
+if ( $cgi->param('redirect') ) {
+  my $session = $cgi->param('redirect');
+  my $pref = $curuser->option("redirect$session");
+  die "unknown redirect session $session\n" unless length($pref);
+  $cgi = new CGI($pref);
+}
+
 my $custnum;
 if ( $cgi->param('error') ) {
   $custnum = scalar($cgi->param('custnum'));
