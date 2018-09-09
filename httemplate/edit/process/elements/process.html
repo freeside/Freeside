@@ -123,7 +123,7 @@ Example:
 %          " attempting to set redirect$session to ". $cgi->query_string."\n";
 %    }
 %
-<% $cgi->redirect("$error_redirect"."redirect=$session") %>
+<% $cgi->redirect("$error_redirect?redirect=$session") %>
 %
 %  } else {
 %
