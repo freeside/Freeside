@@ -34,7 +34,37 @@
 
   </FORM>
 
+  <div id="edgebug" style="display: none; border: solid 1px #888; border-radius: 4px; margin: 5em; max-width: 400px; text-align: left; padding: 0 1em;">
+    <div style="text-align: center; font-size: 3em; color: #933; text-shadow: 1px 1px 2px black;">
+      &#9888;
+    </div>
+    <h4 style="border-bottom: solid 1px #888; margin: 1em 0; text-align: center;">
+      Edge Browser Bug
+    </h4>
+    <p>
+      Please ensure your version of Windows is up to date.
+    </p>
+    <p>
+      You are using the Microsoft Edge browser.  In July, Microsoft fixed a
+      bug in Edge.  The bug causes Edge to rarely send different data to
+      the server than the user selected.
+    </p>
+    <p>
+      Only Windows 10 computers that have not received Microsoft's
+      <b>July RS4 Windows 10 Update</b>
+      <sup>
+        [<a  style="text-decoration: none;" href="https://support.microsoft.com/en-us/help/4338819/windows-10-update-kb4338819">*</a>]
+      </sup> are affected.
+    </p>
+  </div>
+
 </CENTER>
+
+<script type="text/javascript">
+  if ( /Edge\/17\.17134/.test( navigator.userAgent ) ) {
+    document.getElementById('edgebug').style.display = 'block';
+  }
+</script>
 
 </BODY></HTML>
 <%init>
