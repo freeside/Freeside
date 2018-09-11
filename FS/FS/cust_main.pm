@@ -79,6 +79,7 @@ use FS::sales;
 use FS::cust_payby;
 use FS::contact;
 use FS::reason;
+use FS::Misc::Savepoint;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -2441,10 +2442,14 @@ sub cancel_pkgs {
   my( $self, %opt ) = @_;
 
   # we're going to cancel services, which is not reversible
+  #   unless exports are suppressed
   die "cancel_pkgs cannot be run inside a transaction"
-    if $FS::UID::AutoCommit == 0;
+    if !$FS::UID::AutoCommit && !$FS::svc_Common::noexport_hack;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
+
+  savepoint_create('cancel_pkgs');
 
   return ( 'access denied' )
     unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
@@ -2462,7 +2467,8 @@ sub cancel_pkgs {
       my $ban = new FS::banned_pay $cust_payby->_new_banned_pay_hashref;
       my $error = $ban->insert;
       if ($error) {
-        dbh->rollback;
+        savepoint_rollback_and_release('cancel_pkgs');
+        dbh->rollback if $oldAutoCommit;
         return ( $error );
       }
 
@@ -2482,13 +2488,14 @@ sub cancel_pkgs {
                              'time'     => $cancel_time );
     if ($error) {
       warn "Error billing during cancel, custnum ". $self->custnum. ": $error";
-      dbh->rollback;
+      savepoint_rollback_and_release('cancel_pkgs');
+      dbh->rollback if $oldAutoCommit;
       return ( "Error billing during cancellation: $error" );
     }
   }
-  dbh->commit;
+  savepoint_release('cancel_pkgs');
+  dbh->commit if $oldAutoCommit;
 
-  $FS::UID::AutoCommit = 1;
   my @errors;
   # now cancel all services, the same way we would for individual packages.
   # if any of them fail, cancel the rest anyway.
@@ -2501,11 +2508,23 @@ sub cancel_pkgs {
   warn "$me removing ".scalar(@sorted_cust_svc)." service(s) for customer ".
     $self->custnum."\n"
     if $DEBUG;
+  my $i = 0;
   foreach my $cust_svc (@sorted_cust_svc) {
+    my $savepoint = 'cancel_pkgs_'.$i++;
+    savepoint_create( $savepoint );
     my $part_svc = $cust_svc->part_svc;
     next if ( defined($part_svc) and $part_svc->preserve );
-    my $error = $cust_svc->cancel; # immediate cancel, no date option
-    push @errors, $error if $error;
+    # immediate cancel, no date option
+    # transactionize individually
+    my $error = try { $cust_svc->cancel } catch { $_ };
+    if ( $error ) {
+      savepoint_rollback_and_release( $savepoint );
+      dbh->rollback if $oldAutoCommit;
+      push @errors, $error;
+    } else {
+      savepoint_release( $savepoint );
+      dbh->commit if $oldAutoCommit;
+    }
   }
   if (@errors) {
     return @errors;
@@ -2520,8 +2539,11 @@ sub cancel_pkgs {
     @cprs = @{ delete $opt{'cust_pkg_reason'} };
   }
   my $null_reason;
+  $i = 0;
   foreach (@pkgs) {
     my %lopt = %opt;
+    my $savepoint = 'cancel_pkgs_'.$i++;
+    savepoint_create( $savepoint );
     if (@cprs) {
       my $cpr = shift @cprs;
       if ( $cpr ) {
@@ -2541,7 +2563,14 @@ sub cancel_pkgs {
       }
     }
     my $error = $_->cancel(%lopt);
-    push @errors, 'pkgnum '.$_->pkgnum.': '.$error if $error;
+    if ( $error ) {
+      savepoint_rollback_and_release( $savepoint );
+      dbh->rollback if $oldAutoCommit;
+      push @errors, 'pkgnum '.$_->pkgnum.': '.$error;
+    } else {
+      savepoint_release( $savepoint );
+      dbh->commit if $oldAutoCommit;
+    }
   }
 
   return @errors;
