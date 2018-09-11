@@ -1,5 +1,6 @@
 package FS::cust_payby;
 use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
+use feature 'state';
 
 use strict;
 use Scalar::Util qw( blessed );
@@ -914,31 +915,79 @@ sub search_sql {
 
 =back
 
-=item count_autobill_cards
+=item has_autobill_cards
 
 Returns the number of unexpired cards configured for autobill
 
 =cut
 
-sub count_autobill_cards {
-  shift->count("
-    weight > 0
-    AND payby IN ('CARD','DCRD')
-    AND paydate > '".DateTime->now->ymd."'
-  ");
+sub has_autobill_cards {
+  scalar FS::Record::qsearch({
+    table     => 'cust_payby',
+    addl_from => 'JOIN cust_main USING (custnum)',
+    order_by  => 'LIMIT 1',
+    hashref   => {
+        paydate => { op => '>', value => DateTime->now->ymd },
+        weight  => { op => '>',  value => 0 },
+    },
+    extra_sql =>
+      "AND payby IN ('CARD', 'DCRD') ".
+      'AND '.
+      $FS::CurrentUser::CurrentUser->agentnums_sql( table => 'cust_main' ),
+  });
 }
 
-=item count_autobill_checks
+=item has_autobill_checks
 
 Returns the number of check accounts configured for autobill
 
 =cut
 
-sub count_autobill_checks {
-  shift->count("
-    weight > 0
-    AND payby IN ('CHEK','DCHEK')
-  ");
+sub has_autobill_checks {
+  scalar FS::Record::qsearch({
+    table     => 'cust_payby',
+    addl_from => 'JOIN cust_main USING (custnum)',
+    order_by  => 'LIMIT 1',
+    hashref   => {
+        weight  => { op => '>',  value => 0 },
+    },
+    extra_sql =>
+      "AND payby IN ('CHEK','DCHEK','DCHK') ".
+      'AND '.
+      $FS::CurrentUser::CurrentUser->agentnums_sql( table => 'cust_main' ),
+  });
+}
+
+=item future_autobill_report_title
+
+Determine if the future_autobill report should be available.
+If so, return a dynamic title for it
+
+=cut
+
+sub future_autobill_report_title {
+  # Perhaps this function belongs somewhere else
+  state $title;
+  return $title if defined $title;
+
+  # Report incompatible with tax engines
+  return $title = '' if FS::TaxEngine->new->info->{batch};
+
+  my $has_cards  = has_autobill_cards();
+  my $has_checks = has_autobill_checks();
+  my $_title = 'Future %s transactions';
+
+  if ( $has_cards && $has_checks ) {
+    $title = sprintf $_title, 'credit card and electronic check';
+  } elsif ( $has_cards ) {
+    $title = sprintf $_title, 'credit card';
+  } elsif ( $has_checks ) {
+    $title = sprintf $_title, 'electronic check';
+  } else {
+    $title = '';
+  }
+
+  $title;
 }
 
 sub _upgrade_data {
