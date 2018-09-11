@@ -914,7 +914,32 @@ sub search_sql {
 
 =back
 
+=item count_autobill_cards
+
+Returns the number of unexpired cards configured for autobill
+
 =cut
+
+sub count_autobill_cards {
+  shift->count("
+    weight > 0
+    AND payby IN ('CARD','DCRD')
+    AND paydate > '".DateTime->now->ymd."'
+  ");
+}
+
+=item count_autobill_checks
+
+Returns the number of check accounts configured for autobill
+
+=cut
+
+sub count_autobill_checks {
+  shift->count("
+    weight > 0
+    AND payby IN ('CHEK','DCHEK')
+  ");
+}
 
 sub _upgrade_data {
 
