@@ -10,6 +10,7 @@ use Date::Format qw(time2str);
 use Parse::FixedLength;
 use File::Temp qw(tempfile);
 use vars qw(%info %options $initial_load_hack $DEBUG);
+use Carp qw( carp );
 
 my %upload_targets;
 
@@ -396,6 +397,13 @@ sub process {
   my $self = shift;
   my $batch = shift;
   local $DEBUG = $self->option('debug');
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'FS::part_export::nena2::process() suppressed by noexport_hack'
+      if $DEBUG;
+    return;
+  }
+
   local $FS::UID::AutoCommit = 0;
   my $error;
 

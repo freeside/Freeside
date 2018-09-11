@@ -5,7 +5,7 @@ use strict;
 use vars qw(
   @EXPORT_OK $DEBUG $me $cgi $freeside_uid $conf_dir $cache_dir
   $secrets $datasrc $db_user $db_pass $schema $dbh $driver_name
-  $AutoCommit %callback @callback $callback_hack
+  $AutoCommit $ForceObeyAutoCommit %callback @callback $callback_hack
 );
 use subs qw( getsecrets );
 use Carp qw( carp croak cluck confess );
@@ -26,7 +26,17 @@ $freeside_uid = scalar(getpwnam('freeside'));
 $conf_dir  = "%%%FREESIDE_CONF%%%";
 $cache_dir = "%%%FREESIDE_CACHE%%%";
 
+# Code wanting to issue a COMMIT statement to the database is expected to
+# obey the convention of checking this flag first.  Setting $AutoCommit = 0
+# should (usually) suppress COMMIT statements.
 $AutoCommit = 1; #ours, not DBI
+
+# Not all methods obey $AutoCommit, by design choice.  Setting
+# $ForceObeyAutoCommit = 1 will override that design choice for:
+#   &FS::cust_main::Billing::collect
+#   &FS::cust_main::Billing::do_cust_event
+$ForceObeyAutoCommit = 0;
+
 $callback_hack = 0;
 
 =head1 NAME

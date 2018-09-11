@@ -55,7 +55,7 @@ Savepoints cannot work while AutoCommit is enabled.
 Savepoint labels must be valid sql identifiers.  If your choice of label
 would not make a valid column name, it probably will not make a valid label.
 
-Savepint labels must be unique within the transaction.
+Savepoint labels must be unique within the transaction.
 
 =cut
 
