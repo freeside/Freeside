@@ -10,7 +10,7 @@
     <TABLE BORDER=0 CELLSPACING=2 CELLPADDING=0>
       <TR>
         <TD>
-          Sorry we were unable to locate your account with ip <? echo $username; ?>  .
+          Sorry we were unable to locate your account with MAC address <? echo $username; ?>  .
         </TD>
       </TR>
     </TABLE>
