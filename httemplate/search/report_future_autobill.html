@@ -3,40 +3,64 @@
 Display date selector for the future_autobill.html report
 
 </%doc>
-<% include('/elements/header.html', 'Future Auto-Bill Transactions' ) %>
+<% include('/elements/header.html', $report_title ) %>
 
 
-<FORM ACTION="future_autobill.html" METHOD="GET">
-<TABLE>
-<& /elements/tr-input-date-field.html,
-  {
-    name     => 'target_date',
-    value    => $target_date,
-    label    => emt('Target billing date').': ',
-    required => 1
-  }
-&>
+% if ( FS::TaxEngine->new->info->{batch} ) {
 
-<& /elements/tr-checkbox.html,
-     'label' => emt('Multiple billing dates (slow)').': ',
-     'field' => 'multiple_billing_dates',
-     'value' => '1',
-&>
+  <div style="font-color: red">
+  NOTE: This report is disabled due to tax engine configuration
+  </div>
 
-</TABLE>
+% } else {
 
-<BR>
-<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+  <FORM ACTION="future_autobill.html" METHOD="GET">
+  <TABLE>
+  <& /elements/tr-input-date-field.html,
+    {
+      name     => 'target_date',
+      value    => $target_date,
+      label    => emt('Target billing date').': ',
+      required => 1
+    }
+  &>
 
-</FORM>
+  </TABLE>
+
+  <BR>
+
+  <INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+  </FORM>
+
+% }
 
 <% include('/elements/footer.html') %>
 
 <%init>
+use FS::cust_payby;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $target_date = DateTime->from_epoch(epoch=>(time()+86400))->mdy('/');
+my $target_date = DateTime->now->add(days => 1)->mdy('/');
+
+# Dynamic report title
+my $title_types = '';
+my $card_count = FS::cust_payby->count_autobill_cards;
+my $check_count = FS::cust_payby->count_autobill_checks;
+if ( $card_count && $check_count ) {
+  $title_types = 'Card and Check';
+} elsif ( $card_count ) {
+  $title_types = 'Card';
+} elsif ( $check_count ) {
+  $title_types = 'Check';
+}
+
+my $report_title = sprintf(
+  'Upcoming Auto Bill %s Transactions',
+  $title_types,
+);
 
 </%init>
+
