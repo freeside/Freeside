@@ -30,12 +30,16 @@ results.
 &>
 
 <%init>
-  use FS::UID qw( dbh myconnect );
+  use FS::UID qw( dbh );
 
   die "access denied"
     unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
   my $DEBUG = $cgi->param('DEBUG') || 0;
+
+  my $report_title = FS::cust_payby->future_autobill_report_title;
+  my $agentnum = $cgi->param('agentnum')
+    if $cgi->param('agentnum') =~ /^\d+/;
 
   my $target_dt;
   my @target_dates;
@@ -87,17 +91,17 @@ results.
 
   # List all customers with an auto-bill method that's not expired
   my %cust_payby = map {$_->custnum => $_} qsearch({
-    table => 'cust_payby',
-    hashref => {
-      weight  => { op => '>', value => '0' },
-    },
-    order_by => " ORDER BY weight DESC ",
-    extra_sql => "
-      AND (
-        payby IN ('CHEK','DCHK')
+    table     => 'cust_payby',
+    addl_from => 'JOIN cust_main USING (custnum)',
+    hashref   => {  weight  => { op => '>', value => '0' }},
+    order_by  => " ORDER BY weight DESC ",
+    extra_sql =>
+      "AND (
+        payby IN ('CHEK','DCHK','DCHEK')
         OR ( paydate > '".$target_dt->ymd."')
       )
-    ",
+      AND " . $FS::CurrentUser::CurrentUser->agentnums_sql
+      . ($agentnum ? "AND cust_main.agentnum = $agentnum" : ''),
   });
 
   my $fakebill_time = time();
@@ -109,7 +113,7 @@ results.
 
   eval { # Sandbox
 
-    # Create new database handle and supress all COMMIT statements
+    # Supress COMMIT statements
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
     local $FS::UID::ForceObeyAutoCommit = 1;
@@ -201,7 +205,7 @@ results.
       # Makes the report slighly slower, but ensures only one customer row
       #   locked at a time
 
-      warn "-- custnum $custnum -- rollback()\n";
+      warn "-- custnum $custnum -- rollback()\n" if $DEBUG;
       dbh->rollback if $oldAutoCommit;
 
     } # /foreach $custnum
@@ -225,22 +229,5 @@ results.
 
   # grid-report.html requires a parallel @rows parameter to accompany @cells
   @rows = map { {class => 'gridreport'} } 1..scalar(@cells);
-
-  # Dynamic report title
-  my $title_types = '';
-  my $card_count = FS::cust_payby->count_autobill_cards;
-  my $check_count = FS::cust_payby->count_autobill_checks;
-  if ( $card_count && $check_count ) {
-    $title_types = 'Card and Check';
-  } elsif ( $card_count ) {
-    $title_types = 'Card';
-  } elsif ( $check_count ) {
-    $title_types = 'Check';
-  }
-
-  my $report_title = sprintf(
-    'Upcoming Auto Bill %s Transactions',
-    $title_types,
-  );
 
 </%init>

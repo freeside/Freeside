@@ -25,6 +25,12 @@ Display date selector for the future_autobill.html report
     }
   &>
 
+  <% include('/elements/tr-select-agent.html',
+              'label'         => 'For agent: ',
+              'disable_empty' => 0,
+            )
+  %>
+
   </TABLE>
 
   <BR>
@@ -39,28 +45,13 @@ Display date selector for the future_autobill.html report
 
 <%init>
 use FS::cust_payby;
+use FS::CurrentUser;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $target_date = DateTime->now->add(days => 1)->mdy('/');
-
-# Dynamic report title
-my $title_types = '';
-my $card_count = FS::cust_payby->count_autobill_cards;
-my $check_count = FS::cust_payby->count_autobill_checks;
-if ( $card_count && $check_count ) {
-  $title_types = 'Card and Check';
-} elsif ( $card_count ) {
-  $title_types = 'Card';
-} elsif ( $check_count ) {
-  $title_types = 'Check';
-}
-
-my $report_title = sprintf(
-  'Upcoming Auto Bill %s Transactions',
-  $title_types,
-);
+my $report_title = FS::cust_payby->future_autobill_report_title;
 
 </%init>
 
