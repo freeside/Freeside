@@ -12,6 +12,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 use FS::agent;
 use FS::cust_main;
 use FS::sales;
+use Carp qw( croak );
 
 $DEBUG = 0;
 $me = '[FS::access_user]';
@@ -812,6 +813,103 @@ sub set_page_pref {
   }
 
   return $error;
+}
+
+=item get_pref NAME
+
+Fetch the prefvalue column from L<FS::access_user_pref> for prefname NAME
+
+Returns undef when no value has been saved, or when record has expired
+
+=cut
+
+sub get_pref {
+  my ( $self, $prefname ) = @_;
+  croak 'prefname parameter requrired' unless $prefname;
+
+  my $pref_row = $self->get_pref_row( $prefname )
+    or return undef;
+
+  return undef
+    if $pref_row->expiration
+    && $pref_row->expiration < time();
+
+  $pref_row->prefvalue;
+}
+
+=item get_pref_row NAME
+
+Fetch the row object from L<FS::access_user_pref> for prefname NAME
+
+returns undef when no row has been created
+
+=cut
+
+sub get_pref_row {
+  my ( $self, $prefname ) = @_;
+  croak 'prefname parameter required' unless $prefname;
+
+  qsearchs(
+    access_user_pref => {
+      usernum    => $self->usernum,
+      prefname   => $prefname,
+    }
+  );
+}
+
+=item set_pref NAME, VALUE, [EXPIRATION_EPOCH]
+
+Add or update user preference in L<FS::access_user_pref> table
+
+Passing an undefined VALUE will delete the user preference
+
+Returns VALUE
+
+=cut
+
+sub set_pref {
+  my $self = shift;
+  my ( $prefname, $prefvalue, $expiration ) = @_;
+
+  return $self->delete_pref( $prefname )
+    unless defined $prefvalue;
+
+  if ( my $pref_row = $self->get_pref_row( $prefname )) {
+    return $prefvalue
+      if $pref_row->prefvalue eq $prefvalue;
+
+    $pref_row->prefvalue( $prefvalue );
+    $pref_row->expiration( $expiration || '');
+
+    if ( my $error = $pref_row->replace ) { croak $error }
+
+    return $prefvalue;
+  }
+
+  my $pref_row = FS::access_user_pref->new({
+    usernum    => $self->usernum,
+    prefname   => $prefname,
+    prefvalue  => $prefvalue,
+    expiration => $expiration,
+  });
+  if ( my $error = $pref_row->insert ) { croak $error }
+
+  $prefvalue;
+}
+
+=item delete_pref NAME
+
+Delete user preference from L<FS::access_user_pref> table
+
+=cut
+
+sub delete_pref {
+  my ( $self, $prefname ) = @_;
+
+  my $pref_row = $self->get_pref_row( $prefname )
+    or return;
+
+  if ( my $error = $pref_row->delete ) { croak $error }
 }
 
 =back
