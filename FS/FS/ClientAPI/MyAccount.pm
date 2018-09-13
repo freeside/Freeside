@@ -367,6 +367,7 @@ sub login {
 
   return { 'error'      => '',
            'session_id' => $session_id,
+           %$session,
          };
 }
 
