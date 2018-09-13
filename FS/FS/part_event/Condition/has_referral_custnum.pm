@@ -57,16 +57,23 @@ sub condition {
 
 }
 
-#this is incomplete wrt checking referring customer balances, but that's okay.
-# false positives are acceptable here, its just an optimizaiton
 sub condition_sql {
-  my( $class, $table ) = @_;
+  my( $class, $table, %opt ) = @_;
 
-  my $sql = FS::cust_main->active_sql;
-  $sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
-  $sql = 'cust_main.referral_custnum IS NOT NULL AND ('.
-          $class->condition_sql_option('active') . ' IS NULL OR '.$sql.')';
-  return $sql;
+  my $active_sql = FS::cust_main->active_sql;
+  $active_sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
+
+  my $under = $class->condition_sql_option_money('balance');
+
+  my $age = $class->condition_sql_option_age_from('age', $opt{'time'});
+  my $balance_date_sql = FS::cust_main->balance_date_sql($age);
+  $balance_date_sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
+  my $bal_sql = "$balance_date_sql <= $under";
+
+  "cust_main.referral_custnum IS NOT NULL
+    AND (". $class->condition_sql_option('active').    " IS NULL OR $active_sql)
+    AND (". $class->condition_sql_option('check_bal'). " IS NULL OR $bal_sql   )
+  ";
 }
 
 1;
