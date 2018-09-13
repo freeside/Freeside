@@ -2999,6 +2999,60 @@ sub ut_enumn {
     : '';
 }
 
+=item ut_date COLUMN
+
+Check/untaint a column containing a date string.
+
+Date will be normalized to YYYY-MM-DD format
+
+=cut
+
+sub ut_date {
+  my ( $self, $field ) = @_;
+  my $value = $self->getfield( $field );
+
+  my @date = split /[\-\/]/, $value;
+  if ( scalar(@date) == 3 ) {
+    @date = @date[2,0,1] if $date[2] >= 1900;
+
+    local $@;
+    my $ymd;
+    eval {
+      # DateTime will die given invalid date
+      $ymd = DateTime->new(
+        year  => $date[0],
+        month => $date[1],
+        day   => $date[2],
+      )->ymd('-');
+    };
+
+    unless( $@ ) {
+      $self->setfield( $field, $ymd ) unless $value eq $ymd;
+      return '';
+    }
+
+  }
+  return "Illegal (date) field $field: $value";
+}
+
+=item ut_daten COLUMN
+
+Check/untaint a column containing a date string.
+
+Column may be null.
+
+Date will be normalized to YYYY-MM-DD format
+
+=cut
+
+sub ut_daten {
+  my ( $self, $field ) = @_;
+
+  $self->getfield( $field ) =~ /^()$/
+  ? $self->setfield( $field, '' )
+  : $self->ut_date( $field );
+}
+
 =item ut_flag COLUMN
 
 Check/untaint a column if it contains either an empty string or 'Y'.  This

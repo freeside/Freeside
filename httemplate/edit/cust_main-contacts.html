@@ -1,12 +1,27 @@
-<% include('elements/edit.html',
-     'name_singular'   => 'customer contacts', #yes, we're editing all of them
-     'table'           => 'cust_main',
-     'post_url'       => popurl(1). 'process/cust_main-contacts.html',
-     'labels'          => { 'custnum'     => ' ', #XXX supress this line entirely, its being redundant
-                            'contactnum'  => ' ', #'Contact',
-                            #'locationnum' => '&nbsp;',
-                          },
-     'fields'          => [
+<SCRIPT>
+  function checkPasswordValidation(fieldid)  {
+    var validationResult = document.getElementById(fieldid+'_result').innerHTML;
+    if (validationResult.match(/Password valid!/)) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+</SCRIPT>
+
+<& '/elements/validate_password_js.html', &>
+
+<& elements/edit.html,
+     'name_singular'    => 'customer contacts', #yes, we're editing all of them
+     'table'            => 'cust_main',
+     'post_url'         => popurl(1). 'process/cust_main-contacts.html',
+     'no_pkey_display'  => 1,
+     'labels'           => { 'custnum'     => ' ', #XXX supress this line entirely, its being redundant
+                             'contactnum'  => ' ', #'Contact',
+                             #'locationnum' => '&nbsp;',
+                           },
+     'fields'           => [
        { 'field'             => 'contactnum',
          'type'              => 'contact',
          'colspan'           => 6,
@@ -30,12 +45,18 @@
                                      $conf->config('countrydefault') || 'US',
                                      1, #no balance
                                   ),
-   )
-%>
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $conf = new FS::Conf;
+
+if ( $cgi->param('redirect') ) {
+  my $session = $cgi->param('redirect');
+  my $pref = $curuser->option("redirect$session");
+  die "unknown redirect session $session\n" unless length($pref);
+  $cgi = new CGI($pref);
+}
 
 my $custnum;
 if ( $cgi->param('error') ) {

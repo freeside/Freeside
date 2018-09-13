@@ -37,6 +37,9 @@ Generic Google Maps front end.
 
 </%doc>
 <%init>
+
+my $apikey = FS::Conf->new->config('google_maps_api_key');
+
 foreach (@features) {
   $_->{type} = 'Feature';
   # any other per-feature massaging can go here
@@ -57,7 +60,7 @@ body { height: 100%; margin: 0px; padding: 0px }
 #map_canvas { height: 100%; }
 </style>
 
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3">
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3<% $apikey ? "&key=$apikey" : '' %>">
 </script>
 
 <script type="text/javascript">

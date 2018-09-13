@@ -291,6 +291,10 @@ tr.row1 {
   font-style: italic;
 }
 
+th, td {
+  vertical-align: top;
+}
+
 /* border at the top of the footer, but not between footer rows */
 .grid tfoot tr:first-child td {
   border-top: 1px dashed black;

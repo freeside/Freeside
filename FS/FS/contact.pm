@@ -131,7 +131,6 @@ sub insert {
   my $dbh = dbh;
 
   my $error = $self->SUPER::insert;
-  $error ||= $self->insert_password_history;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -185,6 +184,15 @@ sub insert {
 
   if ( $self->selfservice_access && ! length($self->_password) ) {
     my $error = $self->send_reset_email( queue=>1 );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ( $self->get('password') ) {
+    my $error = $self->is_password_allowed($self->get('password'))
+          ||  $self->change_password($self->get('password'));
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -614,7 +622,7 @@ sub authenticate_password {
 
     $hash eq $check_hash;
 
-  } else { 
+  } else {
 
     return 0 if $self->_password eq '';
 

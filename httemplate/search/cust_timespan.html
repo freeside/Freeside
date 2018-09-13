@@ -88,7 +88,8 @@ my $active_date = 'select min(setup) from cust_pkg left join part_pkg using (pkg
 
 ## set cancel date range here
 my($beginning_date, $ending_date) = FS::UI::Web::parse_beginning_ending($cgi, '');
-my $cancel_date = 'select max(cancel) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\' and (cancel >= '.$beginning_date.' and cancel <= '.$ending_date.')';
+my $max_cancel_sql = "select max(cancel) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\'";
+my $cancel_date = $max_cancel_sql.' and (('.$max_cancel_sql.') >= '.$beginning_date.' and ('.$max_cancel_sql.') <= '.$ending_date.')';
 
 my $cancel_reason = 'select reason.reason from cust_pkg
 	left join cust_pkg_reason on (cust_pkg.pkgnum = cust_pkg_reason.pkgnum)
@@ -101,8 +102,6 @@ my @fields = ( 'custnum', 'custname', $location_sub, 'daytime', $email_sub, 'act
 my @links = ( $customer_link, $customer_link, '', '', '', '', '', '', '' );
 my @select = (
 	'cust_main.*',
-	'cust_location.*',
-	'part_pkg.*',
 	"(select to_char((select to_timestamp((".$active_date."))), 'Mon DD YYYY')) AS active_date",
 	"(select to_char((select to_timestamp((".$cancel_date."))), 'Mon DD YYYY')) AS cancel_date",
 	"($cancel_reason) AS cancel_reason",

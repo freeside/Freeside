@@ -91,15 +91,13 @@ Example:
 >
 
 % unless ( $opt{'disable_empty'} ) {
-    <OPTION VALUE=""><% $opt{'empty_label'} || '(all)' %>
+    <OPTION VALUE=""><% $opt{'empty_label'} || '(all)' %></OPTION>
 % }
 
 % foreach my $country ( @all_countries ) {
-
-  <OPTION VALUE="<% $country |h %>"
-          <% $country eq $opt{'country'} ? ' SELECTED' : '' %>
-  ><% FS::geocode_Mixin->code2country($country). " ($country)" %>
-
+  <OPTION VALUE="<% $country |h %>"<% $country eq $opt{'country'} ? ' SELECTED' : '' %>>
+    <% FS::geocode_Mixin->code2country($country). " ($country)" |h %>
+  </OPTION>
 % } 
 
 </SELECT>
