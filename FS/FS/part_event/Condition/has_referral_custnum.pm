@@ -60,19 +60,20 @@ sub condition {
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
+  my $active_sql = FS::cust_main->active_sql;
+  $active_sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
+
+  my $under = $class->condition_sql_option_money('balance');
+
   my $age = $class->condition_sql_option_age_from('age', $opt{'time'});
-  my $balance_sql      = FS::cust_main->balance_sql( $age );
-  my $balance_date_sql = FS::cust_main->balance_date_sql;
-  my $active_sql       = FS::cust_main->active_sql;
-  $balance_sql      =~ s/cust_main.custnum/cust_main.referral_custnum/;
+  my $balance_date_sql = FS::cust_main->balance_date_sql($age);
   $balance_date_sql =~ s/cust_main.custnum/cust_main.referral_custnum/;
-  $active_sql       =~ s/cust_main.custnum/cust_main.referral_custnum/;
+  my $bal_sql = "$balance_date_sql <= $under";
 
-  my $sql = "cust_main.referral_custnum IS NOT NULL".
-    " AND (".$class->condition_sql_option('active')." IS NULL OR $active_sql)".
-    " AND ($balance_date_sql <= $balance_sql)";
-
-  return $sql;
+  "cust_main.referral_custnum IS NOT NULL
+    AND (". $class->condition_sql_option('active').    " IS NULL OR $active_sql)
+    AND (". $class->condition_sql_option('check_bal'). " IS NULL OR $bal_sql   )
+  ";
 }
 
 1;

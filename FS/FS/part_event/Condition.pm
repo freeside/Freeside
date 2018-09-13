@@ -533,6 +533,22 @@ sub condition_sql_option_integer {
        " AS $integer )";
 }
 
+=item condition_sql_option_money OPTION
+
+As I<condition_sql_option>, but cast the option value to DECIMAL so that
+comparison to other monetary values is type-correct.
+
+=cut
+
+sub condition_sql_option_money {
+  my ($class, $option ) = @_;
+
+  'CAST(
+         COALESCE('. $class->condition_sql_option($option).
+                " ,'0') ".
+       " AS DECIMAL(10,2) )";
+}
+
 =head1 NEW CONDITION CLASSES
 
 A module should be added in FS/FS/part_event/Condition/ which implements the
