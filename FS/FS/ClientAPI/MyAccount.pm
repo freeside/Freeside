@@ -183,6 +183,29 @@ sub skin_info {
 
 }
 
+sub get_mac_address {
+  my $p = shift;
+
+## access radius exports acct tables to get mac
+  my @part_export = ();
+  @part_export = (
+    qsearch( 'part_export', { 'exporttype' => 'sqlradius' } ),
+    qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } ),
+    qsearch( 'part_export', { 'exporttype' => 'broadband_sqlradius' } ),
+  );
+
+  my @sessions;
+  foreach my $part_export (@part_export) {
+    push @sessions, ( @{ $part_export->usage_sessions( {
+      'ip' => $p->{'ip'},
+    } ) } );
+  }
+
+  my $mac = $sessions[0]->{'callingstationid'};
+
+  return { 'mac_address' => $mac, };
+}
+
 sub login_info {
   my $p = shift;
 
@@ -235,6 +258,16 @@ sub login {
       unless $svc_phone->check_pin($p->{'password'});
 
     $svc_x = $svc_phone;
+
+  } elsif ( $p->{'domain'} eq 'ip_mac' ) {
+
+      my $mac_address = $p->{'username'};
+      $mac_address =~ s/\://g;
+
+      my $svc_broadband = qsearchs( 'svc_broadband', { 'mac_addr' => $mac_address } );
+      return { error => 'MAC address not found '.$p->{'username'} }
+        unless $svc_broadband;
+      $svc_x = $svc_broadband;
 
   } elsif ( $p->{email}
               && (my $contact = FS::contact->by_selfservice_email($p->{email}))
@@ -334,6 +367,7 @@ sub login {
 
   return { 'error'      => '',
            'session_id' => $session_id,
+           %$session,
          };
 }
 
