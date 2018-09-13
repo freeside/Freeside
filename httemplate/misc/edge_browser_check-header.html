@@ -1,0 +1,32 @@
+% if ( $force_redirect ) {
+  <script type="text/javascript">
+    if ( <% $DEBUG %> || /Edge\/17\.17134/.test( navigator.userAgent )) {
+      if ( window.location.href.indexOf("fail_notice") == -1 ) {
+        window.location.href = "<% $fsurl %>misc/edge_browser_check-fail_notice.html";
+      }
+    }
+  </script>
+% } elsif ( $do_check ) {
+  <iframe id="edge_browser_check_iframe" style="display:none;"></iframe>
+  <script type="text/javascript">
+    if ( <% $DEBUG %> || /Edge\/17\.17134/.test( navigator.userAgent )) {
+      $("#edge_browser_check_iframe").attr(
+        'src',
+        '<% $fsurl %>misc/edge_browser_check-iframe.html?edge_browser_check=1'
+      );
+    }
+  </script>
+% }
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $cgi = FS::UID::cgi();
+my $DEBUG = 0;
+
+my $do_check = 0;
+$do_check = 1
+  if $curuser
+  && !$cgi->param('edge_browser_check')
+  && $curuser->get_pref('edge_bug_vulnerable') ne 'N';
+
+my $force_redirect = $curuser->get_pref('edge_bug_vulnerable') eq 'Y' ? 1 : 0;
+</%init>
