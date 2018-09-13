@@ -19,16 +19,15 @@
 <%init>
 my $cgi = FS::UID::cgi();
 my $curuser = $FS::CurrentUser::CurrentUser;
+my $session = $FS::CurrentUser::CurrentSession;
+my $sessionkey = $session->sessionkey if $session;
 
 if ( $curuser ) {
   my $canary = $cgi->param('edge_browser_canary');
   $curuser->set_pref(
     'edge_bug_vulnerable',
 
-    $canary eq 'test' ? 'Y' : 'Y',
-
-    # Don't test this user's session for the next 10m
-    time() + 600,
+    $canary eq 'test' ? $sessionkey : 'Y',
   );
 }
 

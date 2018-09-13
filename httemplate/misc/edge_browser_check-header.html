@@ -18,7 +18,10 @@
   </script>
 % }
 <%init>
-my $curuser = $FS::CurrentUser::CurrentUser;
+my $curuser    = $FS::CurrentUser::CurrentUser;
+my $session    = $FS::CurrentUser::CurrentSession;
+my $sessionkey = $session->sessionkey if $session;
+
 my $cgi = FS::UID::cgi();
 my $DEBUG = 0;
 
@@ -26,7 +29,8 @@ my $do_check = 0;
 $do_check = 1
   if $curuser
   && !$cgi->param('edge_browser_check')
-  && $curuser->get_pref('edge_bug_vulnerable') ne 'N';
+  && $sessionkey
+  && $curuser->get_pref('edge_bug_vulnerable') ne $sessionkey;
 
 my $force_redirect = $curuser->get_pref('edge_bug_vulnerable') eq 'Y' ? 1 : 0;
 </%init>
