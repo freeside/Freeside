@@ -1,4 +1,6 @@
-% unless ( $opt{'js_only'} ) {
+% if ( $opt{'js_only'} ) {
+<% $js %>
+% } else {
 
   <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
 
@@ -75,25 +77,8 @@
                    VALUE = ""
                    placeholder = "<% $value |h %>"
             >
-%           my $contactnum = $curr_value ? $curr_value : '0';
-            <& '/elements/validate_password.html',
-             'fieldid'    => "changepw".$id."_password",
-             'svcnum'     => '',
-             'contactnum' => $contactnum,
-             'submitid'   => "submit",
-           &>
-
-            <SCRIPT TYPE="text/javascript">
-                    var selfService = document.getElementById("<%$id%>_selfservice_access").value;
-
-                    if (selfService !== "Y") { document.getElementById("changepw<%$id%>_password").disabled = 'true'; }
-                    document.getElementById("<%$id%>_selfservice_access").onchange = function() {
-                      if (this.value == "P" || this.value == "E" || this.value =="Y") {
-                        document.getElementById("changepw<%$id%>_password").disabled = '';
-                      }
-                      else { document.getElementById("changepw<%$id%>_password").disabled = 'true'; }
-                      return false;
-                    }
+            <SCRIPT>
+              <% $js %>
             </SCRIPT>
 %         } elsif ( $field eq 'invoice_dest' || $field eq 'message_dest' ) {
 %           my $curr_value = $cgi->param($name . '_' . $field);
@@ -118,7 +103,7 @@
           <BR>
           <FONT SIZE="-1"><% $label{$field} %></FONT>
 %       if ( $field eq 'password' ) {
-          <div id="changepw<%$id%>_<%$field%>_result"></div>
+          <DIV ID="changepw<%$id%>_<%$field%>_result" STYLE="font-size: smaller"></DIV>
 %       }
         </TD>
 %     }
@@ -138,6 +123,7 @@ my $name = $opt{'element_name'} || $opt{'field'} || 'contactnum';
 my $id = $opt{'id'} || 'contactnum';
 
 my $curr_value = $opt{'curr_value'} || $opt{'value'};
+my $contactnum = $curr_value ? $curr_value : '0';
 
 my $onchange = '';
 if ( $opt{'onchange'} ) {
@@ -204,5 +190,20 @@ foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
 $label{'comment'} = 'Comment';
 
 my @fields = $opt{'name_only'} ? qw( first last ) : keys %label;
+
+my $js = qq(
+    add_password_validation('changepw$id\_password', 'submit', '', '$contactnum');
+
+    var selfService = document.getElementById("$id\_selfservice_access").value;
+
+    if (selfService !== "Y") { document.getElementById("changepw$id\_password").disabled = 'true'; }
+    document.getElementById("$id\_selfservice_access").onchange = function() {
+      if (this.value == "P" || this.value == "E" || this.value =="Y") {
+        document.getElementById("changepw$id\_password").disabled = '';
+      }
+      else { document.getElementById("changepw$id\_password").disabled = 'true'; }
+      return false;
+    }
+);
 
 </%init>

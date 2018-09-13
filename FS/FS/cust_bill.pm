@@ -41,6 +41,7 @@ use FS::cust_bill_void;
 use FS::reason;
 use FS::reason_type;
 use FS::L10N;
+use FS::Misc::Savepoint;
 
 $DEBUG = 0;
 $me = '[FS::cust_bill]';
@@ -974,6 +975,9 @@ sub apply_payments_and_credits {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $savepoint_label = 'cust_bill__apply_payments_and_credits';
+  savepoint_create( $savepoint_label );
+
   $self->select_for_update; #mutex
 
   my @payments = grep { $_->unapplied > 0 }
@@ -1062,6 +1066,7 @@ sub apply_payments_and_credits {
 
     my $error = $app->insert(%options);
     if ( $error ) {
+      savepoint_rollback_and_release( $savepoint_label );
       $dbh->rollback if $oldAutoCommit;
       return "Error inserting ". $app->table. " record: $error";
     }
@@ -1069,6 +1074,7 @@ sub apply_payments_and_credits {
 
   }
 
+  savepoint_release( $savepoint_label );
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 
