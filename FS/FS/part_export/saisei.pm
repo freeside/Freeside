@@ -200,12 +200,28 @@ sub _export_insert {
     my $accesspoint = process_sector($self, $sector_opt);
     return $self->api_error if $self->{'__saisei_error'};
 
+## get custnum and pkgpart from cust_pkg for virtual access point
+    my $cust_pkg = FS::Record::qsearchs({
+      'table'     => 'cust_pkg',
+      'hashref'   => { 'pkgnum' => $svc_broadband->{Hash}->{pkgnum}, },
+    });
+    my $virtual_ap_name = $cust_pkg->{Hash}->{custnum}.'_'.$cust_pkg->{Hash}->{pkgpart}.'_'.$svc_broadband->{Hash}->{speed_down}.'_'.$svc_broadband->{Hash}->{speed_up};
+
+    my $virtual_ap_opt = {
+      'virtual_name'           => $virtual_ap_name,
+      'sector_name'            => $sector_name,
+      'virtual_uprate_limit'   => $svc_broadband->{Hash}->{speed_up},
+      'virtual_downrate_limit' => $svc_broadband->{Hash}->{speed_down},
+    };
+    my $virtual_ap = process_virtual_ap($self, $virtual_ap_opt);
+    return $self->api_error if $self->{'__saisei_error'};
+
     ## tie host to user add sector name as access point.
     $self->api_add_host_to_user(
       $user->{collection}->[0]->{name},
       $rateplan->{collection}->[0]->{name},
       $svc_broadband->{Hash}->{ip_addr},
-      $accesspoint->{collection}->[0]->{name},
+      $virtual_ap->{collection}->[0]->{name},
     ) unless $self->{'__saisei_error'};
   }
 
@@ -215,8 +231,8 @@ sub _export_insert {
 
 sub _export_replace {
   my ($self, $svc_broadband) = @_;
-  $self->_export_insert($svc_broadband);
-  return '';
+  my $error = $self->_export_insert($svc_broadband);
+  return $error;
 }
 
 sub _export_delete {
@@ -800,6 +816,44 @@ sub process_sector {
 
   # set access point to existing one or newly created one.
   my $accesspoint = $existing_sector_ap ? $existing_sector_ap : $self->api_get_accesspoint($sector_name);
+
+  return $accesspoint;
+}
+
+sub process_virtual_ap {
+  my ($self, $opt) = @_;
+
+  my $existing_virtual_ap;
+  my $virtual_name = $opt->{virtual_name};
+
+  #check if sector has been set up as an access point.
+  $existing_virtual_ap = $self->api_get_accesspoint($virtual_name);
+
+  # modify the existing virtual accesspoint if changing it. this should never happen
+  $self->api_modify_existing_accesspoint (
+    $virtual_name,
+    $opt->{sector_name},
+    $opt->{virtual_uprate_limit},
+    $opt->{virtual_downrate_limit},
+  ) if $existing_virtual_ap && $opt->{modify_existing};
+
+  #if virtual ap does not exist as an access point create it.
+  $self->api_create_accesspoint(
+    $virtual_name,
+    $opt->{virtual_uprate_limit},
+    $opt->{virtual_downrate_limit},
+  ) unless $existing_virtual_ap;
+
+my $update_sector;
+if ($existing_virtual_ap && ($existing_virtual_ap->{collection}->[0]->{uplink}->{link}->{name} ne $opt->{sector_name})) {
+  $update_sector = 1;
+}
+
+  # Attach newly created virtual ap to tower sector ap or if sector has changed.
+  $self->api_modify_accesspoint($virtual_name, $opt->{sector_name}) unless ($self->{'__saisei_error'} || ($existing_virtual_ap && !$update_sector));
+
+  # set access point to existing one or newly created one.
+  my $accesspoint = $existing_virtual_ap ? $existing_virtual_ap : $self->api_get_accesspoint($virtual_name);
 
   return $accesspoint;
 }

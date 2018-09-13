@@ -1,4 +1,6 @@
-% unless ( $opt{'js_only'} ) {
+% if ( $opt{'js_only'} ) {
+<% $js %>
+% } else {
 
   <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
 
@@ -40,6 +42,8 @@
 %         }
 %       } elsif ( $field eq 'emailaddress' ) {
 %         $value = join(', ', map $_->emailaddress, $contact->contact_email);
+%       } elsif ( $field eq 'password' ) {
+%          $value = $contact->get('_password') ? '********' : '';
 %       } elsif ( $field eq 'selfservice_access'
 %              or $field eq 'comment'
 %              or $field eq 'invoice_dest' ) {
@@ -55,28 +59,25 @@
                     ID   = "<%$id%>_<%$field%>"
                     STYLE = "width: 140px"
             >
-              <OPTION VALUE="">Disabled
+              <OPTION VALUE="" <% !$value ? 'SELECTED' : '' %>>Disabled
 %             if ( $value || $self_base_url ) {
                 <OPTION VALUE="<% $value eq 'Y' ? 'Y' : 'E' %>" <% $value eq 'Y' ? 'SELECTED' : '' %>>Enabled
 %               if ( $value eq 'Y' && $self_base_url ) {
                   <OPTION VALUE="R">Re-email
-                  <OPTION VALUE="P"><% $pwd_change_label %>
 %               }
 %             }
             </SELECT>
-                  <& /elements/change_password.html,
-                   'contact_num'         => $curr_value,
-                   'custnum'             => $opt{'custnum'},
-                   'curr_value'          => '',
-                   'no_label_display'    => '1',
-                   'noformtag'           => '1',
-                   'pre_pwd_field_label' => $id.'_',
-                  &>
-            <SCRIPT TYPE="text/javascript">
-                    document.getElementById("<%$id%>_<%$field%>").onchange = function() {
-                      if (this.value == "P" || this.value == "E") { changepw<%$id%>_toggle(true); }
-                      return false
-                    }
+% #password form
+%         } elsif ( $field eq 'password') {
+            <INPUT TYPE  = "text"
+                   NAME  = "<%$name%>_<%$field%>"
+                   ID    = "changepw<%$id%>_<%$field%>"
+                   SIZE  = "<% $size{$field} || 14 %>"
+                   VALUE = ""
+                   placeholder = "<% $value |h %>"
+            >
+            <SCRIPT>
+              <% $js %>
             </SCRIPT>
 %         } elsif ( $field eq 'invoice_dest' ) {
 %           my $curr_value = $cgi->param($name . '_' . $field);
@@ -100,6 +101,9 @@
 %         }
           <BR>
           <FONT SIZE="-1"><% $label{$field} %></FONT>
+%       if ( $field eq 'password' ) {
+          <DIV ID="changepw<%$id%>_<%$field%>_result" STYLE="font-size: smaller"></DIV>
+%       }
         </TD>
 %     }
     </TR>
@@ -118,6 +122,7 @@ my $name = $opt{'element_name'} || $opt{'field'} || 'contactnum';
 my $id = $opt{'id'} || 'contactnum';
 
 my $curr_value = $opt{'curr_value'} || $opt{'value'};
+my $contactnum = $curr_value ? $curr_value : '0';
 
 my $onchange = '';
 if ( $opt{'onchange'} ) {
@@ -169,6 +174,7 @@ tie my %label, 'Tie::IxHash',
 unless ($opt{'for_prospect'}) {
   $label{'invoice_dest'} = 'Send&nbsp;invoices';
   $label{'selfservice_access'} = 'Self-service';
+  $label{'password'} = 'Password';
 }
 
 my $first = 0;
@@ -183,7 +189,19 @@ $label{'comment'} = 'Comment';
 
 my @fields = $opt{'name_only'} ? qw( first last ) : keys %label;
 
-my $pwd_change_label = 'Change Password';
-$pwd_change_label = 'Setup Password' unless $contact->_password;
+my $js = qq(
+    add_password_validation('changepw$id\_password', 'submit', '', '$contactnum');
+
+    var selfService = document.getElementById("$id\_selfservice_access").value;
+
+    if (selfService !== "Y") { document.getElementById("changepw$id\_password").disabled = 'true'; }
+    document.getElementById("$id\_selfservice_access").onchange = function() {
+      if (this.value == "P" || this.value == "E" || this.value =="Y") {
+        document.getElementById("changepw$id\_password").disabled = '';
+      }
+      else { document.getElementById("changepw$id\_password").disabled = 'true'; }
+      return false;
+    }
+);
 
 </%init>
