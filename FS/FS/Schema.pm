@@ -2750,7 +2750,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'paybatchnum',
       'unique'       => [],
-      'index'        => [ ['batchnum'], ['invnum'], ['custnum'] ],
+      'index'        => [ ['batchnum'], ['invnum'], ['custnum'],['status'] ],
       'foreign_keys' => [
                           { columns    => [ 'batchnum' ],
                             table      => 'pay_batch',
