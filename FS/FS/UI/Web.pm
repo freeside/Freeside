@@ -743,6 +743,7 @@ use FS::CurrentUser;
 use FS::Record qw(qsearchs);
 use FS::queue;
 use FS::CGI qw(rooturl);
+use FS::Report::Queued::FutureAutobill;
 
 $DEBUG = 0;
 

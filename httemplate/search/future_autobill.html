@@ -11,7 +11,12 @@ This report relies on the ability to safely run bill_and_collect(),
 with all exports and messaging disabled, and then to roll back the
 results.
 
+This report takes time.  If 200 customers have automatic
+payment methods, and requester is looking one week ahead,
+there will be 1,400 billing and payment cycles simulated
+
 </%doc>
+<h4><% $report_subtitle %></h4>
 <& elements/grid-report.html,
   title => $report_title,
   rows => \@rows,
@@ -27,17 +32,25 @@ results.
       td.gridreport { margin: 0 .2em; padding: 0 .4em; }
     </style>
   ',
+  suppress_header => $job ? 1 : 0,
+  suppress_footer => $job ? 1 : 0,
 &>
 
 <%init>
+  use DateTime;
+  use FS::Misc::Savepoint;
+  use FS::Report::Queued::FutureAutobill;
   use FS::UID qw( dbh );
 
   die "access denied"
     unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
+  my $job = $FS::Report::Queued::FutureAutobill::job;
+
+  $job->update_statustext('0,Finding customers') if $job;
+
   my $DEBUG = $cgi->param('DEBUG') || 0;
 
-  my $report_title = FS::cust_payby->future_autobill_report_title;
   my $agentnum = $cgi->param('agentnum')
     if $cgi->param('agentnum') =~ /^\d+/;
 
@@ -60,22 +73,33 @@ results.
 
   # Get target date from form
   if ($cgi->param('target_date')) {
+    # DateTime::Format::DateParse would be better
     my ($mm, $dd, $yy) = split /[\-\/]/,$cgi->param('target_date');
+    ( $yy, $mm, $dd ) = ( $mm, $dd, $yy ) if $mm > 1900;
+
     $target_dt = DateTime->new(
       month  => $mm,
       day    => $dd,
       year   => $yy,
       %noon,
-    ) if $mm && $dd & $yy;
+    ) if $mm && $dd && $yy;
 
     # Catch a date from the past: time only travels in one direction
-    $target_dt = undef if $target_dt->epoch < $now_dt->epoch;
+    $target_dt = undef
+      unless $target_dt && $now_dt && $now_dt <=  $target_dt;
   }
 
   # without a target date, default to tomorrow
   unless ($target_dt) {
     $target_dt = $now_dt->clone->add( days => 1 );
   }
+
+  my $report_title = FS::cust_payby->future_autobill_report_title;
+  my $report_subtitle = sprintf(
+    '(%s through %s)',
+    $now_dt->mdy('/'),
+    $target_dt->mdy('/'),
+  );
 
   # Create a range of dates from today until the given report date
   #   (leaving the probably useless 'quick-report' mode, but disabled)
@@ -104,6 +128,9 @@ results.
       . ($agentnum ? "AND cust_main.agentnum = $agentnum" : ''),
   });
 
+  my $completion_target = scalar(keys %cust_payby) * scalar( @target_dates );
+  my $completion_progress = 0;
+
   my $fakebill_time = time();
   my %abreport;
   my @rows;
@@ -124,6 +151,9 @@ results.
     # Bypass payment processing, recording a fake payment
     local $FS::cust_main::Billing_Realtime::BOP_TESTING = 1;
     local $FS::cust_main::Billing_Realtime::BOP_TESTING_SUCCESS = 1;
+
+    my $savepoint_label = 'future_autobill';
+    savepoint_create( $savepoint_label );
 
     warn sprintf "Report involves %s customers", scalar keys %cust_payby
       if $DEBUG;
@@ -153,7 +183,17 @@ results.
         );
 
         warn "!!! $error (simulating future billing)\n" if $error;
+
+        my $statustext = sprintf(
+            '%s,Simulating upcoming invoices and payments',
+            int( ( ++$completion_progress / $completion_target ) * 100 )
+        );
+        $job->update_statustext( $statustext ) if $job;
+        warn "[ $completion_progress / $completion_target ] $statustext\n"
+          if $DEBUG;
+
       }
+
 
       # Generate report rows from recorded payments in cust_pay
       for my $cust_pay (
@@ -206,6 +246,7 @@ results.
       #   locked at a time
 
       warn "-- custnum $custnum -- rollback()\n" if $DEBUG;
+      savepoint_rollback( $savepoint_label );
       dbh->rollback if $oldAutoCommit;
 
     } # /foreach $custnum
