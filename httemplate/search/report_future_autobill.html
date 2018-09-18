@@ -1,6 +1,9 @@
 <%doc>
 
-Display date selector for the future_autobill.html report
+Display pre-report page for the Future Auto Bill Transactions report
+
+Report runs in the queue.  Once the report is generated, user is
+redirected to the report results.
 
 </%doc>
 <% include('/elements/header.html', $report_title ) %>
@@ -14,30 +17,43 @@ Display date selector for the future_autobill.html report
 
 % } else {
 
-  <FORM ACTION="future_autobill.html" METHOD="GET">
-  <TABLE>
-  <& /elements/tr-input-date-field.html,
-    {
-      name     => 'target_date',
-      value    => $target_date,
-      label    => emt('Target billing date').': ',
-      required => 1
-    }
-  &>
+  <FORM NAME="future_autobill" ID="future_autobill">
+    <TABLE>
+    <& /elements/tr-input-date-field.html,
+      {
+        name     => 'target_date',
+        value    => $target_date,
+        label    => emt('Target billing date').': ',
+        required => 1
+      }
+    &>
 
-  <% include('/elements/tr-select-agent.html',
-              'label'         => 'For agent: ',
-              'disable_empty' => 0,
+    <% include('/elements/tr-select-agent.html',
+                'label'         => 'For agent: ',
+                'disable_empty' => 0,
+              )
+    %>
+    </TABLE>
+    <BR>
+
+    <INPUT ID="future_autobill_submit" TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+  </FORM>
+
+  <% include( '/elements/progress-init.html',
+              'future_autobill',
+              [ qw( agentnum target_date ) ],
+              'report_future_autobill-queued_job.html',
             )
   %>
 
-  </TABLE>
-
-  <BR>
-
-  <INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
-
-  </FORM>
+  <script type="text/javascript">
+    $('#future_autobill').submit( function( event ) {
+      $('#future_autobill').prop( 'disabled', true );
+      $('#future_autobill_submit').prop( 'disabled', true );
+      event.preventDefault();
+      process();
+    });
+  </script>
 
 % }
 

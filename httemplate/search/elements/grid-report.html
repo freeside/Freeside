@@ -141,13 +141,17 @@ Usage:
   $m->print($output);
 </%perl>
 % } else {
+% unless ( $suppress_header ) {
 <& /elements/header.html, $title &>
+% }
 <% $head %>
 % my $myself = $cgi->self_url;
+% unless ( $suppress_header ) {
 <P ALIGN="right" CLASS="noprint">
 Download full reports<BR>
 as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 </P>
+% }
 <style type="text/css">
 .report * {
   background-color: #f8f8f8;
@@ -169,8 +173,10 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 %     next if !ref($cell); # placeholders
 %     my $td = $cell->{header} ? 'th' : 'td';
 %     my $style = '';
-%     $style .= " rowspan=".$cell->{rowspan} if $cell->{rowspan} > 1;
-%     $style .= " colspan=".$cell->{colspan} if $cell->{colspan} > 1;
+%     $style .= " rowspan=".$cell->{rowspan}
+%       if exists $cell->{rowspan} && $cell->{rowspan} > 1;
+%     $style .= " colspan=".$cell->{colspan}
+%       if exists $cell->{colspan} && $cell->{colspan} > 1;
 %     $style .= ' class="' . $cell->{class} . '"' if $cell->{class};
 % if ($cell->{bypass_filter}) {
       <<%$td%><%$style%>><% $cell->{value} %></<%$td%>>
@@ -182,7 +188,9 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 % }
 </table>
 <% $foot %>
+% unless ( $suppress_footer ) {
 <& /elements/footer.html &>
+% }
 % }
 <%args>
 $title
@@ -192,4 +200,6 @@ $head => ''
 $foot => ''
 $table_width => "100%"
 $table_class => "report"
+$suppress_header => undef
+$suppress_footer => undef
 </%args>
