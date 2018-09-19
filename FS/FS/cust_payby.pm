@@ -931,7 +931,7 @@ sub has_autobill_cards {
         weight  => { op => '>',  value => 0 },
     },
     extra_sql =>
-      "AND payby IN ('CARD', 'DCRD') ".
+      "AND cust_payby.payby IN ('CARD', 'DCRD') ".
       'AND '.
       $FS::CurrentUser::CurrentUser->agentnums_sql( table => 'cust_main' ),
   });
@@ -952,7 +952,7 @@ sub has_autobill_checks {
         weight  => { op => '>',  value => 0 },
     },
     extra_sql =>
-      "AND payby IN ('CHEK','DCHEK','DCHK') ".
+      "AND cust_payby.payby IN ('CHEK','DCHEK','DCHK') ".
       'AND '.
       $FS::CurrentUser::CurrentUser->agentnums_sql( table => 'cust_main' ),
   });

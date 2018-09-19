@@ -121,8 +121,8 @@ there will be 1,400 billing and payment cycles simulated
     order_by  => " ORDER BY weight DESC ",
     extra_sql =>
       "AND (
-        payby IN ('CHEK','DCHK','DCHEK')
-        OR ( paydate > '".$target_dt->ymd."')
+        cust_payby.payby IN ('CHEK','DCHK','DCHEK')
+        OR ( cust_payby.paydate > '".$target_dt->ymd."')
       )
       AND " . $FS::CurrentUser::CurrentUser->agentnums_sql
       . ($agentnum ? "AND cust_main.agentnum = $agentnum" : ''),
