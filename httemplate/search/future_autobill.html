@@ -35,6 +35,34 @@ there will be 1,400 billing and payment cycles simulated
   suppress_header => $job ? 1 : 0,
   suppress_footer => $job ? 1 : 0,
 &>
+% if ( %pmt_type_subtotal ) {
+    <table class="gridreport" style="margin-left: 2em;">
+      <tr>
+        <th class="gridreport" colspan="2">
+          Summary
+        </th>
+      </tr>
+%   for my $pmt_type ( sort keys %pmt_type_subtotal ) {
+      <tr class="gridreport">
+        <td class="gridreport" style="text-align: right; margin-right: 1em;">
+          <% sprintf '$%.2f', $pmt_type_subtotal{ $pmt_type } %>
+        </td>
+        <td class="gridreport">
+          <% $pmt_type |h %>
+        </td>
+      </tr>
+%   }
+%   $pmt_type_subtotal{Total} += $_ for values %pmt_type_subtotal;
+    <tr class="gridreport" style="border-top: solid 1px #999;">
+      <td class="gridreport" style="text-align: right; margin-right: 1em; border-top: solid 1px #666;">
+        <% sprintf( '$%.2f', $pmt_type_subtotal{Total} ) %>
+      </td>
+      <td class="gridreport" style="border-top: solid 1px #666;">
+        Total
+      </td>
+    </tr>
+    </table>
+% }
 
 <%init>
   use DateTime;
@@ -134,6 +162,7 @@ there will be 1,400 billing and payment cycles simulated
   my $fakebill_time = time();
   my %abreport;
   my @rows;
+  my %pmt_type_subtotal;
 
   local $@;
   local $SIG{__DIE__};
@@ -238,6 +267,9 @@ there will be 1,400 billing and payment cycles simulated
             },
           ]
         };
+
+        $pmt_type_subtotal{ $cust_pay->paycardtype || $cust_pay-> payby }
+          += $cust_pay->paid;
 
       } # /foreach payment
 
