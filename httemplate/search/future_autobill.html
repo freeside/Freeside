@@ -52,16 +52,18 @@ there will be 1,400 billing and payment cycles simulated
         </td>
       </tr>
 %   }
-%   $pmt_type_subtotal{Total} += $_ for values %pmt_type_subtotal;
-    <tr class="gridreport" style="border-top: solid 1px #999;">
-      <td class="gridreport" style="text-align: right; margin-right: 1em; border-top: solid 1px #666;">
-        <% sprintf( '$%.2f', $pmt_type_subtotal{Total} ) %>
-      </td>
-      <td class="gridreport" style="border-top: solid 1px #666;">
-        Total
-      </td>
-    </tr>
-    </table>
+%   if ( keys %pmt_type_subtotal > 1 ) {
+%     $pmt_type_subtotal{Total} += $_ for values %pmt_type_subtotal;
+      <tr class="gridreport" style="border-top: solid 1px #999;">
+        <td class="gridreport" style="text-align: right; margin-right: 1em; border-top: solid 1px #666;">
+          <% sprintf( '$%.2f', $pmt_type_subtotal{Total} ) %>
+        </td>
+        <td class="gridreport" style="border-top: solid 1px #666;">
+          Total
+        </td>
+      </tr>
+      </table>
+%   }
 % }
 
 <%init>
