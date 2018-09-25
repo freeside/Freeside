@@ -19,6 +19,7 @@ function <% $id %>randomPass() {
   for(var j, x, i = pass.length; i; j = Math.floor(Math.random() * i), x = pass[--i], pass[i] = pass[j], pass[j] = x);
   pass = pass.join('');
   document.getElementById('<% $id %>').value = pass;
+  document.getElementById('<% $id %>_result').innerHTML = '<IMG SRC="<% $p %>images/tick.png" style="width: 1em; display: inline-block; padding-right: .5em"> <SPAN STYLE="color: green;">Password valid!</SPAN>';
 % if ($submitid) {
     document.getElementById('<% $submitid %>').disabled = false;
 % }

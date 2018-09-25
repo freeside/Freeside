@@ -1838,7 +1838,7 @@ and customer address. Include units.',
   {
     'key'         => 'passwordmin',
     'section'     => 'password',
-    'description' => 'Minimum password length (default 6)',
+    'description' => 'Minimum password length (default 8)',
     'type'        => 'text',
   },
 
