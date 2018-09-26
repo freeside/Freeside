@@ -67,12 +67,8 @@ my $gateway;
         $hash->{'error_message'} = $hash->{'procStatusMessage'};
       }
     },
-  'approved'    => sub { my $hash = shift;
-                            $hash->{'approvalStatus'} 
-    },
-  'declined'    => sub { my $hash = shift;
-                            ! $hash->{'approvalStatus'} 
-    },
+  'approved'    => sub { shift->{'approvalStatus'} == 1 },
+  'declined'    => sub { shift->{'approvalStatus'} != 1 },
 );
 
 my %paytype = (
