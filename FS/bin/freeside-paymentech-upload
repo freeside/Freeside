@@ -92,7 +92,7 @@ while ($ssh_retry > 0) {
   $sftp = Net::SFTP::Foreign->new( host => $host,
                                    user => $username,
                                    password => $password,
-                                   timeout => 30,
+                                   timeout => 300,
                                  );
   last unless $sftp->error;
   $ssh_retry -= 1;
