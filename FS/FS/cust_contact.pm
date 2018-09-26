@@ -59,6 +59,11 @@ empty or Y
 
 'Y' if the customer should get invoices sent to this address, null if not
 
+=item message_dest
+
+'Y' if contact should get non-invoice email messages sent to this address,
+NULL if not
+
 =back
 
 =head1 METHODS
@@ -119,6 +124,7 @@ sub check {
     || $self->ut_textn('comment')
     || $self->ut_enum('selfservice_access', [ '', 'Y' ])
     || $self->ut_flag('invoice_dest')
+    || $self->ut_flag('message_dest')
   ;
   return $error if $error;
 
@@ -148,4 +154,3 @@ L<FS::contact>, L<FS::cust_main>, L<FS::Record>
 =cut
 
 1;
-
