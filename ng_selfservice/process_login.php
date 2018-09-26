@@ -3,7 +3,14 @@
 require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
-$response = $freeside->login( array(
+$ip = $_SERVER['REMOTE_ADDR'];
+
+if ($_POST['domain'] == "ip_mac") {
+  $mac_addr = $freeside->get_mac_address( array('ip' => $ip, ) );
+  $_POST['username'] = $mac_addr['mac_address'];
+}
+
+$response = $freeside->login( array( 
   'email'    => strtolower($_POST['email']),
   'username' => strtolower($_POST['username']),
   'domain'   => strtolower($_POST['domain']),
@@ -16,9 +23,9 @@ $error = $response['error'];
 
 if ( $error ) {
 
-  header('Location:index.php?username='. urlencode($username).
-                           '&domain='.   urlencode($domain).
-                           '&email='.    urlencode($email).
+  header('Location:index.php?username='. urlencode($_POST['username']).
+                           '&domain='.   urlencode($_POST['domain']).
+                           '&email='.    urlencode($_POST['email']).
                            '&error='.    urlencode($error)
         );
   die();
@@ -36,7 +43,7 @@ error_log("[login] logged into freeside with session_id=$session_id, setting coo
 
 setcookie('session_id', $session_id);
 
-header("Location:main.php")
+header("Location:main.php");
 #die();
 
 ?>

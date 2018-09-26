@@ -1,3 +1,21 @@
+<?
+
+require_once('session.php');
+
+$page = basename($_SERVER['SCRIPT_FILENAME']);
+
+$access = $freeside->check_access( array(
+  'session_id' => $_COOKIE['session_id'],
+  'page'       => $page,
+) );
+
+if ($access['error']) {
+  header('Location:no_access.php?error='. urlencode($access['error']));
+  die();
+}
+
+?>
+
 <!DOCTYPE html>
 <HTML>
   <HEAD>
