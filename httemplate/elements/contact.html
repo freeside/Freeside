@@ -191,8 +191,10 @@ $label{'comment'} = 'Comment';
 
 my @fields = $opt{'name_only'} ? qw( first last ) : keys %label;
 
+my $submitid = $opt{'submit_id'} ? $opt{'submit_id'} : 'submit';
+
 my $js = qq(
-    add_password_validation('changepw$id\_password', 'submit', '', '$contactnum');
+    add_password_validation('changepw$id\_password', '$submitid', '', '$contactnum');
 
     var selfService = document.getElementById("$id\_selfservice_access").value;
 
