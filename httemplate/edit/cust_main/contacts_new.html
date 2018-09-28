@@ -1,9 +1,25 @@
+<SCRIPT>
+  function checkPasswordValidation(fieldid)  {
+    var validationResult = document.getElementById(fieldid+'_result').innerHTML;
+    if (validationResult.match(/Password valid!/)) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+</SCRIPT>
+
+<& '/elements/validate_password_js.html', &>
+
 <DIV ID="contacts_div" STYLE="display:<% $display %>">
 <BR>
 <FONT CLASS="fsinnerbox-title">Contacts</FONT>
 <% include('/edit/elements/edit.html',
      'embed'           => $opt{cust_main},
      'table'           => 'cust_main',
+     'agent_virt'       => 1,
+     'submit_id'        => $opt{submit_id},
      'labels'          => { 'contactnum'  => 'Contact',
                             #'locationnum' => '&nbsp;',
                           },
@@ -17,7 +33,6 @@
          'm2_error_callback' => $m2_error_callback,
        },
      ],
-     'agent_virt'      => 1,
     )
 %>
 </DIV>
