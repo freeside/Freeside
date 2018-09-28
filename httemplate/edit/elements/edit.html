@@ -114,6 +114,9 @@ Example:
     #we're in a popup (no title/menu/searchboxes)
     'popup' => 1,
 
+    #if you need to access the submit button
+    'submit_id' => 'mysubmitbuttonid',
+
     #we're embedded (rows only: no header at all, no html_init, no error
     # display, no <FORM>, no hidden fields for table name or primary key, no
     # display of primary key, no submit button, no html_foot, no footer)
@@ -398,6 +401,8 @@ Example:
 %
 %   my $layer_prefix_on = '';
 %
+%   my $submitid   = $opt{submit_id} ? $opt{submit_id} : '';
+%
 %   my $include_sub = sub {
 %     my %opt = @_;
 %
@@ -422,6 +427,7 @@ Example:
 %         'field'      => "$field$fieldnum",
 %         'id'         => "$field$fieldnum", #separate?
 %         'label_id'   => $field."_label$fieldnum", #don't want field0_label0...
+%         'submit_id'  => $submitid,
 %         %include_common,
 %         %opt,
 %     );

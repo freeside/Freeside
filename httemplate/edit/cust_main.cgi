@@ -111,7 +111,7 @@ function samechanged(what) {
 
 </SCRIPT>
 
-<& cust_main/contacts_new.html, 'cust_main'=>$cust_main, &>
+<& cust_main/contacts_new.html, 'cust_main'=>$cust_main, 'submit_id'=>'submitButton', &>
 
 %# billing info
 <& cust_main/billing.html, $cust_main,
