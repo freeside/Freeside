@@ -3629,7 +3629,19 @@ sub _quote {
            && driver_name eq 'Pg'
           )
   {
-    dbh->quote($value, { pg_type => PG_BYTEA() });
+    local $@;
+
+    eval { $value = dbh->quote($value, { pg_type => PG_BYTEA() }); };
+
+    if ( $@ && $@ =~ /Wide character/i ) {
+      warn 'Correcting malformed UTF-8 string for binary quote()'
+        if $DEBUG;
+      utf8::decode($value);
+      utf8::encode($value);
+      $value = dbh->quote($value, { pg_type => PG_BYTEA() });
+    }
+
+    $value;
   } else {
     dbh->quote($value);
   }
