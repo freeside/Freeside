@@ -107,14 +107,13 @@ Returns a formatted time period for this line item.
 =cut
 
 sub time_period_pretty {
-  my( $self, $part_pkg, $agentnum ) = @_;
+  my( $self, $part_pkg, $agentnum, %opt ) = @_;
 
   #more efficient to look some of this conf stuff up outside the
   # invoice/template display loop we're called from
   # (Template_Mixin::_invoice_cust_bill_pkg) and pass them in as options
 
-  return '' if $conf->exists('disable_line_item_date_ranges')
-            || $part_pkg->option('disable_line_item_date_ranges',1)
+  return '' if $opt{'disable_line_item_date_ranges'}
             || ! $self->sdate
             || ! $self->edate;
 

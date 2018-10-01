@@ -11,6 +11,7 @@
                   'header'      => \@header,
                   'fields'      => \@fields,
                   'links'       => \@links,
+                  'disable_maxselect' => '1',
 
 &>
 <%init>
@@ -84,11 +85,16 @@ my $active_pkg_sql = 'select pkgnum from cust_pkg where cust_pkg.custnum = cust_
 
 ## sql to get the first active date, last cancel date, and last reason.
 my $active_date = 'select min(setup) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\'';
-my $cancel_date = 'select max(cancel) from cust_pkg where cust_pkg.custnum = cust_main.custnum';
+
+## set cancel date range here
+my($beginning_date, $ending_date) = FS::UI::Web::parse_beginning_ending($cgi, '');
+my $max_cancel_sql = "select max(cancel) from cust_pkg left join part_pkg using (pkgpart) where cust_pkg.custnum = cust_main.custnum and part_pkg.freq > \'0\'";
+my $cancel_date = $max_cancel_sql.' and (('.$max_cancel_sql.') >= '.$beginning_date.' and ('.$max_cancel_sql.') <= '.$ending_date.')';
+
 my $cancel_reason = 'select reason.reason from cust_pkg
 	left join cust_pkg_reason on (cust_pkg.pkgnum = cust_pkg_reason.pkgnum)
 	left join reason on (cust_pkg_reason.reasonnum = reason.reasonnum)
-	where cust_pkg.custnum = cust_main.custnum and cust_pkg_reason.date = ('.$cancel_date.')
+	where cust_pkg.custnum = cust_main.custnum and cust_pkg_reason.date = ('.$cancel_date.') limit 1
 ';
 
 my @header = ( '#', 'Name', 'Address', 'Phone', 'Email', 'Active Date', 'Cancelled Date', 'Reason', 'Active Days' );
@@ -96,8 +102,6 @@ my @fields = ( 'custnum', 'custname', $location_sub, 'daytime', $email_sub, 'act
 my @links = ( $customer_link, $customer_link, '', '', '', '', '', '', '' );
 my @select = (
 	'cust_main.*',
-	'cust_location.*',
-	'part_pkg.*',
 	"(select to_char((select to_timestamp((".$active_date."))), 'Mon DD YYYY')) AS active_date",
 	"(select to_char((select to_timestamp((".$cancel_date."))), 'Mon DD YYYY')) AS cancel_date",
 	"($cancel_reason) AS cancel_reason",

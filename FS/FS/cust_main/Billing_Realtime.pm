@@ -16,6 +16,7 @@ use FS::cust_bill_pay;
 use FS::cust_refund;
 use FS::banned_pay;
 use FS::payment_gateway;
+use FS::Misc::Savepoint;
 
 $realtime_bop_decline_quiet = 0;
 
@@ -27,6 +28,7 @@ $me = '[FS::cust_main::Billing_Realtime]';
 
 our $BOP_TESTING = 0;
 our $BOP_TESTING_SUCCESS = 1;
+our $BOP_TESTING_TIMESTAMP = '';
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
@@ -405,7 +407,7 @@ sub realtime_bop {
 
   confess "Can't call realtime_bop within another transaction ".
           '($FS::UID::AutoCommit is false)'
-    unless $FS::UID::AutoCommit;
+    unless $FS::UID::AutoCommit || $BOP_TESTING;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
@@ -420,6 +422,8 @@ sub realtime_bop {
     $options{method} = $method;
     $options{amount} = $amount;
   }
+
+  return '' unless $options{amount} > 0;
 
   # set fields from passed cust_payby
   _bop_cust_payby_options(\%options);
@@ -454,16 +458,24 @@ sub realtime_bop {
     if $conf->config('credit-card-surcharge-percentage', $self->agentnum)
     && $options{method} eq 'CC';
 
+  my $cc_surcharge_flat = 0;
+  $cc_surcharge_flat = $conf->config('credit-card-surcharge-flatfee', $self->agentnum)
+    if $conf->config('credit-card-surcharge-flatfee', $self->agentnum)
+    && $options{method} eq 'CC';
+
   # always add cc surcharge if called from event 
-  if($options{'cc_surcharge_from_event'} && $cc_surcharge_pct > 0) {
-      $cc_surcharge = $options{'amount'} * $cc_surcharge_pct / 100;
+  if($options{'cc_surcharge_from_event'} && ($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0)) {
+    if ($options{'amount'} > 0) {
+      $cc_surcharge = ($options{'amount'} * ($cc_surcharge_pct / 100)) + $cc_surcharge_flat;
       $options{'amount'} += $cc_surcharge;
       $options{'amount'} = sprintf("%.2f", $options{'amount'}); # round (again)?
+    }
   }
-  elsif($cc_surcharge_pct > 0) { # we're called not from event (i.e. from a 
-                                 # payment screen), so consider the given 
-				 # amount as post-surcharge
-    $cc_surcharge = $options{'amount'} - ($options{'amount'} / ( 1 + $cc_surcharge_pct/100 ));
+  elsif($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0) {
+    # we're called not from event (i.e. from a
+    # payment screen), so consider the given
+		# amount as post-surcharge
+    $cc_surcharge = $options{'amount'} - (($options{'amount'} - $cc_surcharge_flat) / ( 1 + $cc_surcharge_pct/100 )) if $options{'amount'} > 0;
   }
   
   $cc_surcharge = sprintf("%.2f",$cc_surcharge) if $cc_surcharge > 0;
@@ -672,7 +684,7 @@ sub realtime_bop {
   my $cust_pay_pending = new FS::cust_pay_pending {
     'custnum'           => $self->custnum,
     'paid'              => $options{amount},
-    '_date'             => '',
+    '_date'             => $BOP_TESTING ? $BOP_TESTING_TIMESTAMP : '',
     'payby'             => $bop_method2payby{$options{method}},
     'payinfo'           => $options{payinfo},
     'paymask'           => $options{paymask},
@@ -747,7 +759,7 @@ sub realtime_bop {
     return { reference => $cust_pay_pending->paypendingnum,
              map { $_ => $transaction->$_ } qw ( popup_url collectitems ) };
 
-  } elsif ( $transaction->is_success() && $action2 ) {
+  } elsif ( !$BOP_TESTING && $transaction->is_success() && $action2 ) {
 
     $cust_pay_pending->status('authorized');
     my $cpp_authorized_err = $cust_pay_pending->replace;
@@ -936,7 +948,7 @@ sub _realtime_bop_result {
        'custnum'  => $self->custnum,
        'invnum'   => $options{'invnum'},
        'paid'     => $cust_pay_pending->paid,
-       '_date'    => '',
+       '_date'    => $BOP_TESTING ? $BOP_TESTING_TIMESTAMP : '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
        'paymask'  => $options{'paymask'} || $cust_pay_pending->paymask,
@@ -957,12 +969,16 @@ sub _realtime_bop_result {
     local $FS::UID::AutoCommit = 0;
     my $dbh = dbh;
 
+    my $savepoint_label = '_realtime_bop_result';
+    savepoint_create( $savepoint_label );
+
     #start a transaction, insert the cust_pay and set cust_pay_pending.status to done in a single transction
 
     my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
 
     if ( $error ) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      savepoint_rollback( $savepoint_label );
+
       $cust_pay->invnum(''); #try again with no specific invnum
       $cust_pay->paynum('');
       my $error2 = $cust_pay->insert( $options{'manual'} ?
@@ -971,7 +987,8 @@ sub _realtime_bop_result {
       if ( $error2 ) {
         # gah.  but at least we have a record of the state we had to abort in
         # from cust_pay_pending now.
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        savepoint_rollback_and_release( $savepoint_label );
+
         my $e = "WARNING: $options{method} captured but payment not recorded -".
                 " error inserting payment (". $payment_gateway->gateway_module.
                 "): $error2".
@@ -986,9 +1003,10 @@ sub _realtime_bop_result {
     my $jobnum = $cust_pay_pending->jobnum;
     if ( $jobnum ) {
        my $placeholder = qsearchs( 'queue', { 'jobnum' => $jobnum } );
-      
+
        unless ( $placeholder ) {
-         $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+         savepoint_rollback_and_release( $savepoint_label );
+
          my $e = "WARNING: $options{method} captured but job $jobnum not ".
              "found for paypendingnum ". $cust_pay_pending->paypendingnum. "\n";
          warn $e;
@@ -998,7 +1016,8 @@ sub _realtime_bop_result {
        $error = $placeholder->delete;
 
        if ( $error ) {
-         $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        savepoint_rollback_and_release( $savepoint_label );
+
          my $e = "WARNING: $options{method} captured but could not delete ".
               "job $jobnum for paypendingnum ".
               $cust_pay_pending->paypendingnum. ": $error\n";
@@ -1020,8 +1039,8 @@ sub _realtime_bop_result {
     my $cpp_done_err = $cust_pay_pending->replace;
 
     if ( $cpp_done_err ) {
+      savepoint_rollback_and_release( $savepoint_label );
 
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       my $e = "WARNING: $options{method} captured but payment not recorded - ".
               "error updating status for paypendingnum ".
               $cust_pay_pending->paypendingnum. ": $cpp_done_err \n";
@@ -1029,7 +1048,7 @@ sub _realtime_bop_result {
       return $e;
 
     } else {
-
+      savepoint_release( $savepoint_label );
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
       if ( $options{'apply'} ) {
@@ -1068,9 +1087,11 @@ sub _realtime_bop_result {
 	  }
 
 	  my $cust_pkg;
+    my $cc_surcharge_text = 'Credit Card Surcharge';
+    $cc_surcharge_text = $conf->config('credit-card-surcharge-text', $self->agentnum) if $conf->exists('credit-card-surcharge-text', $self->agentnum);
 	  my $charge_error = $self->charge({
 				    'amount' 	=> $options{'cc_surcharge'},
-				    'pkg' 	=> 'Credit Card Surcharge',
+				    'pkg' 	=> $cc_surcharge_text,
 				    'setuptax'  => 'Y',
 				    'cust_pkg_ref' => \$cust_pkg,
 				});
@@ -1193,6 +1214,7 @@ sub _realtime_bop_result {
               "resolved - error updating status for paypendingnum ".
               $cust_pay_pending->paypendingnum. ": $cpp_done_err \n";
       warn $e;
+      #XXX internal system log $e (what's going on?)
       $perror = "$e ($perror)";
     }
 
@@ -1520,7 +1542,7 @@ sub realtime_refund_bop {
  
     my $payment_gateway =
       $self->agent->payment_gateway( 'method'  => $options{method} );
-    my( $processor, $login, $password, $namespace ) =
+    ( $processor, $login, $password, $namespace ) =
       map { my $method = "gateway_$_"; $payment_gateway->$method }
         qw( module username password namespace );
 

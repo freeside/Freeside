@@ -55,7 +55,8 @@ sub batch_card {
     return;
   }
   
-  my $invnum = delete $options{invnum};
+  #my $invnum = delete $options{invnum};
+  my $invnum = $options{invnum};
 
   #pay fields should all come from either cust_payby or options, not both
   #  in theory, could just pass payby, and use it to select cust_payby,
@@ -114,7 +115,7 @@ sub batch_card {
   } );
 
   foreach (qw( address1 address2 city state zip country latitude longitude
-               payby payinfo paydate payname paycode ))
+               payby payinfo paydate payname paycode paytype ))
   {
     $options{$_} = '' unless exists($options{$_});
   }
@@ -138,11 +139,16 @@ sub batch_card {
     'country'  => $options{country}  || $loc->country,
     'payby'    => $options{payby}    || $cust_payby->payby,
     'payinfo'  => $options{payinfo}  || $cust_payby->payinfo,
+    'paymask'  => ( $options{payinfo}
+                      ? FS::payinfo_Mixin->mask_payinfo( $options{payby},
+                                                         $options{payinfo} )
+                      : $cust_payby->paymask
+                  ),
     'exp'      => $options{paydate}  || $cust_payby->paydate,
     'payname'  => $options{payname}  || $cust_payby->payname,
     'paytype'  => $options{paytype}  || $cust_payby->paytype,
     'amount'   => $amount,                         # consolidating
-    'paycode'  => $options{paycode}  || $cust_payby->paycode,
+    'paycode'  => $options{paycode}  || '',
   } );
   
   $cust_pay_batch->paybatchnum($old_cust_pay_batch->paybatchnum)

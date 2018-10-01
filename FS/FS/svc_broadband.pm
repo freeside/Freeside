@@ -107,15 +107,23 @@ sub table_info {
     'fields' => {
       'svcnum'      => 'Service',
       'description' => 'Descriptive label',
-      'speed_down'  => 'Download speed (Kbps)',
-      'speed_up'    => 'Upload speed (Kbps)',
+      'speed_up'    => {
+                         'label'    => 'Upload speed (Kbps)',
+                         'type'     => 'fcc_477_speed',
+                         'def_info' => 'both upload and download speed must be set to FCC 477 information if using that modifier',
+                       },
+      'speed_down'  => {
+                         'label'    => 'Download speed (Kbps)',
+                         'type'     => 'fcc_477_speed',
+                         'def_info' => 'both upload and download speed must be set to FCC 477 information if using that modifier',
+                       },
       'ip_addr'     => 'IP address',
-      'blocknum'    => 
-      { 'label' => 'Address block',
-                         'type'  => 'select',
-                         'select_table' => 'addr_block',
-                          'select_key'   => 'blocknum',
-                         'select_label' => 'cidr',
+      'blocknum'    => {
+                         'label'             => 'Address block',
+                         'type'              => 'select',
+                         'select_table'      => 'addr_block',
+                          'select_key'       => 'blocknum',
+                         'select_label'      => 'cidr',
                          'disable_inventory' => 1,
                        },
      'plan_id' => 'Service Plan Id',
@@ -134,6 +142,7 @@ sub table_info {
                          #select_table => 'radius_group',
                          #select_key   => 'groupnum',
                          #select_label => 'groupname',
+                         disable_select => 1,
                          disable_inventory => 1,
                          multiple => 1,
                        },
@@ -147,6 +156,9 @@ sub table_info {
                              disable_inventory => 1,
                            },
       'serviceid' => 'Torrus serviceid', #but is should be hidden
+      'speed_test_up'      => { 'label' => 'Speed test upload (Kbps)' },
+      'speed_test_down'    => { 'label' => 'Speed test download (Kbps)' },
+      'speed_test_latency' => 'Speed test latency (ms)',
     },
   };
 }
@@ -352,6 +364,8 @@ sub check {
     || $self->ut_textn('description')
     || $self->ut_numbern('speed_up')
     || $self->ut_numbern('speed_down')
+    || $self->ut_numbern('speed_test_up')
+    || $self->ut_numbern('speed_test_down')
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
     || $self->ut_hexn('auth_key')
@@ -501,6 +515,11 @@ sub _upgrade_data {
     #next SVC;
   }
 
+  require FS::Misc::FixIPFormat;
+  FS::Misc::FixIPFormat::fix_bad_addresses_in_table(
+      'svc_broadband', 'svcnum', 'ip_addr',
+  );
+
   '';
 }
 
@@ -523,4 +542,3 @@ FS::part_svc, schema.html from the base documentation.
 =cut
 
 1;
-

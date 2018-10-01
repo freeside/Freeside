@@ -94,6 +94,15 @@ sub ip_check {
     $self->ip_addr('');
   }
 
+  # strip user-entered leading 0's from IPv4 addresses
+  # Parsers like NetAddr::IP interpret them as octal instead of decimal
+  $self->ip_addr(
+    join( '.', (
+        map{ int($_) }
+        split( /\./, $self->ip_addr )
+    ))
+  ) if $self->ip_addr =~ /\./ && $self->ip_addr =~ /[\.^]0/;
+
   if ( $self->ip_addr
        and !$self->router
        and $self->conf->exists('auto_router') ) {
@@ -129,6 +138,10 @@ address space, it won't be changed.
 sub assign_ip_addr {
   my $self = shift;
   my %opt = @_;
+
+  #otherwise we'll get the same assignment for concurrent identical calls
+  # this will serialize them
+  $_->lock_table foreach @subclasses;
 
   my @blocks;
   my $na = $self->NetAddr;
@@ -260,18 +273,22 @@ sub router {
   FS::router->by_key($self->routernum);
 }
 
-=item used_addresses [ BLOCK ]
+=item used_addresses [ FS::addr_block ]
 
-Returns a list of all addresses (in BLOCK, or in all blocks)
-that are in use.  If called as an instance method, excludes 
-that instance from the search.
+Returns a list of all addresses in use within the given L<FS::addr_block>.
+
+If called as an instance method, excludes that instance from the search.
 
 =cut
 
 sub used_addresses {
-  my $self = shift;
-  my $block = shift;
-  return ( map { $_->_used_addresses($block, $self) } @subclasses );
+  my ($self, $block) = @_;
+
+  (
+    $block->ip_gateway ? $block->ip_gateway : (),
+    $block->NetAddr->broadcast->addr,
+    map { $_->_used_addresses($block, $self ) } @subclasses
+  );
 }
 
 sub _used_addresses {

@@ -53,6 +53,10 @@ _date
 
 =back
 
+=item pid
+
+=back
+
 =head1 METHODS
 
 =over 4
@@ -84,6 +88,7 @@ sub insert_new_path {
     'path'           => $path,
     '_date'          => time,
     'render_seconds' => $render_seconds,
+    'pid'            => $$,
   } );
 
   #so we can still log pages after a transaction-aborting SQL error (and then
@@ -127,6 +132,7 @@ sub check {
     || $self->ut_text('path')
     || $self->ut_number('_date')
     || $self->ut_numbern('render_seconds')
+    || $self->ut_numbern('pid')
   ;
   return $error if $error;
 

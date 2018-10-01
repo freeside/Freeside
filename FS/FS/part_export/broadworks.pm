@@ -6,6 +6,7 @@ use strict;
 use Tie::IxHash;
 use FS::Record qw(dbh qsearch qsearchs);
 use Locale::SubCountry;
+use Carp qw(carp);
 
 our $me = '[broadworks]';
 our %client; # exportnum => client object
@@ -46,7 +47,7 @@ Until then, authentication will be denied.</P>
 END
 );
 
-sub export_insert {
+sub _export_insert {
   my($self, $svc_x) = (shift, shift);
 
   my $cust_main = $svc_x->cust_main;
@@ -68,7 +69,7 @@ sub export_insert {
   '';
 }
 
-sub export_replace {
+sub _export_replace {
   my($self, $svc_new, $svc_old) = @_;
 
   my $cust_main = $svc_new->cust_main;
@@ -121,7 +122,7 @@ sub export_replace {
   '';
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc_x) = @_;
 
   my $cust_main = $svc_x->cust_main;
@@ -162,6 +163,12 @@ sub export_delete {
 sub export_device_insert {
   my ($self, $svc_x, $device) = @_;
 
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_device_insert() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
+
   if ( $device->count('svcnum = ?', $svc_x->svcnum) > 1 ) {
     return "This service already has a device.";
   }
@@ -181,6 +188,13 @@ sub export_device_insert {
 
 sub export_device_replace {
   my ($self, $svc_x, $new_device, $old_device) = @_;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_device_replace() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
+
   my $cust_main = $svc_x->cust_main;
   my $groupId = $self->groupId($cust_main);
 
@@ -204,6 +218,12 @@ sub export_device_replace {
 
 sub export_device_delete {
   my ($self, $svc_x, $device) = @_;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_device_delete() suppressed by noexport_hack'
+      if $self->option('debug');
+    return;
+  }
 
   if ( $device->isa('FS::phone_device') ) {
     my $error = $self->set_endpoint( $self->userId($svc_x), '' );

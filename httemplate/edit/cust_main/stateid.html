@@ -1,7 +1,12 @@
 % if ( $conf->exists('show_stateid') ) {
 <TR>
   <TH ALIGN="right"><% $stateid_label %></TH>
-  <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>" SIZE=12></TD>
+  <TD>
+    <INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>" SIZE=12 ID="stateid">
+% if ( $stateid && $FS::CurrentUser::CurrentUser->access_right( 'Unmask customer DL' )) {
+    <& /elements/link-replace_element_text.html, {target_id => 'stateid', replace_text => $cust_main->stateid} &>
+% }
+  </TD>
   <TD><& /elements/select-state.html,
           state   => $cust_main->stateid_state,
           country => $cust_main->country, # how does this work on new customer?

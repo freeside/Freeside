@@ -1,6 +1,6 @@
-  <TR ID="payment_amount_row" <% $opt{'row_style'} %>>
+  <TR ID="payment_amount_row">
     <TH ALIGN="right"><% mt('Payment amount') |h %></TH>
-    <TD COLSPAN=7>
+    <TD>
       <TABLE><TR><TD BGCOLOR="#ffffff">
         <% $money_char %><INPUT NAME     = "amount"
                                 ID       = "amount"
@@ -8,7 +8,7 @@
                                 VALUE    = "<% $amount %>"
                                 SIZE     = 8
                                 STYLE    = "text-align:right;"
-%                               if ( $fee ) {
+%                               if ( $fee || $surcharge_percentage || $surcharge_flatfee ) {
                                   onChange   = "amount_changed(this)"
                                   onKeyDown  = "amount_changed(this)"
                                   onKeyUp    = "amount_changed(this)"
@@ -28,17 +28,23 @@
            <FONT SIZE="+1"><% length($amount) ? $money_char. sprintf('%.2f', ($fee_display eq 'add') ? $amount + $fee : $amount - $fee ) : '' %> <% $fee_display eq 'add' ? 'TOTAL' : 'AVAILABLE' %></FONT>
   
 %        }
+%        if ( $surcharge_percentage || $surcharge_flatfee ) {
+           <INPUT TYPE="hidden" NAME="surcharge_percentage" ID="surcharge_percentage" VALUE="<% $surcharge_percentage %>">
+           <INPUT TYPE="hidden" NAME="surcharge_flatfee" ID="surcharge_flatfee" VALUE="<% $surcharge_flatfee %>">
+      </TD><TD ID="ajax_surcharge_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
+           <FONT SIZE="+1">A credit card surcharge of <% $money_char. sprintf('%.2f', $surcharge) %> is included in this payment</FONT>
+%        }
       </TD></TR></TABLE>
     </TD>
   </TR>
 
-% if ( $fee ) {
+% if ($fee || $surcharge_percentage || $surcharge_flatfee ) {
 
     <SCRIPT TYPE="text/javascript">
 
       function amount_changed(what) {
 
-
+% if ( $fee ) {
         var total = '';
         if ( what.value.length ) {
           total = parseFloat(what.value) <% $fee_op %> <% $fee %>;
@@ -48,6 +54,13 @@
 
         var total_cell = document.getElementById('ajax_total_cell');
         total_cell.innerHTML = '<FONT SIZE="+1">' + total + ' <% $fee_display eq 'add' ? 'TOTAL' : 'AVAILABLE' %></FONT>';
+% }
+
+% if ( $surcharge_percentage || $surcharge_flatfee ) {
+        var surcharge_cell = document.getElementById('ajax_surcharge_cell');
+        var surcharge = ((what.value - <% $surcharge_flatfee %>) * <% $surcharge_percentage %>) + <% $surcharge_flatfee %>;
+        surcharge_cell.innerHTML = '<FONT SIZE="+1">A credit card surcharge of ' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
+% }
 
       }
 
@@ -66,6 +79,9 @@ my $fee = '';
 my $fee_pkg = '';
 my $fee_display = '';
 my $fee_op = '';
+my $surcharge = '';
+my $surcharge_percentage = 0;
+my $surcharge_flatfee = 0;
 
 if ( $opt{'process-pkgpart'}
      and ! $opt{'process-skip_first'} || $opt{'num_payments'}
@@ -86,13 +102,21 @@ if ( $opt{'process-pkgpart'}
 }
 
 my $amount = $opt{'amount'};
-if ( $amount > 0 ) {
+if ( $amount ) {
+  # probably should not happen, but will prevent surcharge being applied to negative due amounts
+  unless ($amount > 0) { $amount = 0; }
+
   $amount += $fee
     if $fee && $fee_display eq 'subtract';
 
   #&{ $opt{post_fee_callback} }( \$amount ) if $opt{post_fee_callback};
-  $amount += $amount * $opt{'surcharge_percentage'}/100
-    if $opt{'surcharge_percentage'} > 0;
+
+  $surcharge_percentage = $opt{'surcharge_percentage'}/100 if $opt{'surcharge_percentage'} > 0;
+  $surcharge_flatfee = $opt{'surcharge_flatfee'} if $opt{'surcharge_flatfee'} > 0;
+  $surcharge = $amount * $surcharge_percentage if $surcharge_percentage > 0;
+  $surcharge += $surcharge_flatfee if ( $surcharge_flatfee > 0 && $amount > 0 );
+
+  $amount += $surcharge;
 
   $amount = sprintf("%.2f", $amount);
 }

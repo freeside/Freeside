@@ -87,6 +87,8 @@ sub skin_info {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   #return { 'error' => $session } if $context eq 'error';
 
+  my $domain = $session->{'domain'};
+
   my $agentnum = '';
   if ( $context eq 'customer' && $custnum ) {
 
@@ -105,7 +107,7 @@ sub skin_info {
   $p->{'agentnum'} = $agentnum;
 
   my $conf = new FS::Conf;
-
+  my $timeout = $conf->config('selfservice-session_timeout') || '1 hour';
   #false laziness w/Signup.pm
 
   my $skin_info_cache_agent = _cache->get("skin_info_cache_agent$agentnum");
@@ -119,6 +121,8 @@ sub skin_info {
 
     warn "$me populating skin info cache for agentnum $agentnum\n"
       if $DEBUG > 1;
+
+    my $menu = $conf->config("ng_selfservice-menu", $agentnum );
 
     $skin_info_cache_agent = {
       'agentnum' => $agentnum,
@@ -143,7 +147,93 @@ sub skin_info {
       ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
         qw( head body_header body_footer company_address ) ),
       'money_char' => $conf->config("money_char") || '$',
-      'menu' => join("\n", $conf->config("ng_selfservice-menu", $agentnum ) ) ||
+      'menu'  => _menu($domain,$menu),
+    };
+
+    _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent, $timeout);
+
+  }
+
+  #{ %$skin_info_cache_agent };
+  $skin_info_cache_agent;
+
+}
+
+## checks if page is in menu listing, if not sends to main with error.
+sub check_access {
+ my $p = shift;
+ my $error;
+
+ return if $p->{'page'} eq "index.php";
+ return if $p->{'page'} eq "ip_login.php";
+
+ return if substr($p->{'page'}, 0, length("process_")) eq "process_";
+
+ my $conf = new FS::Conf;
+
+ my($context, $session, $custnum) = _custoragent_session_custnum($p);
+
+ my $domain = ref($session) ? $session->{'domain'} : '';
+
+ my $agentnum = '';
+ if ( $context eq 'customer' && $custnum ) {
+
+  my $sth = dbh->prepare('SELECT agentnum FROM cust_main WHERE custnum = ?')
+    or die dbh->errstr;
+
+  $sth->execute($custnum) or die $sth->errstr;
+
+  $agentnum = $sth->fetchrow_arrayref->[0]
+    or die "no agentnum for custnum $custnum";
+
+  #} elsif ( $context eq 'agent' ) {
+  } elsif ( defined($p->{'agentnum'}) and $p->{'agentnum'} =~ /^(\d+)$/ ) {
+    $agentnum = $1;
+  }
+  $p->{'agentnum'} = $agentnum;
+
+ my $menu = $conf->config("ng_selfservice-menu", $agentnum );
+
+ my $allowed_pages = _menu($domain,$menu);
+
+ my %allowed;
+ my @lines = split /\n/, $allowed_pages;
+ foreach my $line (@lines) {
+  chomp; # remove newlines
+  $line =~ s/^\s+//;  # remove leading whitespace
+  next unless length($line);
+  my (@pages) = split(/ /, $line, 2);
+  $allowed{$pages[0]} = $pages[1];
+ }
+
+ $error = "You do not have access to the page ".$allowed{$p->{page}} unless $allowed{$p->{page}};
+
+ return { 'error' => $error, };
+
+}
+
+sub _menu {
+ my $p = shift;
+ my $m = shift;
+
+ my $menu;
+
+ if ($p eq 'ip_mac') {
+   $menu =       'main.php Home
+
+                 payment.php Payments
+                 payment_cc.php Credit Card Payment
+                 payment_ach.php Electronic Check Payment
+                 payment_paypal.php PayPal Payment
+                 payment_webpay.php Webpay Payments
+
+                 docs.php FAQs
+
+                 logout.php Logout
+                ';
+ }
+ else {
+   $menu = join("\n", $m ) ||
                 'main.php Home
 
                  services.php Services
@@ -172,16 +262,31 @@ sub skin_info {
                  docs.php FAQs
 
                  logout.php Logout
-                ',
-    };
+                ';
+ }
+ return $menu;
+}
 
-    _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent);
+sub get_mac_address {
+  my $p = shift;
 
+## access radius exports acct tables to get mac
+  my @part_export = ();
+  @part_export = (
+    qsearch( 'part_export', { 'exporttype' => 'sqlradius' } ),
+    qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } ),
+    qsearch( 'part_export', { 'exporttype' => 'broadband_sqlradius' } ),
+  );
+
+  my @sessions;
+  foreach my $part_export (@part_export) {
+    push @sessions, ( @{ $part_export->usage_sessions( {
+      'ip' => $p->{'ip'},
+      'session_status' => 'open',
+    } ) } );
   }
 
-  #{ %$skin_info_cache_agent };
-  $skin_info_cache_agent;
-
+  return { 'mac_address' => $sessions[0]->{'callingstationid'}, };
 }
 
 sub login_info {
@@ -191,8 +296,8 @@ sub login_info {
 
   my %info = (
     %{ skin_info($p) },
-    'phone_login'  => $conf->exists('selfservice_server-phone_login'),
-    'single_domain'=> scalar($conf->config('selfservice_server-single_domain')),
+    'phone_login'      => $conf->exists('selfservice_server-phone_login'),
+    'single_domain'    => scalar($conf->config('selfservice_server-single_domain')),
     'banner_url'       => scalar($conf->config('selfservice-login_banner_url')),
     'banner_image_md5' => 
       md5_hex($conf->config_binary('selfservice-login_banner_image')),
@@ -239,10 +344,19 @@ sub login {
 
   } elsif ( $p->{'domain'} eq 'ip_mac' ) {
 
-      my $svc_broadband = qsearchs( 'svc_broadband', { 'mac_addr' => $p->{'username'} } );
-      return { error => 'IP address not found' }
+      return { error => 'MAC address empty '.$p->{'username'} }
+        unless $p->{'username'};
+
+      my $mac_address = $p->{'username'};
+      $mac_address =~ s/[\:\,\-\. ]//g;
+      $mac_address =~ tr/[a-z]/[A-Z/;
+
+      my $svc_broadband = qsearchs( 'svc_broadband', { 'mac_addr' => $mac_address } );
+      return { error => 'MAC address not found '.$p->{'username'} }
         unless $svc_broadband;
       $svc_x = $svc_broadband;
+
+      $session->{'domain'} = $p->{'domain'};
 
   } elsif ( $p->{email}
               && (my $contact = FS::contact->by_selfservice_email($p->{email}))
@@ -630,6 +744,8 @@ sub customer_info_short {
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
     }
+    $return{$_} = $cust_main->masked($_) for qw/ss stateid/;
+
     #maybe a little more expensive, but it should be cached by now
     for (@location_editable_fields) {
       $return{$_} = $cust_main->bill_location->get($_)
@@ -921,6 +1037,7 @@ sub payment_info {
   $return{paybatch} = $return{payunique};  #back compat
 
   $return{credit_card_surcharge_percentage} = $conf->config('credit-card-surcharge-percentage', $cust_main->agentnum);
+  $return{credit_card_surcharge_flatfee} = $conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum);
 
   return { 'error' => '',
            %return,
@@ -1730,20 +1847,34 @@ sub update_payby {
                            })
     or return { 'error' => 'unknown custpaybynum '. $p->{'custpaybynum'} };
 
+  my $cust_main = qsearchs( 'cust_main', {custnum => $cust_payby->custnum} )
+    or return { 'error' => 'unknown custnum '.$cust_payby->custnum };
+
   foreach my $field (
     qw( weight payby payinfo paycvv paydate payname paystate paytype payip )
   ) {
     next unless exists($p->{$field});
     $cust_payby->set($field,$p->{$field});
   }
+  $cust_payby->set( 'paymask' => $cust_payby->mask_payinfo );
 
-  my $error = $cust_payby->replace;
-  if ( $error ) {
-    return { 'error' => $error };
-  } else {
-    return { 'custpaybynum' => $cust_payby->custpaybynum };
+  # Update column if given a value, and the given value wasn't
+  # the value generated by $cust_main->masked($column);
+  $cust_main->set( $_, $p->{$_} )
+    for grep{ $p->{$_} !~ /^x/i; }
+        grep{ exists $p->{$_} }
+        qw/ss stateid/;
+
+  # Perform updates within a transaction
+  local $FS::UID::AutoCommit = 0;
+
+  if ( my $error = $cust_payby->replace || $cust_main->replace ) {
+    dbh->rollback;
+    return { error => $error };
   }
-  
+
+  dbh->commit;
+  return { custpaybynum => $cust_payby->custpaybynum };
 }
 
 sub verify_payby {
@@ -3899,4 +4030,3 @@ sub _custoragent_session_custnum {
 }
 
 1;
-

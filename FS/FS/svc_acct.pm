@@ -329,6 +329,15 @@ sub table_info {
                          disable_select => 1, #UI wonky, pry works otherwise
                        },
         'sectornum' => 'Tower sector',
+        'routernum' => 'Router/block',
+        'blocknum'  => {
+                         'label' => 'Address block',
+                         'type'  => 'select',
+                         'select_table' => 'addr_block',
+                          'select_key'   => 'blocknum',
+                         'select_label' => 'cidr',
+                         'disable_inventory' => 1,
+                       },
         'usergroup' => {
                          label => 'RADIUS groups',
                          type  => 'select-radius_group.html',
@@ -341,7 +350,7 @@ sub table_info {
                          type  => 'text',
                          disable_inventory => 1,
                          disable_select => 1,
-                         disable_part_svc_column => 1,
+                         #disable_part_svc_column => 1,
                        },
         'upbytes'   => { label => 'Upload',
                          type  => 'text',
@@ -1970,6 +1979,9 @@ sub _op_usage {
     if $DEBUG;
 
   return '' unless $amount;
+
+  return ''
+    if $self->cust_svc->part_svc->part_svc_column($column)->columnflag eq 'F';
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';

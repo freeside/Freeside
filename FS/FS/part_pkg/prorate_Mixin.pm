@@ -30,7 +30,7 @@ tie our %prorate_round_day_opts, 'Tie::IxHash',
     },
     'prorate_defer_bill' => {
                 'name' => 'When prorating, defer the first bill until the '.
-                          'billing day',
+                          'billing day or customers next bill date if synchronizing.',
                 'type' => 'checkbox',
     },
     'prorate_verbose' => {

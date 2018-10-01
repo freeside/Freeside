@@ -745,6 +745,12 @@ sub cust_bill_pkg_detail {
   
 }
 
+=item cust_bill_pkg_discount: Discounts issued
+
+Arguments: agentnum, refnum, cust_classnum
+
+=cut
+
 sub cust_bill_pkg_discount {
   my $self = shift;
   my ($speriod, $eperiod, $agentnum, %opt) = @_;
@@ -766,6 +772,60 @@ sub cust_bill_pkg_discount {
   JOIN cust_bill_pkg USING (billpkgnum)
   $cust_bill_pkg_join
   WHERE " . join(' AND ', grep $_, @where);
+
+  $self->scalar_sql($total_sql);
+}
+
+=item cust_bill_pkg_discount_or_waived: Discounts and waived fees issued
+
+Arguments: agentnum, refnum, cust_classnum
+
+=cut
+
+sub cust_bill_pkg_discount_or_waived {
+
+  my $self = shift;
+  my ($speriod, $eperiod, $agentnum, %opt) = @_;
+
+  $agentnum ||= $opt{'agentnum'};
+
+  my $total_sql = "
+    SELECT
+      COALESCE(
+          SUM(
+            COALESCE(
+              cust_bill_pkg_discount.amount,
+              CAST((  SELECT optionvalue
+                 FROM part_pkg_option
+                 WHERE
+                    part_pkg_option.pkgpart = cust_pkg.pkgpart
+                    AND optionname = 'setup_fee'
+              ) AS NUMERIC )
+            )
+          ),
+          0
+       )
+    FROM cust_bill_pkg
+    LEFT JOIN cust_bill_pkg_discount USING (billpkgnum)
+    LEFT JOIN cust_pkg ON cust_bill_pkg.pkgnum = cust_pkg.pkgnum
+    LEFT JOIN part_pkg USING (pkgpart)
+    LEFT JOIN cust_bill USING ( invnum )
+    LEFT JOIN cust_main ON cust_pkg.custnum = cust_main.custnum
+    WHERE
+    (
+        cust_bill_pkg_discount.billpkgdiscountnum IS NOT NULL
+        OR (
+            cust_pkg.setup = cust_bill_pkg.sdate
+            AND cust_pkg.waive_setup = 'Y'
+        )
+    )
+    AND cust_bill_pkg.pkgpart_override IS NULL
+  " . join "\n",
+      map  { " AND ( $_ ) " }
+      grep { $_ }
+      $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+      $self->with_report_option(%opt),
+      $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
 
   $self->scalar_sql($total_sql);
 }
@@ -1055,7 +1115,7 @@ sub calculate_churn_cust {
                                                       as suspended,
            SUM((s_active = 0 and s_suspended > 0 and e_active > 0)::int)
                                                       as resumed,
-           SUM((s_active > 0 and e_active = 0 and e_suspended = 0)::int)
+           SUM((e_active = 0 and e_cancelled > s_cancelled)::int)
                                                       as cancelled
     FROM ($cust_sql) AS x
   ";

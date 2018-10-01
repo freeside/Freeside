@@ -365,8 +365,10 @@ sub void {
     return $error;
   }
 
+  #more efficiently than below, because there could be lots
+  $self->void_cust_bill_pkg_detail($reprocess_cdrs);
+
   foreach my $table (qw(
-    cust_bill_pkg_detail
     cust_bill_pkg_display
     cust_bill_pkg_discount
     cust_bill_pkg_tax_location
@@ -374,17 +376,13 @@ sub void {
     cust_tax_exempt_pkg
     cust_bill_pkg_fee
   )) {
-    my %delete_args = ();
-    $delete_args{'reprocess_cdrs'} = $reprocess_cdrs
-      if $table eq 'cust_bill_pkg_detail';
-
     foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
 
       my $vclass = 'FS::'.$table.'_void';
       my $void = $vclass->new( {
         map { $_ => $linked->get($_) } $linked->fields
       });
-      my $error = $void->insert || $linked->delete(%delete_args);
+      my $error = $void->insert || $linked->delete;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -403,6 +401,40 @@ sub void {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
+
+}
+
+sub void_cust_bill_pkg_detail {
+  my( $self, $reprocess_cdrs ) = @_;
+
+  my $from_cust_bill_pkg_detail =
+    'FROM cust_bill_pkg_detail WHERE billpkgnum = ?';
+  my $where_detailnum =
+    "WHERE detailnum IN ( SELECT detailnum $from_cust_bill_pkg_detail )";
+
+  if ( $reprocess_cdrs ) {
+    #well, technically this could have been on other invoices / termination
+    # partners... separate flag?
+    $self->scalar_sql(
+      "DELETE FROM cdr_termination
+         WHERE acctid IN ( SELECT acctid FROM cdr $where_detailnum )
+      ",
+      $self->billpkgnum
+    );
+  }
+
+  my $setstatus = $reprocess_cdrs ? ', freesidestatus = NULL' : '';
+  $self->scalar_sql(
+    "UPDATE cdr SET detailnum = NULL $setstatus $where_detailnum",
+    $self->billpkgnum
+  );
+
+  $self->scalar_sql("INSERT INTO cust_bill_pkg_detail_void
+                       SELECT * $from_cust_bill_pkg_detail",
+                    $self->billpkgnum
+                   );
+
+  $self->scalar_sql("DELETE $from_cust_bill_pkg_detail", $self->billpkgnum);
 
 }
 
@@ -716,6 +748,7 @@ Returns the customer (L<FS::cust_main> object) for this line item.
 =cut
 
 sub cust_main {
+  carp "->cust_main called" if $DEBUG;
   # required for cust_main_Mixin equivalence
   # and use cust_bill instead of cust_pkg because this might not have a 
   # cust_pkg
@@ -1815,6 +1848,92 @@ sub upgrade_tax_location {
   '';
 }
 
+sub _pkg_tax_list {
+  # Return an array of hashrefs for each cust_bill_pkg_tax_location
+  # applied to this bill for this cust_bill_pkg.pkgnum.
+  #
+  # ! Important Note:
+  #   In some situations, this list will contain more tax records than the
+  #   ones directly related to $self->billpkgnum.  The returned list contains
+  #   all records, for this bill, charged against this billpkgnum's pkgnum.
+  #
+  #   One must keep this in mind when using data returned by this method.
+  #
+  #   An unaddressed deficiency in the cust_bill_pkg_tax_location model makes
+  #   this necessary:  When a linked-hidden package generates a tax/fee as a row
+  #   in cust_bill_pkg_tax_location, there is not enough information to surmise
+  #   with specificity which billpkgnum row represents the direct parent of the
+  #   the linked-hidden package's tax row.  The closest we can get to this
+  #   backwards reassociation is to use the pkgnum.  Therefore, when multiple
+  #   billpkgnum's appear with the same pkgnum, this method is going to return
+  #   the tax records for ALL of those billpkgnum's, not just $self->billpkgnum.
+  #
+  #   This could be addressed with an update to the model, and to the billing
+  #   routine that generates rows into cust_bill_pkg_tax_location.  Perhaps a
+  #   column, link_billpkgnum or parent_billpkgnum, recording the link. I'm not
+  #   doing that now, because there would be no possible repair of data stored
+  #   historically prior to such a fix.  I need _pkg_tax_list() to not be
+  #   broken for already-generated bills.
+  #
+  #   Any code you write relying on _pkg_tax_list() MUST be aware of, and
+  #   account for, the possible return of duplicated tax records returned
+  #   when method is called on multiple cust_bill_pkg_tax_location rows.
+  #   Duplicates can be identified by billpkgtaxlocationnum column.
+
+  my $self = shift;
+
+  my $search_selector;
+  if ( $self->pkgnum ) {
+
+    # For taxes applied to normal billing items
+    $search_selector =
+      ' cust_bill_pkg_tax_location.pkgnum = '
+      . dbh->quote( $self->pkgnum );
+
+  } elsif ( $self->feepart ) {
+
+    # For taxes applied to fees, when the fee is not attached to a package
+    # i.e. late fees, billing events fees
+    $search_selector =
+      ' cust_bill_pkg_tax_location.taxable_billpkgnum = '
+      . dbh->quote( $self->billpkgnum );
+
+  } else {
+    warn "_pkg_tax_list() unhandled case breaking taxes into sections";
+    warn "_pkg_tax_list() $_: ".$self->$_
+      for qw(pkgnum billpkgnum feepart);
+    return;
+  }
+
+  map +{
+      billpkgtaxlocationnum => $_->billpkgtaxlocationnum,
+      billpkgnum            => $_->billpkgnum,
+      taxnum                => $_->taxnum,
+      amount                => $_->amount,
+      taxname               => $_->taxname,
+  },
+  qsearch({
+    table  => 'cust_bill_pkg_tax_location',
+    addl_from => '
+      LEFT JOIN cust_bill_pkg
+	      ON cust_bill_pkg.billpkgnum
+         = cust_bill_pkg_tax_location.taxable_billpkgnum
+    ',
+    select => join( ', ', (qw|
+      cust_bill_pkg.billpkgnum
+      cust_bill_pkg_tax_location.billpkgtaxlocationnum
+      cust_bill_pkg_tax_location.taxnum
+      cust_bill_pkg_tax_location.amount
+    |)),
+    extra_sql =>
+      ' WHERE '.
+      ' cust_bill_pkg.invnum = ' . dbh->quote( $self->invnum ) .
+      ' AND '.
+      $search_selector
+  });
+
+}
+
 sub _upgrade_data {
   # Create a queue job to run upgrade_tax_location from January 1, 2012 to 
   # the present date.
@@ -1873,4 +1992,3 @@ from the base documentation.
 =cut
 
 1;
-

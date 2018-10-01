@@ -1282,6 +1282,14 @@ sub Customers {
 
       $self->{'Customers'} = $self->MemberOf->Clone;
 
+      my $RecordType = $self->RecordType;
+      my $uri_type = $RecordType eq 'Ticket' ? 'ticket' : "RT::$RecordType";
+
+      $self->{'Customers'}->Limit( FIELD    => 'Base',
+                                   OPERATOR => 'STARTSWITH',
+                                   VALUE    => 'fsck.com-rt://%/'.$uri_type.'/',
+                                 );
+
       for my $fstable (qw(cust_main cust_svc)) {
 
         $self->{'Customers'}->Limit(

@@ -2881,11 +2881,9 @@ to 127.0.0.1.
 sub ut_ip {
   my( $self, $field ) = @_;
   $self->setfield($field, '127.0.0.1') if $self->getfield($field) eq '::1';
-  $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
-    or return "Illegal (IP address) $field: ". $self->getfield($field);
-  for ( $1, $2, $3, $4 ) { return "Illegal (IP address) $field" if $_ > 255; }
-  $self->setfield($field, "$1.$2.$3.$4");
-  '';
+  return "Illegal (IP address) $field: ".$self->getfield($field)
+    unless $self->getfield($field) =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  $self->ut_ip46($field);
 }
 
 =item ut_ipn COLUMN
@@ -2913,7 +2911,17 @@ Check/untaint IPv4 or IPv6 address.
 
 sub ut_ip46 {
   my( $self, $field ) = @_;
-  my $ip = NetAddr::IP->new($self->getfield($field))
+  my $ip_addr = $self->getfield( $field );
+
+  # strip user-entered leading 0's from IPv4 addresses
+  # Parsers like NetAddr::IP interpret them as octal instead of decimal
+  $ip_addr = join( '.', (
+        map{ int($_) }
+        split( /\./, $ip_addr )
+    )
+  ) if $ip_addr =~ /\./ && $ip_addr =~ /[\.^]0/;
+
+  my $ip = NetAddr::IP->new( $ip_addr )
     or return "Illegal (IP address) $field: ".$self->getfield($field);
   $self->setfield($field, lc($ip->addr));
   return '';
@@ -3209,6 +3217,60 @@ sub ut_enumn {
   $self->getfield($field)
     ? $self->ut_enum($field, $choices)
     : '';
+}
+
+=item ut_date COLUMN
+
+Check/untaint a column containing a date string.
+
+Date will be normalized to YYYY-MM-DD format
+
+=cut
+
+sub ut_date {
+  my ( $self, $field ) = @_;
+  my $value = $self->getfield( $field );
+
+  my @date = split /[\-\/]/, $value;
+  if ( scalar(@date) == 3 ) {
+    @date = @date[2,0,1] if $date[2] >= 1900;
+
+    local $@;
+    my $ymd;
+    eval {
+      # DateTime will die given invalid date
+      $ymd = DateTime->new(
+        year  => $date[0],
+        month => $date[1],
+        day   => $date[2],
+      )->ymd('-');
+    };
+
+    unless( $@ ) {
+      $self->setfield( $field, $ymd ) unless $value eq $ymd;
+      return '';
+    }
+
+  }
+  return "Illegal (date) field $field: $value";
+}
+
+=item ut_daten COLUMN
+
+Check/untaint a column containing a date string.
+
+Column may be null.
+
+Date will be normalized to YYYY-MM-DD format
+
+=cut
+
+sub ut_daten {
+  my ( $self, $field ) = @_;
+
+  $self->getfield( $field ) =~ /^()$/
+  ? $self->setfield( $field, '' )
+  : $self->ut_date( $field );
 }
 
 =item ut_flag COLUMN
@@ -3579,7 +3641,19 @@ sub _quote {
            && driver_name eq 'Pg'
           )
   {
-    dbh->quote($value, { pg_type => PG_BYTEA() });
+    local $@;
+
+    eval { $value = dbh->quote($value, { pg_type => PG_BYTEA() }); };
+
+    if ( $@ && $@ =~ /Wide character/i ) {
+      warn 'Correcting malformed UTF-8 string for binary quote()'
+        if $DEBUG;
+      utf8::decode($value);
+      utf8::encode($value);
+      $value = dbh->quote($value, { pg_type => PG_BYTEA() });
+    }
+
+    $value;
   } else {
     dbh->quote($value);
   }

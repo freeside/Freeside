@@ -60,6 +60,8 @@ sub dbi_import {
   my $dbd_type = $args{'dbd'} ? $args{'dbd'} : 'Pg';
   my $status_column = $args{status_column} ? $args{status_column} : 'freesidestatus';
   my $status_column_info = $args{status_column_info} ? $args{status_column} : 'VARCHAR(32)';
+  my $st_sql;
+  my $batch_name = $args{batch_name} ? $args{batch_name} : 'CDR_DB';
 
   my $queries = get_queries({
     'dbd'                 => $dbd_type,
@@ -88,6 +90,7 @@ sub dbi_import {
       $dbi->do( $queries->{create_statustable} )
         or die $dbi->errstr;
     }
+    $st_sql = "INSERT INTO $status_table ( $pkey, $status_column ) VALUES ( ?, 'done' )";
   }
   ## check for column freeside status if not using status table and create it if not there.
   else {
@@ -97,6 +100,7 @@ sub dbi_import {
       $dbi->do( $queries->{create_statuscolumn} )
         or die $dbi->errstr;
     }
+    $st_sql = "UPDATE $table SET $status_column = 'done' WHERE $pkey = ?";
   }
 
   #my @cols = values %{ $args{column_map} };
@@ -110,7 +114,7 @@ sub dbi_import {
   $sth->execute or die $sth->errstr. " executing $sql";
 
   my $cdr_batch = new FS::cdr_batch({ 
-      'cdrbatch' => $args{batch_name} . '-import-'. time2str('%Y/%m/%d-%T',time),
+      'cdrbatch' => $batch_name . '-import-'. time2str('%Y/%m/%d-%T',time),
     });
   my $error = $cdr_batch->insert;
   die $error if $error;
@@ -149,19 +153,6 @@ sub dbi_import {
 
       $imported++;
 
-      my $st_sql;
-      if ( $status_table ) {
-
-        $st_sql = 
-          'INSERT INTO '. $status_table. " ( $pkey, $status_column ) ".
-            " VALUES ( ?, 'done' )";
-
-      } else {
-
-        $st_sql = "UPDATE $table SET $status_column = 'done' WHERE $pkey = ?";
-
-      }
-
       my $updated = $dbi->do($st_sql, undef, $pkey_value );
       #$updates += $updated;
       die "failed to set status: ".$dbi->errstr."\n" unless $updated;
@@ -195,7 +186,7 @@ sub get_queries {
   $port ||= '5000'; # check for pg default 5000 is sybase.
 
   my %dbi_connect_types = (
-    'Sybase'  => ':host='.$host.';port='.$port,
+    'Sybase'  => ':server='.$host.';port='.$port,
     'Pg'      => ':host='.$info->{host},
   );
 

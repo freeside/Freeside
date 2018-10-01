@@ -1,7 +1,7 @@
 package FS::Misc;
 
 use strict;
-use vars qw ( @ISA @EXPORT_OK $DEBUG );
+use vars qw ( @ISA @EXPORT_OK $DEBUG $DISABLE_ALL_NOTICES );
 use Exporter;
 use Carp;
 use Data::Dumper;
@@ -22,7 +22,6 @@ use Encode;
                  generate_ps generate_pdf do_print
                  csv_from_fixed
                  ocr_image
-                 bytes_substr
                  money_pretty
                );
 
@@ -43,6 +42,32 @@ FS::Misc - Miscellaneous subroutines
 Miscellaneous subroutines.  This module contains miscellaneous subroutines
 called from multiple other modules.  These are not OO or necessarily related,
 but are collected here to eliminate code duplication.
+
+=head1 DISABLE ALL NOTICES
+
+Set $FS::Misc::DISABLE_ALL_NOTICES to suppress:
+
+=over 4
+
+=item FS::cust_bill::send_csv
+
+=item FS::cust_bill::spool_csv
+
+=item FS::msg_template::email::send_prepared
+
+=item FS::Misc::send_email
+
+=item FS::Misc::do_print
+
+=item FS::Misc::send_fax
+
+=item FS::Template_Mixin::postal_mail_fsinc
+
+=back
+
+=cut
+
+$DISABLE_ALL_NOTICES = 0;
 
 =head1 SUBROUTINES
 
@@ -119,6 +144,12 @@ FS::UID->install_callback( sub {
 
 sub send_email {
   my(%options) = @_;
+
+  if ( $DISABLE_ALL_NOTICES ) {
+    warn 'send_email() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
+
   if ( $DEBUG ) {
     my %doptions = %options;
     $doptions{'body'} = '(full body not shown in debug)';
@@ -450,6 +481,11 @@ sub send_fax {
 
   die 'HylaFAX support has not been configured.'
     unless $conf->exists('hylafax');
+
+  if ( $DISABLE_ALL_NOTICES ) {
+    warn 'send_fax() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
 
   eval {
     require Fax::Hylafax::Client;
@@ -870,6 +906,11 @@ global value and agentnum).
 sub do_print {
   my( $data, %opt ) = @_;
 
+  if ( $DISABLE_ALL_NOTICES ) {
+    warn 'do_print() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
+
   my $lpr = ( exists($opt{'lpr'}) && $opt{'lpr'} )
               ? $opt{'lpr'}
               : $conf->config('lpr', $opt{'agentnum'} );
@@ -982,23 +1023,26 @@ sub ocr_image {
 
 =item bytes_substr STRING, OFFSET[, LENGTH[, REPLACEMENT] ]
 
+DEPRECATED
+  Use Unicode::Truncate truncate_egc instead
+
 A replacement for "substr" that counts raw bytes rather than logical 
 characters. Unlike "bytes::substr", will suppress fragmented UTF-8 characters
 rather than output them. Unlike real "substr", is not an lvalue.
 
 =cut
 
-sub bytes_substr {
-  my ($string, $offset, $length, $repl) = @_;
-  my $bytes = substr(
-    Encode::encode('utf8', $string),
-    $offset,
-    $length,
-    Encode::encode('utf8', $repl)
-  );
-  my $chk = $DEBUG ? Encode::FB_WARN : Encode::FB_QUIET;
-  return Encode::decode('utf8', $bytes, $chk);
-}
+# sub bytes_substr {
+#   my ($string, $offset, $length, $repl) = @_;
+#   my $bytes = substr(
+#     Encode::encode('utf8', $string),
+#     $offset,
+#     $length,
+#     Encode::encode('utf8', $repl)
+#   );
+#   my $chk = $DEBUG ? Encode::FB_WARN : Encode::FB_QUIET;
+#   return Encode::decode('utf8', $bytes, $chk);
+# }
 
 =item money_pretty
 

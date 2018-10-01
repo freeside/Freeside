@@ -80,7 +80,11 @@ Example:
    'precheck_callback' => sub { my( $cgi ) = @_; },
 
    #after the new object is created
+   #return an error string or empty for no error
    'post_new_object_callback' => sub { my( $cgi, $object ) = @_; },
+
+   #run right before replacing (not run for inserts)
+   'edit_callback' => sub { my( $new, $old ) = @_; },
 
    #after everything's inserted
    'noerror_callback' => sub { my( $cgi, $object ) = @_; },
@@ -88,6 +92,9 @@ Example:
    #supplies arguments to insert() and replace()
    # for use with tables that are FS::option_Common (among other things)
    'args_callback' => sub { my( $cgi, $object ) = @_; },
+
+   # if no errors after package insert or replace will update services attached to package.
+   'update_svc' => sub { my( $cgi, $object ) = @_; },
 
    'debug' => 1, #turns on debugging output
 
@@ -273,7 +280,7 @@ foreach my $value ( @values ) {
     }
 
     if ( $opt{'post_new_object_callback'} ) {
-      &{ $opt{'post_new_object_callback'} }( $cgi, $new );
+      $error ||= &{ $opt{'post_new_object_callback'} }( $cgi, $new );
     }
 
     if ( $opt{'agent_virt'} ) {
@@ -438,6 +445,12 @@ foreach my $value ( @values ) {
     }
   }
 
+  if ( !$error and $opt{'update_svc'} ) {
+    my @args = ();
+    @args = &{ $opt{'args_callback'} }( $cgi, $new ) if $opt{'args_callback'};
+   $error = &{ $opt{'update_svc'} }( $cgi, $new, @args );
+  }
+
   if ( $error ) {
 
     $cgi->param('error', $error);
@@ -457,6 +470,14 @@ foreach my $value ( @values ) {
 
   last if $error;
 
+}
+
+if ($class eq "FS::tower") {
+  foreach my $part_svc_broadband_export ( FS::tower_sector->part_export_svc_broadband ) {
+    if ($part_svc_broadband_export and $part_svc_broadband_export->can('export_tower_sector')) {
+      $error = $part_svc_broadband_export->export_tower_sector($new);
+    }
+  }
 }
 
 # set up redirect URLs

@@ -1,42 +1,73 @@
 <%doc>
 
-Display date selector for the future_autobill.html report
+Display pre-report page for the Future Auto Bill Transactions report
+
+Report runs in the queue.  Once the report is generated, user is
+redirected to the report results.
 
 </%doc>
-<% include('/elements/header.html', 'Future Auto-Bill Transactions' ) %>
+<% include('/elements/header.html', $report_title ) %>
 
 
-<FORM ACTION="future_autobill.html" METHOD="GET">
-<TABLE>
-<& /elements/tr-input-date-field.html,
-  {
-    name     => 'target_date',
-    value    => $target_date,
-    label    => emt('Target billing date').': ',
-    required => 1
-  }
-&>
+% if ( FS::TaxEngine->new->info->{batch} ) {
 
-<& /elements/tr-checkbox.html,
-     'label' => emt('Multiple billing dates (slow)').': ',
-     'field' => 'multiple_billing_dates',
-     'value' => '1',
-&>
+  <div style="font-color: red">
+  NOTE: This report is disabled due to tax engine configuration
+  </div>
 
-</TABLE>
+% } else {
 
-<BR>
-<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+  <FORM NAME="future_autobill" ID="future_autobill">
+    <TABLE>
+    <& /elements/tr-input-date-field.html,
+      {
+        name     => 'target_date',
+        value    => $target_date,
+        label    => emt('Target billing date').': ',
+        required => 1
+      }
+    &>
 
-</FORM>
+    <% include('/elements/tr-select-agent.html',
+                'label'         => 'For agent: ',
+                'disable_empty' => 0,
+              )
+    %>
+    </TABLE>
+    <BR>
+
+    <INPUT ID="future_autobill_submit" TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+  </FORM>
+
+  <% include( '/elements/progress-init.html',
+              'future_autobill',
+              [ qw( agentnum target_date ) ],
+              'report_future_autobill-queued_job.html',
+            )
+  %>
+
+  <script type="text/javascript">
+    $('#future_autobill').submit( function( event ) {
+      $('#future_autobill').prop( 'disabled', true );
+      $('#future_autobill_submit').prop( 'disabled', true );
+      event.preventDefault();
+      process();
+    });
+  </script>
+
+% }
 
 <% include('/elements/footer.html') %>
 
 <%init>
+use FS::cust_payby;
+use FS::CurrentUser;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $target_date = DateTime->from_epoch(epoch=>(time()+86400))->mdy('/');
+my $target_date = DateTime->now->add(days => 1)->mdy('/');
+my $report_title = FS::cust_payby->future_autobill_report_title;
 
 </%init>
+

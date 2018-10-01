@@ -41,6 +41,7 @@ use FS::cust_bill_void;
 use FS::reason;
 use FS::reason_type;
 use FS::L10N;
+use FS::Misc::Savepoint;
 
 $DEBUG = 0;
 $me = '[FS::cust_bill]';
@@ -147,15 +148,6 @@ Invoices are normally created by calling the bill method of a customer object
 
 sub table { 'cust_bill'; }
 sub template_conf { 'invoice_'; }
-
-sub has_sections {
-  my $self = shift;
-  my $agentnum = $self->cust_main->agentnum;
-  my $tc = $self->template_conf;
-
-  $self->conf->exists($tc.'sections', $agentnum) ||
-  $self->conf->exists($tc.'sections_by_location', $agentnum);
-}
 
 # should be the ONLY occurrence of "Invoice" in invoice rendering code.
 # (except email_subject and invnum_date_pretty)
@@ -530,7 +522,13 @@ Returns the line items (see L<FS::cust_bill_pkg>) for this invoice.
 sub cust_bill_pkg {
   my $self = shift;
   qsearch(
-    { 'table'    => 'cust_bill_pkg',
+    { 
+      'select'    => 'cust_bill_pkg.*, pkg_category.categoryname',
+      'table'    => 'cust_bill_pkg',
+      'addl_from' => ' LEFT JOIN cust_pkg     USING ( pkgnum ) '.
+                     ' LEFT JOIN part_pkg     USING ( pkgpart ) '.
+                     ' LEFT JOIN pkg_class    USING ( classnum ) '.
+                     ' LEFT JOIN pkg_category USING ( categorynum ) ',
       'hashref'  => { 'invnum' => $self->invnum },
       'order_by' => 'ORDER BY billpkgnum', #important?  otherwise we could use
                                            # the AUTLOADED FK search.  or should
@@ -977,6 +975,9 @@ sub apply_payments_and_credits {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $savepoint_label = 'cust_bill__apply_payments_and_credits';
+  savepoint_create( $savepoint_label );
+
   $self->select_for_update; #mutex
 
   my @payments = grep { $_->unapplied > 0 }
@@ -1065,6 +1066,7 @@ sub apply_payments_and_credits {
 
     my $error = $app->insert(%options);
     if ( $error ) {
+      savepoint_rollback_and_release( $savepoint_label );
       $dbh->rollback if $oldAutoCommit;
       return "Error inserting ". $app->table. " record: $error";
     }
@@ -1072,6 +1074,7 @@ sub apply_payments_and_credits {
 
   }
 
+  savepoint_release( $savepoint_label );
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 
@@ -1408,6 +1411,11 @@ See L</print_csv> for a description of the output format.
 sub send_csv {
   my($self, %opt) = @_;
 
+  if ( $FS::Misc::DISABLE_ALL_NOTICES ) {
+    warn 'send_csv() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
+
   #create file(s)
 
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
@@ -1483,6 +1491,11 @@ in the ICS format.
 
 sub spool_csv {
   my($self, %opt) = @_;
+
+  if ( $FS::Misc::DISABLE_ALL_NOTICES ) {
+    warn 'spool_csv() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
 
   my $time = $opt{'time'} || time;
   my $cust_main = $self->cust_main;
@@ -2719,7 +2732,7 @@ sub _items_svc_phone_sections {
 
 }
 
-=sub _items_usage_class_summary OPTIONS
+=item _items_usage_class_summary OPTIONS
 
 Returns a list of detail items summarizing the usage charges on this
 invoice.  Each one will have 'amount', 'description' (the usage charge name),
@@ -2768,7 +2781,7 @@ sub _items_usage_class_summary {
   return @l;
 }
 
-=sub _items_previous()
+=item _items_previous()
 
   Returns an array of hashrefs, each hashref representing a line-item on
   the current bill for previous unpaid invoices.
@@ -2902,7 +2915,7 @@ sub _items_previous {
 
 }
 
-=sub _items_previous_total
+=item _items_previous_total
 
   Return sum of amounts from all items returned by _items_previous
   Results will vary based on invoicing conf flags
@@ -2952,7 +2965,7 @@ sub __items_previous_map_invoice {
   }
 }
 
-=sub _items_credits()
+=item _items_credits()
 
   Return array of hashrefs containing credits to be shown as line-items
   when rendering this bill.
@@ -3091,7 +3104,7 @@ sub _items_credits {
   @return;
 }
 
-=sub _items_credits_total
+=item _items_credits_total
 
   Return the total of al items from _items_credits
   Will vary based on invoice display conf flag
@@ -3107,7 +3120,7 @@ sub _items_credits_total {
 
 
 
-=sub _items_credits_postbill()
+=item _items_credits_postbill()
 
   Returns an array of hashrefs for credits where
   - Credit issued after this invoice
@@ -3149,7 +3162,7 @@ sub _items_credits_postbill {
   }} @cust_credit_bill;
 }
 
-=sub _items_payments_postbill()
+=item _items_payments_postbill()
 
   Returns an array of hashrefs for payments where
   - Payment occured after this invoice
@@ -3185,7 +3198,7 @@ sub _items_payments_postbill {
   }} @cust_bill_pay;
 }
 
-=sub _items_payments()
+=item _items_payments()
 
   Return array of hashrefs containing payments to be shown as line-items
   when rendering this bill.
@@ -3246,7 +3259,6 @@ sub _items_payments {
 
   if ($self->conf->exists('previous_balance-payments_since')) {
     if ($template eq 'statement') {
-print "\nCASE 3\n";
       # Case 3 (see above)
       # Return payments timestamped between the previous and following bills
 
@@ -3270,7 +3282,7 @@ print "\nCASE 3\n";
     } else {
       # Case 2 (see above)
       # Return payments timestamped between this and the previous bill
-print "\nCASE 2\n";
+
       my $date_start = 0;
       my $date_end = $self->_date;
 
@@ -3304,7 +3316,7 @@ print "\nCASE 2\n";
   return @{ $self->get('_items_payments') };
 }
 
-=sub _items_payments_total
+=item _items_payments_total
 
   Return a total of all records returned by _items_payments
   Results vary based on invoicing conf flags
@@ -3361,7 +3373,7 @@ sub __items_payments_make_hashref {
   return @return;
 }
 
-=sub _items_total()
+=item _items_total()
 
   Generate the line-items to be shown on the bill in the "Totals" section
 

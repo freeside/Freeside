@@ -781,6 +781,22 @@ my $validate_email = sub { $_[0] =~
   },
 
   {
+    'key'         => 'credit-card-surcharge-flatfee',
+    'section'     => 'credit_cards',
+    'description' => 'Add a credit card surcharge to invoices, as a flat fee.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'credit-card-surcharge-text',
+    'section'     => 'credit_cards',
+    'description' => 'Text for the credit card surcharge invoice line.  If not set, it will default to Credit Card Surcharge.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'discount-show-always',
     'section'     => 'invoicing',
     'description' => 'Generate a line item on an invoice even when a package is discounted 100%',
@@ -1215,6 +1231,7 @@ my $validate_email = sub { $_[0] =~
     'section'     => 'invoicing',
     'description' => 'Indicates that html and latex invoices should be in summary style and make use of invoice_latexsummary.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
@@ -1578,9 +1595,19 @@ and customer address. Include units.',
   { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
-    'description' => 'Split invoice into sections and label according to package category when enabled.',
+    'description' => 'Split invoice into sections and label according to either package category or location when enabled.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
+    'config_bool' => 1,
+  },
+
+  {
+    'key'         => 'invoice_sections_multilocation',
+    'section'     => 'invoicing',
+    'description' => 'Enable invoice_sections for for any bill with at least this many locations on the bill.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~ /^\d+$/ ? undef : 'Please enter a number' },
   },
 
   { 
@@ -1596,6 +1623,15 @@ and customer address. Include units.',
     'description' => 'How to group line items on multi-section invoices.',
     'type'        => 'select',
     'select_enum' => [ qw(category location) ],
+  },
+
+  {
+    'key'         => 'invoice_sections_with_taxes',
+    'section'     => 'invoicing',
+    'description' => 'Include taxes within each section of mutli-section invoices.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+    'agent_bool'  => 1,
   },
 
   {
@@ -1677,6 +1713,13 @@ and customer address. Include units.',
     'key'         => 'payment_receipt_msgnum',
     'section'     => 'notification',
     'description' => 'Template to use for manual payment receipts.',
+    %msg_template_options,
+  },
+
+  {
+    'key'         => 'payment_receipt_msgnum_auto',
+    'section'     => 'notification',
+    'description' => 'Automatic payments will cause a post-payment to use a message template for automatic payment receipts rather than a post payment statement.',
     %msg_template_options,
   },
   
@@ -1771,7 +1814,7 @@ and customer address. Include units.',
   {
     'key'         => 'passwordmin',
     'section'     => 'password',
-    'description' => 'Minimum password length (default 6)',
+    'description' => 'Minimum password length (default 8)',
     'type'        => 'text',
   },
 
@@ -2134,7 +2177,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'unmask_ss',
-    'section'     => 'e-checks',
+    'section'     => 'deprecated',
     'description' => "Don't mask social security numbers in the web interface.",
     'type'        => 'checkbox',
   },
@@ -2749,6 +2792,13 @@ and customer address. Include units.',
     'key'         => 'selfservice-require_cvv',
     'section'     => 'credit_cards',
     'description' => 'Require CVV for credit card self-service payments, except for cards on-file.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'manual_process-single_invoice_amount',
+    'section'     => 'deprecated',
+    'description' => 'When entering manual credit card and ACH payments, amount will not autofill if the customer has more than one open invoice',
     'type'        => 'checkbox',
   },
 
@@ -5961,4 +6011,3 @@ and customer address. Include units.',
 );
 
 1;
-

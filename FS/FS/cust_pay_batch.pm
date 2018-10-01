@@ -302,6 +302,7 @@ sub approve {
       '_date'     => $new->_date,
       'usernum'   => $new->usernum,
       'batchnum'  => $new->batchnum,
+      'invnum'    => $old->invnum,
       'gatewaynum'    => $opt{'gatewaynum'},
       'processor'     => $opt{'processor'},
       'auth'          => $opt{'auth'},

@@ -119,15 +119,6 @@ sub table { 'cust_bill_void'; }
 sub notice_name { 'VOIDED Invoice'; }
 sub template_conf { 'invoice_'; }
 
-sub has_sections {
-  my $self = shift;
-  my $agentnum = $self->cust_main->agentnum;
-  my $tc = $self->template_conf;
-
-  $self->conf->exists($tc.'sections', $agentnum) ||
-  $self->conf->exists($tc.'sections_by_location', $agentnum);
-}
-
 
 =item insert
 
@@ -375,4 +366,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-

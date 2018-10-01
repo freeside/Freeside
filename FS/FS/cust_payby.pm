@@ -1,5 +1,6 @@
 package FS::cust_payby;
 use base qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
+use feature 'state';
 
 use strict;
 use Scalar::Util qw( blessed );
@@ -315,7 +316,6 @@ sub check {
     #encrypted #|| $self->ut_textn('payinfo')
     #encrypted #|| $self->ut_textn('paycvv')
 #    || $self->ut_textn('paymask') #XXX something
-    #later #|| $self->ut_textn('paydate')
     || $self->ut_numbern('paystart_month')
     || $self->ut_numbern('paystart_year')
     || $self->ut_numbern('payissue')
@@ -545,6 +545,9 @@ sub check {
     }
     return $error if $error;
   }
+
+  $error = $self->ut_daten('paydate');
+  return $error if $error;
 
   $self->SUPER::check;
 }
@@ -912,7 +915,80 @@ sub search_sql {
 
 =back
 
+=item has_autobill_cards
+
+Returns the number of unexpired cards configured for autobill
+
 =cut
+
+sub has_autobill_cards {
+  scalar FS::Record::qsearch({
+    table     => 'cust_payby',
+    addl_from => 'JOIN cust_main USING (custnum)',
+    order_by  => 'LIMIT 1',
+    hashref   => {
+        paydate => { op => '>', value => DateTime->now->ymd },
+        weight  => { op => '>',  value => 0 },
+    },
+    extra_sql =>
+      "AND cust_payby.payby IN ('CARD', 'DCRD') ".
+      'AND '.
+      $FS::CurrentUser::CurrentUser->agentnums_sql( table => 'cust_main' ),
+  });
+}
+
+=item has_autobill_checks
+
+Returns the number of check accounts configured for autobill
+
+=cut
+
+sub has_autobill_checks {
+  scalar FS::Record::qsearch({
+    table     => 'cust_payby',
+    addl_from => 'JOIN cust_main USING (custnum)',
+    order_by  => 'LIMIT 1',
+    hashref   => {
+        weight  => { op => '>',  value => 0 },
+    },
+    extra_sql =>
+      "AND cust_payby.payby IN ('CHEK','DCHEK','DCHK') ".
+      'AND '.
+      $FS::CurrentUser::CurrentUser->agentnums_sql( table => 'cust_main' ),
+  });
+}
+
+=item future_autobill_report_title
+
+Determine if the future_autobill report should be available.
+If so, return a dynamic title for it
+
+=cut
+
+sub future_autobill_report_title {
+  # Perhaps this function belongs somewhere else
+  state $title;
+  return $title if defined $title;
+
+  # Report incompatible with tax engines
+  return $title = '' if FS::TaxEngine->new->info->{batch};
+
+  my $has_cards  = has_autobill_cards();
+  my $has_checks = has_autobill_checks();
+  my $_title = 'Future %s transactions';
+
+  if ( $has_cards && $has_checks ) {
+    $title = sprintf $_title, 'credit card and electronic check';
+  } elsif ( $has_cards ) {
+    $title = sprintf $_title, 'credit card';
+  } elsif ( $has_checks ) {
+    $title = sprintf $_title, 'electronic check';
+  } else {
+    $title = '';
+  }
+
+  $title;
+}
 
 sub _upgrade_data {
 
@@ -921,7 +997,87 @@ sub _upgrade_data {
   local $ignore_expired_card = 1;
   local $ignore_invalid_card = 1;
   $class->upgrade_set_cardtype;
+  $class->_upgrade_data_paydate_edgebug;
 
+}
+
+=item _upgrade_data_paydate_edgebug
+
+Correct bad data injected into payment expire date column by Edge browser bug
+
+The month and year values may have an extra character injected into form POST
+data by Edge browser.  It was possible for some bad month values to slip
+past data validation.
+
+If the stored value was out of range, it was causing payments screen to crash.
+We can detect and fix this by dropping the second digit.
+
+If the stored value is is 11 or 12, it's possible the user inputted a 1.  In
+this case, the payment method will fail to authorize, but the record will
+not cause crashdumps for being out of range.
+
+In short, check for any expiration month > 12, and drop the extra digit
+
+=cut
+
+sub _upgrade_data_paydate_edgebug {
+  my $journal_label = 'cust_payby_paydate_edgebug';
+  return if FS::upgrade_journal->is_done( $journal_label );
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  for my $row (
+    FS::Record::qsearch(
+      cust_payby => { paydate => { op => '!=', value => '' }}
+    )
+  ) {
+    next unless $row->ut_daten('paydate');
+
+    # paydate column stored in database has failed date validation
+    my $bad_paydate = $row->paydate;
+
+    my @date = split /[\-\/]/, $bad_paydate;
+    @date = @date[2,0,1] if $date[2] > 1900;
+
+    # Only autocorrecting when month > 12 - notify operator
+    unless ( $date[1] > 12 ) {
+      die sprintf(
+        'Unable to correct bad paydate stored in cust_payby row '.
+        'custpaybynum(%s) custnum(%s) paydate(%s)',
+        $row->custpaybynum,
+        $row->custnum,
+        $bad_paydate,
+      );
+    }
+
+    $date[1] = substr( $date[1], 0, 1 );
+    $row->paydate( join('-', @date ));
+
+    if ( my $error = $row->replace ) {
+      die sprintf(
+        'Failed to autocorrect bad paydate stored in cust_payby row '.
+        'custpaybynum(%s) custnum(%s) paydate(%s) - error: %s',
+        $row->custpaybynum,
+        $row->custnum,
+        $bad_paydate,
+        $error
+      );
+    }
+
+    warn sprintf(
+      'Autocorrected bad paydate stored in cust_payby row '.
+      "custpaybynum(%s) custnum(%s) old-paydate(%s) new-paydate(%s)\n",
+      $row->custpaybynum,
+      $row->custnum,
+      $bad_paydate,
+      $row->paydate,
+    );
+
+  }
+
+  FS::upgrade_journal->set_done( $journal_label );
+  dbh->commit unless $oldAutoCommit;
 }
 
 =head1 BUGS

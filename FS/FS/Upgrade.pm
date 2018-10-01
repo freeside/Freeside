@@ -153,7 +153,7 @@ If you need to continue using the old Form 477 report, turn on the
 
   # boolean+text previous_balance-exclude_from_total is now two separate options
   my $total_new_charges = $conf->config('previous_balance-exclude_from_total');
-  if (length($total_new_charges) > 0) {
+  if ( defined $total_new_charges && length($total_new_charges) > 0 ) {
     $conf->set('previous_balance-text-total_new_charges', $total_new_charges);
     $conf->set('previous_balance-exclude_from_total', '');
   }
@@ -174,8 +174,8 @@ If you need to continue using the old Form 477 report, turn on the
     $conf->delete('unsuspendauto');
   }
 
-  if ($conf->config('cust-fields') =~ / \| Payment Type/) {
-    my $cust_fields = $conf->config('cust-fields');
+  my $cust_fields = $conf->config('cust-fields');
+  if ( defined $cust_fields && $cust_fields =~ / \| Payment Type/ ) {
     # so we can potentially use 'Payment Types' or somesuch in the future
     $cust_fields =~ s/ \| Payment Type( \|)/$1/;
     $cust_fields =~ s/ \| Payment Type$//;
@@ -192,6 +192,19 @@ If you need to continue using the old Form 477 report, turn on the
       $lh->maketext($_) if length($_);
     }
   }
+
+  unless ( FS::upgrade_journal->is_done('deprecate_unmask_ss') ) {
+    if ( $conf->config_bool( 'unmask_ss' )) {
+      warn "'unmask_ssn' deprecated from global configuration\n";
+      for my $access_group ( qsearch( access_group => {} )) {
+        $access_group->grant_access_right( 'Unmask customer SSN' );
+        warn " - 'Unmask customer SSN' access right granted to '" .
+             $access_group->groupname . "' employee group\n";
+      }
+    }
+    FS::upgrade_journal->set_done('deprecate_unmask_ss');
+  }
+
 }
 
 sub upgrade_overlimit_groups {
@@ -338,7 +351,10 @@ sub upgrade {
       });
       foreach my $object ( @objects ) {
           my $payinfo = $object->decrypt($object->payinfo);
-          die "error decrypting payinfo" if $payinfo eq $object->payinfo;
+          if ( $payinfo eq $object->payinfo ) {
+            warn "error decrypting payinfo for $table: $payinfo\n";
+            next;
+          }
           $object->payinfo($payinfo);
           my $error = $object->replace;
           die $error if $error;
@@ -501,6 +517,23 @@ sub upgrade_data {
     #'compliance solutions' -> 'compliance_solutions'
     'tax_rate' => [],
     'tax_rate_location' => [],
+
+    #upgrade part_event_condition_option agentnum to a multiple hash value
+    'part_event_condition_option' =>[],
+
+    #fix ip format
+    'svc_circuit' => [],
+
+    #fix ip format
+    'svc_hardware' => [],
+
+    #fix ip format
+    'svc_pbx' => [],
+
+    #fix ip format
+    'tower_sector' => [],
+
+
   ;
 
   \%hash;
@@ -711,4 +744,3 @@ Sure.
 =cut
 
 1;
-

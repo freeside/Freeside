@@ -2487,6 +2487,12 @@ sub change {
     $keep_dates = 0;
     $hash{'last_bill'} = '';
     $hash{'bill'} = '';
+
+    # Optionally, carry over the next bill date from the changed cust_pkg
+    # so an invoice isn't generated until the customer's usual billing date
+    if ( $self->part_pkg->option('prorate_defer_change_bill', 1) ) {
+      $hash{bill} = $self->bill;
+    }
   }
 
   if ( $keep_dates ) {
@@ -3329,11 +3335,10 @@ sub process_bulk_cust_pkg {
   my $param = shift;
   warn Dumper($param) if $DEBUG;
 
-  my $old_part_pkg = qsearchs('part_pkg', 
-                              { pkgpart => $param->{'old_pkgpart'} });
   my $new_part_pkg = qsearchs('part_pkg',
                               { pkgpart => $param->{'new_pkgpart'} });
-  die "Must select a new package type\n" unless $new_part_pkg;
+  die "Must select a new package definition\n" unless $new_part_pkg;
+
   #my $keep_dates = $param->{'keep_dates'} || 0;
   my $keep_dates = 1; # there is no good reason to turn this off
 
@@ -3341,7 +3346,14 @@ sub process_bulk_cust_pkg {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my @cust_pkgs = qsearch('cust_pkg', { 'pkgpart' => $param->{'old_pkgpart'} } );
+  my @old_pkgpart = ref($param->{'old_pkgpart'}) ? @{ $param->{'old_pkgpart'} }
+                                                 : $param->{'old_pkgpart'};
+
+  my @cust_pkgs = qsearch({
+                    'table' => 'cust_pkg',
+                    'extra_sql' => ' WHERE pkgpart IN ('.
+                                       join(',', @old_pkgpart). ')',
+                  });
 
   my $i = 0;
   foreach my $old_cust_pkg ( @cust_pkgs ) {
@@ -5448,6 +5460,24 @@ sub fcc_477_count {
   my $count_arrayref = $count_sth->fetchrow_arrayref;
 
   return ( @$count_arrayref );
+
+}
+
+=item fcc_477_record
+
+Returns a fcc_477 record based on option name.
+
+=cut
+
+sub fcc_477_record {
+  my ($self, $option_name) = @_;
+
+  my $fcc_record = qsearchs({
+    'table'     => 'part_pkg_fcc_option',
+    'hashref'   => { 'pkgpart' => $self->{Hash}->{pkgpart}, 'fccoptionname' => $option_name, },
+  });
+
+  return ( $fcc_record );
 
 }
 

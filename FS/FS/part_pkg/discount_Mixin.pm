@@ -102,7 +102,10 @@ sub calc_discount {
     # $chg_months: the number of months we are charging recur for
     # $months: $chg_months or the months left on the discount, whchever is less
 
-    my $chg_months = $cust_pkg->part_pkg->freq || 1;
+    my $chg_months = 1;
+    unless ($cust_pkg->part_pkg->freq !~ /^\d+$/) {
+      $chg_months = $cust_pkg->part_pkg->freq || 1;
+    }
     if ( defined($param->{'months'}) ) { # then override
       $chg_months = $param->{'months'};
     }

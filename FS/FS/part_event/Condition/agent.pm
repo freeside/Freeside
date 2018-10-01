@@ -13,7 +13,7 @@ sub description {
 
 sub option_fields {
   (
-    'agentnum'   => { label=>'Agent', type=>'select-agent', },
+    'agentnum'   => { label=>'Agent', type=>'select-agent', multiple => '1' },
   );
 }
 
@@ -22,16 +22,15 @@ sub condition {
 
   my $cust_main = $self->cust_main($object);
 
-  my $agentnum = $self->option('agentnum');
-
-  $cust_main->agentnum == $agentnum;
+  my $hashref = $self->option('agentnum') || {};
+  grep $hashref->{ $_->agentnum }, $cust_main->agent;
 
 }
 
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
-  "cust_main.agentnum = " . $class->condition_sql_option_integer('agentnum', $opt{'driver_name'});
+  "cust_main.agentnum IN " . $class->condition_sql_option_option_integer('agentnum', $opt{'driver_name'});
 }
 
 1;

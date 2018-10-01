@@ -2,20 +2,23 @@
 
 Report listing upcoming auto-bill transactions
 
-Spec requested the ability to run this report with a longer date range,
-and see which charges will process on which day.  Checkbox multiple_billing_dates
-enables this functionality.
+For every customer with a valid auto-bill payment method,
+report runs bill_and_collect() for each customer, for each
+day, from today through the report target date.  After
+recording the results, all operations are rolled back.
 
-Performance:
-This is a dynamically generated report.  The time this report takes to run
-will depends on the number of customers.  Installations with a high number
-of auto-bill customers may find themselves unable to run this report
-because of browser timeout.  Report could be implemented as a queued job if
-necessary, to solve the performance problem.
+This report relies on the ability to safely run bill_and_collect(),
+with all exports and messaging disabled, and then to roll back the
+results.
+
+This report takes time.  If 200 customers have automatic
+payment methods, and requester is looking one week ahead,
+there will be 1,400 billing and payment cycles simulated
 
 </%doc>
+<h4><% $report_subtitle %></h4>
 <& elements/grid-report.html,
-  title => 'Upcoming auto-bill transactions',
+  title => $report_title,
   rows => \@rows,
   cells => \@cells,
   table_width => "",
@@ -29,14 +32,57 @@ necessary, to solve the performance problem.
       td.gridreport { margin: 0 .2em; padding: 0 .4em; }
     </style>
   ',
+  suppress_header => $job ? 1 : 0,
+  suppress_footer => $job ? 1 : 0,
 &>
+% if ( %pmt_type_subtotal ) {
+    <table class="gridreport" style="margin-left: 2em;">
+      <tr>
+        <th class="gridreport" colspan="2">
+          Summary
+        </th>
+      </tr>
+%   for my $pmt_type ( sort keys %pmt_type_subtotal ) {
+      <tr class="gridreport">
+        <td class="gridreport" style="text-align: right; margin-right: 1em;">
+          <% sprintf '$%.2f', $pmt_type_subtotal{ $pmt_type } %>
+        </td>
+        <td class="gridreport">
+          <% $pmt_type |h %>
+        </td>
+      </tr>
+%   }
+%   if ( keys %pmt_type_subtotal > 1 ) {
+%     $pmt_type_subtotal{Total} += $_ for values %pmt_type_subtotal;
+      <tr class="gridreport" style="border-top: solid 1px #999;">
+        <td class="gridreport" style="text-align: right; margin-right: 1em; border-top: solid 1px #666;">
+          <% sprintf( '$%.2f', $pmt_type_subtotal{Total} ) %>
+        </td>
+        <td class="gridreport" style="border-top: solid 1px #666;">
+          Total
+        </td>
+      </tr>
+      </table>
+%   }
+% }
 
 <%init>
+  use DateTime;
+  use FS::Misc::Savepoint;
+  use FS::Report::Queued::FutureAutobill;
+  use FS::UID qw( dbh );
 
-use FS::UID qw( dbh myconnect );
+  die "access denied"
+    unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+  my $job = $FS::Report::Queued::FutureAutobill::job;
+
+  $job->update_statustext('0,Finding customers') if $job;
+
+  my $DEBUG = $cgi->param('DEBUG') || 0;
+
+  my $agentnum = $cgi->param('agentnum')
+    if $cgi->param('agentnum') =~ /^\d+/;
 
   my $target_dt;
   my @target_dates;
@@ -45,45 +91,49 @@ die "access denied"
   my %noon = (
     hour   => 12,
     minute => 0,
-    second => 0
+    second => 0,
   );
-
   my $now_dt = DateTime->now;
   $now_dt = DateTime->new(
-    month => $now_dt->month,
-    day   => $now_dt->day,
-    year  => $now_dt->year,
+    month  => $now_dt->month,
+    day    => $now_dt->day,
+    year   => $now_dt->year,
     %noon,
   );
 
   # Get target date from form
   if ($cgi->param('target_date')) {
+    # DateTime::Format::DateParse would be better
     my ($mm, $dd, $yy) = split /[\-\/]/,$cgi->param('target_date');
+    ( $yy, $mm, $dd ) = ( $mm, $dd, $yy ) if $mm > 1900;
+
     $target_dt = DateTime->new(
-      month => $mm,
-      day   => $dd,
-      year  => $yy,
+      month  => $mm,
+      day    => $dd,
+      year   => $yy,
       %noon,
-    ) if $mm && $dd & $yy;
+    ) if $mm && $dd && $yy;
 
     # Catch a date from the past: time only travels in one direction
-    $target_dt = undef if $target_dt->epoch < $now_dt->epoch;
+    $target_dt = undef
+      unless $target_dt && $now_dt && $now_dt <=  $target_dt;
   }
 
   # without a target date, default to tomorrow
   unless ($target_dt) {
-    $target_dt = DateTime->from_epoch( epoch => time() + 86400) ;
-    $target_dt = DateTime->new(
-      month => $target_dt->month,
-      day   => $target_dt->day,
-      year  => $target_dt->year,
-      %noon
-    );
+    $target_dt = $now_dt->clone->add( days => 1 );
   }
 
-  # If multiple_billing_dates checkbox selected, create a range of dates
-  # from today until the given report date.  Otherwise, use target date only.
-  if ($cgi->param('multiple_billing_dates')) {
+  my $report_title = FS::cust_payby->future_autobill_report_title;
+  my $report_subtitle = sprintf(
+    '(%s through %s)',
+    $now_dt->mdy('/'),
+    $target_dt->mdy('/'),
+  );
+
+  # Create a range of dates from today until the given report date
+  #   (leaving the probably useless 'quick-report' mode, but disabled)
+  if ( 1 || $cgi->param('multiple_billing_dates')) {
     my $walking_dt = DateTime->from_epoch(epoch => $now_dt->epoch);
     until ($walking_dt->epoch > $target_dt->epoch) {
      push @target_dates, $walking_dt->epoch;
@@ -93,80 +143,149 @@ die "access denied"
     push @target_dates, $target_dt->epoch;
   }
 
-  # List all customers with an auto-bill method
-  #
-  # my %cust_payby = map {$_->custnum => $_} qsearch({
-  #   table => 'cust_payby',
-  #   hashref => {
-  #     weight  => { op => '>', value => '0' },
-  #     paydate => { op => '>', value => $target_dt->ymd },
-  #   },
-  #   order_by => " ORDER BY weight DESC ",
-  # });
-
   # List all customers with an auto-bill method that's not expired
   my %cust_payby = map {$_->custnum => $_} qsearch({
-    table => 'cust_payby',
-    hashref => {
-      weight  => { op => '>', value => '0' },
-    },
-    order_by => " ORDER BY weight DESC ",
-    extra_sql => " AND ( payby = 'CHEK' OR ( paydate > '".$target_dt->ymd."')) ",
+    table     => 'cust_payby',
+    addl_from => 'JOIN cust_main USING (custnum)',
+    hashref   => {  weight  => { op => '>', value => '0' }},
+    order_by  => " ORDER BY weight DESC ",
+    extra_sql =>
+      "AND (
+        cust_payby.payby IN ('CHEK','DCHK','DCHEK')
+        OR ( cust_payby.paydate > '".$target_dt->ymd."')
+      )
+      AND " . $FS::CurrentUser::CurrentUser->agentnums_sql
+      . ($agentnum ? "AND cust_main.agentnum = $agentnum" : ''),
   });
 
+  my $completion_target = scalar(keys %cust_payby) * scalar( @target_dates );
+  my $completion_progress = 0;
+
+  my $fakebill_time = time();
   my %abreport;
   my @rows;
+  my %pmt_type_subtotal;
 
   local $@;
   local $SIG{__DIE__};
-  my $temp_dbh = myconnect();
-  eval { # Creating sandbox dbh where all connections are to be rolled back
-    local $FS::UID::dbh = $temp_dbh;
-    local $FS::UID::AutoCommit = 0;
 
-    # Generate report data into @rows
+  eval { # Sandbox
+
+    # Supress COMMIT statements
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    local $FS::UID::ForceObeyAutoCommit = 1;
+
+    # Suppress notices generated by billing events
+    local $FS::Misc::DISABLE_ALL_NOTICES = 1;
+
+    # Bypass payment processing, recording a fake payment
+    local $FS::cust_main::Billing_Realtime::BOP_TESTING = 1;
+    local $FS::cust_main::Billing_Realtime::BOP_TESTING_SUCCESS = 1;
+
+    my $savepoint_label = 'future_autobill';
+    savepoint_create( $savepoint_label );
+
+    warn sprintf "Report involves %s customers", scalar keys %cust_payby
+      if $DEBUG;
+
+    # Run bill_and_collect(), for each customer with an autobill payment method,
+    # for each day represented in the report
     for my $custnum (keys %cust_payby) {
       my $cust_main = qsearchs('cust_main', {custnum => $custnum});
 
+      warn "-- Processing custnum $custnum\n"
+        if $DEBUG;
+
       # walk forward through billing dates
       for my $query_epoch (@target_dates) {
+        $FS::cust_main::Billing_Realtime::BOP_TESTING_TIMESTAMP = $query_epoch;
         my $return_bill = [];
 
-        eval { # Don't let an error on one customer crash the report
-          my $error = $cust_main->bill(
-            time           => $query_epoch,
-            return_bill    => $return_bill,
-            no_usage_reset => 1,
-          );
-          die "$error (simulating future billing)" if $error;
-        };
-        warn ("$@: (future_autobill custnum:$custnum)");
+        warn "---- Set billtime to ".
+             DateTime->from_epoch( epoch => $query_epoch )."\n"
+                if $DEBUG;
 
-        if (@{$return_bill}) {
-          my $inv = $return_bill->[0];
-          push @rows,{
-            name => $cust_main->name,
-            _date => $inv->_date,
-            cells => [
-              { class => 'gridreport', value => $custnum },
-              { class => 'gridreport',
-                value => '<a href="/view/cust_main.cgi?"'.$custnum.'">'.$cust_main->name.'</a>',
-                bypass_filter => 1,
-              },
-              { class => 'gridreport', value => $inv->charged, format => 'money' },
-              { class => 'gridreport', value => DateTime->from_epoch(epoch=>$inv->_date)->ymd },
-              { class => 'gridreport', value => ($cust_payby{$custnum}->payby || $cust_payby{$custnum}->paytype) },
-              { class => 'gridreport', value => $cust_payby{$custnum}->paymask },
-            ]
-          };
-        }
+        my $error = $cust_main->bill_and_collect(
+          time           => $query_epoch,
+          return_bill    => $return_bill,
+          no_usage_reset => 1,
+          fake           => 1,
+        );
+
+        warn "!!! $error (simulating future billing)\n" if $error;
+
+        my $statustext = sprintf(
+            '%s,Simulating upcoming invoices and payments',
+            int( ( ++$completion_progress / $completion_target ) * 100 )
+        );
+        $job->update_statustext( $statustext ) if $job;
+        warn "[ $completion_progress / $completion_target ] $statustext\n"
+          if $DEBUG;
 
       }
-      $temp_dbh->rollback;
-    } # /foreach $custnum
 
+
+      # Generate report rows from recorded payments in cust_pay
+      for my $cust_pay (
+        qsearch( cust_pay => {
+          custnum => $custnum,
+          _date   => { op => '>=', value => $fakebill_time },
+        })
+      ) {
+        push @rows,{
+          name  => $cust_main->name,
+          _date => $cust_pay->_date,
+          cells => [
+
+            # Customer number
+            { class => 'gridreport', value => $custnum },
+
+            # Customer name / customer link
+            { class => 'gridreport',
+              value =>  qq{<a href="${fsurl}view/cust_main.cgi?${custnum}">} . encode_entities( $cust_main->name ). '</a>',
+              bypass_filter => 1
+            },
+
+            # Amount
+            { class => 'gridreport',
+              value => $cust_pay->paid,
+              format => 'money'
+            },
+
+            # Transaction Date
+            { class => 'gridreport',
+              value => DateTime->from_epoch( epoch => $cust_pay->_date )->ymd
+            },
+
+            # Payment Method
+            { class => 'gridreport',
+              value => encode_entities( $cust_pay->paycardtype || $cust_pay->payby ),
+            },
+
+            # Masked Payment Instrument
+            { class => 'gridreport',
+              value => encode_entities( $cust_pay->paymask ),
+            },
+          ]
+        };
+
+        $pmt_type_subtotal{ $cust_pay->paycardtype || $cust_pay-> payby }
+          += $cust_pay->paid;
+
+      } # /foreach payment
+
+      # Roll back database at the end of each customer
+      # Makes the report slighly slower, but ensures only one customer row
+      #   locked at a time
+
+      warn "-- custnum $custnum -- rollback()\n" if $DEBUG;
+      savepoint_rollback( $savepoint_label );
+      dbh->rollback if $oldAutoCommit;
+
+    } # /foreach $custnum
   }; # /eval
-  warn("$@") if $@;
+  warn("future_autobill.html report generated error $@") if $@;
 
   # Sort output by date, and format for output to grid-report.html
   my @cells = [

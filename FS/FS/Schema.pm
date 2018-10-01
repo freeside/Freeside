@@ -2736,6 +2736,7 @@ sub tables_hashref {
         'country',          'char',     '',       2, '', '', 
         'payby',            'char',     '',       4, '', '',
         'payinfo',       'varchar', 'NULL',     512, '', '', 
+        #'paymask',       'varchar', 'NULL', $char_d, '', '',
         #'exp',          @date_type,                  '', '',
         'exp',           'varchar', 'NULL',      11, '', '', 
         'payname',       'varchar', 'NULL', $char_d, '', '', 
@@ -2749,7 +2750,7 @@ sub tables_hashref {
       ],
       'primary_key'  => 'paybatchnum',
       'unique'       => [],
-      'index'        => [ ['batchnum'], ['invnum'], ['custnum'] ],
+      'index'        => [ ['batchnum'], ['invnum'], ['custnum'],['status'] ],
       'foreign_keys' => [
                           { columns    => [ 'batchnum' ],
                             table      => 'pay_batch',
@@ -3269,7 +3270,7 @@ sub tables_hashref {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
         'pkgpartbatch',  'varchar', 'NULL', $char_d, '', '',
-        'pkg',           'varchar',   '',   $char_d, '', '', 
+        'pkg',           'varchar',   '',   104, '', '', 
         'comment',       'varchar', 'NULL', 2*$char_d, '', '', 
         'promo_code',    'varchar', 'NULL', $char_d, '', '', 
         'freq',          'varchar',   '',   $char_d, '', '', #billing frequency
@@ -4890,6 +4891,9 @@ sub tables_hashref {
         'suid',                    'int', 'NULL',        '', '', '',
         'shared_svcnum',           'int', 'NULL',        '', '', '',
         'serviceid',           'varchar', 'NULL',        64, '', '',#srvexport/reportfields
+        'speed_test_up',           'int', 'NULL',        '', '', '',
+        'speed_test_down',         'int', 'NULL',        '', '', '',
+        'speed_test_latency',      'int', 'NULL',        '', '', '',
       ],
       'primary_key'  => 'svcnum',
       'unique'       => [ [ 'ip_addr' ], [ 'mac_addr' ] ],
@@ -4927,6 +4931,8 @@ sub tables_hashref {
         'height',     'decimal', 'NULL',      '', '', '', 
         'veg_height', 'decimal', 'NULL',      '', '', '', 
         'color',      'varchar', 'NULL',       6, '', '',
+        'up_rate_limit',        'int', 'NULL',      '', '', '',
+        'down_rate_limit',      'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'towernum',
       'unique'      => [ [ 'towername' ] ], # , 'agentnum' ] ],
@@ -4957,8 +4963,9 @@ sub tables_hashref {
         'east',         'decimal', 'NULL', '10,7', '', '',
         'south',        'decimal', 'NULL', '10,7', '', '',
         'north',        'decimal', 'NULL', '10,7', '', '',
-
         'title',        'varchar', 'NULL', $char_d,'', '',
+        'up_rate_limit',          'int', 'NULL',      '', '', '',
+        'down_rate_limit',        'int', 'NULL',      '', '', '',
      ],
       'primary_key'  => 'sectornum',
       'unique'       => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
@@ -5965,6 +5972,7 @@ sub tables_hashref {
         'path',           'varchar',     '', 2*$char_d, '', '',
         '_date',                   @date_type,          '', '',
         'render_seconds',     'int', 'NULL',        '', '', '',
+        'pid',                'int', 'NULL',        '', '', '',
       ],
       'primary_key'  => 'lognum',
       'unique'       => [],

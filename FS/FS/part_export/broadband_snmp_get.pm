@@ -21,6 +21,7 @@ tie my %options, 'Tie::IxHash',
   'snmp_community' => { 'label'=>'Community', 'default'=>'public' },
   'snmp_timeout' => { label=>'Timeout (seconds)', 'default'=>1 },
   'snmp_oid' => { label=>'Object ID', multiple=>1 },
+  'snmp_oid_name' => { label=>'Object Name', multiple=>1 },
 ;
 
 %info = (
@@ -80,6 +81,7 @@ sub snmp_results {
   my $vers = $self->option('snmp_version');
   my $time = ($self->option('snmp_timeout') || 1) * 1000000;
   my @oids = split("\n", $self->option('snmp_oid'));
+  my @oidnames = split("\n", $self->option('snmp_oid_name'));
   my %connect = (
     'DestHost'  => $host,
     'Community' => $comm,
@@ -90,7 +92,9 @@ sub snmp_results {
   return { 'error' => 'Error creating SNMP session' } unless $snmp;
   return { 'error' => $snmp->{'ErrorStr'} } if $snmp->{'ErrorStr'};
   my @out;
-  foreach my $oid (@oids) {
+  for (my $i=0; $i <= $#oids; $i++) {
+    my $oid = $oids[$i];
+    my $oidname = $oidnames[$i];
     $oid = $SNMP::MIB{$oid}->{'objectID'} if $SNMP::MIB{$oid};
     my @values;
     if ($vers eq '1') {
@@ -115,6 +119,7 @@ sub snmp_results {
       next;
     }
     my %result = map { $_ => $SNMP::MIB{$oid}{$_} } qw( objectID label );
+    $result{'name'} = $oidname;
     # unbless @values, for ease of JSON encoding
     $result{'values'} = [];
     foreach my $value (@values) {

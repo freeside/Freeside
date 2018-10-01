@@ -35,15 +35,6 @@
           <td align="right"><b><%= $dollar.$current_less_finance %></b></td>
         </tr>
         <tr><th colspan=2><br></th></tr>
-        <tr>
-          <td><b><u><br>Summary of Payments and Credits<br></u></b></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td><b>Payments and Credits</b></td>
-          <td align="right"><b>-<%= $dollar.$balance_adjustments %></b></td>
-        </tr>
-        <tr><th colspan=2><br></th></tr>
         <tr><td colspan=2><br></td></tr>
         <tr>
           <td><b><u>Invoice Summary</u></b></td>
@@ -61,16 +52,14 @@
           <td><b>New Charges</b></td>
           <td align="right"><b><%= $dollar.$current_less_finance %></b></td>
         </tr>
-        <%=
-          foreach my $section ( grep $_->{adjust_section}, @sections) {
-            $OUT .= '<tr><td><b>'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '</b></td>';
-            $OUT .= qq(<th align="right"><b>). $section->{'subtotal'}. "</b></th></tr>";
-          }
-        %>
-        <tr>
-          <td><b>Payments and Credits</b></td>
-          <th align="right"><b>-<%= $dollar.sprintf('%.2f', $balance_adjustments) %></b></th>
-        </tr>
+        <%= if ( $balance_adjustments > 0 ) {
+          $OUT .= "
+            <tr>
+              <td><b>Payments and Credits</b></td>
+              <th align='right'><b>-$dollar" . sprintf('%.2f', $balance_adjustments). "</b></th>
+            </tr>
+          ";
+        } %>
         <tr>
           <td><b>Total Amount Due</b></td>
           <td align="right"><b><%= $dollar.sprintf('%.2f', $balance) %></b></td>

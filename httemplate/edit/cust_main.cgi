@@ -111,7 +111,7 @@ function samechanged(what) {
 
 </SCRIPT>
 
-<& cust_main/contacts_new.html, 'cust_main'=>$cust_main, &>
+<& cust_main/contacts_new.html, 'cust_main'=>$cust_main, 'submit_id'=>'submitButton', &>
 
 %# billing info
 <& cust_main/billing.html, $cust_main,
@@ -286,7 +286,7 @@ if ( $cgi->param('error') ) {
     $cust_main->paycvv($paycvv);
   }
   @invoicing_list = $cust_main->invoicing_list;
-  $ss = $conf->exists('unmask_ss') ? $cust_main->ss : $cust_main->masked('ss');
+  $ss = $cust_main->masked('ss');
   $stateid = $cust_main->masked('stateid');
 
 } else { #new customer

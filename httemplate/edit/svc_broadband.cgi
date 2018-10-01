@@ -100,7 +100,7 @@ END
 ;
 
 my @fields = (
-  qw( description speed_down speed_up ),
+  qw( description speed_down speed_up speed_test_down speed_test_up speed_test_latency),
   { field=>'sectornum', type=>'select-tower_sector', },
   { field=>'routernum', type=>'select-router_block_ip', 
     include_opt_callback => sub { 
@@ -179,7 +179,6 @@ my $svc_field_callback = sub {
 
   my $columndef = $part_svc->part_svc_column($fieldref->{'field'});
   if ($fieldref->{field} eq 'usergroup' && $columndef->columnflag eq 'F') {
-    
     $fieldref->{'formatted_value'} = 
       [ $object->radius_groups('long_description') ];
   }

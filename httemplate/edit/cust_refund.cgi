@@ -34,7 +34,7 @@
 %  }
 
   <BR>Payment
-  <% ntable("#cccccc", 2) %>
+  <TABLE class="fsinnerbox">
 
     <TR>
       <TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">$<% $cust_pay->paid %></TD>
@@ -85,7 +85,8 @@
 
 
 <BR>Refund
-<% ntable("#cccccc", 2) %>
+
+<TABLE class="fsinnerbox">
 
   <TR>
     <TD ALIGN="right">Date</TD>
@@ -102,9 +103,23 @@
       <TD ALIGN="right">Check #</TD>
       <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
     </TR>
+    </TABLE>
 % }
-%  elsif ($payby eq 'CHEK') {
+% elsif ($payby eq 'CHEK' || $payby eq 'CARD') {
 %
+<SCRIPT TYPE="text/javascript">
+  function cust_payby_changed (what) {
+    var custpaybynum = what.options[what.selectedIndex].value
+    if ( custpaybynum == '' || custpaybynum == '0' ) {
+       //what.form.payinfo.disabled = false;
+       $('#cust_payby').slideDown();
+    } else {
+       //what.form.payinfo.value = '';
+       //what.form.payinfo.disabled = true;
+       $('#cust_payby').slideUp();
+    }
+  }
+</SCRIPT>
 % my @cust_payby = ();
 % if ( $payby eq 'CARD' ) {
 %   @cust_payby = $cust_main->cust_payby('CARD','DCRD');
@@ -117,16 +132,58 @@
 % my $custpaybynum = length(scalar($cgi->param('custpaybynum')))
 %                      ? scalar($cgi->param('custpaybynum'))
 %                      : scalar(@cust_payby) && $cust_payby[0]->custpaybynum;
-<& /elements/tr-select-cust_payby.html,
+
+% if ($cust_pay) {
+  <INPUT TYPE="hidden" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10>
+% }
+% else {
+  <& /elements/tr-select-cust_payby.html,
      'cust_payby' => \@cust_payby,
      'curr_value' => $custpaybynum,
      'onchange'   => 'cust_payby_changed(this)',
-&>
-    <INPUT TYPE="hidden" NAME="batch" VALUE="1">
-%  } else {
-    <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
+  &>
 % }
 
+% if ( $conf->exists("batch-enable")
+%      || grep $payby eq $_, $conf->config('batch-enable_payby')
+% ) {
+%     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
+          <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+%     } else {
+        <TR>
+          <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="batch" VALUE="1" ID="batch" <% ($batchnum || $batch) ? 'checked' : '' %> ></TD>
+          <TH ALIGN="left">&nbsp;&nbsp;&nbsp;<% mt('Add to current batch') |h %></TH>
+        </TR>
+%     }
+% }
+
+    </TABLE>
+<P>
+
+%   if ( !$cust_pay ) {
+<DIV ID="cust_payby"
+  <% $custpaybynum ? 'STYLE="display:none"'
+                   : ''
+  %>
+>
+<TABLE class="fsinnerbox">
+
+    <& /elements/cust_payby_new.html,
+        'cust_payby' => \@cust_payby,
+        'curr_value' => $custpaybynum,
+    &>
+
+</TABLE>
+</DIV>
+%   } # end if cust_pay
+
+%  } else {
+    <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
+    </TABLE>
+% }
+
+<P>
+<TABLE class="fsinnerbox">
 <& /elements/tr-select-reason.html,
               'field'          => 'reasonnum',
               'reason_class'   => 'F',
@@ -159,16 +216,18 @@ my $payby   = $cgi->param('payby');
 my $payinfo = $cgi->param('payinfo');
 my $reason  = $cgi->param('reason');
 my $link    = $cgi->param('popup') ? 'popup' : '';
+my $batch   = $cgi->param('batch');
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->refund_access_right($payby);
 
-my( $paynum, $cust_pay ) = ( '', '' );
+my( $paynum, $cust_pay, $batchnum ) = ( '', '', '' );
 if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   $paynum = $1;
   $cust_pay = qsearchs('cust_pay', { paynum=>$paynum } )
     or die "unknown payment # $paynum";
   $refund ||= $cust_pay->unrefunded;
+  $batchnum = $cust_pay->batchnum;
   if ( $custnum ) {
     die "payment # $paynum is not for specified customer # $custnum"
       unless $custnum == $cust_pay->custnum;

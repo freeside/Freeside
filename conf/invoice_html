@@ -134,7 +134,7 @@
       my $columncount = $unitprices ? 5 : 3;
       foreach my $section ( grep { !$summary || $_->{description} ne $finance_section } @sections ) {
         if ($section->{'pretotal'} && !$summary) {
-          $OUT .= '</table>' if $notfirst;
+          $OUT .= '</table>' if $notfirst++;
           $OUT .=
             '<table width="100%"><tr><td>'.
             '<p align="right"><b><font size="+1">'.
@@ -145,7 +145,10 @@
             '</td></tr>';
         }
         unless ($section->{'summarized'}) {
-          $OUT .= '</table>' if ( $notfirst || $section->{'pretotal'} && !$summary );
+          if ( $notfirst || $section->{'pretotal'} && !$summary ) {
+            $OUT .= '</table>';
+            $notfirst = 1;
+          }
           $OUT .= '<table><tr><td>';
           $OUT .= '<p class="allcaps"><b>';
           my $sectionhead;
@@ -292,9 +295,6 @@
             '<p>';
           $OUT .= '</td></tr>';
         }
-
-        $notfirst++;
-
       }
 
       my $style = 'border-top: 3px solid #000000;';
@@ -326,6 +326,61 @@
     %>
   </table>
   <br><br>
+
+<%=
+
+  my @location_summary_sections =
+    grep {
+      ref $_->{location}
+      && $_->{locationnum}
+      && $_->{description}
+      && $_->{description} ne $finance_section
+    } @sections;
+
+  if ( $multisection eq 'location' && scalar(@location_summary_sections) > 1 ) {
+
+    $OUT .= '
+      <hr>
+      <table width="100%">
+        <tr>
+          <td>
+            <p class="allcaps">
+              <b>'.emt('Summary Of New Charges By Location').'</b>
+            <p>
+          </td>
+        </tr>
+      </table>
+
+      <table class="invoice_longtable" cellspacing="0" width="100%">
+      <thead>
+        <tr>
+          <th></th>
+          <th align="left">'.emt('Location').'</th>
+          <th align="right">'.emt('Amount').'</th>
+        </tr>
+      </thead>
+      <tbody>
+    ';
+
+    for my $section (@location_summary_sections) {
+      next unless $section->{description};
+      $OUT .= '
+        <tr class="invoice_desc_more">
+          <td></td>
+          <td>'.$section->{description}.'</td>
+          <td align="right">'. $section->{subtotal} .'</td>
+        </tr>
+      ';
+    }
+
+    $OUT .= '
+      <tr class="invoice_desc"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </tbody>
+      </table>
+      <br><br>
+    ';
+
+} %>
 
 <%= length($summary)
       ? ''

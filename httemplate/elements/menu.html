@@ -418,7 +418,9 @@ if( $curuser->access_right('Financial reports') ) {
 
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
-  $report_financial{'Upcoming Auto-Bill Transactions'} = [ $fsurl.'search/report_future_autobill.html', 'Upcoming auto-bill transactions' ];
+  if ( my $report_title = FS::cust_payby->future_autobill_report_title ) {
+    $report_financial{$report_title} = [ $fsurl.'search/report_future_autobill.html', "$report_title for customers with automatic payment methods (by date)" ];
+  }
 
 } elsif($curuser->access_right('Receivables report')) {
 

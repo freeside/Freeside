@@ -53,7 +53,7 @@ if ( $error ) {
              'CHEK' => 'electronic check (ACH)',
              );
 
-my( $cust_payby, $payinfo, $paycvv, $month, $year, $payname );
+my( $cust_pay, $cust_payby, $payinfo, $paycvv, $month, $year, $payname );
 my $paymask = '';
 if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
@@ -71,6 +71,18 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
   ( $month, $year ) = $cust_payby->paydate_mon_year;
   $payname = $cust_payby->payname;
+  $cgi->param(-name=>"paytype", -value=>$cust_payby->paytype) unless $cgi->param("paytype");
+
+} elsif ( $cgi->param('paynum') > 0) {
+
+  $cust_pay = qsearchs({
+    'table'     => 'cust_pay',
+    'hashref'   => { 'paynum' => $cgi->param('paynum') },
+    'select'    => 'cust_pay.*, cust_pay_batch.payname ',
+    'addl_from' => "left join cust_pay_batch on cust_pay_batch.batchnum = cust_pay.batchnum and cust_pay_batch.custnum = $custnum ",
+  });
+  $payinfo = $cust_pay->payinfo;
+  $payname = $cust_pay->payname;
 
 } else {
 
@@ -192,16 +204,19 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   my $refund = "$1$2";
   $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
   my $paynum = $1;
-  my $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
-  $options{'paydate'} = $paydate if $paydate =~ /^\d{2,4}-\d{1,2}-01$/;
+  my $paydate;
+  unless ($paynum) {
+    if ($cust_payby->paydate) { $paydate = "$year-$month-01"; }
+    else { $paydate = "2037-12-01"; }
+  }
 
   if ( $cgi->param('batch') ) {
-
+    $paydate = "2037-12-01" unless $paydate;
     $error ||= $cust_main->batch_card(
                                      'payby'    => $payby,
                                      'amount'   => $refund,
                                      'payinfo'  => $payinfo,
-                                     'paydate'  => "$year-$month-01",
+                                     'paydate'  => $paydate,
                                      'payname'  => $payname,
                                      'paycode'  => 'C',
                                      map { $_ => scalar($cgi->param($_)) }
@@ -209,28 +224,23 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
                                    );
     errorpage($error) if $error;
 
-#### post refund #####
     my %hash = map {
       $_, scalar($cgi->param($_))
     } fields('cust_refund');
-    $paynum = $cgi->param('paynum');
-    $paynum =~ /^(\d*)$/ or die "Illegal paynum!";
-    if ($paynum) {
-      my $cust_pay = qsearchs('cust_pay',{ 'paynum' => $paynum });
-      die "Could not find paynum $paynum" unless $cust_pay;
-      $error = $cust_pay->refund(\%hash);
-    } else {
-      my $new = new FS::cust_refund ( \%hash );
-      $error = $new->insert;
-    }
-    # if not a batch refund run realtime.
+
+    my $new = new FS::cust_refund ( { 'paynum' => $paynum,
+                                      %hash,
+                                  } );
+    $error = $new->insert;
+
+  # if not a batch refund run realtime.
   } else {
     $error = $cust_main->realtime_refund_bop( $bop, 'amount' => $refund,
                                                   'paynum' => $paynum,
                                                   'reasonnum' => scalar($cgi->param('reasonnum')),
                                                   %options );
   }
-} else {
+} else { # run cash refund.
   my %hash = map {
     $_, scalar($cgi->param($_))
   } fields('cust_refund');

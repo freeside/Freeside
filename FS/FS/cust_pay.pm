@@ -662,11 +662,75 @@ sub send_receipt {
        || ! $cust_bill
      )
   {
-    my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
+      $error = $self->send_message_receipt(
+        'cust_main' => $cust_main,
+        'cust_bill' => $opt->{cust_bill},
+        'msgnum'    => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
+      );
+  #not manual and no noemail flag (here or on the customer)
+  } elsif ( ! $opt->{'noemail'} && ! $cust_main->invoice_noemail ) {
+
+    # check to see if they want to send specific message template as receipt for auto payments
+    if ( $conf->config('payment_receipt_msgnum_auto', $cust_main->agentnum) ) {
+      $error = $self->send_message_receipt(
+        'cust_main' => $cust_main,
+        'cust_bill' => $opt->{cust_bill},
+        'msgnum'    => $conf->config('payment_receipt_msgnum_auto', $cust_main->agentnum),
+      );
+    }
+    else {
+      my $queue = new FS::queue {
+        'job'     => 'FS::cust_bill::queueable_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+
+      my %opt = (
+        'invnum'      => $cust_bill->invnum,
+        'no_coupon'   => 1,
+      );
+
+      if ( my $mode = $conf->config('payment_receipt_statement_mode') ) {
+        $opt{'mode'} = $mode;
+      } else {
+        # backward compatibility, no good fix for this yet as some people may
+        # still have "invoice_latex_statement" and such options
+        $opt{'template'} = 'statement';
+        $opt{'notice_name'} = 'Statement';
+      }
+
+      $error = $queue->insert(%opt);
+    }
+
+
+
+  }
+
+  warn "send_receipt: $error\n" if $error;
+}
+
+=item send_message_receipt
+
+sends out a message receipt.
+$error = $self->send_message_receipt(
+        'cust_main' => $cust_main,
+        'cust_bill' => $opt->{cust_bill},
+        'msgnum'    => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
+      );
+
+=cut
+
+sub send_message_receipt {
+  my ($self, %opt) = @_;
+  my $cust_main = $opt{'cust_main'};
+  my $cust_bill = $opt{'cust_bill'};
+  my $msgnum = $opt{'msgnum'};
+  my $error = '';
+
     if ( $msgnum ) {
 
       my %substitutions = ();
-      $substitutions{invnum} = $opt->{cust_bill}->invnum if $opt->{cust_bill};
+      $substitutions{invnum} = $cust_bill->invnum if $cust_bill;
 
       my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
       unless ($msg_template) {
@@ -684,7 +748,7 @@ sub send_receipt {
       $error = $cust_msg ? $cust_msg->insert : 'error preparing msg_template';
       if ($error) {
         warn "send_receipt: $error";
-        return;
+        return $error;
       }
 
       my $queue = new FS::queue {
@@ -695,39 +759,11 @@ sub send_receipt {
       $error = $queue->insert( $cust_msg->custmsgnum );
 
     } else {
-
       warn "payment_receipt is on, but no payment_receipt_msgnum\n";
-
+      $error = "payment_receipt is on, but no payment_receipt_msgnum";
     }
 
-  #not manual and no noemail flag (here or on the customer)
-  } elsif ( ! $opt->{'noemail'} && ! $cust_main->invoice_noemail ) {
-
-    my $queue = new FS::queue {
-       'job'     => 'FS::cust_bill::queueable_email',
-       'paynum'  => $self->paynum,
-       'custnum' => $cust_main->custnum,
-    };
-
-    my %opt = (
-      'invnum'      => $cust_bill->invnum,
-      'no_coupon'   => 1,
-    );
-
-    if ( my $mode = $conf->config('payment_receipt_statement_mode') ) {
-      $opt{'mode'} = $mode;
-    } else {
-      # backward compatibility, no good fix for this yet as some people may
-      # still have "invoice_latex_statement" and such options
-      $opt{'template'} = 'statement';
-      $opt{'notice_name'} = 'Statement';
-    }
-
-    $error = $queue->insert(%opt);
-
-  }
-  
-  warn "send_receipt: $error\n" if $error;
+  return $error;
 }
 
 =item cust_bill_pay

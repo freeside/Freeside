@@ -169,6 +169,16 @@
                                      ];
                    } # shouldn't this be enforced for all 'S' fields?
 
+                   elsif ( $flag eq 'P' ) { #form fcc_477 values
+                     $f->{type}    = 'fixed';
+                     my $cust_pkg = FS::Record::qsearchs({
+                       'table'   => 'cust_pkg',
+                       'hashref' => { 'pkgnum' => $object->{Hash}->{pkgnum} }
+                     });
+                     my $fcc_record = $cust_pkg->fcc_477_record('broadband_'.$columndef->columnvalue.'stream') if $cust_pkg;
+                     $f->{'value'} = $fcc_record->{Hash}->{optionvalue} ? $fcc_record->{Hash}->{optionvalue} * 1000 : '';
+                   } # end 477 values
+
                    if ( $f->{'type'} =~ /^select-svc/ )
                    {
                      $f->{'include_opt_callback'} =

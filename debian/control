@@ -101,7 +101,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,latex-xcolor,
  libmap-splat-perl, libdatetime-format-ical-perl, librest-client-perl,
  libgeo-streetaddress-us-perl, libbusiness-onlinepayment-perl,
  libnet-vitelity-perl (>= 0.05), libnet-sslglue-perl, libexpect-perl,
- libspreadsheet-parsexlsx-perl
+ libspreadsheet-parsexlsx-perl, libunicode-truncate-perl (>= 0.303-1)
 Conflicts: libparams-classify-perl (>= 0.013-6)
 Replaces: freeside (<<4)
 Breaks: freeside (<<4)

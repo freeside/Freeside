@@ -97,7 +97,7 @@ sub check {
   ;
   return $error if $error;
 
-  $self->columnflag =~ /^([DFSMAHX]?)$/
+  $self->columnflag =~ /^([DFSMAHXP]?)$/
     or return "illegal columnflag ". $self->columnflag;
   $self->columnflag(uc($1));
 

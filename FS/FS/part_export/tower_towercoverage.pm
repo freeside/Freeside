@@ -102,7 +102,7 @@ sub insert {
   '';
 }
 
-sub export_insert {
+sub _export_insert {
   my ($self, $sector) = @_;
 
   return unless $self->option('use_coverage');
@@ -175,7 +175,7 @@ sub export_insert {
 
 }
 
-sub export_replace { # do the same thing as insert
+sub _export_replace { # do the same thing as insert
   my $self = shift;
   $self->export_insert(@_);
 }

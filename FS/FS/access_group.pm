@@ -2,6 +2,7 @@ package FS::access_group;
 use base qw( FS::m2m_Common FS::m2name_Common FS::Record );
 
 use strict;
+use Carp qw( croak );
 use FS::Record qw( qsearch qsearchs );
 use FS::access_right;
 
@@ -137,6 +138,54 @@ sub access_right {
           );
 }
 
+=item grant_access_right RIGHTNAME
+
+Grant the specified specified FS::access_right record to this group.
+Return the FS::access_right record.
+
+=cut
+
+sub grant_access_right {
+  my ( $self, $rightname ) = @_;
+
+  croak "grant_access_right() requires \$rightname"
+    unless $rightname;
+
+  my $access_right = $self->access_right( $rightname );
+  return $access_right if $access_right;
+
+  $access_right = FS::access_right->new({
+    righttype   => 'FS::access_group',
+    rightobjnum => $self->groupnum,
+    rightname   => $rightname,
+  });
+  if ( my $error = $access_right->insert ) {
+    die "grant_access_right() error: $error";
+  }
+
+  $access_right;
+}
+
+=item revoke_access_right RIGHTNAME
+
+Revoke the specified FS::access_right record from this group.
+
+=cut
+
+sub revoke_access_right {
+  my ( $self, $rightname ) = @_;
+
+  croak "revoke_access_right() requires \$rightname"
+    unless $rightname;
+
+  my $access_right = $self->access_right( $rightname )
+    or return;
+
+  if ( my $error = $access_right->delete ) {
+    die "revoke_access_right() error: $error";
+  }
+}
+
 =back
 
 =head1 BUGS
@@ -148,4 +197,3 @@ L<FS::Record>, schema.html from the base documentation.
 =cut
 
 1;
-

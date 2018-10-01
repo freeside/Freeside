@@ -529,6 +529,11 @@ sub send_prepared {
   my $self = shift;
   my $cust_msg = shift or die "cust_msg required";
 
+  if ( $FS::Misc::DISABLE_ALL_NOTICES ) {
+    warn 'send_prepared() disabled by $FS::Misc::DISABLE_ALL_NOTICES' if $DEBUG;
+    return;
+  }
+
   my $domain = 'example.com';
   if ( $cust_msg->env_from =~ /\@([\w\.\-]+)/ ) {
     $domain = $1;

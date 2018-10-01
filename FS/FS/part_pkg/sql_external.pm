@@ -19,6 +19,10 @@ our @detail_cols = ( qw(amount format duration phonenum accountcode
   'shortname' => 'External SQL query',
   'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => {
+    'sync_bill_date' => { 'name' => 'Prorate first month to synchronize '.
+                                    'with the customer\'s other packages',
+                          'type' => 'checkbox',
+                        },
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
                                    'subscription',
                          'default' => '1',
@@ -50,7 +54,7 @@ our @detail_cols = ( qw(amount format duration phonenum accountcode
     },
 
   },
-  'fieldorder' => [qw( recur_method cutoff_day ),
+  'fieldorder' => [qw( recur_method cutoff_day sync_bill_date),
                    FS::part_pkg::prorate_Mixin::fieldorder,
                    qw( datasrc db_username db_password query query_style
                   )],
@@ -138,6 +142,12 @@ sub calc_recur {
   $param->{'override_quantity'} = $quantity;
   $param->{'override_charges'} = $price;
   ($cust_pkg->quantity || 1) * $self->calc_recur_Common($cust_pkg,$sdate,$details,$param);
+}
+
+sub cutoff_day {
+  my( $self, $cust_pkg ) = @_;
+  my $error = FS::part_pkg::flat::cutoff_day( $self, $cust_pkg );
+  return $error;
 }
 
 sub can_discount { 1; }

@@ -20,8 +20,17 @@ elsif ( $cgi->param('format') =~ /^([\w\- ]+)$/ ) {
   $opt{'format'} = $1;
 }
 
-my $pay_batch = qsearchs('pay_batch', { batchnum => $batchnum } );
+my $credit_transactions = "EXISTS (SELECT 1 FROM cust_pay_batch WHERE batchnum = $batchnum AND paycode = 'C') AS arecredits";
+my $pay_batch = qsearchs({ 'select'    => "*, $credit_transactions",
+                           'table'     => 'pay_batch',
+                           'hashref'   => { batchnum => $batchnum },
+                         });
 die "Batch not found: '$batchnum'" if !$pay_batch;
+
+if ($pay_batch->{Hash}->{arecredits}) {
+  my $export_format = "FS::pay_batch::".$opt{'format'};
+    die "This format can not handle refunds." unless $export_format->can('can_handle_credits');
+}
 
 my $exporttext = $pay_batch->export_batch(%opt);
 unless ($exporttext) {

@@ -562,7 +562,7 @@ if ( $acl_edit_global ) {
                                 'action'      => "${p}edit/bulk-cust_pkg.html?".
                                                  'pkgpart='.$part_pkg->pkgpart,
                                 'actionlabel' => 'Change Packages',
-                                'width'       => 569,
+                                'width'       => 960,
                                 'height'      => 210,
                               ).' ]</FONT>',
                             'align' => 'left',
@@ -796,8 +796,22 @@ if ( $acl_edit_bulk ) {
   $align .= 'c';
   $html_form = qq!<FORM ACTION="${p}edit/bulk-part_pkg.html" METHOD="POST">!;
   $html_foot = include('/search/elements/checkbox-foot.html',
-      submit  => 'edit report classes', # for now it's only report classes
-  ) . '</FORM>';
+                 actions => [
+                   { submit => 'edit report classes', },
+                   { label  => 'change customer packages',
+                     onclick=> include('/elements/popup_link_onclick.html',
+                                 'label'       => 'change',
+                                 'js_action'   => qq{
+                                   '${p}edit/bulk-cust_pkg.html?' + \$('input[name=pkgpart]').serialize()
+                                 },
+                                 'actionlabel' => 'Change customer packages',
+                                 'width'       => 960,
+                                 'height'      => 420,
+                               )
+                   },
+                 ],
+               ).
+               '</FORM>';
 }
 
 my @menubar;

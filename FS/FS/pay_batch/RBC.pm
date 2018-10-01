@@ -174,6 +174,9 @@ $name = 'RBC';
       die "invalid branch/routing number '$aba'\n";
     }
 
+    ## set custname to business name if business checking or savings account is used otherwise leave as first and last name.
+    my $custname = $cust_pay_batch->cust_main->batch_payment_payname($cust_pay_batch);
+
     $i++;
 
     ## set to D for debit by default, then override to what cust_pay_batch has as payments may not have paycode.
@@ -194,8 +197,7 @@ $name = 'RBC';
     sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
     time2str("%Y%j", time + 86400).
-    sprintf("%-30.30s", encode('utf8', $cust_pay_batch->cust_main->first . ' ' .
-                     $cust_pay_batch->cust_main->last)).
+    sprintf("%-30.30s", encode('utf8', $custname)).
     'E'. # English
     ' '.
     sprintf("%-15s", $shortname).
@@ -225,6 +227,11 @@ $name = 'RBC';
     ;
   },
 );
+
+## this format can handle credit transactions
+sub can_handle_credits {
+  1;
+}
 
 1;
 

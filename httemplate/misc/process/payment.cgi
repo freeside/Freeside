@@ -39,6 +39,8 @@ my $cust_main = qsearchs({
   'extra_sql' => ' AND '. $curuser->agentnums_sql,
 }) or die "unknown custnum $custnum";
 
+my $invoice = ($cgi->param('invoice') =~ /^(\d+)$/) ? $cgi->param('invoice') : '';
+
 $cgi->param('amount') =~ /^\s*(\d*(\.\d\d)?)\s*$/
   or errorpage("illegal amount ". $cgi->param('amount'));
 my $amount = $1;
@@ -90,6 +92,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
   ( $month, $year ) = $cust_payby->paydate_mon_year;
   $payname = $cust_payby->payname;
+  $cgi->param(-name=>"paytype", -value=>$cust_payby->paytype) unless $cgi->param("paytype");
 
 } else {
 
@@ -97,11 +100,11 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
   # use new info
   ##
 
-  $cgi->param('year') =~ /^(\d+)$/
+  $cgi->param('year') =~ /^(\d{4})/
     or errorpage("illegal year ". $cgi->param('year'));
   $year = $1;
 
-  $cgi->param('month') =~ /^(\d+)$/
+  $cgi->param('month') =~ /^(\d{2})/
     or errorpage("illegal month ". $cgi->param('month'));
   $month = $1;
 
@@ -208,17 +211,28 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
 my $error = '';
 my $paynum = '';
+
 if ( $cgi->param('batch') ) {
 
   $error = 'Prepayment discounts not supported with batched payments' 
     if $discount_term;
 
+  # Invalid payment expire dates are replaced with 2037-12-01 (why?)
+  my $paydate = "${year}-${month}-01";
+  {
+    use DateTime;
+    local $@;
+    eval { DateTime->new({ year => $year, month => $month, day => 1 }) };
+    $paydate = '2037-12-01' if $@;
+  }
+
   $error ||= $cust_main->batch_card(
                                      'payby'    => $payby,
                                      'amount'   => $amount,
                                      'payinfo'  => $payinfo,
-                                     'paydate'  => "$year-$month-01",
+                                     'paydate'  => $paydate,
                                      'payname'  => $payname,
+                                     'invnum'   => $invoice,
                                      map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}
                                    );
@@ -241,6 +255,7 @@ if ( $cgi->param('batch') ) {
     'discount_term' => $discount_term,
     'no_auto_apply' => ($cgi->param('apply') eq 'never') ? 'Y' : '',
     'no_invnum'     => 1,
+    'invnum'        => $invoice,
     map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;

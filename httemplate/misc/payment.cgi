@@ -13,8 +13,7 @@
 <TABLE class="fsinnerbox">
 
   <& /elements/tr-select-payment_options.html,
-       'custnum'            => $cust_main->custnum,
-       'amount'             => $balance,
+       'cust_main'          => $cust_main,
        'process-pkgpart'    => 
           scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
        'process-display'    => scalar($conf->config('manual_process-display')),
@@ -23,6 +22,11 @@
        'surcharge_percentage' =>
          ( $payby eq 'CARD'
              ? scalar($conf->config('credit-card-surcharge-percentage', $cust_main->agentnum))
+             : 0
+         ),
+       'surcharge_flatfee' =>
+         ( $payby eq 'CARD'
+             ? scalar($conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum))
              : 0
          ),
   &>
@@ -97,6 +101,11 @@ function change_batch_checkbox () {
        $('#cust_payby').slideUp();
     }
   }
+
+  function enableAmountField() {
+    document.getElementById('amount').disabled = false;
+  }
+
 </SCRIPT>
 
 % #can't quite handle CARD/CHEK on the same page yet, but very close
@@ -130,185 +139,57 @@ function change_batch_checkbox () {
 >
 <TABLE class="fsinnerbox">
 
-% my $auto = 0;
-% if ( $payby eq 'CARD' ) {
-%
-%   my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
-%   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
-%   my $location = $cust_main->bill_location;
-
-    <TR>
-      <TH ALIGN="right"><% mt('Card number') |h %></TH>
-      <TD COLSPAN=7>
-        <TABLE>
-          <TR>
-            <TD>
-              <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"> </TD>
-            <TH><% mt('Exp.') |h %></TH>
-            <TD>
-              <SELECT NAME="month">
-% for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { 
-
-                  <OPTION<% $_ == $month ? ' SELECTED' : '' %>><% $_ %>
-% } 
-
-              </SELECT>
-            </TD>
-            <TD> / </TD>
-            <TD>
-              <SELECT NAME="year">
-% my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) { 
-
-                  <OPTION<% $_ == $year ? ' SELECTED' : '' %>><% $_ %>
-% } 
-
-              </SELECT>
-            </TD>
-          </TR>
-        </TABLE>
-      </TD>
-    </TR>
-    <TR>
-      <TH ALIGN="right"><% mt('CVV2') |h %></TH>
-      <TD><INPUT TYPE="text" NAME="paycvv" VALUE="<% $paycvv %>" SIZE=4 MAXLENGTH=4>
-          (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
-      </TD>
-    </TR>
-    <TR>
-      <TH ALIGN="right"><% mt('Exact name on card') |h %></TH>
-      <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%$payname%>"></TD>
-    </TR>
-
-    <& /elements/location.html,
-                  'object'         => $location,
-                  'no_asterisks'   => 1,
-                  'address1_label' => emt('Card billing address'),
-    &>
-
-% } elsif ( $payby eq 'CHEK' ) {
-%
-%   my( $account, $aba, $branch, $payname, $ss, $paytype, $paystate,
-%       $stateid, $stateid_state )
-%     = ( '', '', '', '', '', '', '', '', '' );
-%
-%  #false laziness w/{edit,view}/cust_main/billing.html
-%  my $routing_label = $conf->config('echeck-country') eq 'US'
-%                        ? 'ABA/Routing number'
-%                        : 'Routing number';
-%  my $routing_size      = $conf->config('echeck-country') eq 'CA' ? 4 : 10;
-%  my $routing_maxlength = $conf->config('echeck-country') eq 'CA' ? 3 : 9;
-
-    <INPUT TYPE="hidden" NAME="month" VALUE="12">
-    <INPUT TYPE="hidden" NAME="year" VALUE="2037">
-    <TR>
-      <TD ALIGN="right"><% mt('Account number') |h %></TD>
-      <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$account%>"></TD>
-      <TD ALIGN="right"><% mt('Type') |h %></TD>
-      <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } FS::cust_payby->paytypes) %></SELECT></TD>
-    </TR>
-    <TR>
-      <TD ALIGN="right"><% mt($routing_label) |h %></TD>
-      <TD>
-        <INPUT TYPE="text" SIZE="<% $routing_size %>" MAXLENGTH="<% $routing_maxlength %>" NAME="payinfo2" VALUE="<%$aba%>">
-        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
-      </TD>
-    </TR>
-%   if ( $conf->config('echeck-country') eq 'CA' ) {
-      <TR>
-        <TD ALIGN="right"><% mt('Branch number') |h %></TD>
-        <TD>
-          <INPUT TYPE="text" NAME="payinfo3" VALUE="<%$branch%>" SIZE=6 MAXLENGTH=5>
-        </TD>
-      </TR>
-%   }
-    <TR>
-      <TD ALIGN="right"><% mt('Bank name') |h %></TD>
-      <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
-    </TR>
-
-%   if ( $conf->exists('show_bankstate') ) {
-      <TR>
-        <TD ALIGN="right"><% mt('Bank state') |h %></TD>
-        <TD><& /elements/select-state.html,
-                         'disable_empty' => 0,
-                         'empty_label'   => emt('(choose)'),
-                         'state'         => $paystate,
-                         'country'       => $cust_main->country,
-                         'prefix'        => 'pay',
-            &>
-        </TD>
-      </TR>
-%   } else {
-      <INPUT TYPE="hidden" NAME="paystate" VALUE="<% $paystate %>">
-%   }
-
-%   if ( $conf->exists('show_ss') ) {
-      <TR>
-        <TD ALIGN="right">
-          <% mt('Account holder') |h %><BR>
-          <% mt('Social security or tax ID #') |h %> 
-        </TD>
-        <TD><INPUT TYPE="text" NAME="ss" VALUE="<% $ss %>"></TD>
-      </TR>
-%   } else {
-      <INPUT TYPE="hidden" NAME="ss" VALUE="<% $ss %>"></TD>
-%   }
-
-%   if ( $conf->exists('show_stateid') ) {
-      <TR>
-        <TD ALIGN="right">
-          <% mt('Account holder') |h %><BR>
-          <% mt("Driver's license or state ID #") |h %> 
-        </TD>
-        <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>"></TD>
-        <TD ALIGN="right"><% mt('State') |h %></TD>
-        <TD><& /elements/select-state.html,
-                         'disable_empty' => 0,
-                         'empty_label'   => emt('(choose)'),
-                         'state'         => $stateid_state,
-                         'country'       => $cust_main->country,
-                         'prefix'        => 'stateid_',
-            &>
-        </TD>
-      </TR>
-%   } else {
-      <INPUT TYPE="hidden" NAME="stateid" VALUE="<% $stateid %>">
-      <INPUT TYPE="hidden" NAME="stateid_state" VALUE="<% $stateid_state %>">
-%   }
-
-% } #end CARD/CHEK-specific section
-
-
-<TR>
-  <TD COLSPAN=8>
-    <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
-    <% mt('Remember this information') |h %>
-  </TD>
-</TR>
-
-<TR>
-  <TD COLSPAN=8>
-    <INPUT TYPE="checkbox"<% $auto ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
-    <% mt("Charge future payments to this [_1] automatically",$type{$payby}) |h %> 
-% if ( @cust_payby ) {
-    <% mt('as') |h %>
-    <SELECT NAME="weight">
-%     for ( 1 .. 1+scalar(grep { $_->payby =~ /^(CARD|CHEK)$/ } @cust_payby) ) {
-        <OPTION VALUE="<%$_%>"><% mt( $weight{$_} ) |h %>
-%     }
-    </SELECT>
-% } else {
-    <INPUT TYPE="hidden" NAME="weight" VALUE="1">
-% }
-  </TD>
-</TR>
+<& /elements/cust_payby_new.html,
+     'cust_payby' => \@cust_payby,
+     'curr_value' => $custpaybynum,
+&>
 
 </TABLE>
 </DIV>
 
 <BR>
-<INPUT TYPE="submit" NAME="process" VALUE="<% mt('Process payment') |h %>">
+<INPUT TYPE="submit" NAME="process" ID="process" VALUE="<% mt('Process payment') |h %>" disabled="disabled" onclick="enableAmountField()">
 </FORM>
+
+<SCRIPT TYPE="text/javascript">
+
+$(document).ready(function (){
+    validate();
+    $('<% $validate_select_fields %>').change(validate);
+    $('<% $validate_input_fields %>').keyup(validate);
+});
+
+function validate(){
+    if (
+      $('#amount').val() > 0 && (
+        ( $('#custpaybynum').val() > 0 ) ||
+% if ($payby eq "CHEK") {
+        ( $('input[name=payinfo1]').val().length > 0 &&
+          $('input[name=payinfo2]').val().length > 0 &&
+          $('input[name=payname]').val().length > 0  &&
+          $('select[name=paytype]').val().length > 0
+        )
+% }
+% elsif ($payby eq "CARD") {
+        ( $('input[name=payinfo]').val().length > 0 &&
+          $('input[name=paycvv]').val().length > 0 &&
+          $('input[name=payname]').val().length > 0 &&
+          $('#city').val().length > 0 &&
+          $('#city').val().length > 0 &&
+          $('#state').val().length > 0 &&
+          $('#country').val().length > 0
+        )
+% }
+      )
+     ) {
+        $("#process").prop("disabled", false);
+    }
+    else {
+        $("#process").prop("disabled", true);
+    }
+}
+
+</SCRIPT>
 
 <& /elements/footer-cust_main.html &>
 <%once>
@@ -337,6 +218,17 @@ $cgi->param('payby') =~ /^(CARD|CHEK)$/
   or die "unknown payby ". $cgi->param('payby');
 my $payby = $1;
 
+my $validate_select_fields = "#payment_option, #invoice, #custpaybynum, ";
+my $validate_input_fields  = "#amount, input[name=payname], ";
+if ($payby eq "CHEK") {
+  $validate_input_fields  .= "input[name=payinfo1], input[name=payinfo2]";
+  $validate_select_fields .= "select[name=paytype] ";
+}
+elsif ($payby eq "CARD") {
+  $validate_input_fields  .= "input[name=payinfo], input[name=paycvv], input[name=address1], #city, #zip";
+  $validate_select_fields .= "#state, #country ";
+}
+
 $cgi->param('custnum') =~ /^(\d+)$/
   or die "illegal custnum ". $cgi->param('custnum');
 my $custnum = $1;
@@ -349,13 +241,6 @@ my $balance = $cust_main->balance;
 my $payinfo = '';
 
 my $conf = new FS::Conf;
-
-#false laziness w/selfservice make_payment.html shortcut for one-country
-my %states = map { $_->state => 1 }
-               qsearch('cust_main_county', {
-                 'country' => $conf->config('countrydefault') || 'US'
-               } );
-my @states = sort { $a cmp $b } keys %states;
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
 

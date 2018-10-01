@@ -5,7 +5,11 @@ Example:
   include( '/elements/tr-select-invoice.html',
 
     #opt - most get used in /elements/tr-amount-fee
-    'custnum'              => 4,     # customer number,
+    'cust_main'            => $cust_main,     # cust_main,
+    'status'               => 'open' # type of invoices to show.  Possible values are:
+                                     # open - shows only open invoices
+                                     # void - shows only voided invoices
+                                     # all  - shows all invoices, this is default if no status is set.
     'prefix'               => 'pre', # prefix to fields and row ID's
   )
 
@@ -13,31 +17,35 @@ Example:
 
   <TR ID="invoice_row" STYLE="display:none;">
     <TH ALIGN="right"><% mt('Open invoices') |h %></TH>
-    <TD COLSPAN=7>
+    <TD>
      <SELECT
   	  ID       = "<% $opt{prefix} %>invoice"
   	  NAME     = "<% $opt{prefix} %>invoice"
   	  onChange = "<% $opt{prefix} %>invoice_select_changed(this)"
 	>
   		<OPTION VALUE="select">Select an invoice to pay</OPTION>
-%         foreach my $record (@records) {
+%         foreach my $record (@invoices) {
 %            my $read_date = time2str("%b %o, %Y", $record->_date);
-            <OPTION VALUE="<% $record->charged %>"><% $record->invnum %> (<% $read_date %>) - <% $record->charged %></OPTION>	
+%             $hidden .= '<INPUT TYPE="hidden" ID="inv'.$record->invnum.'" NAME="inv'.$record->invnum.'" VALUE="'.$record->owed.'">';
+            <OPTION VALUE="<% $record->invnum %>"><% $record->invnum %> (<% $read_date %>) - <% $record->owed %></OPTION>
 %         }
 
-	</SELECT>	
+	</SELECT>
+
+  <% $hidden %>
+
     </TD>
   </TR>
 
 <%init>
 
 my %opt = @_;
+my $status = $opt{'status'} ? $opt{'status'} : 'all';
+my $hidden;
 
-my @records = qsearch( {
-    'select'    => '*',
-    'table'     => 'cust_bill',
-    'hashref'   => { 'custnum' => $opt{custnum} },
-    'order_by'  => 'ORDER BY _date',
-});
+my @invoices;
+if ($status eq "all") { @invoices = $opt{'cust_main'}->cust_bill; }
+elsif ($status eq "open") { @invoices = $opt{'cust_main'}->open_cust_bill; }
+elsif ($status eq "void") { @invoices = $opt{'cust_main'}->cust_bill_void; }
 
 </%init>

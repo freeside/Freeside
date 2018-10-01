@@ -1,7 +1,17 @@
 <%def .namepart>
-% my ($field, $value, $label, $extra) = @_;
+% my ($field, $value, $label, $extra, $unmask_field) = @_;
 <DIV STYLE="display: inline-block" ID="<% $field %>_input">
   <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
+% if (
+%   $value
+%   && ref $unmask_field
+%   && $FS::CurrentUser::CurrentUser->access_right( $unmask_field->{access_right} )
+% ) {
+  <& /elements/link-replace_element_text.html, {
+      target_id    => $unmask_field->{target_id},
+      replace_text => $unmask_field->{replace_text},
+  } &>
+% }
   <BR><FONT SIZE="-1" COLOR="#333333"><% emt($label) %></FONT>
 </DIV>
 </%def>
@@ -13,7 +23,11 @@
         <& .namepart, 'first', $cust_main->first, 'First' &>
 % if ( $conf->exists('show_ss') ) {
         &nbsp;
-        <& .namepart, 'ss', $ss, 'SS#', "SIZE=11" &>
+        <& .namepart, 'ss', $ss, 'SS#', "SIZE=11 ID='ss'", {
+          target_id    => 'ss',
+          replace_text => $cust_main->ss,
+          access_right => 'Unmask customer SSN',
+        } &>
 % } else  {
         <INPUT TYPE="hidden" NAME="ss" VALUE="<% $ss %>">
 % }
@@ -47,7 +61,7 @@ my $agentnum = $cust_main->agentnum if $cust_main->custnum;
 my $conf = FS::Conf->new;
 my $ss;
 
-if ( $cgi->param('error') or $conf->exists('unmask_ss') ) {
+if ( $cgi->param('error') ) {
   $ss = $cust_main->ss;
 } else {
   $ss = $cust_main->masked('ss');

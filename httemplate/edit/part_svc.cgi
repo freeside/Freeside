@@ -107,7 +107,7 @@ function flag_changed(obj) {
         select.multiple = false;
       }
     }
-  } else if ( newflag == 'M' || newflag == 'A' || newflag == 'H' ) {
+  } else if ( newflag == 'M' || newflag == 'A' || newflag == 'H' || newflag == 'P' ) {
     // these all require a class selection
     if ( select ) {
       select.disabled = false;
@@ -120,7 +120,7 @@ function flag_changed(obj) {
   }
   var required = document.getElementById(layer + '__' + field + '_required');
   if (required && !required.disabledinit) {
-    if (newflag == "F") {
+    if (newflag == "F" || newflag =="P") {
       required.checked = false;
       required.disabled = true;
     } else {

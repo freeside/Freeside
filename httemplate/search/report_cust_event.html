@@ -5,11 +5,9 @@
 %>
 
     <FORM ACTION="cust_event.html" METHOD="GET">
-    <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-      <TR>
-        <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
-      </TR>
+    <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+    <TABLE CLASS="fsinnerbox">
 
       <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
 
@@ -44,7 +42,7 @@
         'field'         => 'event_status',
         'multiple'      => 1,
         'all_selected'  => 1,
-        'size'          => 5,
+        'size'          => 6,
         'options'       => [ qw( done_Y done_S done_N failed new locked ) ],
         'option_labels' => { done_Y => 'Completed normally',
                              done_S => 'Completed, with an error',

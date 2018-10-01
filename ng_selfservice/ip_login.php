@@ -4,29 +4,30 @@ require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
 $ip = $_SERVER['REMOTE_ADDR'];
-# need a routine here to get mac address from radius account table based on ip address.  Every else should be good to go.
-$mac_addr = '1234567890FF';
+
+$mac = $freeside->get_mac_address( array('ip' => $ip, ) );
 
 $response = $freeside->login( array( 
-  'username' => $mac_addr, 
+  'username' => $mac['mac_address'],
   'domain'   => 'ip_mac',
 ) );
-
-#error_log("[login] received response from freeside: $response");
 
 $error = $response['error'];
 
 if ( $error ) {
 
-  header('Location:index.php?username='. urlencode($mac).
-                           '&domain='.   urlencode($domain).
-                           '&email='.    urlencode($email).
-                           '&error='.    urlencode($error)
-        );
-  die();
+  $title ='Login'; include('elements/header.php');
+  include('elements/error.php');	
+  echo "Sorry "+$error;
+
+ // header('Location:index.php?username='. urlencode($mac).
+ //                          '&domain='.   urlencode($domain).
+ //                          '&email='.    urlencode($email).
+ //                          '&error='.    urlencode($error)
+ //       );
 
 }
-
+else {
 // sucessful login
 
 $session_id = $response['session_id'];
@@ -46,7 +47,7 @@ if ( $response['custnum'] || $response['svcnum'] ) {
   //1;
 
 } elseif ( $response['customers'] ) {
-var_dump($response['customers']);
+  //var_dump($response['customers']);
 ?>
 
   <? $title ='Select customer'; include('elements/header.php'); ?>
@@ -89,14 +90,16 @@ var_dump($response['customers']);
 
   </SCRIPT>
 
-  <? include('elements/footer.php'); ?>
-
 <?
 
 // } else {
 // 
 //   die 'login successful, but unrecognized info (no custnum, svcnum or customers)';
   
-}
+} // multiple customers found
+
+} //successfull login
 
 ?>
+
+  <? include('elements/footer.php'); ?>

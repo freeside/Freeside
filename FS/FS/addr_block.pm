@@ -207,6 +207,27 @@ sub cidr {
   $self->NetAddr->cidr;
 }
 
+=item free_addrs
+
+Returns an aref sorted list of free addresses in the block.
+
+=cut
+
+sub free_addrs {
+  my $self = shift;
+
+  my %used_addr_map =
+    map {$_ => 1}
+    FS::IP_Mixin->used_addresses($self),
+    FS::Conf->new()->config('exclude_ip_addr');
+
+  [
+    grep { !exists $used_addr_map{$_} }
+    map { $_->addr }
+    $self->NetAddr->hostenum
+  ];
+}
+
 =item next_free_addr
 
 Returns a NetAddr::IP object corresponding to the first unassigned address 
@@ -416,4 +437,3 @@ now because that's the smallest block that makes any sense at all.
 =cut
 
 1;
-

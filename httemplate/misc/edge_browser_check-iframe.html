@@ -1,0 +1,34 @@
+<form id="canary-form" action="<% $fsurl %>misc/edge_browser_check-iframe.html" method="POST">
+<input type="text" id="canary-result" value="<% scalar $cgi->param('edge_browser_canary') %>">
+<select name="edge_browser_canary">
+  <option>test
+  <option>test
+</select>
+<input id="canary-submit" type="submit">
+</form>
+
+<script type="text/javascript" src="<% $fsurl %>elements/jquery.js"></script>
+<script type="text/javascript">
+  $( function() {
+    if ( ! $("#canary-result").val() ) {
+      $("#canary-form").submit();
+    }
+  });
+</script>
+
+<%init>
+my $cgi = FS::UID::cgi();
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $session = $FS::CurrentUser::CurrentSession;
+my $sessionkey = $session->sessionkey if $session;
+
+if ( $curuser ) {
+  my $canary = $cgi->param('edge_browser_canary');
+  $curuser->set_pref(
+    'edge_bug_vulnerable',
+
+    $canary eq 'test' ? $sessionkey : 'Y',
+  );
+}
+
+</%init>

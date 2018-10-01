@@ -1,6 +1,7 @@
 package FS::cust_main::Billing;
 
 use strict;
+use feature 'state';
 use vars qw( $conf $DEBUG $me );
 use Carp;
 use Data::Dumper;
@@ -25,6 +26,7 @@ use FS::pkg_category;
 use FS::FeeOrigin_Mixin;
 use FS::Log;
 use FS::TaxEngine;
+use FS::Misc::Savepoint;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -170,11 +172,8 @@ sub bill_and_collect {
 
   # In a batch tax environment, do not run collection if any pending 
   # invoices were created.  Collection will run after the next tax batch.
-  my $tax = FS::TaxEngine->new;
-  if ( $tax->info->{batch} and 
-       qsearch('cust_bill', { custnum => $self->custnum, pending => 'Y' })
-     )
-  {
+  state $is_batch_tax = FS::TaxEngine->new->info->{batch} ? 1 : 0;
+  if ( $is_batch_tax && $self->pending_invoice_count ) {
     warn "skipped collection for custnum ".$self->custnum.
          " due to pending invoices\n" if $DEBUG;
   } elsif ( $conf->exists('cancelled_cust-noevents')
@@ -1052,6 +1051,9 @@ sub _make_lines {
         }
     }
 
+    $lineitems++
+    if $cust_pkg->waive_setup && $part_pkg->can('prorate_setup') && $part_pkg->prorate_setup($cust_pkg, $time);
+
     if ( $cust_pkg->get('setup') ) {
       # don't change it
     } elsif ( $cust_pkg->get('start_date') ) {
@@ -1752,7 +1754,10 @@ sub collect {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   #never want to roll back an event just because it returned an error
-  local $FS::UID::AutoCommit = 1; #$oldAutoCommit;
+  # unless $FS::UID::ForceObeyAutoCommit is set
+  local $FS::UID::AutoCommit = 1
+    unless !$oldAutoCommit
+        && $FS::UID::ForceObeyAutoCommit;
 
   $self->do_cust_event(
     'debug'      => ( $options{'debug'} || 0 ),
@@ -1960,9 +1965,13 @@ sub do_cust_event {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
   #never want to roll back an event just because it or a different one
   # returned an error
-  local $FS::UID::AutoCommit = 1; #$oldAutoCommit;
+  # unless $FS::UID::ForceObeyAutoCommit is set
+  local $FS::UID::AutoCommit = 1
+    unless !$oldAutoCommit
+        && $FS::UID::ForceObeyAutoCommit;
 
   foreach my $cust_event ( @$due_cust_event ) {
 
@@ -2287,16 +2296,21 @@ sub apply_payments_and_credits {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $savepoint_label = 'Billing__apply_payments_and_credits';
+  savepoint_create( $savepoint_label );
+
   $self->select_for_update; #mutex
 
   foreach my $cust_bill ( $self->open_cust_bill ) {
     my $error = $cust_bill->apply_payments_and_credits(%options);
     if ( $error ) {
+      savepoint_rollback_and_release( $savepoint_label );
       $dbh->rollback if $oldAutoCommit;
       return "Error applying: $error";
     }
   }
 
+  savepoint_release( $savepoint_label );
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 

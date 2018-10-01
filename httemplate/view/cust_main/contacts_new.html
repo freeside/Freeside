@@ -22,6 +22,7 @@
 %   my $bgcolor1 = '#ffffff';
 %   my $bgcolor2 = '#eeeeee';
 %   my $bgcolor = $bgcolor2;
+%   my $count = 0;
 %   foreach my $cust_contact ( @cust_contacts ) {
 %     my $contact = $cust_contact->contact;
 %     my $td = qq(<TD CLASS="grid" BGCOLOR="$bgcolor">);
@@ -39,6 +40,16 @@
             Enabled
 %#            <FONT SIZE="-1"><A HREF="XXX">disable</A>
 %#                            <A HREF="XXX">re-email</A></FONT>
+            <FONT SIZE="-1">
+              <& /elements/change_password.html,
+                'contact_num'      => $cust_contact->contactnum,
+                'custnum'          => $cust_contact->custnum,
+                'no_label_display' => '',
+                'label'            => 'change password',
+                'curr_value'       => '',
+                'pre_pwd_field_label' => 'contact'.$count.'_',
+              &>
+            </FONT>
 %         } else {
             Disabled
 %#            <FONT SIZE="-1"><A HREF="XXX">enable</A></FONT>
@@ -63,6 +74,7 @@
 %      } else {
 %        $bgcolor = $bgcolor1;
 %      }
+%     $count++;
 %   }
 </TABLE>
 %}
@@ -80,6 +92,6 @@ my @cust_contacts = $cust_main->cust_contact;
 
 # residential customers have a default "invisible" contact, but if they
 # somehow get more than one contact, show them
-my $display = scalar(@cust_contacts) > 1;
+my $display = scalar(@cust_contacts) > 0;
 
 </%init>

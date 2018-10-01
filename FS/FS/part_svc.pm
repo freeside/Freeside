@@ -519,6 +519,18 @@ sub part_export_dsl_pull {
     grep $_->can('dsl_pull'), $self->part_export;
 }
 
+=item part_export_partsvc
+
+Returns a list of any exports (see L<FS::part_export>) for this service that
+are capable of pushing a change after part svc is changed.
+
+=cut
+
+sub part_export_partsvc {
+    my $self = shift;
+    grep $_->can('export_partsvc'), $self->part_export;
+}
+
 =item cust_svc [ PKGPART ] 
 
 Returns a list of associated customer services (FS::cust_svc records).
@@ -861,10 +873,10 @@ sub process {
               map {
                     my $f = $svcdb.'__'.$_;
                     my $flag = $param->{ $f.'_flag' } || ''; #silence warnings
-                    if ( $flag =~ /^[MAH]$/ ) {
+                    if ( $flag =~ /^[MAHP]$/ ) {
                       $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
-		    if ( ( $flag =~ /^[MAHS]$/ or $_ eq 'usergroup' )
+		    if ( ( $flag =~ /^[MAHSP]$/ or $_ eq 'usergroup' )
                          and ref($param->{ $f }) ) {
                       $param->{ $f } = join(',', @{ $param->{ $f } });
 		    }
@@ -909,6 +921,11 @@ sub process {
   );
 
   die "$error\n" if $error;
+
+  foreach my $part_svc_export ( $new->part_export_partsvc ) {
+    $error = $part_svc_export->export_partsvc($new);
+  }
+  return $error if $error;
 }
 
 =item process_bulk_cust_svc

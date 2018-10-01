@@ -14,6 +14,7 @@ use FS::Misc::DateTime qw(parse_datetime);
 use DateTime;
 use Number::Phone;
 use Try::Tiny;
+use Carp qw(carp);
 
 our $me = '[sipwise]';
 our $DEBUG = 0;
@@ -67,7 +68,7 @@ our %info = (
 END
 );
 
-sub export_insert {
+sub _export_insert {
   my($self, $svc_x) = (shift, shift);
 
   local $SIG{__DIE__};
@@ -88,7 +89,7 @@ sub export_insert {
   '';
 }
 
-sub export_replace {
+sub _export_replace {
   my ($self, $svc_new, $svc_old) = @_;
   local $SIG{__DIE__};
 
@@ -110,7 +111,7 @@ sub export_replace {
   '';
 }
 
-sub export_delete {
+sub _export_delete {
   my ($self, $svc_x) = (shift, shift);
   local $SIG{__DIE__};
 
@@ -135,7 +136,7 @@ sub export_delete {
 
 # logic to set subscribers to locked/active is in replace_subscriber
 
-sub export_suspend {
+sub _export_suspend {
   my $self = shift;
   my $svc_x = shift;
   my $role = $self->svc_role($svc_x);
@@ -148,7 +149,7 @@ sub export_suspend {
   '';
 }
 
-sub export_unsuspend {
+sub _export_unsuspend {
   my $self = shift;
   my $svc_x = shift;
   my $role = $self->svc_role($svc_x);
@@ -295,6 +296,13 @@ previously, and the one it's linked to now.
 sub export_did {
   my $self = shift;
   my ($new, $old) = @_;
+
+  if ( $FS::svc_Common::noexport_hack ) {
+    carp 'export_did() suppressed by noexport_hack'
+      if $self->option('debug') || $DEBUG;
+    return;
+  }
+
   if ( $old and $new->forward_svcnum ne $old->forward_svcnum ) {
     my $old_svc_acct = $self->acct_for_did($old);
     $self->replace_subscriber( $old_svc_acct ) if $old_svc_acct;
