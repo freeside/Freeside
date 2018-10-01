@@ -220,7 +220,7 @@ sub install_callback {
 
 =item cgi
 
-Returns the CGI (see L<CGI>) object.
+(Deprecated) Returns the CGI (see L<CGI>) object.
 
 =cut
 
@@ -230,9 +230,9 @@ sub cgi {
   $cgi;
 }
 
-=item cgi CGI_OBJECT
+=item setcgi CGI_OBJECT
 
-Sets the CGI (see L<CGI>) object.
+(Deprecated) Sets the CGI (see L<CGI>) object.
 
 =cut
 
