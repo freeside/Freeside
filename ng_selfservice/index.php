@@ -3,7 +3,7 @@
 require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
-$login_info = $freeside->login_info( array('session_id' => $_COOKIE['session_id'],));
+$login_info = $freeside->login_info();
 
 extract($login_info);
 
@@ -60,7 +60,7 @@ if ( $error ) {
 <? if ( $phone_login ) { ?>
 
   <B>OR</B><BR><BR>
-
+    
   <FORM ACTION="process_login.php" METHOD=POST>
   <INPUT TYPE="hidden" NAME="session" VALUE="login">
   <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
@@ -84,10 +84,6 @@ if ( $error ) {
   </FORM>
 
 <? } ?>
-
-<!--
-<BR><BR><A HREF="ip_login.php">Login by IP (<? echo $_SERVER['REMOTE_ADDR']; ?>) to make a payment.</A>
--->
 
 <? include('elements/footer.php'); ?>
 
