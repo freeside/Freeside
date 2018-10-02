@@ -4,13 +4,15 @@ require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
 $ip = $_SERVER['REMOTE_ADDR'];
-
-$mac_addr = $freeside->get_mac_address( array('ip' => $ip, ) );
+# need a routine here to get mac address from radius account table based on ip address.  Every else should be good to go.
+$mac_addr = '1234567890FF';
 
 $response = $freeside->login( array( 
-  'username' => $mac_addr['mac_address'],
+  'username' => $mac_addr, 
   'domain'   => 'ip_mac',
 ) );
+
+#error_log("[login] received response from freeside: $response");
 
 $error = $response['error'];
 
