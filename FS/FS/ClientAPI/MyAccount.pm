@@ -106,7 +106,7 @@ sub skin_info {
   $p->{'agentnum'} = $agentnum;
 
   my $conf = new FS::Conf;
-  my $timeout = $conf->config('selfservice-session_timeout') || '1 hour';
+
   #false laziness w/Signup.pm
 
   my $skin_info_cache_agent = _cache->get("skin_info_cache_agent$agentnum");
@@ -149,7 +149,7 @@ sub skin_info {
       'menu'  => _menu($domain,$menu),
     };
 
-    _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent, $timeout);
+    _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent);
 
   }
 
