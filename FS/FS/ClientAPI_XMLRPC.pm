@@ -228,7 +228,6 @@ sub ss2clientapi {
   'quotation_remove_pkg'      => 'MyAccount/quotation/quotation_remove_pkg',
   'quotation_order'           => 'MyAccount/quotation/quotation_order',
   'get_mac_address'           => 'MyAccount/get_mac_address',
-  'check_access'              => 'MyAccount/check_access',
 
   'freesideinc_service'       => 'Freeside/freesideinc_service',
   };
