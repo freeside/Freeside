@@ -3,7 +3,7 @@ package FS::cdr;
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $me
              $conf $cdr_prerate %cdr_prerate_cdrtypenums
-             $use_lrn $support_key
+             $use_lrn $support_key $max_duration
            );
 use Exporter;
 use List::Util qw(first min);
@@ -49,6 +49,8 @@ FS::UID->install_callback( sub {
 
   $support_key = $conf->config('support-key');
   $use_lrn = $conf->exists('cdr-lrn_lookup');
+
+  $max_duration = $conf->config('cdr-max_duration') || 0;
 
 });
 
@@ -649,6 +651,10 @@ sub rate_prefix {
   my $part_pkg = $opt{'part_pkg'} or return "No part_pkg specified";
   my $cust_pkg = $opt{'cust_pkg'};
 
+  ###
+  # (Directory assistance) rewriting
+  ###
+
   my $da_rewrote = 0;
   # this will result in those CDRs being marked as done... is that 
   # what we want?
@@ -663,6 +669,10 @@ sub rate_prefix {
     $self->dst('411');
     $da_rewrote = 1;
   }
+
+  ###
+  # Checks to see if the CDR is chargeable
+  ###
 
   my $reason = $part_pkg->check_chargable( $self,
                                            'da_rewrote'   => $da_rewrote,
@@ -698,6 +708,17 @@ sub rate_prefix {
                                                 $opt{'svcnum'},
                                               );
     }
+  }
+
+  my $rated_seconds = $part_pkg->option_cacheable('use_duration')
+                        ? $self->duration
+                        : $self->billsec;
+  if ( $max_duration > 0 && $rated_seconds > $max_duration ) {
+    return $self->set_status_and_rated_price(
+      'failed',
+      '',
+      $opt{'svcnum'},
+    );
   }
 
   ###
@@ -872,9 +893,6 @@ sub rate_prefix {
   # We don't round _anything_ (except granularizing) 
   # until the final $charge = sprintf("%.2f"...).
 
-  my $rated_seconds = $part_pkg->option_cacheable('use_duration')
-                        ? $self->duration
-                        : $self->billsec;
   my $seconds_left = $rated_seconds;
 
   #no, do this later so it respects (group) included minutes
