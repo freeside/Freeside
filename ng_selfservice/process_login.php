@@ -3,13 +3,6 @@
 require('freeside.class.php');
 $freeside = new FreesideSelfService();
 
-$ip = $_SERVER['REMOTE_ADDR'];
-
-if ($_POST['domain'] == "ip_mac") {
-  $mac_addr = $freeside->get_mac_address( array('ip' => $ip, ) );
-  $_POST['username'] = $mac_addr['mac_address'];
-}
-
 $response = $freeside->login( array( 
   'email'    => strtolower($_POST['email']),
   'username' => strtolower($_POST['username']),
@@ -23,9 +16,9 @@ $error = $response['error'];
 
 if ( $error ) {
 
-  header('Location:index.php?username='. urlencode($_POST['username']).
-                           '&domain='.   urlencode($_POST['domain']).
-                           '&email='.    urlencode($_POST['email']).
+  header('Location:index.php?username='. urlencode($username).
+                           '&domain='.   urlencode($domain).
+                           '&email='.    urlencode($email).
                            '&error='.    urlencode($error)
         );
   die();
@@ -50,7 +43,7 @@ if ( $response['custnum'] || $response['svcnum'] ) {
   die();
 
 } elseif ( $response['customers'] ) {
-  //var_dump($response['customers']);
+var_dump($response['customers']);
 ?>
 
   <? $title ='Select customer'; include('elements/header.php'); ?>
