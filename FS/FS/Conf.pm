@@ -5512,6 +5512,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-max_duration',
+    'section'     => 'telephony',
+    'description' => 'If set, defines a global maximum billsec/duration for (prefix-based) call rating, in seconds.  Used with questionable/dirty CDR data that may contain bad records with long billsecs/durations.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'disable-cust-pkg_class',
     'section'     => 'UI',
     'description' => 'Disable the two-step dropdown for selecting package class and package, and return to the classic single dropdown.',
