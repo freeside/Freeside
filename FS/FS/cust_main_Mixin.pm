@@ -465,8 +465,7 @@ sub email_search_result {
       next; # unlinked object; nothing else we can do
     }
 
-    my %to = {};
-    if ($to) { $to{'to'} = $to; }
+    my %to = ( to => $to ) if $to;
 
     if ( $msg_template ) {
       # Now supports other context objects.
