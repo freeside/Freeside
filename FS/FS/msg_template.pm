@@ -239,7 +239,7 @@ Options are passed as a list of name/value pairs:
 
 =item cust_main
 
-Customer object
+Customer object (optional)
 
 =item object
 
@@ -280,13 +280,18 @@ sub prepare {
   my $cust_main = $opt{'cust_main'}; # or die 'cust_main required';
   my $object = $opt{'object'}; # or die 'object required';
 
-  # localization
-  my $locale = $cust_main->locale || '';
+  my $locale = $cust_main ? $cust_main->locale : '';
+
   warn "no locale for cust#".$cust_main->custnum."; using default content\n"
-    if $DEBUG and !$locale;
-  my $content = $self->content($cust_main->locale);
-  warn "preparing template '".$self->msgname."' to cust#".$cust_main->custnum."\n"
-    if($DEBUG);
+    if $DEBUG and $cust_main and !$locale;
+
+  my $content = $self->content( $locale );
+
+  warn sprintf(
+    "preparing template '%s' to cust#%s\n",
+    $self->msgname,
+    $cust_main ? $cust_main->custnum : 'none'
+  ) if $DEBUG;
 
   my $subs = $self->substitutions;
 
@@ -294,8 +299,11 @@ sub prepare {
   # create substitution table
   ###  
   my %hash;
-  my @objects = ($cust_main);
-  my @prefixes = ('');
+  my ( @objects, @prefixes );
+  if ( $cust_main ) {
+    @objects  = ( $cust_main );
+    @prefixes = ( '' );
+  }
   my $svc;
   if( ref $object ) {
     if( ref($object) eq 'ARRAY' ) {
@@ -407,11 +415,11 @@ sub prepare {
   my $from_addr = $self->from_addr;
 
   if ( !$from_addr ) {
+    my @agentnum = ( $cust_main->agentnum ) if $cust_main;
     if ( $opt{'from_config'} ) {
-      $from_addr = scalar( $conf->config($opt{'from_config'}, 
-                                         $cust_main->agentnum) );
+      $from_addr = scalar( $conf->config( $opt{'from_config'}, @agentnum ));
     }
-    $from_addr ||= $conf->invoice_from_full($cust_main->agentnum);
+    $from_addr ||= $conf->invoice_from_full( @agentnum );
   }
 #  my @cust_msg = ();
 #  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {
@@ -429,11 +437,11 @@ sub prepare {
                       ->format( HTML::TreeBuilder->new_from_content($body) )
                   );
   (
-    'custnum' => $cust_main->custnum,
-    'msgnum'  => $self->msgnum,
-    'from' => $from_addr,
-    'to'   => \@to,
-    'bcc'  => $self->bcc_addr || undef,
+    'custnum'   => $cust_main ? $cust_main->custnum : undef,
+    'msgnum'    => $self->msgnum,
+    'from'      => $from_addr,
+    'to'        => \@to,
+    'bcc'       => $self->bcc_addr || undef,
     'subject'   => $subject,
     'html_body' => $body,
     'text_body' => $text_body,
