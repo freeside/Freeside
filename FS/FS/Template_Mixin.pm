@@ -2486,7 +2486,7 @@ use CAM::PDF;
 use IO::Socket::SSL;
 use LWP::UserAgent;
 use HTTP::Request::Common qw( POST );
-use JSON::XS;
+use Cpanel::JSON::XS;
 use MIME::Base64;
 sub postal_mail_fsinc {
   my ( $self, %opt ) = @_;

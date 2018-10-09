@@ -29,7 +29,7 @@ use FS::rate_detail;
 use LWP::UserAgent;
 use HTTP::Request::Common qw(POST);
 use IO::Socket::SSL;
-use JSON::XS qw(decode_json);
+use Cpanel::JSON::XS;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker _cdr_date_parse );

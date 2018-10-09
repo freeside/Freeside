@@ -8,7 +8,7 @@ use Tie::IxHash;
 use IO::Socket::SSL;
 use LWP::UserAgent;
 use URI;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use HTTP::Request::Common qw(GET POST PUT DELETE);
 use FS::Misc::DateTime qw(parse_datetime);
 use DateTime;

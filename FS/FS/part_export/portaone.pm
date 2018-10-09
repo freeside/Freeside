@@ -5,7 +5,7 @@ use strict;
 use base qw( FS::part_export );
 
 use Date::Format 'time2str';
-use JSON::XS;
+use Cpanel::JSON::XS;
 use Net::HTTPS::Any qw(https_post);
 
 use FS::Conf;
