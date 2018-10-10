@@ -2,7 +2,7 @@ package FS::ClientAPI::MasonComponent;
 
 use strict;
 use vars qw( $cache $DEBUG $me );
-use subs qw( _cache );
+use subs qw( _cache _mason_comp );
 use FS::Mason qw( mason_interps );
 use FS::Conf;
 use FS::ClientAPI_SessionCache;
@@ -138,8 +138,27 @@ my( $fs_interp, $rt_interp ) = mason_interps('standalone', 'outbuf'=>\$outbuf);
 
 sub mason_comp {
   my $packet = shift;
+  my $me = 'mason_comp';
+  my $namespace = 'FS::ClientAPI::MyAccount';
 
-  warn "$me mason_comp called on $packet\n" if $DEBUG;
+  _mason_comp($packet, $me, $namespace);
+
+}
+
+sub payment_only_mason_comp {
+  my $packet = shift;
+  my $me = 'payment_only_mason_comp';
+  my $namespace = 'FS::ClientAPI::PaymentOnly';
+
+  _mason_comp($packet, $me, $namespace);
+}
+
+sub _mason_comp {
+  my $packet = shift;
+  my $me = shift;
+  my $namespace = shift;
+
+  warn "$me called on $packet\n" if $DEBUG;
 
   my $comp = $packet->{'comp'};
   unless ( $allowed_comps{$comp} || $session_comps{$comp} ) {
@@ -150,7 +169,7 @@ sub mason_comp {
 
   if ( $session_comps{$comp} ) {
 
-    my $session = _cache->get($packet->{'session_id'})
+    my $session = _cache($namespace)->get($packet->{'session_id'})
       or return ( 'error' => "Can't resume session" ); #better error message
     my $custnum = $session->{'custnum'};
 
@@ -175,8 +194,10 @@ sub mason_comp {
 
 #hmm
 sub _cache {
+  my $namespace = shift || 'FS::ClientAPI::MyAccount';
+
   $cache ||= new FS::ClientAPI_SessionCache( {
-               'namespace' => 'FS::ClientAPI::MyAccount',
+               'namespace' => $namespace,
              } );
 }
 

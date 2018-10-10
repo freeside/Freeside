@@ -50,6 +50,7 @@ our %typefix = (
   'invoice_pdf'          => { 'invoice_pdf' => 'base64', },
   'legacy_invoice_pdf'   => { 'invoice_pdf' => 'base64', },
   'skin_info'            => \%typefix_skin_info,
+  'payment_only_skin_info' => \%typefix_skin_info,
   'login_info'           => \%typefix_skin_info,
   'logout'               => \%typefix_skin_info,
   'access_info'          => \%typefix_skin_info,
@@ -215,6 +216,7 @@ sub ss2clientapi {
   'suspend_username'          => 'Agent/suspend_username',
   'unsuspend_username'        => 'Agent/unsuspend_username',
   'mason_comp'                => 'MasonComponent/mason_comp',
+  'payment_only_mason_comp'   => 'MasonComponent/payment_only_mason_comp',
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
@@ -227,6 +229,12 @@ sub ss2clientapi {
   'quotation_add_pkg'         => 'MyAccount/quotation/quotation_add_pkg',
   'quotation_remove_pkg'      => 'MyAccount/quotation/quotation_remove_pkg',
   'quotation_order'           => 'MyAccount/quotation/quotation_order',
+  'ip_login'                  => 'PaymentOnly/ip_login',
+  'ip_logout'                 => 'PaymentOnly/ip_logout',
+  'get_mac_address'           => 'PaymentOnly/get_mac_address',
+  'payment_only_skin_info'    => 'PaymentOnly/payment_only_skin_info',
+  'payment_only_payment_info' => 'PaymentOnly/payment_only_payment_info',
+  'payment_only_process_payment' => 'PaymentOnly/payment_only_process_payment',
 
   'freesideinc_service'       => 'Freeside/freesideinc_service',
   };

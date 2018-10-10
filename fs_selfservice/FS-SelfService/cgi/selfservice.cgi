@@ -284,7 +284,11 @@ sub change_bill {
   };
 }
 sub change_ship { change_bill(@_); }
-sub change_pay { change_bill(@_); }
+sub change_pay {
+  my @payby = ('CARD', 'CHEK', 'DCHK');
+  use MyLog; use Data::Dumper; MyLog->mylog("my change pay at\n".Dumper(@_));
+  change_bill(@_);
+}
 
 sub change_creditcard_pay { change_bill('CARD'); }
 sub change_check_pay { change_bill('CHEK'); }

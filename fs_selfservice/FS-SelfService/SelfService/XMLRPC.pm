@@ -45,6 +45,7 @@ our %typefix = (
   'invoice_pdf'          => { 'invoice_pdf' => 'base64', },
   'legacy_invoice_pdf'   => { 'invoice_pdf' => 'base64', },
   'skin_info'            => \%typefix_skin_info,
+  'payment_only_skin_info' => \%typefix_skin_info,
   'login_info'           => \%typefix_skin_info,
   'logout'               => \%typefix_skin_info,
   'access_info'          => \%typefix_skin_info,

@@ -68,7 +68,7 @@
     selected_layer => $payby,
 #    form_name => 'dummy',
 #    form_action => 'dummy.cgi',
-    layer_callback => sub { my $layer = shift; return '<TABLE BGCOLOR="#cccccc">'.$paybychecked{$layer}.qq!<INPUT TYPE="hidden" NAME="payby" VALUE="$layer">$tail!; },
+    layer_callback => sub { my $layer = shift; use MyLog; use Data::Dumper; MyLog->mylog("my layer $layer\n"); return '<TABLE BGCOLOR="#cccccc">'.$paybychecked{$layer}.qq!<INPUT TYPE="hidden" NAME="payby" VALUE="$layer">$tail!; },
   )->html;
 
 %>
