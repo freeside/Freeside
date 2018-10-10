@@ -38,7 +38,7 @@ use FS::cdr;
     # Number
     sub {
         my($cdr, $number) = @_;
-        $number =~ /(\+|)(\d+)\s(\d+)$/ 
+        $number =~ /(\+|)(\d+)\s([\d\*]+)$/ 
             or die "unparsable number: $number"; #maybe we shouldn't die...
         $cdr->dst("$1$2$3");
     },           
