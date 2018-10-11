@@ -33,12 +33,14 @@ foreach my $row ( map /^custnum(\d+)$/, keys %$param ) {
   $custnum = $cust_main->custnum if $cust_main;
   # if !$cust_main, then this will throw an error on batch_insert
 
+  my $_date = $param->{"_date$row"} ? parse_datetime($param->{"_date$row"}) : '';
+
   my $cust_pay = new FS::cust_pay {
                     'custnum'        => $custnum,
                     'paid'           => $param->{"paid$row"},
                     'payby'          => 'BILL',
                     'payinfo'        => $param->{"payinfo$row"},
-                    '_date'          => $param->{"_date$row"},
+                    '_date'          => $_date,
                     'discount_term'  => $param->{"discount_term$row"},
                     'paybatch'       => $paybatch,
                     'no_auto_apply'  => exists($param->{"no_auto_apply$row"}) ? 'Y' : '',
