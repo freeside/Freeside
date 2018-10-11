@@ -132,6 +132,8 @@ Example:
                                   # insert an Agent column (query needs to be a
                                   # qsearch hashref and header & fields need to
                                   # be defined)cust_pkg_susp.html
+    'agent_column'          => 'COALESCE( cust_main.agentnum, prospect_main.agentnum )',
+                                # Arbitrarily override the column used for agentvirt
 
     # sort, link & display properties for fields
 
@@ -281,6 +283,7 @@ if ( $opt{'agent_virt'} ) {
                         'null'       => $opt{'agent_null'},
                         'null_right' => $opt{'agent_null_right'},
                         'table'      => $query->{'table'},
+                        'column'     => $opt{'agent_column'},
                       );
 
   # this is ridiculous, but we do have searches where $query has constraints

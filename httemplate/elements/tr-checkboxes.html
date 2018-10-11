@@ -1,0 +1,19 @@
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD <% $style %>>
+    <% include('checkboxes.html', @_) %>
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>

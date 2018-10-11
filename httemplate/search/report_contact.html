@@ -1,4 +1,4 @@
-<& /elements/header.html, mt($title) &>
+<& /elements/header.html, mt('Contact Report') &>
 
 <FORM ACTION="contact.html" METHOD="GET">
 
@@ -11,15 +11,27 @@
   &>
 
   <& /elements/tr-select.html,
-       'label'      => 'Contact source', #??? not "type" - contacts have a type
-       'field'      => 'link',
+       'label'      => 'Contact source',
+       'field'      => 'contact_source',
        'options'    => [ 'prospect_main', 'cust_main', '' ],
        'labels'     => { 'prospect_main' => 'Prospect contacts',
                          'cust_main'     => 'Customer contacts',
                          ''              => 'All contacts',
                        },
-       'curr_value' => scalar( $cgi->param('link') ),
+       'curr_value' => scalar( $cgi->param('contact_source') ),
   &>
+
+% if ( FS::contact_class->count( 'disabled IS NULL' ) > 0 ) {
+  <& /elements/tr-checkboxes.html,
+    label => 'Contact Type',
+    names_list => [
+      [ 'null' => { label => 'None' } ],
+      map {[ $_->classnum => { label => $_->classname } ]}
+      qsearch( contact_class => { disabled => { op => '!=', value => 'Y' } })
+    ],
+    element_name_prefix => 'contact_classnum_',
+  &>
+% }
 
 </FORM>
 
@@ -36,8 +48,5 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
 
-my $conf = new FS::Conf;
-
-my $title = 'Contact Report';
-
+use FS::contact_class;
 </%init>
