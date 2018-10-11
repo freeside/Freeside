@@ -640,6 +640,7 @@ and probably should be cleaned up more before being used by anything else.
 
       var my_cell = document.createElement('TD');
       my_cell.setAttribute('align', '<% $align{ $opt{align}->[$col] || 'l' } %>');
+      my_cell.style.whiteSpace = 'nowrap';
 %     if ($opt{'color'}->[$col]) {
       my_cell.style.color = '<% $opt{color}->[$col] %>';
 %     }
@@ -667,6 +668,7 @@ and probably should be cleaned up more before being used by anything else.
       my_input_button.setAttribute('title', <% mt('Select date') |js_string %>);
       my_input_button.setAttribute('name', '<% $name %>'+thisrownum+'button');
       my_input_button.setAttribute('id',   '<% $name %>'+thisrownum+'button');
+      my_input_button.style.verticalAlign = 'top';
 %     }
       my_input.value = (values && values.<% $field %>) || '';
 %     if ( $opt{onchange}->[$col] ) {
@@ -732,7 +734,7 @@ and probably should be cleaned up more before being used by anything else.
   <TH>Customer</TH>
   <TH>Balance</TH>
 % foreach my $header ( @{$opt{header}} ) {
-    <TH><% $header %></TH>
+    <TH style="white-space: nowrap"><% $header %></TH>
 % }
 </TR>
 
