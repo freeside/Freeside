@@ -470,6 +470,7 @@ sub default_superuser_rights {
     'Void invoices',#people are overusing this when credits are more appropriate
     'Backdate credit',
     'View legacy typeset statments',
+    'Detach customer package',
   );
 
   no warnings 'uninitialized';
