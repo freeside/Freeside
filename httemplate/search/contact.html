@@ -1,69 +1,261 @@
 <& elements/search.html,
-  title         => 'Contacts',
-  name_singular => 'contact',
-  query         => { select    => $select,
-                     table     => 'contact',
-                     addl_from => $addl_from,
-                     hashref   => \%hash,
-                     extra_sql => $extra_sql,
-                   },
-  count_query   => "SELECT COUNT(*) FROM contact $extra_sql", #XXX
-  header        => \@header,
-  fields        => \@fields,
-  links         => \@links,
+  title            => 'Contacts',
+  name_singular    => 'contact',
+
+  query => {
+    select    => $select,
+    table     => 'contact',
+    addl_from => $addl_from,
+    hashref   => {},
+    extra_sql => $extra_sql,
+  },
+  count_query => "SELECT COUNT(*) FROM contact $addl_from $extra_sql",
+
+  header           => \@header,
+  fields           => \@fields,
+  links            => \@links,
+
+  agent_virt       => 1,
+  agent_column     => $agentnum_coalesce,
+  agent_pos        => 10,
+  agent_null_right => 'View customers of all agents',
+  agent_null_right_link => 'View customer',
+
 &>
+
+% if ( $DEBUG ) {
+  <pre>
+  SELECT <% $select %>
+  FROM contact
+  <% $addl_from %>
+  <% $extra_sql %>
+  ---
+  SELECT COUNT(*) FROM contact <% $addl_from %> <% $extra_sql %>
+  </pre>
+% }
+
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List contacts');
 
-my $select = 'contact.*';
-my %hash = ();
-my $addl_from = '';
+use FS::UID 'dbh';
+my $dbh = dbh;
 
-my @header = ( 'First', 'Last', 'Title', );
-my @fields = ( 'first', 'last', 'title', );
-my @links = ( '', '', '' );
+my $DEBUG = 0;
 
-my $company_link = '';
+my $format_phone_sub = sub {
 
-if ( $cgi->param('selfservice_access') eq 'Y' ) {
-  $hash{'selfservice_access'} = 'Y';
+  my $pn = $_[0] || return '';
+  $pn =~ s/\D//g;
+  my @pn = split //, $pn;
+
+  return sprintf(
+    '(%s) %s-%s',
+    join( '', @pn[0..2] ),
+    join( '', @pn[3..5] ),
+    join( '', @pn[6..9] )
+  ) if @pn == 10;
+
+  return sprintf(
+    '+%s (%s) %s-%s',
+    $pn[0],
+    join( '', @pn[1..3] ),
+    join( '', @pn[4..6] ),
+    join( '', @pn[7..10] )
+  ) if @pn == 11 && $pn[0] == 1;
+
+  encode_entities $_[0];
+};
+
+
+my @report = (
+
+  { # Column: First
+    select => 'contact.first',
+    fields => 'first',
+    header => 'First',
+    links  => undef,
+  },
+
+  { # Column: Last
+    select => 'contact.last',
+    fields => 'last',
+    header => 'Last',
+    links  => undef,
+  },
+
+  { # Column: Title
+    select => 'contact.title',
+    fields => 'title',
+    header => 'Title',
+    links  => undef,
+  },
+
+  { # Column: E-Mail
+    select => 'contact_email.emailaddress',
+    fields => 'emailaddress',
+    header => 'E-Mail',
+    links  => undef,
+  },
+
+  { # Column: Work Phone
+    select => '
+      ( SELECT contact_phone.phonenum
+        FROM contact_phone
+        WHERE contact.contactnum = contact_phone.contactnum
+          AND phonetypenum = 1
+      ) AS work_phone
+    ',
+    fields => sub { $format_phone_sub->( shift->work_phone ) },
+    header => 'Work Phone',
+    links  => undef,
+  },
+
+  { # Column: Mobile Phone
+    select => '
+      ( SELECT contact_phone.phonenum
+        FROM contact_phone
+        WHERE contact.contactnum = contact_phone.contactnum
+          AND phonetypenum = 3
+      ) AS mobile_phone
+    ',
+    fields => sub { $format_phone_sub->( shift->mobile_phone ) },
+    header => 'Mobile Phone',
+    links  => undef,
+  },
+
+  # Column: Home Phone
+  #  ( skipped, contact edit screen does not include this )
+
+  { # Column: Contact Type (contact_class)
+    select => 'contact_class.classname',
+    fields => 'classname',
+    header => 'Type',
+    links  => undef,
+  },
+
+  { # Column: Send invoices
+    select => 'cust_main.invoice_noemail',
+    fields => sub {
+      # Prospects cannot opt out (not implemented)
+      # Contacts cannot opt out, but the attached cust_main records can.
+      # Therefore, always YES unless cust_main record is opt-out
+      my $row = shift;
+      return 'No' if $row->invoice_noemail && $row->invoice_noemail eq 'Y';
+      'Yes';
+    },
+    header => 'Receive Invoices',
+    links  => undef,
+  },
+
+  { # Column: Send messages
+    select => 'cust_main.message_noemail',
+    fields => sub {
+      # Same as invoice_noemail, see above
+      my $row = shift;
+      return 'No' if $row->message_noemail && $row->message_noemail eq 'Y';
+      'Yes';
+    },
+    header => 'Receive Messages',
+    links  => undef,
+  },
+
+  { # Column: Customer
+    # The first of these with a value will be displayed:
+    #   1) cust_main.company
+    #   2) cust_main.first + cust_main.last
+    #   3) prospect_main.company
+    #   4) contact.first + contact.last
+    select => q{
+      cust_main.custnum,
+      prospect_main.prospectnum,
+      COALESCE (
+        cust_main.company,
+        prospect_main.company,
+        cust_main.first||' '||cust_main.last,
+        contact.first||' '||contact.last
+      ) as customer_name
+    },
+    fields => 'customer_name',
+    header => 'Customer',
+    links  => [
+      "${fsurl}view/",
+      sub {
+        my $row = shift;
+        $row->custnum
+        ? 'cust_main.cgi?'.$row->custnum
+        : 'prospect_main.html?'.$row->prospectnum
+      }
+    ],
+  },
+
+  # Column: Agent
+  # Inserted by search.html (hopefully)
+
+  { # Column: Self-service
+    select => 'contact.selfservice_access',
+    fields => sub { shift->selfservice_access eq 'Y' ? 'Yes' : 'No' },
+    header => 'Self-Service',
+    links  => undef,
+  },
+
+  { # Column: Comments
+    select => 'contact.comment',
+    fields => 'comment',
+    header => 'Comment',
+    links  => undef,
+  },
+);
+
+my $agentnum_coalesce = 'COALESCE( cust_main.agentnum, prospect_main.agentnum )';
+my @where;
+
+if ( scalar $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "$agentnum_coalesce = $1";
 }
 
-my $extra_sql = '';
-if ( $cgi->param('link') ) {
+if ( my $contact_source = scalar $cgi->param('contact_source') ) {
+  my $col = $contact_source eq 'prospect_main'
+          ? 'prospect_main.prospectnum'
+          : 'cust_main.custnum';
+  push @where, "$col IS NOT NULL"
+}
 
-  my $as       = ') AS prospect_or_customer';
-
-  if ( $cgi->param('link') eq 'cust_main' ) {
-    push @header, 'Customer';
-    $select .=
-      ", COALESCE( cust_main.company, cust_main.first||' '||cust_main.last $as";
-    $addl_from = ' LEFT JOIN cust_main USING ( custnum )';
-    $extra_sql = ' custnum IS NOT NULL ';
-    $company_link  = [ $p.'view/cust_main.cgi?', 'custnum' ];
-  } elsif ( $cgi->param('link') eq 'prospect_main' ) {
-    push @header, 'Prospect';
-    $select .=
-     ", COALESCE( prospect_main.company, contact.first||'  '||contact.last $as";
-    $addl_from = ' LEFT JOIN prospect_main USING ( prospectnum )';
-    $extra_sql = ' prospectnum IS NOT NULL ';
-    $company_link  = [ $p.'view/prospect_main.html?', 'prospectnum' ];
-  } else {
-    die "don't know how to report on contacts linked to specified table";
+# SQL to filter classnums is only invoked if at least one classnum
+# checkbox is selected
+if (
+  my @classnums = 
+    map{ /^contact_classnum_(null|\d+)$/ ? $1 : () }
+    $cgi->param
+) {
+  my @where_classnum;
+  for my $classnum ( @classnums ) {
+    push @where_classnum,
+      $classnum eq 'null'
+      ? ' contact.classnum IS NULL '
+      : sprintf( ' contact.classnum = %s ', $dbh->quote( $classnum ));
   }
-
-  #because right now its harder to show it for both kinds of contacts
-  push @fields, 'prospect_or_customer';
-  push @links, $company_link; 
-
+  push( @where,
+    sprintf(
+      ' ( %s ) ',
+      join( ' OR ', @where_classnum )
+    )
+  );
 }
 
-push @header, 'Self-service';
-push @fields, 'selfservice_access';
-
-$extra_sql = (keys(%hash) ? ' AND ' : ' WHERE '). $extra_sql
- if $extra_sql;
+my $select = join ', ', ( map{ $_->{select} } @report );
+my $addl_from = '
+  LEFT JOIN contact_email USING (contactnum)
+  LEFT JOIN cust_main USING (custnum)
+  LEFT JOIN prospect_main USING (prospectnum)
+  LEFT JOIN contact_class ON contact.classnum = contact_class.classnum
+';
+my $extra_sql = '';
+my @header = map{ $_->{header} } @report;
+my @fields = map{ $_->{fields} } @report;
+my @links  = map{ $_->{links}  } @report;
+my $extra_sql = 'WHERE ( ' . join( ' AND ', @where ) . ' ) '
+  if @where;
 
 </%init>

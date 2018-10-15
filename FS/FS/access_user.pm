@@ -397,6 +397,12 @@ user has the provided access right
 Optional table name in which agentnum is being checked.  Sometimes required to
 resolve 'column reference "agentnum" is ambiguous' errors.
 
+=item column
+
+Optional column name in which agentnum is being checked.
+
+e.g: column => 'COALESCE ( cust_main.agentnum, prospect_main.agentnum )'
+
 =item viewall_right
 
 All agents will be viewable if the current user has the provided access right.
@@ -410,7 +416,14 @@ sub agentnums_sql {
   my( $self ) = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
-  my $agentnum = $opt{'table'} ? $opt{'table'}.'.agentnum' : 'agentnum';
+  my $agentnum;
+  if ( $opt{column} ) {
+    $agentnum = $opt{column};
+  } elsif ( $opt{table} ) {
+    $agentnum = "$opt{table}.agentnum"
+  } else {
+    $agentnum = 'agentnum';
+  }
 
   my @or = ();
 
