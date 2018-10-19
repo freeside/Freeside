@@ -289,6 +289,11 @@ the individual PARAMS_HASHREF queries
 #regular FS::TABLE methods
 #on it.
 
+C<$FS::Record::qsearch_qualify_columns> package global is disabled by default.
+When enabled, the WHERE clause generated from the 'hashref' parameter has
+the table name prepended to each column name. WHERE column = 'value' becomes
+WHERE table.coumn = 'value'
+
 =cut
 
 my %TYPE = (); #for debugging
