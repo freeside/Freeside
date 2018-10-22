@@ -49,6 +49,7 @@ tie my %tables, 'Tie::IxHash',
   #? it gets provisioned anyway 'phone_avail'         => 'Phone',
   'cust_tag'          => 'Tag',
   'contact'           => 'Contact',
+  'cust_contact'      => 'Contact',
 ;
 
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
@@ -69,7 +70,6 @@ my %table_join = (
   'radius_usergroup' => $svc_join,
   'phone_device'     => $svc_join,
   'cust_pkg_discount'=> $pkg_join,
-  'contact'          => "JOIN cust_contact USING ( contactnum )",
 );
 
 %table_join = (%table_join, map { $_ => $svc_join } @svc_tables);
@@ -147,16 +147,59 @@ my $extra_sql = ' AND custnum = '. $cust_main->custnum;
 
 my %foundsvcs;
 foreach my $table ( keys %tables ) {
-  $extra_sql = ' AND cust_contact.custnum = '. $cust_main->custnum if $table eq 'contact';
-  my @items = qsearch({
-    'table'     => "h_$table",
-    'addl_from' => $table_join{$table},
-    'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than }, },
-    'extra_sql' => $extra_sql,
-  });
-  %foundsvcs = (%foundsvcs, map { $_->svcnum => 1 } @items)
-    if $table =~ /^svc/;
-  push @history, @items;
+  if ($table eq 'cust_contact') { next; } #skip as dont need to search table but hack to show contact name
+  elsif ($table eq 'contact') {
+
+    my $contact_addl_from = "
+      INNER JOIN (select contactnum, min(history_date) as min_history_date, max(history_date) as max_history_date FROM h_cust_contact WHERE custnum = ".$cust_main->custnum." AND history_date >= $newer_than GROUP BY contactnum) a ON h_cust_contact.contactnum = a.contactnum
+    ";
+
+    ## get list with add and remove dates of contacts for customer
+    my @h_cust_contacts = qsearch({
+      'table' => "h_cust_contact",
+      'select' => "a.contactnum, a.min_history_date, a.max_history_date, history_action AS max_history_action",
+      'addl_from' => $contact_addl_from,
+      'extra_sql' => " WHERE history_date = a.max_history_date",
+    });
+
+    foreach my $c (@h_cust_contacts) {
+     my $max_date_sql;
+     $max_date_sql = " AND history_date <= ".$c->{Hash}->{max_history_date} if $c->{Hash}->{max_history_action} eq 'delete';
+
+     ## get history of contact while attached to customer
+     my @contact_history = qsearch({
+       'table'      => "h_contact",
+       'hashref'    => {
+          'history_date' =>  { op=>'>=', value=>$c->{Hash}->{min_history_date} },
+          'contactnum'   => $c->{Hash}->{contactnum},
+        },
+        'extra_sql' => $max_date_sql,
+     });
+
+     ## get history of customer specific changes to contact.
+     my @cust_contact_history = qsearch({
+       'table'     => "h_cust_contact",
+       'hashref'   => {
+          'history_date' =>  { op=>'>=', value=>$c->{Hash}->{min_history_date} },
+          'contactnum'   => $c->{Hash}->{contactnum},
+          'custnum'      => $cust_main->custnum,
+        },
+     });
+
+     push @history, @contact_history; push @history, @cust_contact_history;
+    }
+  }
+  else {
+    my @items = qsearch({
+      'table'     => "h_$table",
+      'addl_from' => $table_join{$table},
+      'hashref'   => { 'history_date' =>  { op=>'>=', value=>$newer_than }, },
+      'extra_sql' => $extra_sql,
+    });
+    %foundsvcs = (%foundsvcs, map { $_->svcnum => 1 } @items)
+      if $table =~ /^svc/;
+    push @history, @items;
+  }
 }
 
 ### Load svcs that are no longer linked (cust_svc has been deleted)

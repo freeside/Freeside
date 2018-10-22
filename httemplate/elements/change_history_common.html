@@ -53,6 +53,8 @@
 %     $description = &{ $h_table_descripsub{$item->table} }( $item, $tables{'cust_tag'} )
 %        if $single_cust && $h_table_descripsub{$item->table};
 %   } else {
+%     my @fields = $item->fields;
+%     push @fields, 'message_dest' if $item->table eq 'h_contact';
 %     $description = join(', ',
 %             map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
 %                                  ? 'N/A'
@@ -71,7 +73,7 @@
 %                      : ( $item->get($_) =~ /\S/ )
 %                  }
 %             grep { ! /^(history|custnum$)/i }
-%                  $item->fields
+%                  @fields
 %     );
 %     if ( $single_cust && $h_table_descripsub{$item->table} ) {
 %        $description = &{ $h_table_descripsub{$item->table} }( $item );
@@ -229,6 +231,7 @@ my %h_table_labelsub = (
   #'h_phone_device'
   #'h_cust_tag'      => $tag_labelsub,
   'h_contact'  => $contact_labelsub,
+  'h_cust_contact'  => $contact_labelsub,
 );
 
 my $tag_descripsub = sub {
