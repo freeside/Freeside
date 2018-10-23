@@ -41,8 +41,8 @@
     'unit_title',
     sub {
       return '' unless $_[0]->custnum;
-      return $_[0]->company if $_[0]->company;
-      return $_[0]->first.' '.$_[0]->last;
+      return encode_entities( $_[0]->company ) if $_[0]->company;
+      return encode_entities( $_[0]->first.' '.$_[0]->last );
     },
   ],
   links => [
