@@ -2912,18 +2912,9 @@ Check/untaint IPv4 or IPv6 address.
 
 sub ut_ip46 {
   my( $self, $field ) = @_;
-  my $ip_addr = $self->getfield( $field );
-
-  # strip user-entered leading 0's from IPv4 addresses
-  # Parsers like NetAddr::IP interpret them as octal instead of decimal
-  $ip_addr = join( '.', (
-        map{ int($_) }
-        split( /\./, $ip_addr )
-    )
-  ) if $ip_addr =~ /\./ && $ip_addr =~ /[\.^]0/;
-
-  my $ip = NetAddr::IP->new( $ip_addr )
-    or return "Illegal (IP address) $field: ".$self->getfield($field);
+  my $ip = NetAddr::IP->new(
+    $self->_ut_ip_strip_leading_zeros( $self->getfield( $field ) )
+  ) or return "Illegal (IP address) $field: ".$self->getfield($field);
   $self->setfield($field, lc($ip->addr));
   return '';
 }
@@ -2942,6 +2933,21 @@ sub ut_ip46n {
   }
   $self->ut_ip46($field);
 }
+
+sub _ut_ip_strip_leading_zeros {
+  # strip user-entered leading 0's from IP addresses
+  # so parsers like NetAddr::IP don't mangle the address
+  # e.g. NetAddr::IP converts 10.0.022.220 into 10.0.18.220
+
+  my ( $self, $ip ) = @_;
+
+  return join '.', map int, split /\./, $ip
+    if $ip
+    && $ip =~ /\./
+    && $ip =~ /[\.^]0/;
+  $ip;
+}
+
 
 =item ut_coord COLUMN [ LOWER [ UPPER ] ]
 
