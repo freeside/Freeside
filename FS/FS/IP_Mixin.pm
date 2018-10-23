@@ -94,14 +94,9 @@ sub ip_check {
     $self->ip_addr('');
   }
 
-  # strip user-entered leading 0's from IPv4 addresses
-  # Parsers like NetAddr::IP interpret them as octal instead of decimal
-  $self->ip_addr(
-    join( '.', (
-        map{ int($_) }
-        split( /\./, $self->ip_addr )
-    ))
-  ) if $self->ip_addr =~ /\./ && $self->ip_addr =~ /[\.^]0/;
+  # Will strip extraneous leading zeros from ip adddresses
+  # e.g. 10.0.022.220 corrected to 10.0.22.220
+  $self->ut_ip46n('ip_addr');
 
   if ( $self->ip_addr
        and !$self->router
