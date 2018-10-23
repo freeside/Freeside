@@ -151,7 +151,7 @@ foreach my $table ( keys %tables ) {
   elsif ($table eq 'contact') {
 
     my $contact_addl_from = "
-      INNER JOIN (select contactnum, min(history_date) as min_history_date, max(history_date) as max_history_date FROM h_cust_contact WHERE custnum = ".$cust_main->custnum." AND history_date >= $newer_than GROUP BY contactnum) a ON h_cust_contact.contactnum = a.contactnum
+      INNER JOIN (select contactnum, min(history_date) as min_history_date, max(history_date) as max_history_date, max(historynum) as max_historynum FROM h_cust_contact WHERE custnum = ".$cust_main->custnum." AND history_date >= $newer_than GROUP BY contactnum) a ON h_cust_contact.contactnum = a.contactnum
     ";
 
     ## get list with add and remove dates of contacts for customer
@@ -159,7 +159,7 @@ foreach my $table ( keys %tables ) {
       'table' => "h_cust_contact",
       'select' => "a.contactnum, a.min_history_date, a.max_history_date, history_action AS max_history_action",
       'addl_from' => $contact_addl_from,
-      'extra_sql' => " WHERE history_date = a.max_history_date",
+      'extra_sql' => " WHERE historynum = a.max_historynum",
     });
 
     foreach my $c (@h_cust_contacts) {
