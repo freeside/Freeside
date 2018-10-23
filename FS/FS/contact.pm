@@ -434,11 +434,12 @@ sub replace {
   my $prospectnum = $self->prospectnum;
   $self->prospectnum('');
   my $custnum = $self->custnum;
-  $self->custnum('');
+  $self->custnum(''); $old->custnum(''); # remove because now stored cust_contact
 
   my %link_hash = ();
   for (qw( classnum comment selfservice_access invoice_dest message_dest )) {
     $link_hash{$_} = $self->get($_);
+    $old->$_('');  ##remove values from old record, causes problem with history
     $self->$_('');
   }
 
