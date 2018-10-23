@@ -162,10 +162,10 @@ my %classname =
 
 # And now for something completly different:
 my @report = (
-  { label => 'First',  field => sub { shift->contact_first }},
-  { label => 'Last',   field => sub { shift->contact_last }},
-  { label => 'Title',  field => sub { shift->contact_title }},
-  { label => 'E-Mail', field => sub { shift->contact_email_emailaddress }},
+  { label => 'First',  field => sub { encode_entities shift->contact_first }},
+  { label => 'Last',   field => sub { encode_entities shift->contact_last }},
+  { label => 'Title',  field => sub { encode_entities shift->contact_title }},
+  { label => 'E-Mail', field => sub { encode_entities shift->contact_email_emailaddress }},
   { label => 'Work Phone',   field => $get_phone_sub->('Work') },
   { label => 'Mobile Phone', field => $get_phone_sub->('Mobile') },
   { label => 'Home Phone',   field => $get_phone_sub->('Home') },
@@ -204,10 +204,15 @@ my @report = (
     field => sub {
       my $rec = shift;
       if ($rec->prospect_contact_prospectnum) {
-        return $rec->contact_company
-          || $rec->contact_last.' '.$rec->contact_first;
+        return encode_entities(
+          $rec->contact_company
+          || $rec->contact_last.' '.$rec->contact_first
+        );
       }
-      $rec->cust_main_company || $rec->cust_main_last.' '.$rec->cust_main_first;
+      encode_entities(
+        $rec->cust_main_company
+        || $rec->cust_main_last.' '.$rec->cust_main_first
+      );
     }},
   { label => 'Self-service',
     field => sub {
@@ -218,9 +223,11 @@ my @report = (
   { label => 'Comment',
     field => sub {
       my $rec = shift;
-      $rec->prospect_contact_prospectnum
-      ? $rec->prospect_contact_comment
-      : $rec->cust_contact_comment;
+      encode_entities(
+        $rec->prospect_contact_prospectnum
+        ? $rec->prospect_contact_comment
+        : $rec->cust_contact_comment
+      );
     }},
 );
 
