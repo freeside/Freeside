@@ -72,7 +72,7 @@ sub do_action {
 
     my $reasonnum = $self->option('reasonnum');
 
-    my $desc = 'from invoice #'. $cust_bill->display_invnum .
+    my $desc = ' for customer #'.$cust_main->display_custnum.': '.$cust_main->name.' from invoice #'. $cust_bill->display_invnum .
                ' ('. time2str($date_format, $cust_bill->_date) . ')';
                # could also show custnum and pkgnums here?
     my $error = $sales_cust_main->credit(
