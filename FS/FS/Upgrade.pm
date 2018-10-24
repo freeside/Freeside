@@ -332,11 +332,14 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
+    #remap log levels
+    'log' => [],
+
     #fix whitespace - before cust_main
     'cust_location' => [],
 
-    #remap log levels
-    'log' => [],
+    #remove bad source_paynum before cust_main
+    'cust_refund' => [],
 
     #cust_main (tokenizes cards, remove paycvv from history, locations, cust_payby, etc)
     # (handles payinfo encryption/tokenization across all relevant tables)
@@ -401,7 +404,7 @@ sub upgrade_data {
     'cust_pkg' => [],
     #'cust_pkg_reason' => [],
     'cust_pkg_discount' => [],
-    'cust_refund' => [],
+    #'cust_refund' => [],
     'banned_pay' => [],
 
     #default namespace
