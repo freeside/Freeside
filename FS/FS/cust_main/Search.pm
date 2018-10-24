@@ -979,8 +979,9 @@ sub search {
 
     if ( @tagnums ) {
       if ( $params->{'all_tags'} ) {
+        my $exists = $params->{'all_tags'} eq 'all' ? 'exists' : 'not exists';
         foreach ( @tagnums ) {
-          push @where, 'exists(select 1 from cust_tag where '.
+          push @where, $exists.'(select 1 from cust_tag where '.
                        'cust_tag.custnum = cust_main.custnum and tagnum = '.
                        $_ . ')';
         }
