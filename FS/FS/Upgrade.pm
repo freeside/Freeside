@@ -373,7 +373,7 @@ sub upgrade_data {
   tie my %hash, 'Tie::IxHash', 
 
     #remap log levels
-	'log' => [],
+    'log' => [],
 
     #payby conditions to new ones
     'part_event_condition' => [],
@@ -387,6 +387,9 @@ sub upgrade_data {
     # need before cust_main tokenization upgrade,
     # blocks tokenization upgrade if deprecated features still in use
     'agent_payment_gateway' => [],
+
+    #remove bad source_paynum before cust_main
+    'cust_refund' => [],
 
     #cust_main (tokenizes cards, remove paycvv from history, locations, cust_payby, etc)
     # (handles payinfo encryption/tokenization across all relevant tables)
@@ -457,7 +460,7 @@ sub upgrade_data {
     'cust_pkg' => [],
     #'cust_pkg_reason' => [],
     'cust_pkg_discount' => [],
-    'cust_refund' => [],
+    #'cust_refund' => [],
     'banned_pay' => [],
 
     #paycardtype
