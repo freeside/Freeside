@@ -24,18 +24,18 @@
 % foreach my $prospect_contact ( $prospect_main->prospect_contact ) {
 %   my $contact = $prospect_contact->contact;
     <TR>
-      <TH ALIGN="right" VALIGN="top"><% $prospect_contact->contact_classname %> Contact</TH>
+      <TH ALIGN="right" VALIGN="top"><% $prospect_contact->contact_classname |h %> Contact</TH>
       <TD BGCOLOR="#FFFFFF">
-          <% $contact->line %><br>
+          <% $contact->line |h %><br>
           <table>
 %         for my $row ( $contact->contact_email ) {
-            <tr><th>E-Mail:</th><td><% $row->emailaddress %></td></tr>
+            <tr><th>E-Mail:</th><td><% $row->emailaddress |h %></td></tr>
 %         }
 %         for my $row ( $contact->contact_phone ) {
-            <tr><th><% $row->phone_type->typename %>:</th><td><% $row->phonenum_pretty %></td></tr>
+            <tr><th><% $row->phone_type->typename |h %>:</th><td><% $row->phonenum_pretty |h %></td></tr>
 %         }
 %         if ( $prospect_contact->comment ) {
-            <tr><th>Comment:</th><td><% $prospect_contact->comment %></td></tr>
+            <tr><th>Comment:</th><td><% $prospect_contact->comment |h %></td></tr>
 %         }
           </table>
       </TD>
