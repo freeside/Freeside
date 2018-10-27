@@ -39,8 +39,8 @@ Parameters:
             # Standard discount, not a waived setup fee
             my $discount = qsearchs('discount',{
                 discountnum => $_[0]->discountnum
-            });
-            return $discount->description;
+            }) || return 'Bad discountnum '.$_[0]->pkgdiscountnum;
+            return encode_entities $discount->description;
         } else {
             return 'Waive setup fee';
         }
@@ -53,7 +53,7 @@ Parameters:
             my $discount = qsearchs('discount',{
                 discountnum => $_[0]->discountnum
             });
-            return $discount->classname;
+            return encode_entities $discount->classname;
         } else {
             return 'n/a';
         }
