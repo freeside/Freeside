@@ -162,10 +162,10 @@ my %classname =
 
 # And now for something completly different:
 my @report = (
-  { label => 'First',  field => sub { encode_entities shift->contact_first }},
-  { label => 'Last',   field => sub { encode_entities shift->contact_last }},
-  { label => 'Title',  field => sub { encode_entities shift->contact_title }},
-  { label => 'E-Mail', field => sub { encode_entities shift->contact_email_emailaddress }},
+  { label => 'First',  field => 'contact_first' },
+  { label => 'Last',   field => 'contact_last'  },
+  { label => 'Title',  field => 'contact_title' },
+  { label => 'E-Mail', field => 'contact_email_emailaddress' },
   { label => 'Work Phone',   field => $get_phone_sub->('Work') },
   { label => 'Mobile Phone', field => $get_phone_sub->('Mobile') },
   { label => 'Home Phone',   field => $get_phone_sub->('Home') },
