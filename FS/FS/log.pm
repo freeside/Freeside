@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::UID qw( dbh driver_name );
+use FS::Log;
 use FS::log_context;
 use FS::log_email;
 use FS::upgrade_journal;
@@ -82,6 +83,7 @@ sub insert {
   my $self = shift;
   my $error = $self->SUPER::insert;
   return $error if $error;
+
   my $contexts = {};       # for quick checks when sending emails
   my $context_height = @_; # also for email check
   foreach ( @_ ) { # ordered from least to most specific
@@ -93,6 +95,7 @@ sub insert {
     return $error if $error;
     $contexts->{$_} = $context_height--;
   }
+
   foreach my $log_email (
     qsearch('log_email',
       {
@@ -113,11 +116,11 @@ sub insert {
       next;
     }
     my $emailerror = $msg_template->send(
-      'msgtype'       => 'admin',
-      'to'            => $log_email->to_addr,
+      'msgtype' => 'admin',
+      'to'      => $log_email->to_addr,
       'substitutions' => {
-        'loglevel'   => $FS::Log::LEVELS{$self->level}, # which has hopefully been loaded...
-        'logcontext' => $log_email->context, # use the one that triggered the email
+        'loglevel'   => $FS::Log::LEVELS{$self->level} || 'unknown',
+        'logcontext' => join(', ', keys( %$contexts )) || 'unknown',
         'logmessage' => $self->message,
       },
     );
