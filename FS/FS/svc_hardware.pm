@@ -237,9 +237,9 @@ sub _check_duplicate {
     }
   }
 
-  if ( $self->serialnum ) {
+  if ( $self->serial ) {
     my @dup_serial;
-    @dup_serial = $self->find_duplicates('global', 'typenum', 'serialnum');
+    @dup_serial = $self->find_duplicates('global', 'typenum', 'serial');
     if ( @dup_serial ) {
       return "Serial number in use (svcnum ".$dup_serial[0]->svcnum.")";
     }
