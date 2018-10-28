@@ -215,6 +215,40 @@ sub check {
   $self->SUPER::check;
 }
 
+sub _check_duplicate {
+  my $self = shift;
+
+  return '' unless $conf->exists('global_unique-svc_hardware');
+
+  $self->lock_table;
+
+  if ( $self->hw_addr ) {
+    my @dup_mac;
+    @dup_mac = $self->find_duplicates('global', 'hw_addr');
+    if ( @dup_mac ) {
+      return "MAC address in use (svcnum ".$dup_mac[0]->svcnum.")";
+    }
+  }
+
+  if ( $self->ip_addr ) {
+    my @dup_ip;
+    @dup_ip = $self->find_duplicates('global', 'ip_addr');
+    if ( @dup_ip ) {
+      return "IP address in use (svcnum ".$dup_ip[0]->svcnum.")";
+    }
+  }
+
+  if ( $self->serialnum ) {
+    my @dup_serial;
+    @dup_serial = $self->find_duplicates('global', 'typenum', 'serialnum');
+    if ( @dup_serial ) {
+      return "Serial number in use (svcnum ".$dup_serial[0]->svcnum.")";
+    }
+  }
+
+  '';
+}
+
 =item hardware_type
 
 Returns the L<FS::hardware_type> object associated with this installation.

@@ -3345,6 +3345,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'global_unique-svc_hardware',
+    'section'     => '',
+    'description' => 'Turn on duplicate checking for svc_hardware services.  Unique fields are IP address, hardware address, and serial number (per device type).',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_external-skip_manual',
     'section'     => 'UI',
     'description' => 'When provisioning svc_external services, skip manual entry of id and title fields in the UI.  Usually used in conjunction with an export that populates these fields (i.e. artera_turbo).',
