@@ -225,7 +225,7 @@ sub _check_duplicate {
     my @dup_mac;
     @dup_mac = $self->find_duplicates('global', 'hw_addr');
     if ( @dup_mac ) {
-      return "MAC address in use (svcnum ".$dup_mac[0]->svcnum.")";
+      return "Hardware address in use (svcnum ".$dup_mac[0]->svcnum.")";
     }
   }
 
