@@ -42,6 +42,9 @@ The following fields are currently supported:
 
 =item to_addr - who the email will be sent to (in addition to any bcc on the template)
 
+=item context_height - number of context stack levels to match against 
+(0 or null matches against full stack, 1 only matches lowest level context, 2 matches lowest two levels, etc.)
+
 =back
 
 =head1 METHODS
@@ -88,6 +91,7 @@ sub check {
     || $self->ut_number('min_level')
     || $self->ut_foreign_key('msgnum', 'msg_template', 'msgnum')
     || $self->ut_textn('to_addr')
+    || $self->ut_numbern('context_height')
   ;
   return $error if $error;
 

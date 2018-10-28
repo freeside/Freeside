@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::UID qw( dbh driver_name );
+use FS::Log;
 use FS::log_context;
 use FS::log_email;
 use FS::upgrade_journal;
@@ -81,18 +82,22 @@ Will send emails according to the conditions in L<FS::log_email>.
 sub insert {
   # not using process_o2m for this, because we don't have a web interface
   my $self = shift;
+
   my $error = $self->SUPER::insert;
   return $error if $error;
-  my $contexts = {}; #for quick checks when sending emails
-  foreach ( @_ ) {
+
+  my $contexts = {};
+  my $context_height = @_;
+  foreach ( @_ ) { # ordered from least to most specific
     my $context = FS::log_context->new({
         'lognum'  => $self->lognum,
         'context' => $_
     });
     $error = $context->insert;
     return $error if $error;
-    $contexts->{$_} = 1;
+    $contexts->{$_} = $context_height--;
   }
+
   foreach my $log_email (
     qsearch('log_email',
       {
@@ -104,19 +109,20 @@ sub insert {
       }
     )
   ) {
-    # shouldn't be a lot of these, so not packing this into the qsearch
+    # shouldn't be a lot of log_email records, so not packing these checks into the qsearch
     next if $log_email->context && !$contexts->{$log_email->context};
+    next if $log_email->context_height && ($contexts->{$log_email->context} > $log_email->context_height);
     my $msg_template = qsearchs('msg_template',{ 'msgnum' => $log_email->msgnum });
     unless ($msg_template) {
       warn "Could not send email when logging, could not load message template for logemailnum " . $log_email->logemailnum;
       next;
     }
     my $emailerror = $msg_template->send(
-      'msgtype'       => 'admin',
-      'to'            => $log_email->to_addr,
+      'msgtype' => 'admin',
+      'to'      => $log_email->to_addr,
       'substitutions' => {
-        'loglevel'   => $FS::Log::LEVELS{$self->level}, # which has hopefully been loaded...
-        'logcontext' => $log_email->context, # use the one that triggered the email
+        'loglevel'   => $FS::Log::LEVELS{$self->level} || 'unknown',
+        'logcontext' => join(', ', keys( %$contexts )) || 'unknown',
         'logmessage' => $self->message,
       },
     );

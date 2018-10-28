@@ -6,10 +6,7 @@
                         . $add_condition_link
                         . ' | '
                         . $system_log_link
-                        . '</P>'
-                        . '<SCRIPT>'
-                        . $areyousure
-                        . '</SCRIPT>',
+                        . '</P>',
      'query'         => $query,
      'count_query'   => $count_query,
      'header'      => [ '#',
@@ -43,6 +40,23 @@
 
    ) %>
 
+<script>
+  function areyousure_delete_log_email(logemailnum) {
+    if ( confirm( 'Delete log email condition #' + logemailnum )) {
+      <%
+        include(
+          '/elements/popup_link_onclick.html' => {
+            js_action   => qq( '${fsurl}/misc/delete-log_email.html?logemailnum=' + logemailnum ),
+            actionlabel => 'Delete log email condition',
+            nofalse     => 1,
+          }
+        )
+      %>
+      return;
+    }
+  }
+</script>
+
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -50,11 +64,7 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right([ 'View system logs', 'Configuration' ]);
 
-my $add_condition_link = include('/elements/popup_link.html',
-  'action' => $p.'edit/log_email.html?popup=1',
-  'label'  => 'Add log email condition',
-  'actionlabel' => 'Add log email condition',
-);
+my $add_condition_link = qq( <a href="${fsurl}edit/log_email.html">Add log email condition</a> );
 
 my $system_log_link = qq(<A HREF="${p}search/log.html">System Log</A>);
 
@@ -68,23 +78,9 @@ my $query = {
 my $count_query = "SELECT COUNT(*) FROM log_email";
 
 my $actions = sub {
-  my $log_email = shift;
-  my $logemailnum = $log_email->logemailnum;
+  my $logemailnum = shift->logemailnum;
   qq!<A HREF="javascript:areyousure_delete_log_email($logemailnum)">(delete)</A>!;
 };
-
-my $areyousure_onclick = include('/elements/popup_link_onclick.html',
-  'js_action' => q(') . $p . q(misc/delete-log_email.html?logemailnum=' + logemailnum),
-  'actionlabel' => 'Delete log email condition',
-);
-
-my $areyousure = <<EOF;
-function areyousure_delete_log_email(logemailnum) {
-  if (confirm('Are you sure you want to delete log email condition #'+logemailnum+'?')) {
-${areyousure_onclick}
-  }
-}
-EOF
 
 my $editlink = [ $p.'edit/log_email.html?logemailnum=', 'logemailnum' ];
 

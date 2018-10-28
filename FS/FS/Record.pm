@@ -289,6 +289,11 @@ the individual PARAMS_HASHREF queries
 #regular FS::TABLE methods
 #on it.
 
+C<$FS::Record::qsearch_qualify_columns> package global is disabled by default.
+When enabled, the WHERE clause generated from the 'hashref' parameter has
+the table name prepended to each column name. WHERE column = 'value' becomes
+WHERE table.coumn = 'value'
+
 =cut
 
 my %TYPE = (); #for debugging
@@ -2671,7 +2676,7 @@ sub ut_ip {
   $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
     or return "Illegal (IP address) $field: ". $self->getfield($field);
   for ( $1, $2, $3, $4 ) { return "Illegal (IP address) $field" if $_ > 255; }
-  $self->setfield($field, "$1.$2.$3.$4");
+  $self->setfield( $field, $self->_ut_ip_strip_leading_zeros( "$1.$2.$3.$4" ));
   '';
 }
 
@@ -2700,8 +2705,9 @@ Check/untaint IPv4 or IPv6 address.
 
 sub ut_ip46 {
   my( $self, $field ) = @_;
-  my $ip = NetAddr::IP->new($self->getfield($field))
-    or return "Illegal (IP address) $field: ".$self->getfield($field);
+  my $ip = NetAddr::IP->new(
+    $self->_ut_ip_strip_leading_zeros( $self->getfield($field) )
+  ) or return "Illegal (IP address) $field: ".$self->getfield($field);
   $self->setfield($field, lc($ip->addr));
   return '';
 }
@@ -2719,6 +2725,20 @@ sub ut_ip46n {
     return '';
   }
   $self->ut_ip46($field);
+}
+
+sub _ut_ip_strip_leading_zeros {
+  # strip user-entered leading 0's from IP addresses
+  # so parsers like NetAddr::IP don't mangle the address
+  # e.g. NetAddr::IP converts 10.0.022.220 into 10.0.18.220
+
+  my ( $self, $ip ) = @_;
+
+  return join '.', map int, split /\./, $ip
+    if $ip
+    && $ip =~ /\./
+    && $ip =~ /[\.^]0/;
+  $ip;
 }
 
 =item ut_coord COLUMN [ LOWER [ UPPER ] ]

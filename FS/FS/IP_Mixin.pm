@@ -94,6 +94,10 @@ sub ip_check {
     $self->ip_addr('');
   }
 
+  # Will strip extraneous leading zeros from ip adddresses
+  # e.g. 10.0.022.220 corrected to 10.0.22.220
+  $self->ut_ip46n('ip_addr');
+
   if ( $self->ip_addr
        and !$self->router
        and $self->conf->exists('auto_router') ) {
