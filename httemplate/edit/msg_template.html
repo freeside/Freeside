@@ -305,6 +305,11 @@ my %substitutions = (
     '$payinfo'        => 'Card/account# (masked)',
     '$payinfo_end'    => 'Card/account last 4 digits',
   ],
+  'system_log' => [
+    '$loglevel'   => 'Log event severity level',
+    '$logcontext' => 'Log event context',
+    '$logmessage' => 'Log event message text'
+  ],
 );
 
 tie my %sections, 'Tie::IxHash', (
@@ -319,6 +324,7 @@ tie my %sections, 'Tie::IxHash', (
 'svc_domain'=> 'Domain service fields',
 'svc_phone' => 'Phone service fields',
 'svc_broadband' => 'Broadband service fields',
+'system_log' => 'System log fields',
 );
 
 my $widget = new HTML::Widgets::SelectLayers(
