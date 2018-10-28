@@ -4134,7 +4134,7 @@ sub tables_hashref {
         'note',     'text',    'NULL',      '', '', '',
       ],
       'primary_key'  => 'svcnum',
-      'unique'       => [],
+      'unique'       => [ ['typenum', 'serial'], ['ip_addr'], ['hw_addr'] ],
       'index'        => [],
       'foreign_keys' => [
                           { columns    => [ 'svcnum' ],
@@ -6844,7 +6844,7 @@ sub tables_hashref {
         'mac_addr',  'varchar', 'NULL',      12, '', '', 
       ],
       'primary_key'  => 'svcnum',
-      'unique'       => [ ['serialnum'] , ['mac_addr'] ],
+      'unique'       => [ ['modelnum', 'serialnum'] , ['mac_addr'] ],
       'index'        => [],
       'foreign_keys' => [
                           { columns    => [ 'svcnum' ],
