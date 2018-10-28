@@ -195,12 +195,15 @@ my @report = (
       $rec->cust_contact_message_dest ? 'Y' : 'N';
     }},
   { label => 'Customer',
-    link  => sub {
-      my $rec = shift;
-      $rec->cust_main_custnum
-      ? ["${p}view/cust_main.cgi?", 'cust_main_custnum' ]
-      : ["${p}view/prospect_main.html?", 'prospect_main_prospectnum' ];
-    },
+    link => [
+      "${fsurl}view/",
+      sub {
+        my $row = shift;
+        $row->cust_contact_custnum
+        ? 'cust_main.cgi?'.$row->cust_contact_custnum
+        : 'prospect_main.html?'.$row->prospect_contact_prospectnum
+      }
+    ],
     field => sub {
       my $rec = shift;
       if ($rec->prospect_contact_prospectnum) {
