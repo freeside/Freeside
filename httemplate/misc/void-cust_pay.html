@@ -11,6 +11,9 @@
 <& /elements/error.html &>
 
 <P ALIGN="center"><B><% mt('Void this payment?') |h %></B>
+% if ( $cust_pay->payby =~ /^(CARD|CHEK)$/ ) {
+    <P ALIGN="center"><% mt('(Do not send anything to the payment gateway)') |h %>
+% }
 
 <FORM action="<% ${p} %>misc/void-cust_pay.html">
 <INPUT TYPE="hidden" NAME="paynum" VALUE="<% $paynum %>">
