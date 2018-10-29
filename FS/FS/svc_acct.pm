@@ -2103,14 +2103,16 @@ sub _op_usage {
   die "Can't update $column for svcnum". $self->svcnum
     if $rv == 0;
 
-  #$self->snapshot; #not necessary, we retain the old values
-  #create an object with the updated usage values
-  my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
-  #call exports
-  my $error = $new->replace($self);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Error replacing: $error";
+  if ( $conf->exists('radius-chillispot-max') ) {
+    #$self->snapshot; #not necessary, we retain the old values
+    #create an object with the updated usage values
+    my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
+    #call exports
+    my $error = $new->replace($self);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error replacing: $error";
+    }
   }
 
   #overlimit_action eq 'cancel' handling
@@ -2306,15 +2308,17 @@ sub set_usage {
     die "Can't update usage for svcnum ". $self->svcnum
       if $rv == 0;
   }
-
-  #$self->snapshot; #not necessary, we retain the old values
-  #create an object with the updated usage values
-  my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
-  local($FS::Record::nowarn_identical) = 1;
-  my $error = $new->replace($self); #call exports
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Error replacing: $error";
+  
+  if ( $conf->exists('radius-chillispot-max') ) {
+    #$self->snapshot; #not necessary, we retain the old values
+    #create an object with the updated usage values
+    my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
+    local($FS::Record::nowarn_identical) = 1;
+    my $error = $new->replace($self); #call exports
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error replacing: $error";
+    }
   }
 
   if ( $reset ) {
