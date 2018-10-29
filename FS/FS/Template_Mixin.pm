@@ -2268,7 +2268,7 @@ sub generate_email {
 
   if (!@text) {
 
-    if ( $conf->config($tc.'template') ) {
+    if ( $conf->exists($tc.'template') ) {
 
       warn "$me generating plain text invoice"
         if $DEBUG;
