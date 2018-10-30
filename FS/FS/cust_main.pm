@@ -2293,7 +2293,7 @@ Returns a list: an empty list on success or a list of errors.
 
 sub unsuspend {
   my $self = shift;
-  grep { ($_->get('setup')) && $_->unsuspend } $self->suspended_pkgs;
+  grep { ($_->get('setup')) && $_->unsuspend } $self->suspended_pkgs(@_);
 }
 
 =item release_hold
