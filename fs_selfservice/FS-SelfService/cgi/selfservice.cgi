@@ -306,8 +306,9 @@ sub process_change_ship {
 sub process_change_pay {
         my $postal = $cgi->param( 'postal_invoicing' );
         my $payby  = $cgi->param( 'payby' );
+        $cgi->param('paydate', $cgi->param('year') . '-' . $cgi->param('month') . '-01');
         my @list =
-          qw( payby payinfo payinfo1 payinfo2 month year payname
+          qw( payby payinfo payinfo1 payinfo2 month year paydate payname custpaybynum
               address1 address2 city county state zip country auto paytype
               paystate ss stateid stateid_state invoicing_list
             );
@@ -325,7 +326,11 @@ sub process_change_pay {
           };
         }
 
-        _process_change_info( 'change_pay', @list );
+        if (FS::SelfService->can('update_payby')) {
+          if ($cgi->param( 'custpaybynum' )) { _process_change_payby( 'change_pay', @list ); }
+          else { _process_insert_payby( 'change_pay', @list ); }
+        }
+        else { _process_change_info( 'change_pay', @list ); }
 }
 
 sub view_invoice {

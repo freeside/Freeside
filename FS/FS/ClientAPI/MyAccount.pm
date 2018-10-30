@@ -613,6 +613,7 @@ sub customer_info_short {
       $return{payinfo} = $cust_main->paymask;
       @return{'month', 'year'} = $cust_main->paydate_monthyear;
     }
+    else { delete $return{'payinfo'}; }
     
     my @invoicing_list = $cust_main->invoicing_list;
     $return{'invoicing_list'} =
