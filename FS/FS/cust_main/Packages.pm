@@ -570,16 +570,32 @@ sub sort_packages {
 
 }
 
-=item suspended_pkgs
+=item suspended_pkgs OPTION => VALUE ...
 
 Returns all suspended packages (see L<FS::cust_pkg>) for this customer.
+
+Currently supports one option, I<reason_type>, which if set to a typenum,
+limits the results to packages which were suspended for reasons of this type.
+(Does not currently work in scalar context; i.e. when just asking for a count.)
 
 =cut
 
 sub suspended_pkgs {
   my $self = shift;
-  return $self->num_suspended_pkgs unless wantarray;
-  grep { $_->susp } $self->ncancelled_pkgs;
+  my %opt = @_;
+
+  return $self->num_suspended_pkgs unless wantarray; #XXX opt in scalar context
+
+  my @pkgs = grep { $_->susp } $self->ncancelled_pkgs;
+
+  if ( $opt{reason_type} ) {
+    @pkgs = grep { my $r = $_->last_reason('susp');
+                   $r && $r->reason_type == $opt{reason_type};
+		 }
+              @pkgs;
+  }
+
+  @pkgs;
 }
 
 =item unsuspended_pkgs
