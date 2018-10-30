@@ -2205,6 +2205,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'unsuspend_reason_type',
+    'section'     => 'suspension',
+    'description' => 'If set, limits automatic unsuspension to packages which were suspended for this reason type.',
+    reason_type_options('S'),
+  },
+
+  {
     'key'         => 'unsuspend-always_adjust_next_bill_date',
     'section'     => 'billing',
     'description' => 'Global override that causes unsuspensions to always adjust the next bill date under any circumstances.  This is now controlled on a per-package bases - probably best not to use this option unless you are a legacy installation that requires this behaviour.',
