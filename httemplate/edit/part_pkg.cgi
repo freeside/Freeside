@@ -987,6 +987,14 @@ my $html_bottom = sub {
                      : $href->{$field}{'default'} ).
                  qq!">!;
   
+      } elsif ( $href->{$field}{'type'} eq 'textarea' ) {
+
+        $html .= qq!<TEXTAREA NAME="${layer}__$field">!.
+                 ( exists($options{$field})
+                     ? &$format($options{$field})
+                     : $href->{$field}{'default'} ).
+                 qq!</TEXTAREA>!;
+
       } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
   
         $html .= qq!<INPUT TYPE="checkbox" NAME="${layer}__$field" VALUE=1 !.
