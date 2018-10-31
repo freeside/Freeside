@@ -44,6 +44,7 @@ our @detail_cols = ( qw(amount format duration phonenum accountcode
                        'default' => '',
                      },
     'query' => { 'name' => 'SQL query',
+	         'type' => 'textarea',
                  'default' => '',
                },
 
