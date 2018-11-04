@@ -124,7 +124,9 @@ if ( $payby eq 'CHEK' ) {
 
   if ( defined $cust_main->dbdef_table->column('paycvv') ) {
     if ( length($cgi->param('paycvv') ) ) {
-      if ( cardtype($payinfo) eq 'American Express card' ) {
+      if ( $cgi->param('paycvv') =~ /^\*+$/ ) {
+        $paycvv = $cust_main->paycvv;
+      } elsif ( cardtype($payinfo) eq 'American Express card' ) {
         $cgi->param('paycvv') =~ /^(\d{4})$/
           or errorpage("CVV2 (CID) for American Express cards is four digits.");
         $paycvv = $1;

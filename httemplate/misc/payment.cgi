@@ -42,7 +42,7 @@
 %   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
 %   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
 %     $payinfo = $cust_main->paymask;
-%     $paycvv = $cust_main->paycvv;
+%     ( $paycvv = $cust_main->paycvv ) =~ s/./*/g;
 %     ( $month, $year ) = $cust_main->paydate_monthyear;
 %     $payname = $cust_main->payname if $cust_main->payname;
 %   } elsif ($disable_payauto_default) {
