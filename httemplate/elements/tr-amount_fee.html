@@ -8,7 +8,7 @@
                                 VALUE    = "<% $amount %>"
                                 SIZE     = 8
                                 STYLE    = "text-align:right;"
-%                               if ( $fee ) {
+%                               if ( $fee || $processing_fee) {
                                   onChange   = "amount_changed(this)"
                                   onKeyDown  = "amount_changed(this)"
                                   onKeyUp    = "amount_changed(this)"
@@ -32,7 +32,23 @@
     </TD>
   </TR>
 
-% if ( $fee ) {
+%        if ( $processing_fee ) {
+      <TR>
+        <TH ALIGN="right"><% mt('Processing fee') |h %></TH>
+        <TD>
+          <TABLE><TR>
+            <TD BGCOLOR="#ffffff">
+             <INPUT TYPE="checkbox" NAME="processing_fee" ID="processing_fee" VALUE="<% $processing_fee %>" onclick="<% $opt{prefix} %>process_fee_changed()">
+            </TD>
+            <TD>
+             Apply a processing fee of <% $processing_fee %> .</FONT>
+            </TD>
+          </TR></TABLE>
+        </TD>
+      </TR>
+%        }
+
+% if ($fee) {
 
     <SCRIPT TYPE="text/javascript">
 
@@ -55,6 +71,27 @@
 
 % }
 
+% if ($processing_fee) {
+
+    <SCRIPT TYPE="text/javascript">
+
+      function <% $opt{prefix} %>process_fee_changed(what) {
+
+        if (document.getElementById('processing_fee').checked == true) {
+          var amount = +document.getElementById('amount').value + +document.getElementById('processing_fee').value;
+          $('#amount').val(amount.toFixed(2));
+        }
+        else {
+          var amount = +document.getElementById('amount').value - +document.getElementById('processing_fee').value;
+          $('#amount').val(amount.toFixed(2));
+        }
+
+      }
+
+    </SCRIPT>
+
+% }
+
 <%init>
 
 my %opt = @_;
@@ -66,6 +103,7 @@ my $fee = '';
 my $fee_pkg = '';
 my $fee_display = '';
 my $fee_op = '';
+my $processing_fee = 0;
 
 if ( $opt{'process-pkgpart'}
      and ! $opt{'process-skip_first'} || $opt{'num_payments'}
@@ -96,6 +134,8 @@ if ( $amount > 0 ) {
 
   $amount += $opt{'surcharge_flatfee'}
     if $opt{'surcharge_flatfee'} > 0;
+
+  $processing_fee = $opt{'processing_fee'} if $opt{'processing_fee'} > 0;
 
   $amount = sprintf("%.2f", $amount);
 }

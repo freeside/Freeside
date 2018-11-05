@@ -374,8 +374,8 @@ sub realtime_bop {
   elsif($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0) {
     # we're called not from event (i.e. from a
     # payment screen), so consider the given
-		# amount as post-surcharge
-    $cc_surcharge = $options{'amount'} - (($options{'amount'} - $cc_surcharge_flat) / ( 1 + $cc_surcharge_pct/100 )) if $options{'amount'} > 0;
+		# amount as post-surcharge-processing_fee
+    $cc_surcharge = $options{'amount'} - $options{'processing-fee'} - (($options{'amount'} - ($cc_surcharge_flat + $options{'processing-fee'})) / ( 1 + $cc_surcharge_pct/100 )) if $options{'amount'} > 0;
   }
   
   $cc_surcharge = sprintf("%.2f",$cc_surcharge) if $cc_surcharge > 0;
@@ -979,7 +979,7 @@ sub _realtime_bop_result {
       }
 
       # have a CC surcharge portion --> one-time charge
-      if ( $options{'cc_surcharge'} > 0 ) { 
+      if ( $options{'cc_surcharge'} > 0 || $options{'processing-fee'} > 0) {
 	    # XXX: this whole block needs to be in a transaction?
 
 	  my $invnum;
@@ -1000,43 +1000,82 @@ sub _realtime_bop_result {
 	  unless ( $invnum ) {
 	    # XXX: unlikely case - pre-paying before any invoices generated
 	    # what it should do is create a new invoice and pick it
-		warn 'CC SURCHARGE AND NO INVOICES PICKED TO APPLY IT!';
+		warn 'CC SURCHARGE OR PROCESS FEE AND NO INVOICES PICKED TO APPLY IT!';
 		return '';
 	  }
 
-	  my $cust_pkg;
-    my $cc_surcharge_text = 'Credit Card Surcharge';
-    $cc_surcharge_text = $conf->config('credit-card-surcharge-text', $self->agentnum) if $conf->exists('credit-card-surcharge-text', $self->agentnum);
-	  my $charge_error = $self->charge({
+    if ($options{'cc_surcharge'} > 0) {
+	    my $cust_pkg;
+      my $cc_surcharge_text = 'Credit Card Surcharge';
+      $cc_surcharge_text = $conf->config('credit-card-surcharge-text', $self->agentnum) if $conf->exists('credit-card-surcharge-text', $self->agentnum);
+	    my $charge_error = $self->charge({
 				    'amount' 	=> $options{'cc_surcharge'},
 				    'pkg' 	=> $cc_surcharge_text,
 				    'setuptax'  => 'Y',
 				    'cust_pkg_ref' => \$cust_pkg,
-				});
-	  if($charge_error) {
-		warn 'Unable to add CC surcharge cust_pkg';
-		return '';
-	  }
+			});
 
-	  $cust_pkg->setup(time);
-	  my $cp_error = $cust_pkg->replace;
-	  if($cp_error) {
-	      warn 'Unable to set setup time on cust_pkg for cc surcharge';
-	    # but keep going...
-	  }
-				    
-	  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
-	  unless ( $cust_bill ) {
-	      warn "race condition + invoice deletion just happened";
-	      return '';
-	  }
+	    if($charge_error) {
+		    warn 'Unable to add CC surcharge cust_pkg';
+		    return '';
+	    }
 
-	  my $grand_error = 
-	    $cust_bill->add_cc_surcharge($cust_pkg->pkgnum,$options{'cc_surcharge'});
-
-	  warn "cannot add CC surcharge to invoice #$invnum: $grand_error"
-	    if $grand_error;
+      $cust_pkg->setup(time);
+      my $cp_error = $cust_pkg->replace;
+      if($cp_error) {
+        warn 'Unable to set setup time on cust_pkg for cc surcharge';
+        # but keep going...
       }
+
+      my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+      unless ( $cust_bill ) {
+        warn "race condition + invoice deletion just happened";
+        return '';
+      }
+
+      my $grand_error =
+        $cust_bill->add_cc_surcharge($cust_pkg->pkgnum,$options{'cc_surcharge'});
+
+      warn "cannot add CC surcharge to invoice #$invnum: $grand_error"
+        if $grand_error;
+    } # end if $options{'cc_surcharge'}
+
+    if ($options{'processing-fee'} > 0) {
+      my $pf_cust_pkg;
+      my $processing_fee_text = 'Payment Processing Fee';
+      my $pf_change_error = $self->charge({
+            'amount'  => $options{'processing-fee'},
+            'pkg'   => $processing_fee_text,
+            'setuptax'  => 'Y',
+            'cust_pkg_ref' => \$pf_cust_pkg,
+      });
+
+      if($pf_change_error) {
+        warn 'Unable to add payment processing fee';
+        return '';
+      }
+
+      $pf_cust_pkg->setup(time);
+      my $pf_error = $pf_cust_pkg->replace;
+      if($pf_error) {
+        warn 'Unable to set setup time on cust_pkg for processing fee';
+        # but keep going...
+      }
+
+      my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+      unless ( $cust_bill ) {
+        warn "race condition + invoice deletion just happened";
+        return '';
+      }
+
+      my $grand_pf_error =
+        $cust_bill->add_cc_surcharge($pf_cust_pkg->pkgnum,$options{'processing-fee'});
+
+      warn "cannot add Processing fee to invoice #$invnum: $grand_pf_error"
+        if $grand_pf_error;
+    } #end if $options{'processing-fee'}
+
+      } #end if ( $options{'cc_surcharge'} > 0 || $options{'processing-fee'} > 0)
 
       return ''; #no error
 

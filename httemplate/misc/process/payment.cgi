@@ -32,6 +32,8 @@ my $custnum = $1;
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
 die "unknown custnum $custnum" unless $cust_main;
 
+my $processing_fee = $cgi->param('processing_fee') ? $cgi->param('processing_fee') : '';
+
 $cgi->param('amount') =~ /^\s*(\d*(\.\d\d)?)\s*$/
   or errorpage("illegal amount ". $cgi->param('amount'));
 my $amount = $1;
@@ -204,6 +206,7 @@ if ( $cgi->param('batch') ) {
                                      'payinfo'  => $payinfo,
                                      'paydate'  => "$year-$month-01",
                                      'payname'  => $payname,
+                                     'processing-fee' => $processing_fee,
                                      map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}
                                    );
@@ -225,6 +228,7 @@ if ( $cgi->param('batch') ) {
     'discount_term' => $discount_term,
     'no_auto_apply' => ($cgi->param('apply') eq 'never') ? 'Y' : '',
     'no_invnum'     => 1,
+    'processing-fee' => $processing_fee,
     map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;

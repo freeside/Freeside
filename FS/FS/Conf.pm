@@ -2837,6 +2837,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'processing-fee',
+    'section'     => 'billing',
+    'description' => 'Fee for back end payment processing.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'payby-default',
     'section'     => 'UI',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
