@@ -162,6 +162,41 @@ sub batch_card {
     return $error; # e.g. "Illegal zip" ala RT#75998
   }
 
+  if ($options{'processing-fee'} > 0) {
+    my $pf_cust_pkg;
+    my $processing_fee_text = 'Payment Processing Fee';
+    my $pf_change_error = $self->charge({
+            'amount'  => $options{'processing-fee'},
+            'pkg'   => $processing_fee_text,
+            'setuptax'  => 'Y',
+            'cust_pkg_ref' => \$pf_cust_pkg,
+    });
+
+    if($pf_change_error) {
+      warn 'Unable to add payment processing fee';
+      return '';
+    }
+
+    $pf_cust_pkg->setup(time);
+    my $pf_error = $pf_cust_pkg->replace;
+    if($pf_error) {
+      warn 'Unable to set setup time on cust_pkg for processing fee';
+      # but keep going...
+    }
+
+    my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+    unless ( $cust_bill ) {
+      warn "race condition + invoice deletion just happened";
+      return '';
+    }
+
+    my $grand_pf_error =
+      $cust_bill->add_cc_surcharge($pf_cust_pkg->pkgnum,$options{'processing-fee'});
+
+    warn "cannot add Processing fee to invoice #$invnum: $grand_pf_error"
+      if $grand_pf_error;
+  }
+
   my $unapplied =   $self->total_unapplied_credits
                   + $self->total_unapplied_payments
                   + $self->in_transit_payments;

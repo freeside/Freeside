@@ -22,6 +22,7 @@ Example:
           ? scalar($conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum))
           : 0
       ),
+    'processing_fee' => scalar($conf->config('processing-fee', $cust_main->agentnum)),
   )
 
 </%doc>
@@ -59,6 +60,7 @@ Example:
 
       $('#payment_option_row').<% $payment_option_row %>();
       $('#payment_amount_row').<% $payment_amount_row %>();
+      $('#ajax_processingfee_cell').hide();
 
       if($('#payment_amount_row').is(':visible')) {
         var surcharge;
@@ -76,11 +78,21 @@ Example:
       function <% $opt{prefix} %>payment_option_changed(what) {
 
         var surcharge;
+        var processingFee = 0;
+        var pfElement = document.getElementById('processing_fee');
+
         if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_flatfee')) {
           surcharge = (+what.value * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
         }
         else { surcharge = 0; }
-        var amount = +what.value + +surcharge;
+
+        if (pfElement != null) {
+          if (pfElement.checked == true) {
+           processingFee = +pfElement.value;
+          }
+        }
+
+        var amount = +what.value + +surcharge + +processingFee;
         document.getElementById('amount').disabled = true;
 
         if ( what.value == 'select' ) {
@@ -131,12 +143,21 @@ Example:
       function <% $opt{prefix} %>invoice_select_changed(what) {
 
         var surcharge;
+        var processingFee = 0;
+        var pfElement = document.getElementById('processing_fee');
         var invdue = document.getElementById("<% $opt{prefix} %>inv" + what.value);
         if (document.getElementById('surcharge_percentage') || document.getElementById('surcharge_flatfee')) {
           surcharge = (+invdue.value * +document.getElementById('surcharge_percentage').value) + +document.getElementById('surcharge_flatfee').value;
         }
         else { surcharge = 0; }
-        var amount = +invdue.value + +surcharge;
+
+        if (pfElement != null) {
+          if (pfElement.checked == true) {
+           processingFee = +pfElement.value;
+          }
+        }
+
+        var amount = +invdue.value + +surcharge + +processingFee;
 
         if ( what.value == 'select' ) {
           $('#payment_amount_row').hide();
@@ -150,6 +171,21 @@ Example:
           if (document.getElementById('ajax_surcharge_cell')) {
             document.getElementById('ajax_surcharge_cell').innerHTML = '<FONT SIZE="+1">A credit card surcharge of <% $money_char %>' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
           }
+        }
+
+      }
+
+      function <% $opt{prefix} %>process_fee_changed(what) {
+
+        if (document.getElementById('processing_fee').checked == true) {
+          var amount = +document.getElementById('amount').value + +document.getElementById('processing_fee').value;
+          $('#amount').val(amount.toFixed(2));
+          $('#ajax_processingfee_cell').show();
+        }
+        else {
+          var amount = +document.getElementById('amount').value - +document.getElementById('processing_fee').value;
+          $('#amount').val(amount.toFixed(2));
+          $('#ajax_processingfee_cell').hide();
         }
 
       }

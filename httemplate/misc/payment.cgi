@@ -29,6 +29,7 @@
              ? scalar($conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum))
              : 0
          ),
+         'processing_fee' => scalar($conf->config('processing-fee', $cust_main->agentnum)),
   &>
 
 % if ( $conf->exists('part_pkg-term_discounts') ) {

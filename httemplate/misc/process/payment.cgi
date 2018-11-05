@@ -41,6 +41,8 @@ my $cust_main = qsearchs({
 
 my $invoice = ($cgi->param('invoice') =~ /^(\d+)$/) ? $cgi->param('invoice') : '';
 
+my $processing_fee = $cgi->param('processing_fee') ? $cgi->param('processing_fee') : '';
+
 $cgi->param('amount') =~ /^\s*(\d*(\.\d\d)?)\s*$/
   or errorpage("illegal amount ". $cgi->param('amount'));
 my $amount = $1;
@@ -233,6 +235,7 @@ if ( $cgi->param('batch') ) {
                                      'paydate'  => $paydate,
                                      'payname'  => $payname,
                                      'invnum'   => $invoice,
+                                     'processing-fee' => $processing_fee,
                                      map { $_ => scalar($cgi->param($_)) } 
                                        @{$payby2fields{$payby}}
                                    );
@@ -256,6 +259,7 @@ if ( $cgi->param('batch') ) {
     'no_auto_apply' => ($cgi->param('apply') eq 'never') ? 'Y' : '',
     'no_invnum'     => 1,
     'invnum'        => $invoice,
+    'processing-fee' => $processing_fee,
     map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;
