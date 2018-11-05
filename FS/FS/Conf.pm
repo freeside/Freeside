@@ -2654,6 +2654,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'processing-fee',
+    'section'     => 'payments',
+    'description' => 'Fee for back end payment processing.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'banned_pay-pad',
     'section'     => 'credit_cards',
     'description' => 'Padding for encrypted storage of banned credit card hashes.  If you already have new-style SHA512 entries in the banned_pay table, do not change as this will invalidate the old entries.',

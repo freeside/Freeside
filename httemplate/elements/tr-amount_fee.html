@@ -8,7 +8,7 @@
                                 VALUE    = "<% $amount %>"
                                 SIZE     = 8
                                 STYLE    = "text-align:right;"
-%                               if ( $fee || $surcharge_percentage || $surcharge_flatfee ) {
+%                               if ( $fee || $surcharge_percentage || $surcharge_flatfee || $processing_fee) {
                                   onChange   = "amount_changed(this)"
                                   onKeyDown  = "amount_changed(this)"
                                   onKeyUp    = "amount_changed(this)"
@@ -38,7 +38,23 @@
     </TD>
   </TR>
 
-% if ($fee || $surcharge_percentage || $surcharge_flatfee ) {
+%        if ( $processing_fee ) {
+      <TR>
+        <TH ALIGN="right"><% mt('Apply processing fee') |h %></TH>
+        <TD>
+          <TABLE><TR>
+            <TD BGCOLOR="#ffffff">
+             <INPUT TYPE="checkbox" NAME="processing_fee" ID="processing_fee" VALUE="<% $processing_fee %>" onclick="<% $opt{prefix} %>process_fee_changed()">
+            </TD>
+            <TD ID="ajax_processingfee_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
+             <FONT SIZE="+1">A processing fee of <% $processing_fee %> is being applied to this transaction.</FONT>
+            </TD>
+          </TR></TABLE>
+        </TD>
+      </TR>
+%        }
+
+% if ($fee || $surcharge_percentage || $surcharge_flatfee || $processing_fee) {
 
     <SCRIPT TYPE="text/javascript">
 
@@ -58,6 +74,10 @@
 
 % if ( $surcharge_percentage || $surcharge_flatfee ) {
         var surcharge_cell = document.getElementById('ajax_surcharge_cell');
+        var amount = what.value;
+        if (document.getElementById('processing_fee').checked == true) {
+          amount = (what.value - <% $processing_fee %>);
+        }
         var surcharge = ((what.value - <% $surcharge_flatfee %>) * <% $surcharge_percentage %>) + <% $surcharge_flatfee %>;
         surcharge_cell.innerHTML = '<FONT SIZE="+1">A credit card surcharge of ' + surcharge.toFixed(2) + ' is included in this payment</FONT>';
 % }
@@ -82,6 +102,7 @@ my $fee_op = '';
 my $surcharge = '';
 my $surcharge_percentage = 0;
 my $surcharge_flatfee = 0;
+my $processing_fee = 0;
 
 if ( $opt{'process-pkgpart'}
      and ! $opt{'process-skip_first'} || $opt{'num_payments'}
@@ -115,6 +136,7 @@ if ( $amount ) {
   $surcharge_flatfee = $opt{'surcharge_flatfee'} if $opt{'surcharge_flatfee'} > 0;
   $surcharge = $amount * $surcharge_percentage if $surcharge_percentage > 0;
   $surcharge += $surcharge_flatfee if ( $surcharge_flatfee > 0 && $amount > 0 );
+  $processing_fee = $opt{'processing_fee'} if $opt{'processing_fee'} > 0;
 
   $amount += $surcharge;
 
