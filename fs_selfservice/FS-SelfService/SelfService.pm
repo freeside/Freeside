@@ -1120,23 +1120,23 @@ Package Number
 
 Returns a hash reference containing customer package information.  The hash reference contains the following keys:
 
-=pkg_label
+=over 4
+
+=item pkg_label
 
 Name of this package
 
-=pkgpart
+=item pkgpart
 
 Part package primary key
 
-=classnum
+=item classnum
 
 Package class number
 
-=error
+=item error
 
 error message if errror.
-
-=back
 
 =back
 
