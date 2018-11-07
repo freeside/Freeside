@@ -55,6 +55,17 @@ if ( $error ) {
 
 my( $cust_pay, $cust_payby, $payinfo, $paycvv, $month, $year, $payname );
 my $paymask = '';
+
+## get cust pay info if paynum exists
+if ( $cgi->param('paynum') > 0) {
+  $cust_pay = qsearchs({
+    'table'     => 'cust_pay',
+    'hashref'   => { 'paynum' => $cgi->param('paynum') },
+    'select'    => 'cust_pay.*, cust_pay_batch.payname ',
+    'addl_from' => "left join cust_pay_batch on cust_pay_batch.batchnum = cust_pay.batchnum and cust_pay_batch.custnum = $custnum ",
+  });
+}
+
 if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
   ##
@@ -75,12 +86,6 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 
 } elsif ( $cgi->param('paynum') > 0) {
 
-  $cust_pay = qsearchs({
-    'table'     => 'cust_pay',
-    'hashref'   => { 'paynum' => $cgi->param('paynum') },
-    'select'    => 'cust_pay.*, cust_pay_batch.payname ',
-    'addl_from' => "left join cust_pay_batch on cust_pay_batch.batchnum = cust_pay.batchnum and cust_pay_batch.custnum = $custnum ",
-  });
   $payinfo = $cust_pay->payinfo;
   $payname = $cust_pay->payname;
 
@@ -227,6 +232,15 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     my %hash = map {
       $_, scalar($cgi->param($_))
     } fields('cust_refund');
+
+    ## unapply payment before creating refund.
+    while ( $cust_pay && $cust_pay->unapplied < $refund ) {
+      my @cust_bill_pay = $cust_pay->cust_bill_pay;
+      last unless @cust_bill_pay;
+      my $cust_bill_pay = pop @cust_bill_pay;
+      my $error = $cust_bill_pay->delete;
+      last if $error;
+    }
 
     my $new = new FS::cust_refund ( { 'paynum' => $paynum,
                                       %hash,
