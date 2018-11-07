@@ -44,10 +44,14 @@
     <TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff"><% time2str($date_format, $cust_pay->_date) %></TD>
   </TR>
 
+% if ( $cust_payby ) {
   <TR>
-    <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% $payby %> # <% $paymask %></TD>
-    <INPUT TYPE="hidden" NAME="custpaybynum" VALUE="<% $cust_payby->custpaybynum %>">
+    <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff">
+      <% $payby %> # <% $paymask %>
+      <INPUT TYPE="hidden" NAME="custpaybynum" VALUE="<% $cust_payby->custpaybynum %>">
+    </TD>
   </TR>
+% }
 
 % unless ( $paydate || $cust_pay->payby ne 'CARD' ) {  # possibly other reasons: i.e. card has since expired
   <TR>
@@ -134,10 +138,7 @@
 %                      ? scalar($cgi->param('custpaybynum'))
 %                      : scalar(@cust_payby) && $cust_payby[0]->custpaybynum;
 
-% if ($cust_pay) {
-  <INPUT TYPE="hidden" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10>
-% }
-% else {
+% if ( !$cust_payby ) {
   <& /elements/tr-select-cust_payby.html,
      'cust_payby' => \@cust_payby,
      'curr_value' => $custpaybynum,
@@ -161,7 +162,7 @@
     </TABLE>
 <P>
 
-%   if ( !$cust_pay ) {
+%   if ( !$cust_payby ) {
 <DIV ID="cust_payby"
   <% $custpaybynum ? 'STYLE="display:none"'
                    : ''
@@ -176,7 +177,7 @@
 
 </TABLE>
 </DIV>
-%   } # end if cust_pay
+%   } # end if cust_payby
 
 %  } else {
     <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
@@ -234,10 +235,10 @@ if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
       unless $custnum == $cust_pay->custnum;
   } else {
     $custnum = $cust_pay->custnum;
+    $cgi->param(-name=>"custnum", -value=>$custnum) unless $cgi->param("custnum");
   }
   # get custpayby
-  die "Can not find payby record!"
-  unless $cust_payby = qsearchs(
+  $cust_payby = qsearchs(
     'cust_payby', { paymask => $cust_pay->paymask, custnum => $custnum }
   );
 
