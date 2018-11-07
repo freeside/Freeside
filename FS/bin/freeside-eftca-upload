@@ -95,7 +95,7 @@ freeside-eftca-upload - Transmit a payment batch to EFT Canada via SFTP.
 
 =head1 SYNOPSIS
 
-  freeside-paymentech-upload [ -a ] [ -v ] user batchnum
+  freeside-eftca-upload [ -a ] [ -v ] user batchnum
 
 =head1 DESCRIPTION
 
