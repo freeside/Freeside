@@ -2847,6 +2847,27 @@ sub batch_card {
   if ($options{'processing-fee'} > 0) {
     my $pf_cust_pkg;
     my $processing_fee_text = 'Payment Processing Fee';
+
+    unless ( $invnum ) { # probably from a payment screen
+      # do we have any open invoices? pick earliest
+      # uses the fact that cust_main->cust_bill sorts by date ascending
+      my @open = $self->open_cust_bill;
+      $invnum = $open[0]->invnum if scalar(@open);
+    }
+
+    unless ( $invnum ) {  # still nothing? pick last closed invoice
+      # again uses fact that cust_main->cust_bill sorts by date ascending
+      my @closed = $self->cust_bill;
+      $invnum = $closed[$#closed]->invnum if scalar(@closed);
+    }
+
+    unless ( $invnum ) {
+      # XXX: unlikely case - pre-paying before any invoices generated
+      # what it should do is create a new invoice and pick it
+      warn '\PROCESS FEE AND NO INVOICES PICKED TO APPLY IT!';
+      return '';
+    }
+
     my $pf_change_error = $self->charge({
             'amount'  => $options{'processing-fee'},
             'pkg'   => $processing_fee_text,
