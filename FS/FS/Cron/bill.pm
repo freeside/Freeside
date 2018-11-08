@@ -22,7 +22,8 @@ use FS::Log;
 #  -s: re-charge setup fees
 #  -v: enable debugging
 #  -l: debugging level
-#  -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
+#  -m: Multi-process mode uses the job queue for multi-process and/or multi-machine billing.
+#  -q: Multi-process mode: queue additional job instead of skipping
 #  -r: Multi-process mode dry run option
 #  -g: Don't bill these pkgparts
 
@@ -109,12 +110,14 @@ sub bill {
           warn "DRY RUN: would add custnum $custnum for queued_bill\n";
         } else {
 
-          #avoid queuing another job if there's one still waiting to run
-          next if qsearch( 'queue', { 'job'     => 'FS::cust_main::queued_bill',
-                                      'custnum' => $custnum,
-                                      'status'  => 'new',
-                                    }
-                         );
+          my @waiting = qsearch( 'queue', {
+			           'job'     => 'FS::cust_main::queued_bill',
+                                   'custnum' => $custnum,
+                                   'status'  => 'new',
+                                 }
+			       );
+
+          next if @waiting && ! $opt{'q'};
 
           #add job to queue that calls bill_and_collect with options
           my $queue = new FS::queue {
@@ -124,6 +127,11 @@ sub bill {
           };
           my $error = $queue->insert( 'custnum'=>$custnum, %args );
           die $error if $error;
+
+          foreach $waiting_queue (@waiting) {
+            $queue->depend_insert($waiting_queue->jobnum);
+          }
+
         }
 
       } else {
