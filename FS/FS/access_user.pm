@@ -149,7 +149,16 @@ sub htpasswd_kludge {
   {
     return '';
   } else {
-    return 'htpasswd exited unsucessfully';
+
+    if ($? == -1) {
+      return "htpasswd failed to execute: $!";
+    } elsif ($? & 127) {
+      return sprintf("htpasswd died with signal %d, %s coredump",
+                     ($? & 127),  ($? & 128) ? 'with' : 'without' );
+    } else {
+      return sprintf("htpasswd exited with value %d", $? >> 8 );
+    }
+
   }
 }
 
