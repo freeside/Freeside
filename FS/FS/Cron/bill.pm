@@ -117,6 +117,7 @@ sub bill {
                                  }
 			       );
 
+          #avoid queuing another job if there's one still waiting to run
           next if @waiting && ! $opt{'q'};
 
           #add job to queue that calls bill_and_collect with options
@@ -128,6 +129,7 @@ sub bill {
           my $error = $queue->insert( 'custnum'=>$custnum, %args );
           die $error if $error;
 
+          #wait until the earler jobs complete
           foreach $waiting_queue (@waiting) {
             $queue->depend_insert($waiting_queue->jobnum);
           }
