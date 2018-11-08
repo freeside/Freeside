@@ -33,7 +33,7 @@
 %    $paydate = '' unless ($paydate =~ /^\d{2,4}-\d{1,2}-01$'/);
 %  }
 
-  <BR>Payment
+  <BR><B>Payment</B>
   <% ntable("#cccccc", 2) %>
 
     <TR>
@@ -84,7 +84,7 @@
 % }  #if $cust_pay
 
 
-<BR>Refund
+<BR><B>Refund</B>
 <% ntable("#cccccc", 2) %>
 
   <TR>
@@ -94,21 +94,26 @@
 
   <TR>
     <TD ALIGN="right">Amount</TD>
-    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=9> by <B><% FS::payby->payname($payby) %></B></TD>
+    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=9></TD>
   </TR>
 
 % if ( $payby eq 'BILL' ) { 
     <TR>
-      <TD ALIGN="right">Check #</TD>
-      <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
+      <TD ALIGN="right">Check </TD>
+      <TD><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
     </TR>
 % }
 % elsif ($payby eq 'CHEK' || $payby eq 'CARD') {
 
+  <TR>
+    <TD ALIGN="right">Method</TD>
+    <TD BGCOLOR="#ffffff"><% FS::payby->payname($real_payby) %> # <% $real_paymask %></TD>
+  </TR>
+
 %  if ( $conf->exists("batch-enable")
-%      || grep $payby eq $_, $conf->config('batch-enable_payby')
+%      || grep $real_payby eq $_, $conf->config('batch-enable_payby')
 %  ) {
-%     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
+%     if ( grep $real_payby eq $_, $conf->config('realtime-disable_payby') ) {
           <INPUT TYPE="hidden" NAME="batch" VALUE="1">
 %     } else {
         <TR>
@@ -174,6 +179,12 @@ if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   }
 }
 die "no custnum or paynum specified!" unless $custnum;
+
+my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
+die "unknown custnum $custnum" unless $cust_main;
+
+my $real_payby = $cust_main->payby;
+my $real_paymask = $cust_main->paymask;
 
 my $_date = time;
 
