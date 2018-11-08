@@ -46,7 +46,6 @@
 
   <TR>
     <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% $payby %> # <% $paymask %></TD>
-    <INPUT TYPE="hidden" NAME="custpaybynum" VALUE="<% $cust_payby->custpaybynum %>">
   </TR>
 
 % unless ( $paydate || $cust_pay->payby ne 'CARD' ) {  # possibly other reasons: i.e. card has since expired
@@ -160,7 +159,7 @@ my $batch   = $cgi->param('batch');
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->refund_access_right($payby);
 
-my( $paynum, $cust_pay, $batchnum, $cust_payby ) = ( '', '', '', '' );
+my( $paynum, $cust_pay, $batchnum ) = ( '', '', '' );
 if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   $paynum = $1;
   $cust_pay = qsearchs('cust_pay', { paynum=>$paynum } )
@@ -173,12 +172,6 @@ if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
   } else {
     $custnum = $cust_pay->custnum;
   }
-  # get custpayby
-  die "Can not find payby record!"
-  unless $cust_payby = qsearchs(
-    'cust_payby', { paymask => $cust_pay->paymask, custnum => $custnum }
-  );
-
 }
 die "no custnum or paynum specified!" unless $custnum;
 

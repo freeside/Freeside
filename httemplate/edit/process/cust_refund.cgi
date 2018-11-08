@@ -21,6 +21,8 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Refund payment')
       || $FS::CurrentUser::CurrentUser->access_right('Post refund');
 
+my $conf = new FS::Conf;
+
 $cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
 my $custnum = $1;
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
@@ -64,25 +66,7 @@ if ( $cgi->param('paynum') > 0) {
   });
 }
 
-if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
-
-  ##
-  # use stored cust_payby info
-  ##
-
-  $cust_payby = qsearchs('cust_payby', { custnum      => $custnum,
-                                            custpaybynum => $custpaybynum, } )
-    or die "unknown custpaybynum $custpaybynum";
-
-  # not needed for realtime_bop, but still needed for batch_card
-  $payinfo = $cust_payby->payinfo;
-  $paymask = $cust_payby->paymask;
-  $paycvv = $cust_payby->paycvv; # pass it if we got it, running a transaction will clear it
-  ( $month, $year ) = $cust_payby->paydate_mon_year;
-  $payname = $cust_payby->payname;
-  $cgi->param(-name=>"paytype", -value=>$cust_payby->paytype) unless $cgi->param("paytype");
-
-} elsif ( $cgi->param('paynum') > 0) {
+if ( $cgi->param('paynum') > 0) {
 
   $payinfo = $cust_pay->payinfo;
   $payname = $cust_pay->payname;
