@@ -5776,7 +5776,13 @@ sub process_bill_and_collect {
   $param->{'fatal'} = 1; # runs from job queue, will be caught
   $param->{'retry'} = 1;
 
-  $cust_main->bill_and_collect( %$param );
+  local $@;
+  eval { $cust_main->bill_and_collect( %$param) };
+  if ( $@ ) {
+    die $@ =~ /cancel_pkgs cannot be run inside a transaction/
+      ? "Bill Now unavailable for customer with pending package expiration\n"
+      : $@;
+  }
 }
 
 =item pending_invoice_count
