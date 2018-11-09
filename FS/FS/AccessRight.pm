@@ -352,6 +352,7 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Import', global=>1 }, #some of these are ag-virt'ed now?  give em their own ACLs
     { rightname=>'Export', global=>1 },
     { rightname=> 'Edit rating data', desc=>'Delete CDRs', global=>1 },
+    { rightname=>'Delete fees', },
   #],
   #
   ###
@@ -471,6 +472,7 @@ sub default_superuser_rights {
     'Backdate credit',
     'View legacy typeset statments',
     'Detach customer package',
+    'Delete fees',
   );
 
   no warnings 'uninitialized';
