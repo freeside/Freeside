@@ -1,0 +1,199 @@
+<& elements/search.html,
+                 'title'       => 'Billing event fees',
+                 'html_init'   => include('.init'),
+                 'menubar'     => $menubar,
+                 'name'        => 'billing events',
+                 'query'       => $sql_query,
+                 'count_query' => $count_sql,
+                 'header'      => [ 'Event',
+                                    'Event date',
+                                    'Fee',
+                                    'Invoice',
+                                    'Invoice date',
+                                    FS::UI::Web::cust_header(),
+                                  ],
+                 'fields' => [
+                               'event',
+                               sub { time2str("%b %d %Y %T", $_[0]->_date) },
+                               'itemdesc',
+                               $inv_sub,
+                               sub { my $d = $_[0]->fee_cust_bill_date;
+                                     $d ? time2str("%b %d %Y %T", $d) : '' },
+                               \&FS::UI::Web::cust_fields,
+                             ],
+                'align' => 'lrlrr'.FS::UI::Web::cust_aligns(),
+                'links' => [
+                              '',
+                              '',
+                              '',
+                              $inv_link,
+                              $inv_link,
+                              ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                                    FS::UI::Web::cust_header()
+                              ),
+                            ],
+                 'color' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
+&>
+<%once>
+
+my $inv_sub = sub {
+  my $cust_event_fee = shift;
+  my $fee_invnum = $cust_event_fee->fee_invnum;
+  $fee_invnum || ( $cust_event_fee->nextbill ? '(next bill)' : '(not yet)' );
+};
+
+my $inv_link = sub {
+  $_[0]->fee_invnum
+    ?  [ "${p}view/cust_bill.cgi?", 'fee_invnum' ]
+    : '';
+};
+
+my $link_cust = sub {
+  my $cust_event_fee = shift;
+  $cust_event_fee->custnum
+    ? [ "${p}view/cust_main.cgi?", 'custnum' ]
+    : '';
+};
+
+</%once>
+<%shared>
+my @scalars = qw(); #qw( agentnum status custnum invnum pkgnum failed );
+my @lists = qw( eventpart );
+my %search;
+</%shared>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Billing event reports');
+
+for my $param (@scalars) {
+  $search{$param} = scalar( $cgi->param($param) )
+    if $cgi->param($param);
+}
+
+#lists
+foreach my $param (@lists) {
+  $search{$param} = [ $cgi->param($param) ];
+}
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+$search{'beginning'} = $beginning;
+$search{'ending'}    = $ending;
+
+my $where = ' WHERE '. FS::cust_event->search_sql_where( \%search );
+
+if ( $cgi->param('billpkgnum') eq 'NULL' ) {
+  $where .= ' AND billpkgnum IS NULL';
+} elsif ( $cgi->param('billpkgnum') eq 'NOT NULL' ) {
+  $where .= ' AND billpkgnum IS NOT NULL';
+}
+
+my $join = '
+  LEFT JOIN cust_event USING (eventnum)
+  LEFT JOIN cust_bill_pkg USING (billpkgnum)
+  LEFT JOIN cust_bill AS fee_cust_bill USING (invnum)
+  LEFT JOIN part_fee ON (cust_event_fee.feepart = part_fee.feepart )
+  '. FS::cust_event->join_sql();
+
+my $sql_query = {
+  'table'     => 'cust_event_fee',
+  'select'    => join(', ',
+                    'cust_event_fee.*',
+                    'cust_event.*',
+                    'part_event.*',
+                    'cust_bill_pkg.invnum AS fee_invnum',
+                    'fee_cust_bill._date AS fee_cust_bill_date',
+                    'part_fee.itemdesc',
+                    'cust_main.custnum',
+                    FS::UI::Web::cust_sql_fields(),
+                  ),
+  'hashref'   => {}, 
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY eventfeenum ASC', #'ORDER BY _date ASC',
+  'addl_from' => $join,
+};
+
+my $count_sql = "SELECT COUNT(*) FROM cust_event_fee $join $where";
+warn join(',', FS::UI::Web::cust_sql_fields() );
+
+my $conf = new FS::Conf;
+
+my $menubar = [];
+
+if ( $curuser->access_right('Delete fees') ) {
+
+#XXX delete fee link
+
+#  push @$menubar, 'Re-print these events' =>
+#                    "javascript:confirm_print_process()",
+#                  'Re-email these events' =>
+#                    "javascript:confirm_email_process()",
+#                ;
+#
+#  push @$menubar, 'Re-fax these events' =>
+#                    "javascript:confirm_fax_process()"
+#    if $conf->exists('hylafax');
+
+}
+
+</%init>
+<%def .init>
+% # action is part of the target URL, don't need to pass it as a param
+% foreach my $action (qw(print email fax)) {
+<& /elements/progress-init.html,
+  $action.'_form',
+  [ @scalars, @lists, 'beginning', 'ending' ],
+  "../misc/${action}_events.cgi",
+  { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
+  $action.'_', #key
+&>
+<FORM NAME="<% $action %>_form">
+%   foreach my $param (@scalars, 'beginning', 'ending') {
+  <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $search{$param} |h %>">
+%   }
+%   foreach my $param (@lists) {
+%     foreach my $value (@{ $search{$param} }) {
+  <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $value |h %>">
+%     }
+%   }
+</FORM>
+% } # foreach $action
+<SCRIPT TYPE="text/javascript">
+
+function confirm_print_process() {
+  if ( ! confirm("Are you sure you want to reprint these invoices?") ) {
+    return;
+  }
+  print_process();
+}
+function confirm_email_process() {
+  if ( ! confirm("Are you sure you want to re-email these invoices?") ) {
+    return;
+  }
+  email_process();
+}
+function confirm_fax_process() {
+  if ( ! confirm("Are you sure you want to re-fax these invoices?") ) {
+    return;
+  }
+  fax_process();
+}
+</SCRIPT>
+</%def>

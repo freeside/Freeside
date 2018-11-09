@@ -1,5 +1,5 @@
 package FS::cust_event_fee;
-use base qw( FS::Record FS::FeeOrigin_Mixin );
+use base qw( FS::cust_main_Mixin FS::Record FS::FeeOrigin_Mixin );
 
 use strict;
 use FS::Record qw( qsearch dbh );

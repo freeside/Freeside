@@ -1,0 +1,49 @@
+<& /elements/header.html, 'Billing event fees' &>
+
+    <FORM ACTION="cust_event_fee.html" METHOD="GET">
+
+    <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+    <TABLE CLASS="fsinnerbox">
+
+<%doc>
+# potentially could search on any of these
+
+      <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
+
+      <% include( '/elements/tr-select-cust_main-status.html',
+                    'label' => 'Customer status',
+                    # this field is just called 'status'
+                )
+      %>
+</%doc>
+
+      <& /elements/tr-select-part_event.html,
+                    'label'        => 'Events',
+                    'multiple'     => 1,
+                    'all_selected' => 1,
+      &>
+
+      <& /elements/tr-select.html,
+                    'label'      => 'Invoiced',
+                    'field'      => 'billpkgnum',
+                    'curr_value' => '',
+                    'options'    => [ '', 'NULL', 'NOT NULL' ],
+                    'labels'     => { ''         => 'Pending and invoiced',
+                                      'NULL'     => 'Pending only',
+                                      'NOT NULL' => 'Invoiced only',
+                                    },
+      &>
+
+      <& /elements/tr-input-beginning_ending.html &>
+
+    </TABLE>
+    <BR><INPUT TYPE="submit" VALUE="Get Report">
+    </FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Billing event reports');
+
+</%init>
