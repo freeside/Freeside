@@ -92,6 +92,10 @@
         $cgi->param('disabled', 'Y');
       }
 
+      if ( $action eq 'pkg_fee' && !$actionfields{feepart} ) {
+        return "Select a Fee Definition to use this Event Action";
+      }
+
       my $balance_age_rx = qr/^(condition.+)\.balance_age\.age$/;
 
       foreach my $param ( keys %{ $cgi->Vars() } ){
