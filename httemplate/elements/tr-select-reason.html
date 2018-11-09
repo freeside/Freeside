@@ -43,6 +43,7 @@ Example:
 <& /elements/xmlhttp.html,
   url => $p . 'misc/xmlhttp-reason-hint.html',
   subs => [ 'get_hint' ],
+  skip_empty => 1,
 &>
 <SCRIPT TYPE="text/javascript">
   function <% $id %>_changed() {
