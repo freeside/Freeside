@@ -2,7 +2,7 @@ package FS::cust_event_fee;
 use base qw( FS::cust_main_Mixin FS::Record FS::FeeOrigin_Mixin );
 
 use strict;
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch dbh );
 use FS::cust_event;
 
 =head1 NAME
@@ -72,6 +72,36 @@ otherwise returns false.
 =item delete
 
 Delete this record from the database.
+
+=cut
+
+sub delete {
+  my $self = shift;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_bill_pkg = $self->cust_bill_pkg;
+  if ( $cust_bill_pkg ) {
+    my $error = $cust_bill_pkg->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item replace OLD_RECORD
 
@@ -201,6 +231,86 @@ sub cust_event {
   my $self = shift;
   FS::cust_event->by_key($self->eventnum);
 }
+
+=item search_sql_where
+
+=cut
+
+sub search_sql_where {
+  my($class, $param) = @_;
+
+  my $where = FS::cust_event->search_sql_where( $param );
+
+  if ( $param->{'billpkgnum'} eq 'NULL' ) {
+    $where .= ' AND billpkgnum IS NULL';
+  } elsif ( $param->{'billpkgnum'} eq 'NOT NULL' ) {
+    $where .= ' AND billpkgnum IS NOT NULL';
+  }
+
+  $where;
+
+}
+
+=item join_sql
+
+=cut
+
+sub join_sql {
+  #my $class = shift;
+
+  ' LEFT JOIN cust_event USING (eventnum)
+    LEFT JOIN cust_bill_pkg USING (billpkgnum)
+    LEFT JOIN cust_bill AS fee_cust_bill USING (invnum)
+    LEFT JOIN part_fee ON (cust_event_fee.feepart = part_fee.feepart )
+  '. FS::cust_event->join_sql();
+
+}
+
+=back
+ 
+=head1 SUBROUTINES
+
+=over 4
+
+=item process_delete
+
+=cut
+ 
+sub process_delete {
+  my( $job, $param ) = @_;
+
+  my $search_sql = FS::cust_event_fee->search_sql_where($param);
+  my $where = $search_sql ? " WHERE $search_sql" : '';
+
+  my @cust_event_fee = qsearch({
+    'table'     => 'cust_event_fee',
+    'addl_from' => FS::cust_event_fee->join_sql(),
+    'hashref'   => {},
+    'extra_sql' => $where,
+  });
+
+  my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
+  foreach my $cust_event_fee ( @cust_event_fee ) {
+
+    my $error = $cust_event_fee->delete;
+    die $error if $error;
+
+    if ( $job ) { #progressbar foo
+      $num++;
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $num / scalar(@cust_event_fee) )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
+  }
+
+}
+
+=back
 
 =head1 BUGS
 

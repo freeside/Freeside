@@ -350,6 +350,7 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Import', global=>1 }, #some of these are ag-virt'ed now?  give em their own ACLs
     { rightname=>'Export', global=>1 },
     { rightname=> 'Edit rating data', desc=>'Delete CDRs', global=>1 },
+    { rightname=>'Delete fees', },
   #],
   #
   ###

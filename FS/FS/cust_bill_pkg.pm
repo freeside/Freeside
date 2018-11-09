@@ -451,6 +451,20 @@ sub delete {
     }
   }
 
+  #fix the invoice amount
+
+  my $cust_bill = $self->cust_bill;
+  $cust_bill->charged( $cust_bill->charged - $self->setup - $self->recur );
+
+  #not adding a cc surcharge, but this override lets us modify charged
+  $cust_bill->{'Hash'}{'cc_surcharge_replace_hack'} = 1;
+
+  my $error = $cust_bill->replace;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   my $error = $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
