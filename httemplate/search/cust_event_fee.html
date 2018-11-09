@@ -73,7 +73,7 @@ my $link_cust = sub {
 </%once>
 <%shared>
 my @scalars = qw(); #qw( agentnum status custnum invnum pkgnum failed );
-my @lists = qw( eventpart );
+my @lists = qw( eventpart billpkgnum );
 my %search;
 </%shared>
 <%init>
@@ -97,20 +97,9 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 $search{'beginning'} = $beginning;
 $search{'ending'}    = $ending;
 
-my $where = ' WHERE '. FS::cust_event->search_sql_where( \%search );
+my $where = ' WHERE '. FS::cust_event_fee->search_sql_where( \%search );
 
-if ( $cgi->param('billpkgnum') eq 'NULL' ) {
-  $where .= ' AND billpkgnum IS NULL';
-} elsif ( $cgi->param('billpkgnum') eq 'NOT NULL' ) {
-  $where .= ' AND billpkgnum IS NOT NULL';
-}
-
-my $join = '
-  LEFT JOIN cust_event USING (eventnum)
-  LEFT JOIN cust_bill_pkg USING (billpkgnum)
-  LEFT JOIN cust_bill AS fee_cust_bill USING (invnum)
-  LEFT JOIN part_fee ON (cust_event_fee.feepart = part_fee.feepart )
-  '. FS::cust_event->join_sql();
+my $join = FS::cust_event_fee->join_sql();
 
 my $sql_query = {
   'table'     => 'cust_event_fee',
@@ -131,40 +120,26 @@ my $sql_query = {
 };
 
 my $count_sql = "SELECT COUNT(*) FROM cust_event_fee $join $where";
-warn join(',', FS::UI::Web::cust_sql_fields() );
 
 my $conf = new FS::Conf;
 
 my $menubar = [];
-
-if ( $curuser->access_right('Delete fees') ) {
-
-#XXX delete fee link
-
-#  push @$menubar, 'Re-print these events' =>
-#                    "javascript:confirm_print_process()",
-#                  'Re-email these events' =>
-#                    "javascript:confirm_email_process()",
-#                ;
-#
-#  push @$menubar, 'Re-fax these events' =>
-#                    "javascript:confirm_fax_process()"
-#    if $conf->exists('hylafax');
-
-}
+push @$menubar, 'Delete these fees' => "javascript:confirm_delete_fees()"
+  if $curuser->access_right('Delete fees');
 
 </%init>
 <%def .init>
-% # action is part of the target URL, don't need to pass it as a param
-% foreach my $action (qw(print email fax)) {
 <& /elements/progress-init.html,
-  $action.'_form',
+  'delete_fees_form',
   [ @scalars, @lists, 'beginning', 'ending' ],
-  "../misc/${action}_events.cgi",
-  { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
-  $action.'_', #key
+  "../misc/delete_fees.cgi",
+  { 'message' => 'Fees deleted', #would be nice to show the number of them...
+    #what we were just displaying is gone, so where to go?
+    # woudl be nice to not keep displaying the deleted data
+    #'url'     => 
+  },
 &>
-<FORM NAME="<% $action %>_form">
+<FORM NAME="delete_fees_form">
 %   foreach my $param (@scalars, 'beginning', 'ending') {
   <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $search{$param} |h %>">
 %   }
@@ -174,26 +149,14 @@ if ( $curuser->access_right('Delete fees') ) {
 %     }
 %   }
 </FORM>
-% } # foreach $action
 <SCRIPT TYPE="text/javascript">
 
-function confirm_print_process() {
-  if ( ! confirm("Are you sure you want to reprint these invoices?") ) {
+function confirm_delete_fees() {
+  if ( ! confirm("Are you sure you want to delete these fees?") ) {
     return;
   }
-  print_process();
+  process();
 }
-function confirm_email_process() {
-  if ( ! confirm("Are you sure you want to re-email these invoices?") ) {
-    return;
-  }
-  email_process();
-}
-function confirm_fax_process() {
-  if ( ! confirm("Are you sure you want to re-fax these invoices?") ) {
-    return;
-  }
-  fax_process();
-}
+
 </SCRIPT>
 </%def>
