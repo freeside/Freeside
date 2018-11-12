@@ -72,8 +72,8 @@ my $link_cust = sub {
 
 </%once>
 <%shared>
-my @scalars = qw(); #qw( agentnum status custnum invnum pkgnum failed );
-my @lists = qw( eventpart billpkgnum );
+my @scalars = qw( billpkgnum ); #qw( agentnum status custnum invnum pkgnum failed );
+my @lists = qw( eventpart );
 my %search;
 </%shared>
 <%init>
