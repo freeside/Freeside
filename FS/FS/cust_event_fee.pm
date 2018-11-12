@@ -275,9 +275,12 @@ sub join_sql {
 =item process_delete
 
 =cut
- 
+
+use Storable qw(thaw);
+use MIME::Base64;
 sub process_delete {
-  my( $job, $param ) = @_;
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
 
   my $search_sql = FS::cust_event_fee->search_sql_where($param);
   my $where = $search_sql ? " WHERE $search_sql" : '';
