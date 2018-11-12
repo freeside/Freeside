@@ -973,12 +973,15 @@ sub revenue_pkg {
 
   my $sql;
 
+## if package has changed and has not reached next due date it will not be in h_cust_bill.
+## this causes problems with future months, needed to use change_pkgnum instead.
+
   if ($status eq "active") {
     $sql = "SELECT DISTINCT ON (revenue.pkgnum) revenue.pkgnum AS pkgnum, revenue.recur AS revenue
       FROM $from
       JOIN part_pkg ON (cust_pkg.pkgpart = part_pkg.pkgpart)
       JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
-      JOIN h_cust_bill_pkg AS revenue ON (cust_pkg.pkgnum = revenue.pkgnum AND cust_pkg.history_date < $speriod )
+      JOIN h_cust_bill_pkg AS revenue ON ((cust_pkg.pkgnum = revenue.pkgnum OR cust_pkg.change_pkgnum = revenue.pkgnum) AND cust_pkg.history_date < $speriod )
     ";
   }
   elsif ($status eq "setup") {
