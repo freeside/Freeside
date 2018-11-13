@@ -4,6 +4,7 @@ use base qw( FS::part_pkg::recur_Common );
 use strict;
 use vars qw( $DEBUG %info );
 use Tie::IxHash;
+use Date::Parse;
 use Date::Format;
 use Text::CSV_XS;
 use FS::Conf;
@@ -301,6 +302,9 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'bill_only_pkg_dates' => { 'name' => 'Only bill CDRs with a date during the package billing period',
                                'type' => 'checkbox',
                              },
+    'skip_old' => { 'name' => 'Do not charge for CDRs older than: ',
+                    'type' => 'date',
+                  },
 
     'count_available_phones' => { 'name' => 'Consider for tax purposes the number of lines to be svc_phones that may be provisioned rather than those that actually are.',
                            'type' => 'checkbox',
@@ -366,7 +370,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        selfservice_format selfservice_inbound_format
                        usage_mandate usage_section summarize_usage 
                        usage_showzero bill_every_call bill_inactive_svcs
-                       bill_only_pkg_dates
+                       bill_only_pkg_dates skip_old
                        count_available_phones suspend_bill 
                      )
                   ],
@@ -681,6 +685,10 @@ sub check_chargable {
     if length($self->option_cacheable('skip_max_callers'))
       and length($cdr->max_callers)
       and $cdr->max_callers <= $self->option_cacheable('skip_max_callers');
+
+  return "calldate < ". str2time($self->option_cacheable('skip_old'))
+    if $self->option_cacheable('skip_old')
+    && $self->calldate_unix < str2time($self->option_cacheable('skip_old')); 
 
   #all right then, rate it
   '';
