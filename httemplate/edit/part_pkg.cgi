@@ -9,6 +9,7 @@
      #'viewall_dir'           => 'browse',
      'viewall_url'           => $p.'browse/part_pkg.cgi',
      'html_init'             => include('/elements/init_overlib.html').
+                                include('/elements/init_calendar.html').
                                 $javascript,
      'html_bottom'           => $html_bottom,
      'body_etc'              =>
@@ -1015,6 +1016,13 @@ my $html_bottom = sub {
                    ? ' CHECKED'
                    : ''
                  ). '>';
+
+      } elsif ( $href->{$field}{'type'} eq 'date' ) {
+
+        $html .= include('/elements/input-date-field.html', {
+                           'name'  => $layer.'__'.$field,
+                           'value' => $options{$field},
+                        });
 
       } elsif ( $href->{$field}{'type'} =~ /^select-rt-/ ) {
 
