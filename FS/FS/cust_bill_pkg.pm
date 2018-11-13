@@ -459,13 +459,8 @@ sub delete {
   #not adding a cc surcharge, but this override lets us modify charged
   $cust_bill->{'Hash'}{'cc_surcharge_replace_hack'} = 1;
 
-  my $error = $cust_bill->replace;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  my $error = $self->SUPER::delete(@_);
+  my $error =  $cust_bill->replace
+            || $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
