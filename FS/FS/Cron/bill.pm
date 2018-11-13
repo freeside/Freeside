@@ -130,7 +130,7 @@ sub bill {
           die $error if $error;
 
           #wait until the earler jobs complete
-          foreach $waiting_queue (@waiting) {
+          foreach my $waiting_queue (@waiting) {
             $queue->depend_insert($waiting_queue->jobnum);
           }
 
