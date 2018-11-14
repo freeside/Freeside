@@ -1,0 +1,70 @@
+<% include('/elements/header.html', 'Edit  tax rates with Excel' ) %>
+
+% # 'name' => 'RateImportForm',
+
+<& /elements/form-file_upload.html,
+     'name'      => 'TaxEditForm',
+     'action'    => 'process/tax_edit_excel.html',
+     'num_files' => 1,
+     'fields'    => [ 'format' ],
+     'message'   => 'Tax Rate edit successful',
+     'url'       => $p."browse/cust_main_county.cgi",
+     'onsubmit'  => "document.TaxEditForm.submitButton.disabled=true;"
+&>
+
+<% &ntable("#cccccc", 2) %>
+
+  <TR>
+    <TD ALIGN="left" COLSPAN=2>File format should be as follows:<BR>
+      <TABLE>
+        <TR><TD><B>Country</B> as standard two letter code</TD></TR>
+        <TR><TD><B>State</B> as standard two letter code</TD></TR>
+        <TR><TD><B>County name</B></TD></TR>
+        <TR><TD><B>City name</B></TD></TR>
+        <TR><TD><B>Tax name</B></TD></TR>
+        <TR><TD><B>Tax rate</B></TD></TR>
+      </TABLE><BR>
+      * first row should be blank or contain headers<BR>
+      * Tax rate should be formated as a number not percentage.
+      <P>
+    </TD>
+  </TR>
+  <TR>
+    <TH ALIGN="left" COLSPAN=2>Upload tax rates with Excel (or other .XLS-compatible application)</TH>
+  </TR>
+
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => '',
+                'label_align' => 'left',
+            )
+  %>
+
+  <INPUT TYPE="hidden" NAME="format" VALUE="default">
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
+             VALUE   = "Upload"
+      >
+    </TD>
+  </TR>
+
+
+</TABLE>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $sth = dbh->prepare('SELECT COUNT(*) FROM rate_detail WHERE conn_charge > 0 OR conn_sec > 0 LIMIT 1')
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $have_conn = $sth->fetchrow_arrayref->[0];
+
+</%init>
