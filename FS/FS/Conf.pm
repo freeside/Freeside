@@ -1694,6 +1694,15 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'allow_payment_receipt_noemail',
+    'section'     => 'notification',
+    'description' => 'Add option on customer edit/view page to disable emailing of payment receipts.  If this option is set to NO it will override customer specific option, so when set to NO system will not check for payment_receipt_noemail option at customer level.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+    'agent_bool'  => 1,
+  },
+
+  {
     'key'         => 'payment_receipt',
     'section'     => 'notification',
     'description' => 'Send payment receipts.',

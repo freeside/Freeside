@@ -1695,6 +1695,7 @@ sub tables_hashref {
         'invoice_attn', 'varchar', 'NULL', $char_d, '', '',
         'invoice_ship_address', 'char', 'NULL', 1, '', '',
         'postal_invoice', 'char', 'NULL', 1, '', '',
+        'paymentreceipt_noemail', 'char', 'NULL', 1, '', '',
       ],
       'primary_key'  => 'custnum',
       'unique'       => [ [ 'agentnum', 'agent_custid' ] ],

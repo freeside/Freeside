@@ -241,6 +241,8 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $conf = new FS::Conf;
+
   my $cust_bill;
   if ( $self->invnum ) {
     $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
@@ -649,6 +651,8 @@ sub send_receipt {
   my $conf = new FS::Conf;
 
   return '' unless $conf->config_bool('payment_receipt', $cust_main->agentnum);
+
+  return '' if ($conf->config_bool('allow_payment_receipt_noemail', $cust_main->agentnum) && $cust_main->paymentreceipt_noemail);
 
   my @invoicing_list = $cust_main->invoicing_list_emailonly;
   return '' unless @invoicing_list;

@@ -167,6 +167,12 @@ set_display_recurring(<% encode_json({'display_recurring' => [ $cust_main->displ
   <TD><% $cust_main->invoice_noemail ? $refused : $allowed %></TD>
 % }
 </TR>
+% if ( $conf->config_bool('allow_payment_receipt_noemail', $cust_main->agentnum) ) {
+<TR>
+  <TH ALIGN="right"><% mt('Email payment receipts') |h %></TH>
+  <TD><% $cust_main->paymentreceipt_noemail ? $refused : $allowed %></TD>
+</TR>
+% }
 <TR>
   <TH ALIGN="right"><% mt('Other email notices') |h %></TH>
   <TD>
