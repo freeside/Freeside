@@ -105,6 +105,16 @@
       box_first   => 1,
     &>
 
+% if ( $conf->config_bool('allow_payment_receipt_noemail', $cust_main->agentnum) ) {
+    <& /elements/tr-checkbox.html,
+      field       => 'paymentreceipt_noemail',
+      label       => emt('Do not send email payment receipts'),
+      value       => 'Y',
+      curr_value  => $cust_main->paymentreceipt_noemail,
+      box_first   => 1,
+    &>
+% }
+
     <& /elements/tr-checkbox.html,
       field       => 'message_noemail',
       label       => emt('Do not send other email notices'),
