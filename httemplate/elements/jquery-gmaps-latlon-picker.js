@@ -201,7 +201,7 @@ $.fn.gMapsLatLonPicker = (function() {
 			});
 
 			// Update location and zoom values based on input field's value
-			$(_self.vars.cssID + ".gllpUpdateButton").bind("click", function() {
+			$(_self.vars.cssID + ".gllpUpdateButton").on("click", function() {
 				var lat = $(_self.vars.cssID + ".gllpLatitude").val();
 				var lng = $(_self.vars.cssID + ".gllpLongitude").val();
 				var latlng = new google.maps.LatLng(lat, lng);
@@ -210,17 +210,17 @@ $.fn.gMapsLatLonPicker = (function() {
 			});
 
 			// Search function by search button
-			$(_self.vars.cssID + ".gllpSearchButton").bind("click", function() {
+			$(_self.vars.cssID + ".gllpSearchButton").on("click", function() {
 				performSearch( $(_self.vars.cssID + ".gllpSearchField").val(), false );
 			});
 
 			// Search function by gllp_perform_search listener
-			$(document).bind("gllp_perform_search", function(event, object) {
+			$(document).on("gllp_perform_search", function(event, object) {
 				performSearch( $(object).attr('string'), true );
 			});
 
 			// Zoom function triggered by gllp_perform_zoom listener
-			$(document).bind("gllp_update_fields", function(event) {
+			$(document).on("gllp_update_fields", function(event) {
 				var lat = $(_self.vars.cssID + ".gllpLatitude").val();
 				var lng = $(_self.vars.cssID + ".gllpLongitude").val();
 				var latlng = new google.maps.LatLng(lat, lng);
@@ -249,6 +249,6 @@ $(document).ready( function() {
 	});
 });
 
-$(document).bind("location_changed", function(event, object) {
+$(document).on("location_changed", function(event, object) {
 	console.log("changed: " + $(object).attr('id') );
 });
