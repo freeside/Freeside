@@ -516,6 +516,20 @@
       </TD>
     </TR>
 
+% if ( $conf->config_bool('allow_payment_receipt_noemail', $cust_main->agentnum) ) {
+    <TR>
+      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="paymentreceipt_noemail" VALUE="Y" <%
+
+        ( $cust_main->paymentreceipt_noemail eq 'Y' )
+          ? 'CHECKED'
+          : ''
+
+        %>> <% mt('Do not send email payment receipts') |h %>
+
+      </TD>
+    </TR>
+% }
+
 % unless ( $conf->exists('cust-email-high-visibility')) {
    <TR>
       <TD ALIGN="right" WIDTH="200">

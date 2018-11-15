@@ -304,6 +304,14 @@ set_display_recurring(<% encode_json({'display_recurring' => [ $cust_main->displ
     <% $cust_main->invoice_noemail ? $no : $yes %>
   </TD>
 </TR>
+% if ( $conf->config_bool('allow_payment_receipt_noemail', $cust_main->agentnum) ) {
+<TR>
+  <TD ALIGN="right"><% mt('Email payment receipts') |h %></TD>
+  <TD BGCOLOR="#ffffff">
+    <% $cust_main->paymentreceipt_noemail ? $no : $yes %>
+  </TD>
+</TR>
+% }
 % unless ( $conf->exists('cust-email-high-visibility')) {
 <TR>
   <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
