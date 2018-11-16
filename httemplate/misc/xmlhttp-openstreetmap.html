@@ -1,0 +1,15 @@
+<% $return %>\
+<%init>
+
+my $DEBUG = 0;
+
+my $conf = new FS::Conf;
+
+my $return = {};
+
+my $url = "http://nominatim.openstreetmap.org/search?format=json&limit=1&q=" . $cgi->param('loc');
+
+use LWP::Simple;
+my $return = get $url;
+
+</%init>
