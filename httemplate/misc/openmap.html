@@ -11,50 +11,45 @@
      <input type=hidden id="censustract" value="">
    </td>
    <td>
-     <div id="mapid" style="width: 600px; height: 600px;"></div>
+     <div id="mapid" style="width: 600px; height: 600px;">Retrieving Map.</div>
    </td>
   </tr>
  </table>
 
   <script>
-    var mymap = L.map('mapid').setView(getLatLong('<%$loc%>'), 15);
-    var popup = L.popup();
-    var mainLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    	 maxZoom: 19,
-	 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(mymap);
-    var markersLayer = new L.LayerGroup();
-    mymap.addLayer(markersLayer);
 
-    function onMapClick(e) {
-      markersLayer.clearLayers();
-      var marker = L.marker([e.latlng.lat, e.latlng.lng]);
-      marker.bindPopup("You selected (" + e.latlng.lat + " , " + e.latlng.lng + ")").openPopup();
-      markersLayer.addLayer(marker);
-      getCensusTract(e.latlng.lat, e.latlng.lng);
-    }
+    var url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q=<%$loc%>';
+    $.getJSON(url,function(data){
+      var latlong = [data[0].lat, data[0].lon];
+      var mymap = L.map('mapid').setView(latlong, 15);
+      var popup = L.popup();
+      var mainLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(mymap);
+      var markersLayer = new L.LayerGroup();
+      mymap.addLayer(markersLayer);
 
-    mymap.on('click', onMapClick);
+      function onMapClick(e) {
+       markersLayer.clearLayers();
+       var marker = L.marker([e.latlng.lat, e.latlng.lng]);
+       marker.bindPopup("You selected (" + e.latlng.lat + " , " + e.latlng.lng + ")").openPopup();
+       markersLayer.addLayer(marker);
+       document.getElementById("mycensustract").innerHTML = "Retrieving census tract...";
+       getCensusTract(e.latlng.lat, e.latlng.lng);
+      }
 
-    function Get(yourUrl){
-      var Httpreq = new XMLHttpRequest(); // a new request
-      Httpreq.open("GET",yourUrl,false);
-      Httpreq.send();
-      return Httpreq.responseText;          
-    }
+      mymap.on('click', onMapClick);
 
-    function getLatLong(loc) {
-    	 var url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + loc;
-    	 var json_obj = JSON.parse(Get(url));
-    	 return [json_obj[0].lat, json_obj[0].lon];
-    }
+      function getCensusTract(lat, lon) {
+       var url = 'xmlhttp-censustract.html?lat=' + lat + '&lon=' + lon + '&census_year=<%$census_year%>';
+       $.getJSON(url,function(data){
+         var tract = (data.Block.FIPS.substr(0, 11) / 100).toFixed(2);
+         document.getElementById("mycensustract").innerHTML = tract;
+       });
+      }
 
-    function getCensusTract(lat, lon) {
-    	 var url = 'xmlhttp-censustract.html?lat=' + lat + '&lon=' + lon + '&census_year=<%$census_year%>';
-    	 var json_obj = JSON.parse(Get(url));
-    	 var tract = (json_obj.Block.FIPS.substr(0, 11) / 100).toFixed(2);
-    	 document.getElementById("mycensustract").innerHTML = tract;
-    }
+    });
 
     function changeMainDiv(lat,lng) {
           window.opener.document.getElementById("newcensustract").innerHTML = document.getElementById("mycensustract").innerHTML;
