@@ -372,6 +372,23 @@ Used for determining FCC 477 reporting
 
 Used for determining FCC 477 reporting
 
+=item ship_address1
+
+=item ship_address2
+
+=item ship_city
+
+=item ship_county
+
+=item ship_state
+
+=item ship_zip
+
+=item ship_country
+
+Optional shipping address fields.  If sending an optional shipping address,
+ship_address1, ship_city, ship_state and ship_zip are required.
+
 =item daytime
 
 Daytime phone number
