@@ -1,0 +1,37 @@
+/**
+* Freeside CSS theme overrides for selectize.js
+* 
+*/
+
+.selectize-label {
+  display: none !important;
+}
+
+.selectize-input {
+  border-radius: 0 !important;
+  padding: 1px !important;
+  display: inline-block;
+  width: 250px;
+  text-align: left !important;
+}
+
+.selectize-input .item {
+  margin: 2px !important;
+  text-align: left !important;
+}
+
+.selectize-input .optgroup-header {
+  font-weight: bold;
+  background-color: #eee;
+  border-bottom: solid 1px #ccc;
+  text-align: left !important;
+}
+
+.selectize-dropdown .option {
+  text-align: left !important;
+}
+
+.selectize-input .optgroup .option {
+  padding-left: 1em;
+  text-align: left !important;
+}
