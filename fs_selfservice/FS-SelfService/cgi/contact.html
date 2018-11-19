@@ -3,22 +3,22 @@
 <TR>
   <TH ALIGN="right"><%=$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
   <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%=$pre%>last" VALUE="<%= ${$pre.'last'} %>" onChange="<%= $onchange %>" <%=$disabled%>> , 
-    <INPUT TYPE="text" NAME="<%=$pre%>first" VALUE="<%= ${$pre.'first'} %>" onChange="<%= $onchange %>" <%=$disabled%>>
+    <INPUT TYPE="text" NAME="<%=$pre%>last" VALUE="<%= encode_entities(${$pre.'last'}) %>" onChange="<%= $onchange %>" <%=$disabled%>> , 
+    <INPUT TYPE="text" NAME="<%=$pre%>first" VALUE="<%= encode_entities(${$pre.'first'}) %>" onChange="<%= $onchange %>" <%=$disabled%>>
   </TD>
 </TR>
 
 <TR>
   <TD ALIGN="right">Company</TD>
   <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%=$pre%>company" VALUE="<%= ${$pre.'company'} %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+    <INPUT TYPE="text" NAME="<%=$pre%>company" VALUE="<%= encode_entities(${$pre.'company'}) %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
   </TD>
 </TR>
 
 <TR>
   <TH ALIGN="right"><%=$r%>Address</TH>
   <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%=$pre%>address1" VALUE="<%= ${$pre.'address1'} %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+    <INPUT TYPE="text" NAME="<%=$pre%>address1" VALUE="<%= encode_entities(${$pre.'address1'}) %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
   </TD>
 </TR>
 
@@ -37,14 +37,14 @@
     %>
   </TD>
   <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%=$pre%>address2" VALUE="<%= ${$pre.'address2'} %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+    <INPUT TYPE="text" NAME="<%=$pre%>address2" VALUE="<%= encode_entities(${$pre.'address2'}) %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
   </TD>
 </TR>
 
 <TR>
   <TH ALIGN="right"><%=$r%>City</TH>
   <TD>
-    <INPUT TYPE="text" ID="<%=$pre%>city" NAME="<%=$pre%>city" VALUE="<%= ${$pre.'city'} %>" onChange="<%= $onchange %>" <%=$disabled%>>
+    <INPUT TYPE="text" ID="<%=$pre%>city" NAME="<%=$pre%>city" VALUE="<%= encode_entities(${$pre.'city'}) %>" onChange="<%= $onchange %>" <%=$disabled%>>
   </TD>
   <%= 
     ($county_html, $state_html, $country_html) = 
