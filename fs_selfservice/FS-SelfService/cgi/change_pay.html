@@ -14,7 +14,6 @@
 
   my $tail = qq(</TABLE>).
              qq(<INPUT TYPE="hidden" NAME="action" VALUE="process_change_pay">).
-             qq(<INPUT TYPE="hidden" NAME="custpaybynum" VALUE="$custpaybynum">).
              qq(<BR>).
              qq(<INPUT TYPE="submit" NAME="process" ).
              qq(VALUE="Save payment information"> ).
@@ -60,6 +59,9 @@
   delete( $options{ $paybyremove{$payby} } );
   delete $options{'DCRD'} unless $payby eq 'DCRD' || ! exists $options{'CARD'};
   delete $options{'DCHK'} unless $payby eq 'DCHK' || ! exists $options{'CHEK'};
+
+  ## set default layer to first payby.
+  @p = keys %options; $payby = $p[0];
 
   HTML::Widgets::SelectLayers->new(
     options => \%options,

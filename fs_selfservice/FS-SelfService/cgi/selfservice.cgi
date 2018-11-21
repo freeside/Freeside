@@ -12,7 +12,7 @@ use Date::Format;
 use Date::Parse 'str2time';
 use Number::Format 1.50;
 use FS::SelfService qw(
-  access_info login_info login customer_info edit_info insert_payby update_payby
+  access_info login_info login customer_info edit_info insert_payby update_payby 
   invoice payment_info process_payment realtime_collect process_prepay
   list_pkgs order_pkg signup_info order_recharge
   part_svc_info provision_acct provision_external provision_phone provision_forward
@@ -388,9 +388,8 @@ sub process_change_ship {
 sub process_change_pay {
         my $postal = $cgi->param( 'postal_invoicing' );
         my $payby  = $cgi->param( 'payby' );
-        $cgi->param('paydate', $cgi->param('year') . '-' . $cgi->param('month') . '-01');
         my @list =
-          qw( payby payinfo payinfo1 payinfo2 month year paydate payname custpaybynum
+          qw( payby payinfo payinfo1 payinfo2 month year payname
               address1 address2 city county state zip country auto paytype
               paystate ss stateid stateid_state invoicing_list
             );
@@ -408,11 +407,7 @@ sub process_change_pay {
           };
         }
 
-        if (FS::SelfService->can('update_payby')) {
-          if ($cgi->param( 'custpaybynum' )) { _process_change_payby( 'change_pay', @list ); }
-          else { _process_insert_payby( 'change_pay', @list ); }
-        }
-        else { _process_change_info( 'change_pay', @list ); }
+        _process_change_info( 'change_pay', @list );
 }
 
 sub process_change_creditcard_pay {

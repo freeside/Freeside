@@ -876,18 +876,12 @@ sub payment_info {
   $return{$_} = $cust_main->bill_location->get($_) 
     for qw(address1 address2 city state zip);
 
-  $p->{'payment_payby'} = $payment_info->{paybys} if !$p->{'payment_payby'};
-
   # look for stored cust_payby info
   #   only if we've been given a clear payment_payby (to avoid payname conflicts)
-  if ($p->{'payment_payby'} =~ /^(CARD|CHEK)$/ || (ref($p->{'payment_payby'}))) {
-    my @search_payby = ();
-    if ($p->{'payment_payby'} eq 'CARD') { @search_payby = ('CARD','DCRD'); }
-    elsif ($p->{'payment_payby'} eq 'CHEK') { @search_payby = ('CHEK','DCHK'); }
-    elsif (ref($p->{'payment_payby'}) eq 'ARRAY') { @search_payby = @{$payment_info->{paybys}}; }
+  if ($p->{'payment_payby'} =~ /^(CARD|CHEK)$/) {
+    my @search_payby = ($p->{'payment_payby'} eq 'CARD') ? ('CARD','DCRD') : ('CHEK','DCHK');
     my ($cust_payby) = $cust_main->cust_payby(@search_payby);
     if ($cust_payby) {
-      $return{payby} = $cust_payby->payby;
       $return{payname} = $cust_payby->payname
                          || ( $cust_main->first. ' '. $cust_main->get('last') );
       $return{custpaybynum} = $cust_payby->custpaybynum;
