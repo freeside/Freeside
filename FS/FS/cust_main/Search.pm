@@ -97,7 +97,7 @@ sub smart_search {
     push @cust_main, qsearch( {
       'select'    => 'cust_main.*',
       'table'     => 'cust_main',
-      'addl_from' => ' left join cust_contact  using (custnum) '.
+      'addl_from' => ' left join contact  using (custnum) '.
                      ' left join contact_phone using (contactnum) ',
       'hashref'   => { %options },
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
@@ -136,7 +136,7 @@ sub smart_search {
       'select'    => 'cust_main.*',
       'table'     => 'cust_main',
       'addl_from' => ' left join cust_main_invoice using (custnum) '.
-                     ' left join cust_contact      using (custnum) '.
+                     ' left join contact      using (custnum) '.
                      ' left join contact_email     using (contactnum) ',
       'hashref'   => { %options },
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
@@ -289,8 +289,7 @@ sub smart_search {
       push @cust_main, qsearch( {
         'select'    => 'cust_main.*',
         'table'     => 'cust_main',
-        'addl_from' => ' left join cust_contact using (custnum) '.
-                       ' left join contact using (contactnum) ',
+        'addl_from' => ' left join contact using (custnum) ',
         'hashref'   => { %options },
         'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
       } );
@@ -322,8 +321,7 @@ sub smart_search {
     push @cust_main, qsearch( {
       'select'    => 'cust_main.*',
       'table'     => 'cust_main',
-      'addl_from' => ' left join cust_contact using (custnum) '.
-                     ' left join contact using (contactnum) ',
+      'addl_from' => ' left join contact using (custnum) ',
       'hashref'   => { %options },
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
     } );
@@ -1094,8 +1092,6 @@ sub search {
   #   (maybe we should be using FS::UI::Web::join_cust_main instead?)
   $addl_from .= ' LEFT JOIN (select refnum, referral from part_referral) AS part_referral_x ON (cust_main.refnum = part_referral_x.refnum) ';
 
-  my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from $extra_sql";
-
   my @select = (
                  'cust_main.custnum',
                  'cust_main.salesnum',
@@ -1114,10 +1110,9 @@ sub search {
     my $contact_params = $params->{'contacts'};
 
     $addl_from .=
-      ' LEFT JOIN cust_contact ON ( cust_main.custnum = cust_contact.custnum ) ';
+      ' LEFT JOIN contact ON ( cust_main.custnum = contact.custnum ) ';
 
     if ($contact_params->{'contacts_firstname'} || $contact_params->{'contacts_lastname'}) {
-      $addl_from .= ' LEFT JOIN contact ON ( cust_contact.contactnum = contact.contactnum ) ';
       my $first_query = " AND contact.first = '" . $contact_params->{'contacts_firstname'} . "'"
         unless !$contact_params->{'contacts_firstname'};
       my $last_query = " AND contact.last = '" . $contact_params->{'contacts_lastname'} . "'"
@@ -1126,12 +1121,12 @@ sub search {
     }
 
     if ($contact_params->{'contacts_email'}) {
-      $addl_from .= ' LEFT JOIN contact_email ON ( cust_contact.contactnum = contact_email.contactnum ) ';
+      $addl_from .= ' LEFT JOIN contact_email ON ( contact.contactnum = contact_email.contactnum ) ';
       $extra_sql .= " AND ( contact_email.emailaddress = '" . $contact_params->{'contacts_email'} . "' )";
     }
 
     if ($contact_params->{'contacts_homephone'} || $contact_params->{'contacts_workphone'} || $contact_params->{'contacts_mobilephone'}) {
-      $addl_from .= ' LEFT JOIN contact_phone ON ( cust_contact.contactnum = contact_phone.contactnum ) ';
+      $addl_from .= ' LEFT JOIN contact_phone ON ( contact.contactnum = contact_phone.contactnum ) ';
       my $contacts_mobilephone;
       foreach my $phone (qw( contacts_homephone contacts_workphone contacts_mobilephone )) {
         (my $num = $contact_params->{$phone}) =~ s/\W//g;
@@ -1147,6 +1142,8 @@ sub search {
     }
 
   }
+
+  my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from $extra_sql";
 
   if ($params->{'flattened_pkgs'}) {
 
