@@ -1,0 +1,42 @@
+<& /elements/header.html, mt('Customer attachment report') &>
+
+<FORM ACTION="cust_attachment.html" METHOD="GET">
+
+<FONT CLASS="fsinnerbox-title"><% emt('Attachment search options') %></FONT>
+<TABLE CLASS="fsinnerbox">
+
+  <& /elements/tr-select-agent.html &>
+
+% if ( $curuser->access_right('View deleted attachments') ) {
+
+    <& /elements/tr-checkbox.html,
+         'label' => 'Show deleted attachments',
+         'field' => 'show_deleted',
+         'value' => 1,
+    &>
+
+% }
+
+</TABLE>
+<BR><BR>
+
+<FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+<TABLE CLASS="fsinnerbox">
+
+    <& /elements/tr-select-cust-fields.html &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% emt('Get Report') %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" if !$curuser->access_right('View attachments')
+                    || !$curuser->access_right('Browse attachments');
+
+</%init>
