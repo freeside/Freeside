@@ -1,4 +1,4 @@
-<% include( 'elements/browse.html',
+<% include( 'elements/search.html',
                  'title'       => 'Attachments',
                  'menubar'     => '',
                  'name'        => ($disabled ? 'deleted' : '') .' attachments',
@@ -14,7 +14,10 @@
                  'query'       => $query,
                  'count_query' => $count_query,
                  'header' => [ selflink('#',orderby => 'attachnum'),
-                               selflink('Customer',orderby => 'custnum'),
+                               #selflink('Customer',orderby => 'custnum'),
+                               FS::UI::Web::cust_header(
+                                 $cgi->param('cust_fields')
+                               ),
                                selflink('Date',orderby => '_date'),
                                selflink('Filename',orderby => 'filename'),
                                selflink('Size',orderby => 'length(body)'),
@@ -24,7 +27,8 @@
                              ],
                  'fields' => [
                                'attachnum',
-                               $sub_cust,
+                               #$sub_cust,
+                               \&FS::UI::Web::cust_fields,
                                $sub_date,
                                'filename',
                                $sub_size,
@@ -33,14 +37,30 @@
                                $sub_checkbox,
                              ],
                  'links' => [ '',
-                              [ $p.'view/cust_main.cgi?', 'custnum' ],
+                              ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                                    FS::UI::Web::cust_header(
+                                      $cgi->param('cust_fields')
+                                    )
+                              ),
                             ],
                  'link_onclicks' => [
                               '',
-                              '',
+                              ( map '', FS::UI::Web::cust_header(
+                                          $cgi->param('cust_fields')
+                                        )
+                              ),
                               '',
                               $sub_edit_link,
                               ],
+                 'color' => [
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
+                 'align'  => 'r'. FS::UI::Web::cust_aligns(),
 
                  #'links' =>  [
                  #              '',
@@ -89,12 +109,17 @@ else {
 
 my $orderby = $cgi->param('orderby') || 'custnum';
 
+my $extra_sql = '';
+if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $extra_sql = " AND agentnum = $1 ";
+}
+
 my $query = {
     table     => 'cust_attachment',
     hashref   => { disabled => $disabled ? { op => '>', value => 0 } : '', },
     order_by  => "ORDER BY $orderby",
     addl_from => 'JOIN cust_main USING (custnum)',
-    extra_sql => ' AND ' . $curuser->agentnums_sql,
+    extra_sql => "$extra_sql AND ". $curuser->agentnums_sql,
 };
 
 my $count_query = 'SELECT COUNT(*) FROM cust_attachment'
@@ -102,10 +127,13 @@ my $count_query = 'SELECT COUNT(*) FROM cust_attachment'
   . ' WHERE ' . $curuser->agentnums_sql
   . ' AND disabled ' . ( $disabled ? '> 0' : 'IS NULL' );
 
-my $sub_cust = sub {
-  my $c = qsearchs('cust_main', { custnum => shift->custnum } );
-  return $c ? encode_entities($c->name) : '<FONT COLOR="red"><B>(not found)</B></FONT>';
-};
+#still need to report on attachments with deleted customer?  did we ever?
+#my $sub_cust = sub {
+#  my $c = qsearchs('cust_main', { custnum => shift->custnum } );
+#  return $c ? encode_entities($c->name) : '<FONT COLOR="red"><B>(not found)</B></FONT>';
+#};
+
+my $clink = [ $p.'view/cust_main.cgi?', 'custnum' ];
 
 my $sub_date = sub {
   time2str("%b %o, %Y", shift->_date);
