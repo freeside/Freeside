@@ -10,11 +10,12 @@ Examples:
 
 </%doc>
 <& /elements/header.html, {
-             'title'          => $title,
-             'title_noescape' => $title_noescape,
-             'head'           => $head,
-             #'nobr'           => 1,
-             'etc'            => $opt{'etc'},
+             'title'             => $title,
+             'title_noescape'    => $title_noescape,
+             'head'              => $head,
+             'etc'               => $opt{'etc'},
+             'include_selectize' => $opt{include_selectize} ? 1 : 0,
+             #'nobr'             => 1,
           }
 &>
 

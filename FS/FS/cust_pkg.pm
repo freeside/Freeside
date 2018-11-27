@@ -5615,6 +5615,8 @@ sub _X_show_zero {
 
 =item order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF [ REFNUM ] ] ]
 
+=item order \%PARAMS
+
 Bulk cancel + order subroutine.  Perhaps slightly deprecated, only used by the
 bulk cancel+order in the web UI and nowhere else (edit/process/cust_pkg.cgi)
 
@@ -5639,10 +5641,25 @@ setting I<refnum> to an array reference of refnums or a hash reference with
 refnums as keys.  If no I<refnum> is defined, a default FS::pkg_referral
 record will be created corresponding to cust_main.refnum.
 
+LOCATIONNUM, if specified, will be set on newly created cust_pkg records
+
 =cut
 
 sub order {
-  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum) = @_;
+  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum,
+      $locationnum);
+
+  if ( ref $_[0] ) {
+    my $args = $_[0];
+    $custnum         = $args->{custnum};
+    $pkgparts        = $args->{pkgparts};
+    $remove_pkgnum   = $args->{remove_pkgnum};
+    $return_cust_pkg = $args->{return_cust_pkg};
+    $refnum          = $args->{refnum};
+    $locationnum     = $args->{locationnum};
+  } else {
+    ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum) = @_;
+  }
 
   my $conf = new FS::Conf;
 
@@ -5685,6 +5702,8 @@ sub order {
     return '';
 
   }
+
+  $hash{locationnum} = $locationnum if $locationnum;
 
   # Create the new packages.
   foreach my $pkgpart (@$pkgparts) {
