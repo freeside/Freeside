@@ -22,7 +22,7 @@ if ( $query =~ /^(\w+)$/ ) {
 my $info = skin_info( agentnum=>$agentnum );
 
 print $cgi->header( '-type'    => 'image/png', #for now
-                    '-expires' => 'now',
+                    #'-expires' => 'now',
                   ).
       $info->{$name};
 

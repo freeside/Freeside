@@ -1,0 +1,46 @@
+<%doc>
+
+    Render a Selectize.js multiple-select to choose from
+    package classes
+
+    Selectize js and css must be included in the page header.
+    Use the include_selectize option on header.html
+
+
+    Parameters:
+    * id          - id of the <select> element
+    * name        - name of the <select> element
+    * onchange    - name of a javascript function
+    * placeholder - Text displayed when no options are selected
+
+</%doc>
+<label for="<% $opt{id} %>" class="selectize-label">Package Classes</label>
+<select id="<% $opt{id} %>" multiple placeholder="<% $opt{placeholder} %>">
+  <option value="">(none)</option>
+% for my $pkg_class ( @pkg_class ) {
+  <option value="<% $pkg_class->classnum %>"><% $pkg_class->classname %></option>
+% }
+</select>
+<script>
+  $('#<% $opt{id} %>').selectize({
+      plugins:          ['remove_button'],
+      sortField:        'text',
+      create:           false,
+      highlight:        true,
+      allowEmptyOption: true,
+      <% $opt{onchange} ? "onChange: $opt{onchange}," : '' %>
+  });
+</script>
+
+<%init>
+
+my %opt = (
+    id          => 'selectize-pkg_class',
+    name        => 'selectize_pkg_class',
+    placeholder => 'Filter Package Classes',
+    @_
+);
+
+my @pkg_class = qsearch( pkg_class => { disabled => '' } );
+
+</%init>

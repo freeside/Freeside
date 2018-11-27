@@ -53,6 +53,11 @@ Example:
       <SCRIPT SRC="<% $fsurl %>elements/printtofit.js"></SCRIPT>
 %     }
 %   }
+%   if ( $include_selectize ) {
+      <script src="<% $fsurl %>elements/selectize/selectize.min.js"></script>
+      <link href="<% $fsurl %>elements/selectize/selectize.css" type="text/css" rel="stylesheet">
+      <link href="<% $fsurl %>elements/selectize/selectize-freeside.css" type="text/css" rel="stylesheet">
+% }
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
     <script type="text/javascript" src="<% $fsurl %>elements/topreload.js"></script>
@@ -221,6 +226,7 @@ my( $title, $title_noescape, $menubar, $etc, $head ) = ( '', '', '', '', '' );
 my( $nobr, $nocss, $no_jquery ) = ( 0, 0, 0 );
 
 my $mobile;
+my $include_selectize;
 
 if ( ref($_[0]) ) {
   my $opt = shift;
@@ -233,6 +239,7 @@ if ( ref($_[0]) ) {
   $nocss      = $opt->{nocss};
   $mobile     = $opt->{mobile};
   $no_jquery  = $opt->{no_jquery};
+  $include_selectize = $opt->{include_selectize} ? 1 : 0;
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.

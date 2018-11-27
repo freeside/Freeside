@@ -745,8 +745,15 @@ sub edit_info {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $conf = new FS::Conf;
-  if (($p->{payby} eq "CHEK" || $p->{payby} eq "DCHEK") && $conf->exists('selfservice-ACH_info_readonly')) {
-    return { 'error' => "You do not have authority to add a bank account" };
+
+  if ($p->{payby}) {
+    return { 'error' => "You do not have authority to add a bank account" }
+      if (($p->{payby} eq "CHEK" || $p->{payby} eq "DCHEK") && $conf->exists('selfservice-ACH_info_readonly'));
+
+    ## get default cust_payby and change it. For old v3 selfservice that upgraded to v4.  this is for v4 only
+    my ($cust_payby) = $cust_main->cust_payby();
+    $p->{'custpaybynum'} = $cust_payby->custpaybynum;
+    update_payby($p);
   }
 
   my $new = new FS::cust_main { $cust_main->hash };
@@ -876,38 +883,35 @@ sub payment_info {
   $return{$_} = $cust_main->bill_location->get($_) 
     for qw(address1 address2 city state zip);
 
-  $p->{'payment_payby'} = $payment_info->{paybys} if !$p->{'payment_payby'};
-
   # look for stored cust_payby info
-  #   only if we've been given a clear payment_payby (to avoid payname conflicts)
-  if ($p->{'payment_payby'} =~ /^(CARD|CHEK)$/ || (ref($p->{'payment_payby'}))) {
-    my @search_payby = ();
-    if ($p->{'payment_payby'} eq 'CARD') { @search_payby = ('CARD','DCRD'); }
-    elsif ($p->{'payment_payby'} eq 'CHEK') { @search_payby = ('CHEK','DCHK'); }
-    elsif (ref($p->{'payment_payby'}) eq 'ARRAY') { @search_payby = @{$payment_info->{paybys}}; }
-    my ($cust_payby) = $cust_main->cust_payby(@search_payby);
-    if ($cust_payby) {
-      $return{payby} = $cust_payby->payby;
-      $return{payname} = $cust_payby->payname
+  #   v3 to v4 upgrade would break change_pay because change_pay does not send payment_payby
+  #   so for change_pay to work need to search for all allowed paybys and grab default payment account
+  my @search_payby = ();
+  @search_payby = ($p->{'payment_payby'} eq 'CARD') ? ('CARD','DCRD') : ('CHEK','DCHK')
+    if ($p->{'payment_payby'} =~ /^(CARD|CHEK)$/);
+
+  my ($cust_payby) = $cust_main->cust_payby(@search_payby);
+  if ($cust_payby) {
+    $return{payby} = $cust_payby->payby;
+    $return{payname} = $cust_payby->payname
                          || ( $cust_main->first. ' '. $cust_main->get('last') );
-      $return{custpaybynum} = $cust_payby->custpaybynum;
+    $return{custpaybynum} = $cust_payby->custpaybynum;
 
-      if ( $cust_payby->payby =~ /^(CARD|DCRD)$/ ) {
-        $return{card_type} = cardtype($cust_payby->payinfo);
-        $return{payinfo} = $cust_payby->paymask;
+    if ( $cust_payby->payby =~ /^(CARD|DCRD)$/ ) {
+      $return{card_type} = cardtype($cust_payby->payinfo);
+      $return{payinfo} = $cust_payby->paymask;
 
-        @return{'month', 'year'} = $cust_payby->paydate_monthyear;
+      @return{'month', 'year'} = $cust_payby->paydate_monthyear;
 
-      }
+    }
 
-      if ( $cust_payby->payby =~ /^(CHEK|DCHK)$/ ) {
-        my ($payinfo1, $payinfo2) = split '@', $cust_payby->paymask;
-        $return{payinfo1} = $payinfo1;
-        $return{payinfo2} = $payinfo2;
-        $return{paytype}  = $cust_payby->paytype;
-        $return{paystate} = $cust_payby->paystate;
-        $return{payname}  = $cust_payby->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
-      }
+    if ( $cust_payby->payby =~ /^(CHEK|DCHK)$/ ) {
+      my ($payinfo1, $payinfo2) = split '@', $cust_payby->paymask;
+      $return{payinfo1} = $payinfo1;
+      $return{payinfo2} = $payinfo2;
+      $return{paytype}  = $cust_payby->paytype;
+      $return{paystate} = $cust_payby->paystate;
+      $return{payname}  = $cust_payby->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
     }
   }
 
@@ -1724,7 +1728,10 @@ sub update_payby {
        or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
      my $payinfo2 = $1;
      $p->{'payinfo'} = $payinfo1. '@'. $payinfo2;
-   }
+  }
+  elsif ($p->{'payby'} eq 'CARD') {
+    $p->{paydate} = $p->{year} . '-' . $p->{month} . '-01' unless $p->{paydate};
+  }
 
   my $cust_payby = qsearchs('cust_payby', {
                               'custnum'      => $custnum,

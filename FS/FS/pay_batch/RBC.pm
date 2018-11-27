@@ -3,6 +3,7 @@ package FS::pay_batch::RBC;
 use strict;
 use vars qw(@ISA %import_info %export_info $name);
 use Date::Format 'time2str';
+use Date::Parse;
 use FS::Conf;
 use Encode 'encode';
 use feature 'state';
@@ -31,7 +32,7 @@ $name = 'RBC';
   'filetype'    => 'fixed',
   #this only really applies to Debit Detail, but we otherwise only need first char
   'formatre'    => 
-  '^(.).{3}(.{10}).{5}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
+  '^(.).{3}(.{10}).{5}(.{4}).{3}(.).{11}(.{19}).{6}(.{30})(.{2})(.{2})(.{4}).{9}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}\r?$',
   'fields' => [ qw(
     recordtype
     clientnum
@@ -39,6 +40,9 @@ $name = 'RBC';
     subtype
     paybatchnum
     custname
+    paydate_month
+    paydate_day
+    paydate_year
     bank
     payinfo
     paid
@@ -54,7 +58,8 @@ $name = 'RBC';
 
     my $hash = shift;
     $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
-    $hash->{'_date'} = time;
+    my $paydate = $hash->{'paydate_year'} . $hash->{'paydate_month'} . $hash->{'paydate_day'};
+    $hash->{'_date'} = str2time($paydate, 'local');
     $hash->{'payinfo'} =~ s/^(\S+).*/$1/; # these often have trailing spaces
     $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
 
