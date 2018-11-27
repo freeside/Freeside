@@ -10,12 +10,12 @@ Examples:
 
 </%doc>
 <& /elements/header.html, {
-             'title'          => $title,
-             'title_noescape' => $title_noescape,
-             #'nobr'           => 1,
-             'etc'            => $opt{'etc'},
-          }
-&>
+    'title'           => $title,
+    'title_noescape'  => $title_noescape,
+    #'nobr'           => 1,
+    'etc'             => $opt{'etc'},
+    include_selectize => $opt{include_selectize} ? 1 : 0,
+} &>
 
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') eq 'top' && @part_tag ) {
