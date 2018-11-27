@@ -1,7 +1,7 @@
 package FS::cust_attachment;
 
 use strict;
-use base qw( FS::otaker_Mixin FS::Record );
+use base qw( FS::cust_main_Mixin FS::otaker_Mixin FS::Record );
 use Carp;
 use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
