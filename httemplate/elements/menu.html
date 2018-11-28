@@ -495,7 +495,7 @@ $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
 tie my %tools_customers, 'Tie::IxHash', ();
 $tools_customers{'Appointments'} = [ $fsurl.'rt/Search/Schedule.html?LengthMin=0', 'View appointment schedule' ]
   if $curuser->access_right('View appointments');
-$tools_customers{'Attachments'} = [ $fsurl.'search/cust_attachment.html', 'View customer attachments' ]
+$tools_customers{'Attachments'} = [ $fsurl.'search/report_cust_attachment.html', 'View customer attachments' ]
   if !$conf->config('disable_cust_attachment') and $curuser->access_right('View attachments') and $curuser->access_right('Browse attachments');
 $tools_customers{'Customer email settings'} = [ $fsurl.'misc/manage_cust_email.html' ]
   if $curuser->access_right('Edit customer');
