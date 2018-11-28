@@ -96,6 +96,8 @@ points to.  You can ask the object for a copy with the I<hash> method.
 =cut
 
 sub table_info {
+  my $conf = new FS::Conf;
+  my $ip_addr_required = $conf->exists('svc_broadband-allow_null_ip_addr');
   {
     'name' => 'Wireless broadband',
     'name_plural' => 'Wireless broadband services',
@@ -117,7 +119,10 @@ sub table_info {
                          'type'     => 'fcc_477_speed',
                          'def_info' => 'both upload and download speed must be set to FCC 477 information if using that modifier',
                        },
-      'ip_addr'     => 'IP address',
+      'ip_addr'     => {
+                         'label' => 'IP address',
+                         'required' => $ip_addr_required,
+                       },
       'blocknum'    => 
       { 'label' => 'Address block',
                          'type'  => 'select',

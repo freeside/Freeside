@@ -109,6 +109,7 @@ my @fields = (
       return () unless $part_svc; #sanity check
       my $col = $part_svc->part_svc_column('ip_addr');
       return () unless $col; #sanity check
+      $col->set('required', 'Y') unless $conf->exists('svc_broadband-allow_null_ip_addr');
       return ('ip_addr_required' => $col->required);
     },
   },
