@@ -401,8 +401,10 @@ sub replace {
   #my $error = $new->SUPER::replace($old, @_);
   my $error = $new->SUPER::replace($old);
 
-  #trigger a relocate export on location changes
-  if ( $new->cust_pkg->locationnum != $old->cust_pkg->locationnum ) {
+  #trigger a relocate export on location changes (NENA2 and Northern 911 export)
+  my $old_pkg = $old->cust_pkg;
+  my $new_pkg = $new->cust_pkg;
+  if ( $old_pkg && $new_pkg && $new_pkg->locationnum != $old_pkg->locationnum ) {
     my $svc_x = $new->svc_x;
     if ( $svc_x->locationnum ) {
       if ( $svc_x->locationnum == $old->cust_pkg->locationnum ) {
