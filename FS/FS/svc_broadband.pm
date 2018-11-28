@@ -97,7 +97,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table_info {
   my $conf = new FS::Conf;
-  my $ip_addr_required = $conf->exists('svc_broadband-allow_null_ip_addr');
+  my $ip_addr_required = $conf->exists('svc_broadband-allow_null_ip_addr') ? '' : '1';
   {
     'name' => 'Wireless broadband',
     'name_plural' => 'Wireless broadband services',
