@@ -21,9 +21,10 @@ sub eventtable_hashref {
 
 sub option_fields {
   (
-    'to'     => { 'label'    => 'Destination',
-                  'type'     => 'text',
-                  'size'     => 30,
+    'to'     => { 'label'      => 'Destination',
+                  'type'       => 'text',
+                  'size'       => 200,
+                  'validation' => 'ut_email',
                 },
     'msgnum' => { 'label'    => 'Template',
                   'type'     => 'select-table',
