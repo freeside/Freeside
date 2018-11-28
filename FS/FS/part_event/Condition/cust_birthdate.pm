@@ -16,13 +16,13 @@ birthday (cust_main.birthdate)
 =cut
 
 sub description {
-  'Customer birthdate occurs within the given timeframe';
+  'Customer birthday is within time window after billing date';
 }
 
 sub option_fields {
   (
     timeframe => {
-      label => 'Timeframe',
+      label => 'Time window after bill date',
       type   => 'freq',
       value  => '1m',
     }
