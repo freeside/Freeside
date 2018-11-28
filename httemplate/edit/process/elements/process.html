@@ -109,6 +109,12 @@ Example:
 
 </%doc>
 %if ( $error ) {
+%  ## flatten any array refs so multi selects are sticky on error
+%  for my $param ($cgi->param) {
+%    if (ref($cgi->param($param)) eq "ARRAY") {
+%      $cgi->param($param, (join ",", @{$cgi->param($param)}));
+%    }
+%  }
 %
 %  #my $query = $m->scomp('/elements/create_uri_query');
 %  #$cgi->redirect("$url?$query");

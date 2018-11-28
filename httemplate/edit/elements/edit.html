@@ -869,6 +869,7 @@ Example:
 
 my(%opt) = @_;
 
+my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 #false laziness w/process.html
@@ -881,6 +882,8 @@ my $fields = $opt{'fields'}
 my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
 
 push @actualfields, $pkey;
+push @actualfields, 'ip_addr' if $table eq 'svc_broadband';
+push @actualfields, 'usergroup' if ($table eq 'svc_broadband' && $conf->exists('svc_broadband-radius'));
 
 my $js_form_validate = {};
 
