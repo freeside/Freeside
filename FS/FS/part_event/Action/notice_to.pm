@@ -23,7 +23,7 @@ sub option_fields {
   (
     'to'     => { 'label'      => 'Destination',
                   'type'       => 'text',
-                  'size'       => 200,
+                  'size'       => 30,
                   'validation' => 'ut_email',
                 },
     'msgnum' => { 'label'    => 'Template',
