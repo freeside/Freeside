@@ -554,7 +554,7 @@ $tools_menu{'Business card scan'} = [ $fsurl.'edit/prospect_main-upload.html' ]
   if $curuser->access_right('New prospect');
 $tools_menu{'Time Queue'} =  [ $fsurl.'search/report_timeworked.html', 'View pending support time' ]
   if $curuser->access_right('Time queue');
-$tools_menu{'Attachments'} = [ $fsurl.'search/cust_attachment.html', 'View customer attachments' ]
+$tools_menu{'Attachments'} = [ $fsurl.'search/report_cust_attachment.html', 'View customer attachments' ]
   if !$conf->config('disable_cust_attachment') and $curuser->access_right('View attachments') and $curuser->access_right('Browse attachments');
 $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
   if $curuser->access_right('Import');
