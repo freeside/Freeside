@@ -85,6 +85,8 @@ hashref with the following values:
 
 =item size - Size for text fields
 
+=item validation - (optional) Validate optionvalue using the given object method, such as ut_textn, ut_email
+
 =item options - For checkbox-multiple and select, a list reference of available option values.
 
 =item option_labels - For select, a hash reference of availble option values and labels.
