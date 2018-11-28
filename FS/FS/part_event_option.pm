@@ -183,9 +183,17 @@ sub check {
     $self->ut_numbern('optionnum')
     || $self->ut_foreign_key('eventpart', 'part_event', 'eventpart' )
     || $self->ut_text('optionname')
-    #|| $self->ut_textn('optionvalue')
     || $self->ut_anything('optionvalue') #http.pm content has \n
   ;
+  return $error if $error;
+
+  if ( my %option_fields = $self->option_fields ) {
+    if ( my $option_field = $option_fields{ $self->optionname } ) {
+      if ( my $validation_method = $option_field->{validation} ) {
+        $error = $self->$validation_method('optionvalue');
+      }
+    }
+  }
   return $error if $error;
 
   $self->SUPER::check;
@@ -201,6 +209,34 @@ sub insert_reason {
 
   $reason_obj->insert or $self->optionvalue( $reason_obj->reasonnum ) and '';
 
+}
+
+=item part_event
+
+Return the associated part_event row
+
+=cut
+
+sub part_event {
+  qsearchs( part_event => { eventpart => shift->eventpart })
+}
+
+=item option_fields
+
+Return the option_fields from the associated part_event::action::$action
+
+=cut
+
+sub option_fields {
+  my $part_event = shift->part_event
+    or return;
+  my $action = $part_event->action
+    or return;
+
+  # For utility scripts, doesn't seem to be necessary
+  # eval "require FS::part_event::Action::$action;";
+
+  return "FS::part_event::Action::$action"->option_fields;
 }
 
 =back
