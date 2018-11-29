@@ -5,6 +5,7 @@
     <TH ALIGN="left">Generic</TH>
     <TH ALIGN="left">Access</TH>
     <TH ALIGN="left">Telephony</TH>
+    <TH ALIGN="left">Video</TH>
 <!--    <TH>Hosting</TH>
     <TH>Colocation</TH>
 -->
@@ -15,21 +16,29 @@
         <LI><B>svc_acct</B>: Accounts - anything with a username (mailbox, shell, RADIUS, etc.)
         <LI><B>svc_hardware</B>: Equipment supplied to customers
         <LI><B>svc_external</B>: Externally-tracked service
+        <LI><B>svc_group</B>: Generic group service
       </UL>
     </TD>
     <TD VALIGN="top">
       <UL STYLE="margin:0">
         <LI><B>svc_dsl</B>: DSL
-        <LI><B>svc_broadband</B>: Wireless broadband
+        <LI><B>svc_broadband</B>: Fixed wireless broadband
         <LI><B>svc_cable</B>: Cable
-        <LI><B>svc_dish</B>: DISH Network
+        <LI><B>svc_fiber</B>: Fiber-to-the-premise service
       </UL>
     </TD>
     <TD VALIGN="top">
       <UL STYLE="margin:0">
         <LI><B>svc_phone</B>: Customer phone number
         <LI><B>svc_pbx</B>: Customer PBX
+        <LI><B>svc_conferencing</B>: Conferencing service
         <LI><B>svc_circuit</B>: Phone circuits other than DSL
+      </UL>
+    </TD>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_video</B>: IPTV or video-on-demand service
+        <LI><B>svc_dish</B>: DISH Network
       </UL>
     </TD>
   </TR>
@@ -39,6 +48,7 @@
   <TR>
     <TH ALIGN="left">Hosting</TH>
     <TH ALIGN="left">Colocation</TH>
+    <TH ALIGN="left">Alarm</TH>
   </TR>
     <TD VALIGN="top">
       <UL STYLE="margin:0">
@@ -54,11 +64,13 @@
         <LI><B>svc_port</B>: Customer router/switch port
       </UL>
     </TD>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_alarm</B>: Alarm service
+      </UL>
+    </TD>
   </TR>
 <TABLE>
-<!--   <LI>svc_charge - One-time charges (Partially unimplemented)
-       <LI>svc_wo - Work orders (Partially unimplemented)
--->
 
 </BODY>
 </HTML>

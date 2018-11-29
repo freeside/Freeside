@@ -7542,6 +7542,22 @@ sub tables_hashref {
                          ],
     },
 
+    'svc_group' => {
+      'columns' => [
+        'svcnum',          'int', '', '', '', '', 
+        'max_accounts',    'int', '', '', '', '',
+      ],
+      'primary_key'  => 'svcnum',
+      'unique'       => [],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'svcnum' ],
+                            table      => 'cust_svc',
+                          },
+                        ],
+    },
+
+
     # name type nullability length default local
 
     #'new_table' => {
