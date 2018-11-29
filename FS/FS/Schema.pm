@@ -7666,11 +7666,11 @@ sub tables_hashref {
       ],
     },
 
-    realestate_location => {
+    'realestate_location' => {
       'columns' => [
         'realestatelocnum', 'serial',  '',     '',      '', '',
         'agentnum',         'int',     'NULL', '',      '', '',
-       'location_title',   'varchar', '',     $char_d, '', '',
+        'location_title',   'varchar', '',     $char_d, '', '',
         'address1',         'varchar', 'NULL', $char_d, '',  '',
         'address2',         'varchar', 'NULL', $char_d, '',  '',
         'city',             'varchar', 'NULL', $char_d, '',  '',
@@ -7678,22 +7678,38 @@ sub tables_hashref {
         'zip',              'char',    'NULL', 5,       '',  '',
         'disabled',         'char',    'NULL', 1,       '',  '',
       ],
-      primary_key  => 'realestatelocnum',
-      'unique'     => [ ['location_title'] ],
-      'index'      => [ ['agentnum'], ['disabled'] ],
+      'primary_key'  => 'realestatelocnum',
+      'unique'       => [ ['location_title'] ],
+      'index'        => [ ['agentnum'], ['disabled'] ],
       'foreign_keys' => [
         {columns => ['agentnum'], table => 'agent'},
       ],
     },
 
-    svc_realestate => {
-      columns => [
+    'svc_realestate' => {
+      'columns' => [
         'svcnum',        'serial',  '',     '',      '', '',
         'realestatenum', 'int',     'NULL', '',      '', '',
       ],
-      primary_key => 'svcnum',
-      index => [],
+      'primary_key' => 'svcnum',
+      'index'       => [],
     },
+
+    'svc_group' => {
+      'columns' => [
+        'svcnum',          'int', '', '', '', '', 
+        'max_accounts',    'int', '', '', '', '',
+      ],
+      'primary_key'  => 'svcnum',
+      'unique'       => [],
+      'index'        => [],
+      'foreign_keys' => [
+                          { columns    => [ 'svcnum' ],
+                            table      => 'cust_svc',
+                          },
+                        ],
+    },
+
 
     # name type nullability length default local
 

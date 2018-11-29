@@ -251,11 +251,11 @@ my $help = '';
 unless ( $hashref->{svcpart} ) {
   $help = '&nbsp;'.
           include('/elements/popup_link.html',
-                    'action' => $p.'docs/part_svc-table.html',
-                    'label'  => 'help',
+                    'action'      => $p.'docs/part_svc-table.html',
+                    'label'       => 'help',
                     'actionlabel' => 'Service table help',
-                    'width'       => 763,
-                    #'height'      => 400,
+                    'width'       => 960,
+                    'height'      => 400,
                   );
 }
 
