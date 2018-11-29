@@ -14,6 +14,7 @@ use FS::svc_external;
 use FS::svc_phone;
 use FS::svc_hardware;
 use FS::part_referral;
+use Business::CreditCard 0.35;
 
 $DEBUG = 0;
 
@@ -95,6 +96,7 @@ sub process_batch_import {
       agentnum  => $param->{'agentnum'},
       refnum    => $param->{'refnum'},
       pkgpart   => $param->{'pkgpart'},
+      validate_cc => $param->{'validate_cc'},
       #'fields'  => [qw( cust_pkg.setup dayphone first last address1 address2
       #                 city state zip comments                          )],
       'format'  => $param->{'format'},
@@ -125,6 +127,7 @@ sub batch_import {
   my $agentnum  = $param->{agentnum};
   my $refnum    = $param->{refnum};
   my $pkgpart   = $param->{pkgpart};
+  my $validate_cc = $param->{validate_cc};
 
   my $format    = $param->{'format'};
 
@@ -420,6 +423,14 @@ sub batch_import {
       } elsif ($cust_main{'payinfo'} =~ /^\s*([AD]?)(.*)\s*$/) {
 
         delete $cust_main{'payinfo'};
+
+        ## validate credit card if requested
+        if ($validate_cc) {
+          validate($2)
+            or return "Invalid card($2) for customer ".$cust_main{'first'}." ".$cust_main{'last'};
+          return "Unknown card type for customer ".$cust_main{'first'}." ".$cust_main{'last'}
+            if cardtype($2) eq "Unknown";
+        }
 
         $cust_payby = new FS::cust_payby {
           'payby'   => ($1 eq 'D') ? 'DCRD' : 'CARD',

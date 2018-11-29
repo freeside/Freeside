@@ -42,6 +42,13 @@ Import a file containing customer records.
     </TD>
   </TR>
 
+  <& /elements/tr-checkbox.html,
+       'label' => 'Validate credit card',
+       'field' => 'validate_cc',
+       'id'    => 'validate_cc',
+       'value' => 'Y',
+  &>
+
   <% include( '/elements/file-upload.html',
                 'field' => 'file',
                 'label' => 'Filename',
