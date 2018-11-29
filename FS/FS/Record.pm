@@ -25,6 +25,7 @@ use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
 #use FS::Conf; #dependency loop bs, in install_callback below instead
+use Email::Valid;
 
 use FS::part_virtual_field;
 
@@ -3362,6 +3363,36 @@ sub ut_agentnum_acl {
 
   '';
 
+}
+
+
+=item ut_email COLUMN
+
+Check column contains a valid E-Mail address
+
+=cut
+
+sub ut_email {
+  my ( $self, $field ) = @_;
+  Email::Valid->address( $self->getfield( $field ) )
+    ? ''
+    : "Illegal (email) field $field: ". $self->getfield( $field );
+}
+
+=item ut_emailn COLUMN
+
+Check column contains a valid E-Mail address
+
+May be null
+
+=cut
+
+sub ut_emailn {
+  my ( $self, $field ) = @_;
+
+  $self->getfield( $field ) =~ /^$/
+    ? $self->getfield( $field, '' )
+    : $self->ut_email( $field );
 }
 
 =item trim_whitespace FIELD[, FIELD ... ]

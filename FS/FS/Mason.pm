@@ -423,6 +423,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::svc_realestate;
   use FS::saved_search;
   use FS::sector_coverage;
+  use FS::svc_group;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -16,13 +16,13 @@ birthday (cust_main.birthdate)
 =cut
 
 sub description {
-  'Customer birthdate occurs within the given timeframe';
+  'Customer birthday is within time window after billing date';
 }
 
 sub option_fields {
   (
     timeframe => {
-      label => 'Timeframe',
+      label => 'Time window after bill date',
       type   => 'freq',
       value  => '1m',
     }
@@ -43,8 +43,10 @@ sub condition {
     die "Unparsable timeframe given: ".$self->option('timeframe');
   }
 
-  my $ck_dt = DateTime->from_epoch( epoch => $opt{time} );
-  my $bd_dt = DateTime->from_epoch( epoch => $birthdate );
+  my $ck_dt = DateTime->from_epoch( epoch => $opt{time} )
+                      ->truncate( to => 'day' );
+  my $bd_dt = DateTime->from_epoch( epoch => $birthdate )
+                      ->truncate( to => 'day' );
 
   # Find the birthday for this calendar year.  If customer birthday
   # has already passed this year, find the birthday for next year.
