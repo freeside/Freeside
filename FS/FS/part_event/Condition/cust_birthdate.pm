@@ -43,8 +43,10 @@ sub condition {
     die "Unparsable timeframe given: ".$self->option('timeframe');
   }
 
-  my $ck_dt = DateTime->from_epoch( epoch => $opt{time} );
-  my $bd_dt = DateTime->from_epoch( epoch => $birthdate );
+  my $ck_dt = DateTime->from_epoch( epoch => $opt{time} )
+                      ->truncate( to => 'day' );
+  my $bd_dt = DateTime->from_epoch( epoch => $birthdate )
+                      ->truncate( to => 'day' );
 
   # Find the birthday for this calendar year.  If customer birthday
   # has already passed this year, find the birthday for next year.
