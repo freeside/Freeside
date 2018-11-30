@@ -232,12 +232,32 @@ my %h_table_labelsub = (
   #'h_cust_tag'      => $tag_labelsub,
   'h_contact'  => $contact_labelsub,
   'h_cust_contact'  => $contact_labelsub,
+  'h_contact_phone' => $contact_labelsub,
+  'h_contact_email' => $contact_labelsub,
 );
 
 my $tag_descripsub = sub {
   my($item, $label) = @_;
   my $part_tag = qsearchs('part_tag',{ tagnum => $item->tagnum });
   '<SPAN STYLE="background-color: #'.$part_tag->tagcolor.'">'. encode_entities($part_tag->tagname). '</SPAN>';
+};
+
+my $contact_descripsub = sub {
+  my($item, $label) = @_;
+  my $phone_type = qsearchs('phone_type',{ phonetypenum => $item->phonetypenum });
+  my @fields = $item->fields;
+  join(', ',
+    map  {
+           my $value = ( $_ eq "phonetypenum" )
+              ? $item->get($_).' ('.$phone_type->typename.')'
+              : $item->get($_);
+           $value = substr($value, 0, 77).'...' if length($value) > 80;
+           $value = encode_entities($value);
+           "<I>$_</I>:<B>$value</B>";
+         }
+         grep { ! /^(history|custnum$)/i }
+            @fields
+  );
 };
 
 my $discounts = {};
@@ -260,6 +280,7 @@ my $discount_descripsub = sub {
 my %h_table_descripsub = (
   'h_cust_pkg_discount' => $discount_descripsub,
   'h_cust_tag'          => $tag_descripsub,
+  'h_contact_phone'     => $contact_descripsub,
 );
 
 my $cust_pkg_date_format = '%b %o, %Y';

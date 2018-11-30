@@ -50,6 +50,8 @@ tie my %tables, 'Tie::IxHash',
   'cust_tag'          => 'Tag',
   'contact'           => 'Contact',
   'cust_contact'      => 'Contact',
+  'contact_phone'     => 'Contact',
+  'contact_email'     => 'Contact',
 ;
 
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
@@ -147,8 +149,7 @@ my $extra_sql = ' AND custnum = '. $cust_main->custnum;
 
 my %foundsvcs;
 foreach my $table ( keys %tables ) {
-  if ($table eq 'cust_contact') { next; } #skip as dont need to search table but hack to show contact name
-  elsif ($table eq 'contact') {
+  if ($tables{$table} eq 'Contact') {
 
     my $contact_addl_from = "
       INNER JOIN (select contactnum, min(history_date) as min_history_date, max(history_date) as max_history_date, max(historynum) as max_historynum FROM h_cust_contact WHERE custnum = ".$cust_main->custnum." AND history_date >= $newer_than GROUP BY contactnum) a ON h_cust_contact.contactnum = a.contactnum
@@ -168,25 +169,14 @@ foreach my $table ( keys %tables ) {
 
      ## get history of contact while attached to customer
      my @contact_history = qsearch({
-       'table'      => "h_contact",
+       'table'      => "h_$table",
        'hashref'    => {
-          'history_date' =>  { op=>'>=', value=>$c->{Hash}->{min_history_date} },
+          'history_date' =>  { op=>'>=', value=>($c->{Hash}->{min_history_date} - 1) },
           'contactnum'   => $c->{Hash}->{contactnum},
-        },
-        'extra_sql' => $max_date_sql,
+       },
+       'extra_sql' => $max_date_sql,
      });
-
-     ## get history of customer specific changes to contact.
-     my @cust_contact_history = qsearch({
-       'table'     => "h_cust_contact",
-       'hashref'   => {
-          'history_date' =>  { op=>'>=', value=>$c->{Hash}->{min_history_date} },
-          'contactnum'   => $c->{Hash}->{contactnum},
-          'custnum'      => $cust_main->custnum,
-        },
-     });
-
-     push @history, @contact_history; push @history, @cust_contact_history;
+     push @history, @contact_history;
     }
   }
   else {
