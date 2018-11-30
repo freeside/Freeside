@@ -48,10 +48,13 @@ tie my %tables, 'Tie::IxHash',
   #? it gets provisioned anyway 'phone_avail'         => 'Phone',
   'cust_tag'          => 'Tag',
   'contact'           => 'Contact',
+  'contact_phone'     => 'Contact',
+  'contact_email'     => 'Contact',
 ;
 
 my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
 my $svc_join = "JOIN cust_svc USING ( svcnum ) $pkg_join";
+my $contact_join = "JOIN contact using (contactnum )";
 
 my @svc_tables = qw(
   svc_acct
@@ -68,6 +71,8 @@ my %table_join = (
   'radius_usergroup' => $svc_join,
   'phone_device'     => $svc_join,
   'cust_pkg_discount'=> $pkg_join,
+  'contact_phone'    => $contact_join,
+  'contact_email'    => $contact_join,
 );
 
 %table_join = (%table_join, map { $_ => $svc_join } @svc_tables);
