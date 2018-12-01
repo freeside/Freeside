@@ -3,8 +3,11 @@ package FS::geocode_Mixin;
 use strict;
 use vars qw( $DEBUG $me );
 use Carp;
+use Cpanel::JSON::XS;
+use Data::Dumper;
 use Locale::Country ();
-use Geo::Coder::Googlev3; #compile time for now, until others are supported
+use LWP::UserAgent;
+use URI::Escape;
 use FS::Record qw( qsearchs qsearch );
 use FS::Conf;
 use FS::cust_pkg;
@@ -163,31 +166,66 @@ API and set the 'latitude' and 'longitude' fields accordingly.
 sub set_coord {
   my $self = shift;
 
-  #my $module = FS::Conf->new->config('geocode_module') || 'Geo::Coder::Googlev3';
+  # Google documetnation:
+  # https://developers.google.com/maps/documentation/geocoding/start
 
-  my $geocoder = Geo::Coder::Googlev3->new;
 
-  my $location = eval {
-    $geocoder->geocode( location =>
-      $self->get('address1'). ','.
-      ( $self->get('address2') ? $self->get('address2').',' : '' ).
-      $self->get('city'). ','.
-      $self->get('state'). ','.
-      $self->country_full
-    );
-  };
-  if ( $@ ) {
-    warn "geocoding error: $@\n";
+  my $api_key = FS::Conf->new->config('google_maps_api_key');
+
+  unless ( $api_key ) {
+    # Google API now requires a valid key with a payment method attached
+    warn 'Geocoding unavailable, install a google_maps_api_key';
     return;
   }
 
-  my $geo_loc = $location->{'geometry'}{'location'} or return;
-  if ( $geo_loc->{'lat'} && $geo_loc->{'lng'} ) {
-    $self->set('latitude',  $geo_loc->{'lat'} );
-    $self->set('longitude', $geo_loc->{'lng'} );
-    $self->set('coord_auto', 'Y');
+  my $google_api_url = 'https://maps.googleapis.com/maps/api/geocode/json';
+
+  my $address =
+    join ',',
+    map { $self->$_ ? uri_escape( $self->get( $_ ) ) : () }
+    qw( address1 address2 city state zip country_full );
+
+  my $query_url = sprintf
+    '%s?address=%s&key=%s',
+    $google_api_url, $address, $api_key;
+
+  my $ua = LWP::UserAgent->new;
+  $ua->timeout(10);
+  my $res = $ua->get( $query_url );
+  my $json_res = decode_json( $res->decoded_content );
+  my $json_error = $json_res->{error_message}
+    if ref $json_res && $json_res->{error_message};
+
+  if ( $DEBUG ) {
+    warn "\$query_url: $query_url\n";
+    warn "\$json_error: $json_error\n";
+    warn Dumper( $json_res || $res->decoded_content )."\n";
   }
 
+  if ( !$res->is_success || $json_error ) {
+    warn "Error using google GeoCoding API";
+    warn Dumper( $json_res || $res->decoded_content );
+    return;
+  }
+  
+  if (
+       ref $json_res
+    && ref $json_res->{results}
+    && ref $json_res->{results}->[0]
+    && ref $json_res->{results}->[0]->{geometry}
+    && ref $json_res->{results}->[0]->{geometry}->{location}
+  ) {
+    my $location = $json_res->{results}->[0]->{geometry}->{location};
+    if ( $location->{lat} && $location->{lng} ) {
+      $self->set( latitude   => $location->{lat} );
+      $self->set( longitude  => $location->{lng} );
+      $self->set( coord_auto => 'Y' );
+    }
+  } else {
+    # If google changes the API response structure, warnings abound
+    warn "No location match found using google GeoCoding API for $address";
+    warn Dumper( $json_res || $res->decoded_content );
+  }
 }
 
 =item geocode DATA_VENDOR
