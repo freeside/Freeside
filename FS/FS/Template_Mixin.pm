@@ -26,6 +26,7 @@ use FS::pkg_category;
 use FS::pkg_class;
 use FS::invoice_mode;
 use FS::L10N;
+use FS::Log;
 
 $DEBUG = 0;
 $me = '[FS::Template_Mixin]';
@@ -3461,6 +3462,27 @@ sub _items_cust_bill_pkg {
           if $DEBUG > 1;
 
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
+
+        unless ( $cust_pkg ) {
+          # There is no related row in cust_pkg for this cust_bill_pkg.pkgnum.
+          # This invoice may have been broken by an unusual combination
+          # of manually editing package dates, and aborted package changes
+          # when the manually edited dates used are nonsensical.
+
+          my $error = sprintf
+            'cust_bill_pkg(billpkgnum:%s) '.
+            'is missing related row in cust_pkg(pkgnum:%s)! '.
+            'cust_bill(invnum:%s) is corrupted by bad database data, '.
+            'and should be investigated',
+              $cust_bill_pkg->billpkgnum,
+              $cust_bill_pkg->pkgnum,
+              $cust_bill_pkg->invnum;
+
+          FS::Log->new('FS::cust_bill_pkg')->critical( $error );
+          warn $error;
+          next;
+        }
+
         my $part_pkg = $cust_pkg->part_pkg;
 
         # which pkgpart to show for display purposes?
