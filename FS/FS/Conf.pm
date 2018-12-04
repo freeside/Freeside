@@ -1503,6 +1503,18 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'invoice_latexcouponlocation',
+    'section'     => 'invoicing',
+    'description' => 'Location of the remittance coupon.Either top or bottom of page, defaults to bottom.',
+    'type'        => 'select',
+    'select_hash' => [
+                       'bottom' => 'Bottom of page (default)',
+                       'top'    => 'Top of page',
+                     ],
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'invoice_latexsmallfooter',
     'section'     => 'invoice_templates',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
