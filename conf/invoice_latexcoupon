@@ -1,4 +1,4 @@
-Detach and return this remittance form with your payment.\\
+[@-- ($couponlocation eq "bottom") ? 'Detach and return this remittance form with your payment.\\' : '' --@]
 \begin{tabular}{ll}
 \begin{tabular}{ll}
 \returninset
@@ -35,3 +35,4 @@ Total Due & \textbf{[@-- $balance --@]} & \\
 \hfill
 \end{tabular}\\
 \end{tabular}\\
+[@-- ($couponlocation eq "top") ? ' \centerline{Detach and return this remittance form with your payment. }\\\\' : '' --@]

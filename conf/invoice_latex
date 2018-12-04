@@ -1,6 +1,6 @@
 %% file: Standard Multipage.tex
 %% Purpose: Multipage bill template for e-Bills
-%% 
+%%
 %% Created by Mark Asplen-Taylor
 %% Asplen Management Ltd
 %% www.asplen.co.uk
@@ -15,7 +15,7 @@
 %%	1.3	2/12/02	Logo graphic added
 %%	1.4	7/2/03	Multipage headers/footers added
 %%      n/a     forked for Freeside; checked into CVS
-%%
+%%      12/04/18  added support for coupon placement, top or bottom of page
 
 \documentclass[letterpaper]{article}
 
@@ -48,10 +48,13 @@
 }
 \end
 
+\newcommand{\extracouponspace}{[@-- defined($extracouponspace) ? $extracouponspace : '2.7in' --@]}
+
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
 \addtolength{\hoffset}{-0.6cm}		% left margin on page
 \addtolength{\topmargin}{[@-- defined($topmargin) ? $topmargin : '-1.00cm' --@]}
 \setlength{\headheight}{2.0cm} 		% height of header
+[@-- if ($coupon && $couponlocation eq "top") { '\addtolength{\headheight}{\extracouponspace}'; } --@] % add coupon space to header
 \setlength{\headsep}{[@-- defined($headsep) ? $headsep : '1.0cm' --@]}
 \setlength{\footskip}{1.0cm}		% bottom of footer from bottom of text
 
@@ -70,18 +73,23 @@
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{1pt}
 
-\renewcommand{\footrule}{
 [@--
-  $coupon ? '\ifthenelse{\equal{\thepage}{1}}' : '';
+  if ($couponlocation eq "top") {
+   if ($coupon) {
+    '\makeatletter
+     \newcommand\ifpageone{
+      \ifnum\value{page}=1
+       \expandafter\@firstoftwo
+      \else
+       \expandafter\@secondoftwo
+      \fi}
+     \makeatother';
+   }
+  }
+  else {
+   '\renewcommand{\footrule}{\ifthenelse{\equal{\thepage}{1}}{}{ \vbox to 0pt{\rule{\headwidth}{\footrulewidth}\vss} } }';
+  }
 --@]
-  {
-  }
-  {
-    \vbox to 0pt{\rule{\headwidth}{\footrulewidth}\vss}
-  }
-}
-
-\newcommand{\extracouponspace}{[@-- defined($extracouponspace) ? $extracouponspace : '2.7in' --@]}
 
 % Adjust the inset of the mailing address
 \newcommand{\addressinset}[1][]{\hspace{1.0cm}}
@@ -103,10 +111,11 @@
 
 % Define fancy header/footer for first and subsequent pages
 \fancyfoot[C]{
+\ifpageone{\global\setlength\headheight{2cm}}
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
 [@--
-  if ($coupon) {
+  if ($coupon && $couponlocation eq "bottom") {
     $OUT .= '\vspace{-\extracouponspace}';
     $OUT .= '\rule[0.5em]{\textwidth}{\footrulewidth}\\\\';
     $OUT .= $coupon;
@@ -117,7 +126,7 @@
   '';
 --@] [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
 [@-- $footer --@]
-    }[@-- $coupon ? '\vspace{\extracouponspace}' : '' --@]
+    }[@-- ($coupon && $couponlocation eq "bottom") ? '\vspace{\extracouponspace}' : '' --@]
   }
   { % ... pages
     [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
@@ -138,7 +147,16 @@
 \fancyhead[L]{
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
-    \returninset
+[@--
+  if ($coupon && $couponlocation eq "top") {
+    $OUT .= '\vspace{-\extracouponspace}';
+    $OUT .= $coupon;
+    $OUT .= '\rule[0.5em]{\textwidth}{\footrulewidth}\\\\';
+    $OUT .= '\vspace{'.
+      (defined($couponfootsep) ? $couponfootsep : '0.2in') .
+      '}';
+  }
+--@]\returninset
     \makebox{
       \begin{tabular}{ll}
         \begin{minipage}[b]{5.5cm}
@@ -197,10 +215,10 @@
 
 \newcommand{\FSdescriptionlength} { [@-- $unitprices ? '8.2cm' : '12.8cm' --@] }
 \newcommand{\FSdescriptioncolumncount} { [@-- $unitprices ? '4' : '6' --@] }
-\newcommand{\FSunitcolumns}{ [@-- 
+\newcommand{\FSunitcolumns}{ [@--
   $unitprices
   ? '\makebox[2.5cm][r]{\textbf{~~' . emt('Unit Price') . '}} &' .
-    '\makebox[1.4cm]{\textbf{~' . emt('Quantity') . '}} & ' 
+    '\makebox[1.4cm]{\textbf{~' . emt('Quantity') . '}} & '
   : '' --@] }
 
 \newcommand{\FShead}{
@@ -273,7 +291,7 @@
 }
 
 %	Headers and footers defined for the first page
-\addressinset \rule{0.5cm}{0cm} 
+\addressinset \rule{0.5cm}{0cm}
 \makebox{
 \begin{minipage}[t]{7.0cm}
 \vspace{[@-- defined($addresssep) ? $addresssep : '0.25cm' --@]}
@@ -386,17 +404,17 @@
 
       my $lastref = 0;
       foreach my $line (
-        grep { ( scalar( @sections ) > 1 
+        grep { ( scalar( @sections ) > 1
                ? $section->{'description'} eq $_->{'section'}->{'description'}
                : 1
              ) }
         @detail_items )
       {
         my $ext_description = $line->{'ext_description'};
-  
+
         # Don't break-up small packages.
         my $rowbreak = @$ext_description < 5 ? '*' : '';
-  
+
         $OUT .= "\\hline\n" if (($line->{'ref'} || 0) ne $lastref);
         if ($section->{description_generator}) {
           $OUT .= &{$section->{description_generator}}($line);
@@ -414,7 +432,7 @@
                   '{' . $line->{'description'} . '}' ;
           if ( $unitprices and length($line->{'unit_amount'}) ) {
             # then show the unit amount and quantity
-            $OUT .= 
+            $OUT .=
                 '{\\dollar' . $line->{'unit_amount'} . '}'.
                 '{'         . $line->{'quantity'}    . '}';
           } else {

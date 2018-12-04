@@ -597,6 +597,7 @@ sub print_generic {
     'amountenclosedsep'     => scalar($conf->config('invoice_latexcouponamountenclosedsep', $agentnum)),
     'coupontoaddresssep'    => scalar($conf->config('invoice_latexcoupontoaddresssep', $agentnum)),
     'addcompanytoaddress'   => $conf->exists('invoice_latexcouponaddcompanytoaddress', $agentnum),
+    'couponlocation'        => (scalar($conf->config('invoice_latexcouponlocation', $agentnum)) eq "top") ? 'top' : 'bottom',
 
     # better hang on to conf_dir for a while (for old templates)
     'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
