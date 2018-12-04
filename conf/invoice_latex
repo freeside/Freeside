@@ -73,23 +73,16 @@
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{1pt}
 
+\renewcommand{\footrule}{
 [@--
-  if ($couponlocation eq "top") {
-   if ($coupon) {
-    '\makeatletter
-     \newcommand\ifpageone{
-      \ifnum\value{page}=1
-       \expandafter\@firstoftwo
-      \else
-       \expandafter\@secondoftwo
-      \fi}
-     \makeatother';
-   }
-  }
-  else {
-   '\renewcommand{\footrule}{\ifthenelse{\equal{\thepage}{1}}{}{ \vbox to 0pt{\rule{\headwidth}{\footrulewidth}\vss} } }';
-  }
+  $coupon ? '\ifthenelse{\equal{\thepage}{1}}' : '';
 --@]
+  {
+  }
+  {
+    \vbox to 0pt{\rule{\headwidth}{\footrulewidth}\vss}
+  }
+}
 
 % Adjust the inset of the mailing address
 \newcommand{\addressinset}[1][]{\hspace{1.0cm}}
@@ -122,6 +115,9 @@
     $OUT .= '\vspace{'.
       (defined($couponfootsep) ? $couponfootsep : '0.2in') .
       '}';
+  }
+  elsif ($coupon && $couponlocation eq "top") {
+    $OUT .= '\vspace{-\extracouponspace}';
   }
   '';
 --@] [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
