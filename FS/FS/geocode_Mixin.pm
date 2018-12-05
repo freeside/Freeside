@@ -182,7 +182,7 @@ sub set_coord {
 
   my $address =
     join ',',
-    map { $self->$_ ? uri_escape( $self->get( $_ ) ) : () }
+    map { $self->get( $_ ) ? uri_escape( $self->get( $_ ) ) : () }
     qw( address1 address2 city state zip country_full );
 
   my $query_url = sprintf
