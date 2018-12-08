@@ -1143,7 +1143,7 @@ sub search {
 
   }
 
-  my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from $extra_sql";
+  my $count_query = "SELECT COUNT(DISTINCT cust_main.custnum) FROM cust_main $addl_from $extra_sql";
 
   if ($params->{'flattened_pkgs'}) {
 
