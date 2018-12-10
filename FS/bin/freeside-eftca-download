@@ -11,6 +11,7 @@ use FS::Record qw(qsearch qsearchs);
 use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::Conf;
+use FS::Log;
 
 use vars qw( $opt_v $opt_a );
 getopts('va:');
@@ -38,11 +39,15 @@ my @fields = (
 my $user = shift or die &HELP_MESSAGE;
 adminsuidsetup $user;
 
+my $log = FS::Log->new('freeside-eftca-download');
+log_info( "EFT Canada download started\n" );
+
 if ( $opt_a ) {
-  die "no such directory: $opt_a\n"
+  log_error_and_die( "no such directory: $opt_a\n" )
     unless -d $opt_a;
-  die "archive directory $opt_a is not writable by the freeside user\n"
-    unless -w $opt_a;
+  log_error_and_die(
+    "archive directory $opt_a is not writable by the freeside user\n"
+  ) unless -w $opt_a;
 }
 
 #my $tmpdir = File::Temp->newdir();
@@ -63,51 +68,58 @@ foreach my $agent (@agents) {
   if ( $conf->exists('batch-spoolagent') ) {
     @batchconf = $conf->config('batchconfig-eft_canada', $agent->agentnum, 1);
     if ( !length($batchconf[0]) ) {
-      warn "agent '".$agent->agent."' has no batchconfig-eft_canada setting; skipped.\n";
+      log_info(
+        "agent '".$agent->agent.
+        "' has no batchconfig-eft_canada setting; skipped.\n"
+      );
       next;
     }
   } else {
     @batchconf = $conf->config('batchconfig-eft_canada');
   }
   # user, password, transaction code, delay days
-  my $user = $batchconf[0] or die "no EFT Canada batch username configured\n";
-  my $pass = $batchconf[1] or die "no EFT Canada batch password configured\n";
+  my $user = $batchconf[0]
+    or log_error_and_die( "no EFT Canada batch username configured\n" );
+  my $pass = $batchconf[1]
+    or log_error_and_die( "no EFT Canada batch password configured\n" );
 
   my $host = 'ftp.eftcanada.com';
-  print STDERR "Connecting to $user\@$host...\n" if $opt_v;
+  log_info( "Connecting to $user\@$host...\n" );
 
   my $sftp = Net::SFTP::Foreign->new( host     => $host,
                                       user     => $user,
                                       password => $pass,
                                       timeout  => 30,
                                     );
-  die "failed to connect to '$user\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+  log_error_and_die("failed to connect to '$user\@$host'\n(".$sftp->error.")\n")
+    if $sftp->error;
 
   $sftp->setcwd('/Returns');
 
   my $files = $sftp->ls('.', wanted => qr/\.txt$/, names_only => 1);
-  die "no response files found\n" if !@$files;
+  log_info_and_die( "Finished: No response files found\n" )
+    if !@$files;
 
   FILE: foreach my $filename (@$files) {
-    print STDERR "Retrieving $filename\n" if $opt_v;
+    log_info( "Retrieving $filename\n" );
     $sftp->get("$filename", "$tmpdir/$filename");
     if($sftp->error) {
-      warn "failed to download $filename\n";
+      log_info( "failed to download $filename\n" );
       next FILE;
     }
 
     #move to server archive dir
     $sftp->rename("$filename", "Archive/$filename");
     if($sftp->error) {
-      warn "failed to archive $filename on server\n";
+      log_info(  "failed to archive $filename on server\n" );
     } # process it anyway though
 
     #copy to local archive dir
     if ( $opt_a ) {
-      print STDERR "Copying $tmpdir/$filename to archive dir $opt_a\n"
-        if $opt_v;
+      log_info( "Copying $tmpdir/$filename to archive dir $opt_a\n" );
       system 'cp', "$tmpdir/$filename", $opt_a;
-      warn "failed to copy $tmpdir/$filename to $opt_a: $@" if $@;
+      log_info( "failed to copy $tmpdir/$filename to $opt_a: $@" )
+        if $@;
     }
 
     open my $fh, "<$tmpdir/$filename";
@@ -118,20 +130,23 @@ foreach my $agent (@agents) {
     while (my $line = <$fh>) {
       next if $line =~ /^\s*$/;
       $csv->parse($line) or do {
-        warn "can't parse $filename: ".$csv->error_input."\n";
+        log_info( "can't parse $filename: ".$csv->error_input."\n" );
         next FILE; #parsing errors = reading the wrong kind of file
       };
       @hash{@fields} = $csv->fields();
-      print STDERR "voiding paybatchnum#$hash{paybatchnum}\n" if $opt_v;
+      log_info( "voiding paybatchnum#$hash{paybatchnum}\n" );
       my $cpb = qsearchs('cust_pay_batch', 
                           { paybatchnum => $hash{'paybatchnum'} });
       if ( !$cpb ) {
-        warn "can't find paybatchnum #$hash{paybatchnum} ($hash{first} $hash{last}, $hash{paid})\n";
+        log_info(
+          "can't find paybatchnum #$hash{paybatchnum} ".
+          "($hash{first} $hash{last}, $hash{paid})\n"
+        );
         next;
       }
       my $error = $cpb->decline("Returned payment ($hash{returncode})");
       if ( $error ) {
-        warn "can't void paybatchnum #$hash{paybatchnum}: $error\n";
+        log_info( "can't void paybatchnum #$hash{paybatchnum}: $error\n" );
       }
     }
     close $fh;
@@ -139,7 +154,25 @@ foreach my $agent (@agents) {
 
 }
 
-print STDERR "Finished!\n" if $opt_v;
+log_info( "Finished!\n" );
+
+sub log_info {
+  my $log_message = shift;
+  $log->info( $log_message );
+  print STDERR $log_message if $opt_v;
+}
+
+sub log_info_and_die {
+  my $log_message = shift;
+  $log->info( $log_message );
+  die $log_message;
+}
+
+sub log_error_and_die {
+  my $log_message = shift;
+  $log->error( $log_message );
+  die $log_message;
+}
 
 =head1 NAME
 

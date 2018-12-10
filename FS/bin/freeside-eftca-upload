@@ -9,6 +9,7 @@ use FS::UID qw(adminsuidsetup dbh);
 use FS::Record qw(qsearch qsearchs);
 use FS::pay_batch;
 use FS::Conf;
+use FS::Log;
 
 use vars qw( $opt_a $opt_v );
 getopts('av');
@@ -24,17 +25,20 @@ sub HELP_MESSAGE { "
 my $user = shift or die &HELP_MESSAGE;
 adminsuidsetup $user;
 
+my $log = FS::Log->new('freeside-eftca-upload');
+log_info( "EFT Canada upload started\n" );
+
 my @batches; 
 
 if($opt_a) {
   @batches = qsearch('pay_batch', { 'status' => 'O', 'payby' => 'CHEK' })
-    or die "No open batches found.\n";
+    or log_info_and_die( "Finished: No open batches found.\n" );
 }
 else {
   my $batchnum = shift;
   die &HELP_MESSAGE if !$batchnum;
   @batches = qsearchs('pay_batch', { batchnum => $batchnum } );
-  die "Can't find payment batch '$batchnum'\n" if !@batches;
+  log_error_and_die( "Can't find payment batch '$batchnum'\n" ) if !@batches;
 }
 
 my $conf = new FS::Conf;
@@ -45,10 +49,10 @@ foreach my $pay_batch (@batches) {
 
   my $batchnum = $pay_batch->batchnum;
   my $filename = time2str('%Y%m%d', time) . '-' . sprintf('%06d.csv',$batchnum);
-  print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
+  log_info( "Exporting batch $batchnum to $filename...\n" );
   my $text = $pay_batch->export_batch(format => 'eft_canada');
   unless ($text) {
-    print STDERR "Batch is empty, resolving..." if $opt_v;
+    log_info( "Batch is empty, resolving..." );
     next;
   }
   open OUT, ">$tmpdir/$filename";
@@ -56,22 +60,24 @@ foreach my $pay_batch (@batches) {
   close OUT;
 
   my @batchconf = $conf->config('batchconfig-eft_canada', $pay_batch->agentnum);
-  my $user = $batchconf[0] or die "no EFT Canada batch username configured\n";
-  my $pass = $batchconf[1] or die "no EFT Canada batch password configured\n";
+  my $user = $batchconf[0]
+    or log_error_and_die( "no EFT Canada batch username configured\n" );
+  my $pass = $batchconf[1]
+    or log_error_and_die( "no EFT Canada batch password configured\n" );
 
   my $host = 'ftp.eftcanada.com';
-  print STDERR "Connecting to $user\@$host...\n" if $opt_v;
+  log_info( "Connecting to $user\@$host...\n" );
 
   my $sftp = Net::SFTP::Foreign->new( host     => $host,
                                       user     => $user,
                                       password => $pass,
                                       timeout  => 30,
                                     );
-  die "failed to connect to '$user\@$host'\n(".$sftp->error.")\n" 
+  log_error_and_die("failed to connect to '$user\@$host'\n(".$sftp->error.")\n")
       if $sftp->error;
 
   $sftp->put("$tmpdir/$filename", "$filename")
-    or die "failed to upload file (".$sftp->error.")\n";
+    or log_error_and_die( "failed to upload file (".$sftp->error.")\n" );
 
   undef $sftp; #$sftp->disconnect;
 
@@ -84,10 +90,29 @@ foreach my $pay_batch (@batches) {
     last if $error;
   }
   $error ||= $pay_batch->set_status('R');
-  die "error closing batch $batchnum: $error\n\n" if $error;
+  log_error_and_die( "error closing batch $batchnum: $error\n\n" )
+    if $error;
 }
 
-print STDERR "Finished!\n" if $opt_v;
+log_info( "Finished!\n" );
+
+sub log_info {
+  my $log_message = shift;
+  $log->info( $log_message );
+  print STDERR $log_message if $opt_v;
+}
+
+sub log_info_and_die {
+  my $log_message = shift;
+  $log->info( $log_message );
+  die $log_message;
+}
+
+sub log_error_and_die {
+  my $log_message = shift;
+  $log->error( $log_message );
+  die $log_message;
+}
 
 =head1 NAME
 
