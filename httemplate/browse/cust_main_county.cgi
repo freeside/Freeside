@@ -260,6 +260,21 @@ if ( $country && $state &&
 }
 $cgi->delete('county');
 
+my $city = '';
+if ( $country && $state && $county &&
+     $cgi->param('city') =~
+       /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]+)$/
+   )
+{
+  $city = $1;
+  if ( $city eq '__NONE__' ) {
+    $title = "No city, $title";
+  } else {
+    $title = "$city city, $title";
+  }
+}
+$cgi->delete('city');
+
 $title = " for $title" if $title;
 
 my $taxclass = '';
@@ -279,12 +294,18 @@ my $filter_change =
   "window.location = '". $cgi->self_url.
   ";country=' + encodeURIComponent( document.getElementById('country').options[document.getElementById('country').selectedIndex].value ) + ".
   "';state='   + encodeURIComponent( document.getElementById('state').options[document.getElementById('state').selectedIndex].value ) +".
-  "';county='  + encodeURIComponent( document.getElementById('county').options[document.getElementById('county').selectedIndex].value );";
+  "';county='  + encodeURIComponent( document.getElementById('county').options[document.getElementById('county').selectedIndex].value )";
+
+$filter_change .= " +';city='  + encodeURIComponent( document.getElementById('city').options[document.getElementById('city').selectedIndex].value )"
+  if $conf->exists('enable_taxclasses');
+
+$filter_change .= ";";
 
 #restore this so pagination works
 $cgi->param('country',  $country) if $country;
 $cgi->param('state',    $state  ) if $state;
 $cgi->param('county',   $county ) if $county;
+$cgi->param('city',     $city )   if $city;
 $cgi->param('taxclass', $county ) if $taxclass;
 
 my $html_posttotal =
@@ -336,6 +357,31 @@ if ( scalar(@counties) > 1 ) {
     '<SELECT NAME="county" ID="county" STYLE="display:none">'.
     '  <OPTION VALUE="" SELECTED>'.
     '</SELECT>';
+}
+
+if ( $conf->exists('enable_taxclasses') ) {
+  my @cities = ( $country && $state && $county ) ? cities($county, $state, $country) : ();
+  if ( scalar(@cities) > 1 ) {
+    $html_posttotal .=
+      ' show city: '.
+      include('/elements/select-city.html',
+              'country'              => $country,
+              'state'                => $state,
+              'county'               => $county,
+              'city'                 => $city,
+              'onchange'             => $filter_change,
+              'empty_label'          => '(all)',
+              'empty_data_label'     => '(none)',
+              'empty_data_value'     => '__NONE__',
+              'disable_empty'        => 0,
+              'disable_cityupdate'   => 1,
+      );
+  } else {
+    $html_posttotal .=
+      '<SELECT NAME="city" ID="city" STYLE="display:none">'.
+      '  <OPTION VALUE="" SELECTED>'.
+      '</SELECT>';
+  }
 }
 
 $html_posttotal .= ' )';
@@ -412,6 +458,8 @@ my $html_foot = <<END;
 |
 <A HREF="javascript:void(0);" onClick="bulkPopup('edit');">Bulk edit selected</A>
 |
+<A HREF="javascript:void(0);" onClick="bulkPopup('edit_rate_only');">Bulk edit rate only selected</A>
+|
 <A HREF="${p}misc/tax_edit_excel.html",">bulk edit with excel file</A>
 END
 
@@ -432,6 +480,15 @@ if ( $county ) {
   } else {
     $hashref->{'county'} = $county;
     $count_query .= ' AND county  = '. dbh->quote($county);
+  }
+}
+if ( $city ) {
+  if ( $city eq '__NONE__' ) {
+    $hashref->{'city'} = '';
+    $count_query .= " AND ( city = '' OR city IS NULL ) ";
+  } else {
+    $hashref->{'city'} = $city;
+    $count_query .= ' AND city  = '. dbh->quote($city);
   }
 }
 if ( $taxclass ) {
