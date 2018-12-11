@@ -459,8 +459,6 @@ my $html_foot = <<END;
 <A HREF="javascript:void(0);" onClick="bulkPopup('edit');">Bulk edit selected</A>
 |
 <A HREF="javascript:void(0);" onClick="bulkPopup('edit_rate_only');">Bulk edit rate only selected</A>
-|
-<A HREF="${p}misc/tax_edit_excel.html",">bulk edit with excel file</A>
 END
 
 my $hashref = {};
