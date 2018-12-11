@@ -3,6 +3,7 @@
 <FORM ACTION="<% popurl(1)."process/bulk-cust_main_county.html" %>" METHOD="POST">
 
 <INPUT TYPE="hidden" NAME="action" VALUE="<% $action %>">
+<INPUT TYPE="hidden" NAME="rate_only" VALUE="<% $rate_only %>">
 <INPUT TYPE="hidden" NAME="taxnum" VALUE="<% join(',', @taxnum) %>">
 
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
@@ -45,11 +46,13 @@
   </TR>
 % }
 
-<% include('/elements/tr-input-text.html',
+% unless ($rate_only) {
+  <% include('/elements/tr-input-text.html',
              'field' => 'taxname',
              'label' => 'Tax name'
           )
-%>
+  %>
+% }
 
 <% include('/elements/tr-input-percentage.html',
              'field' => 'tax',
@@ -57,27 +60,29 @@
           )
 %>
 
-<% include('/elements/tablebreak-tr-title.html', value=>'Exemptions' ) %>
+% unless ($rate_only) {
+  <% include('/elements/tablebreak-tr-title.html', value=>'Exemptions' ) %>
 
-<% include('/elements/tr-checkbox.html',
+  <% include('/elements/tr-checkbox.html',
              'field' => 'setuptax',
              'value' => 'Y',
              'label' => 'This tax not applicable to setup fees',
           )
-%>
+  %>
 
-<% include('/elements/tr-checkbox.html',
+  <% include('/elements/tr-checkbox.html',
              'field' => 'recurtax',
              'value' => 'Y',
              'label' => 'This tax not applicable to recurring fees',
           )
-%>
+  %>
 
-<% include('/elements/tr-input-money.html',
+  <% include('/elements/tr-input-money.html',
              'field' => 'exempt_amount',
              'label' => 'Monthly exemption per customer ($25 "Texas tax")',
           )
-%>
+  %>
+% }
 
 </TABLE>
 
@@ -97,8 +102,13 @@ $cgi->param('taxnum') =~ /^([\d,]+)$/
    or $m->comp('/elements/errorpage-popup.html', $cgi->param('error') || 'Nothing selected');
 my @taxnum = split(',', $1);
 
-$cgi->param('action') =~ /^(add|edit)$/ or die "unknown action";
+$cgi->param('action') =~ /^(add|edit|edit_rate_only)$/ or die "unknown action";
 my $action = $1;
+my $rate_only;
+if ($action eq "edit_rate_only") {
+  $action = "edit";
+  $rate_only = 1;
+}
 my $title = "Bulk $action tax rate";
 
 my @cust_main_county =
