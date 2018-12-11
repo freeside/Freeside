@@ -1,0 +1,176 @@
+<%doc>
+
+Example:
+
+ <& /elements/select-city.html,
+    #recommended
+    country    => $current_country,
+    state      => $current_state,
+    county     => $current_county,
+    city       => $current_city,
+
+    #optional
+    prefix        => $optional_unique_prefix,
+    onchange      => $javascript,
+    disabled      => 0, #bool
+    disable_empty => 1, #defaults to 1, set to 0 to disable the empty option
+    empty_label   => 'all', #label for empty option
+    style         => [ 'attribute:value', 'another:value' ],
+  &>
+
+</%doc>
+% if ( $cityflag ) { 
+
+  <% include('/elements/xmlhttp.html',
+                'url'  => $p.'misc/cities.cgi',
+                'subs' => [ $pre. 'get_cities' ],
+             )
+  %>
+  
+  <SCRIPT TYPE="text/javascript">
+  
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+  
+    function <% $pre %>county_changed(what, callback) {
+
+      what.form.<% $pre %>city.disabled = 'disabled';
+
+      county = what.form.<% $pre %>county.options[what.form.<% $pre %>county.selectedIndex].value;
+      state = what.options[what.selectedIndex].value;
+      country = what.form.<% $pre %>country.options[what.form.<% $pre %>country.selectedIndex].value;
+  
+      function <% $pre %>update_cities(cities) {
+
+        // blank the current city list
+        for ( var i = what.form.<% $pre %>city.length; i >= 0; i-- )
+            what.form.<% $pre %>city.options[i] = null;
+
+%       unless ( $opt{disable_empty} ) {
+          opt( what.form.<% $pre %>city, '', <% $opt{empty_label} |js_string %> );
+%       }
+  
+        // add the new cities
+        var citiesArray = eval('(' + cities + ')' );
+        for ( var s = 0; s < citiesArray.length; s++ ) {
+            var cityLabel = citiesArray[s];
+            if ( cityLabel == "" )
+                cityLabel = '(n/a)';
+            opt(what.form.<% $pre %>city, citiesArray[s], cityLabel);
+        }
+
+        var cityFormLabel = document.getElementById('<% $pre %>citylabel');
+
+        if ( citiesArray.length > 1 ) { 
+          what.form.<% $pre %>city.style.display = '';
+          if ( cityFormLabel )  {
+            //cityFormLabel.style.visibility = 'visible';
+            cityFormLabel.style.display = '';
+          }
+        } else {
+          what.form.<% $pre %>city.style.display = 'none';
+          if ( cityFormLabel ) {
+            //cityFormLabel.style.visibility = 'hidden';
+            cityFormLabel.style.display = 'none';
+          }
+        }
+
+        what.form.<% $pre %>city.disabled = '';
+
+        //run the callback
+        if ( callback != null )  {
+          callback();
+        } else {
+          <% $pre %>city_changed(what.form.<% $pre %>city);
+        }
+      }
+  
+      // go get the new cities
+      <% $pre %>get_cities( state, country, <% $pre %>update_cities );
+  
+    }
+  
+  </SCRIPT>
+
+  <SELECT NAME    = "<% $pre %>city"
+          ID      = "<% $pre %>city"
+          onChange= "<% $onchange %>"
+          <% $opt{'disabled'} %>
+          <% $style %>
+  >
+
+% unless ( $opt{'disable_empty'} ) {
+  <OPTION VALUE="" <% $opt{county} eq '' ? 'SELECTED' : '' %>><% $opt{empty_label} %>
+% }
+
+% foreach my $city ( @cities ) {
+
+    <OPTION VALUE="<% $city |h %>"
+            <% $city eq $opt{'city'} ? 'SELECTED' : '' %>
+    ><% $city eq $opt{'empty_data_value'} ? $opt{'empty_data_label'} : $city %>
+
+% } 
+
+  </SELECT>
+
+% } else { 
+
+  <SCRIPT TYPE="text/javascript">
+    function <% $pre %>city_changed(what) {
+    }
+  </SCRIPT>
+
+  <SELECT NAME  = "<% $pre %>city"
+           ID   = "<% $pre %>city"
+          STYLE = "display:none"
+  >
+    <OPTION SELECTED VALUE="<% $opt{'city'} |h %>">
+  </SELECT>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+foreach my $opt (qw( city county state country prefix onchange disabled
+                     empty_value )) {
+  $opt{$opt} = '' unless exists($opt{$opt}) && defined($opt{$opt});
+}
+
+$opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
+
+my $pre = $opt{'prefix'};
+
+my $onchange = $opt{'onchange'};
+
+my $city_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
+
+my @cities = ();
+if ( $cityflag ) {
+
+  @cities = map { length($_) ? $_ : $opt{'empty_data_value'} }
+                  cities( $opt{'county'}, $opt{'state'}, $opt{'country'} );
+
+  push @$city_style, 'display:none'
+    unless scalar(@cities) > 1;
+
+}
+
+my $style =
+  scalar(@$city_style)
+    ? 'STYLE="'. join(';', @$city_style). '"'
+    : '';
+
+</%init>
+<%once>
+
+my $sql = "SELECT COUNT(*) FROM cust_main_county".
+          " WHERE city IS NOT NULL AND city != ''";
+my $sth = dbh->prepare($sql) or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $cityflag = $sth->fetchrow_arrayref->[0];
+
+</%once>
