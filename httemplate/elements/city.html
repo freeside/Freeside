@@ -153,9 +153,7 @@ my %opt = @_;
 my $pre = $opt{'prefix'};
 
 my $conf = new FS::Conf;
-# Using tax_district_method implies that there's not a preloaded city/county
-# tax district table.
-my $disable_select = 1 if $conf->config('tax_district_method');
+my $disable_select = 0;
 
 $opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
 
