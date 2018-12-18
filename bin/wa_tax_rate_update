@@ -9,118 +9,355 @@ wa_tax_rate_update
 Tool to update city/district sales tax rates in I<cust_main_county> from 
 the Washington State Department of Revenue website.
 
-This does not handle address standardization or geocoding addresses to 
-Washington tax district codes.  That logic is still in FS::Misc::Geo,
-and relies on a heinous screen-scraping of the interactive search tool.
-This script just updates the cust_main_county records that already exist
-with the latest quarterly tax rates.
+Creates, or updates, a L<FS::cust_main_county> row for every tax district
+in Washington state.  Some cities have different tax rates based on the
+address, within the city.  Because of this, some cities may have multiple
+rows defined.
+
+When a Washington state address is inserted or changed in L<FS::cust_location>,
+a job is queued for FS::geocode_Mixin::process_district_update, to ask the
+Washington state API which tax district to use for this address.
 
 Options:
 
--c <taxclass>: operate only on records with the named tax class.  If not 
-specified, this operates on records with null tax class.
+-f <filename>: Skip downloading, and process the given excel file
 
--t <taxname>: operate only on records with that tax name.  If not specified,
-it operates on records where the tax name is either null or 'Tax'.
+-c <taxclass>: Updated or create records within given tax class,
+   If not specified, taxclass will be set as NULL
+
+-t <taxname>: Updated or created records will be set to the given tax name.
+  If not specified, conf value 'tax_district_taxname' will be used
+
+-y <year>: Specify year for tax table - defaults to current year
+
+-q <quarter>: Specify quarter for tax table - defaults to current quarter
+
+=head1 Washington State Department of Revenue Resources
+
+The state of Washington makes data files available via their public website.
+It's possible the availability or format of these files may change.  As of now,
+the only data file that contains both city and county names is published in
+XLSX format.
+
+=item WA Dept of Revenue
+
+https://dor.wa.gov
+
+=item Data file downloads
+
+https://dor.wa.gov/find-taxes-rates/sales-and-use-tax-rates/downloadable-database
+
+=item XLSX file example
+
+https://dor.wa.gov/sites/default/files/legacy/Docs/forms/ExcsTx/LocSalUseTx/ExcelLocalSlsUserates_19_Q1.xlsx
+
+=item CSV file example
+
+https://dor.wa.gov/sites/default/files/legacy/downloads/Add_DataRates2018Q4.zip
+
+
+=item Address lookup API tool
+
+http://webgis.dor.wa.gov/webapi/AddressRates.aspx?output=xml&addr=410 Terry Ave. North&city=&zip=98100
 
 =cut
 
-use FS::Record qw(qsearch qsearchs dbh);
-use FS::cust_main_county;
-use FS::UID qw(adminsuidsetup);
+use strict;
+use warnings;
+
+our $VERSION = '0.02'; # Make Getopt:Std happy
+
+use Data::Dumper;
 use DateTime;
-use LWP::UserAgent;
 use File::Temp 'tempdir';
 use File::Slurp qw(read_file write_file);
-use Text::CSV;
 use Getopt::Std;
+use LWP::UserAgent;
+use Spreadsheet::XLSX;
 
-getopts('c:t:');
-my $user = shift or die usage();
+use FS::cust_main_county;
+use FS::Log;
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::UID qw(adminsuidsetup);
 
-# download the update file
-my $now = DateTime->now;
-my $yr = $now->year;
-my $qt = $now->quarter;
-my $file = "Rates${yr}Q${qt}.zip";
-my $url = 'http://dor.wa.gov/downloads/Add_Data/'.$file;
-my $dir = tempdir();
-chdir($dir);
-my $ua = LWP::UserAgent->new;
-warn "Downloading $url...\n";
-my $response = $ua->get($url);
-if ( ! $response->is_success ) {
-  die $response->status_line;
-}
-write_file($file, $response->decoded_content);
+my %opts;
+getopts( 'c:t:y:q:f:', \%opts );
+my $user = shift
+  or die HELP_MESSAGE();
 
-# parse it
-system('unzip', $file);
-$file =~ s/\.zip$/.csv/;
-if (! -f $file) {
-  die "$file not found in zip archive.\n";
-}
-open my $fh, '<', $file
-  or die "couldn't open $file: $!\n";
-my $csv = Text::CSV->new;
-my $header = $csv->getline($fh);
-$csv->column_names(@$header);
-# columns we care about are headed 'Code' and 'Rate'
+adminsuidsetup( $user )
+  or die "bad username '$user'\n";
 
-# connect to the DB
-adminsuidsetup($user) or die "bad username '$user'\n";
-$FS::UID::AutoCommit = 0;
+my $temp_dir = tempdir();
+my $log = FS::Log->new('wa_tax_rate_update');
 
-$opt_c ||= ''; # taxclass
-$opt_t ||= ''; # taxname
-my $total_changed = 0;
-my $total_skipped = 0;
-while ( !$csv->eof ) {
-  my $line = $csv->getline_hr($fh);
-  my $district = $line->{Code} or next;
-  $district = sprintf('%04d', $district);
-  my $tax = sprintf('%.1f', $line->{Rate} * 100);
-  my $changed = 0;
-  my $skipped = 0;
-  # find all rates in WA
-  my @rates = qsearch('cust_main_county', {
-      country   => 'US',
-      state     => 'WA', # this is specific to WA
-      district  => $district,
-      taxclass  => $opt_c,
-      taxname   => $opt_t,
-      tax       => { op => '>', value => '0' },
-  });
-  if ($opt_t eq '') {
-    push @rates, qsearch('cust_main_county', {
-      country   => 'US',
-      state     => 'WA', # this is specific to WA
-      district  => $district,
-      taxclass  => $opt_c,
-      taxname   => 'Tax',
-      tax       => { op => '>', value => '0' },
-    });
-  }
-  foreach my $rate (@rates) {
-    if ( $rate->tax == $tax ) {
-      $skipped++;
+$opts{t} ||= FS::Conf->new->config('tax_district_taxname');
+
+log_info_and_warn( "Set taxclass=$opts{c}" ) if $opts{c};
+log_info_and_warn( "Set taxname=$opts{t}"  ) if $opts{t};
+
+my $xls_fn = $opts{f} || fetch_xlsx_file();
+my $tax_districts = parse_xlsx_file( $xls_fn );
+
+update_cust_main_county( $tax_districts );
+
+# print Dumper( \%opts );
+# for ( 0..5 ) {
+#   print Dumper( $tax_districts->[$_] );
+# }
+
+log_info_and_warn( "Finished" );
+exit;
+
+
+sub update_cust_main_county {
+  my $tax_districts = shift;
+
+  #
+  # Working from an assumption tax tables may be loaded multiple times,
+  # each with a different tax class,
+  #  re: comments on FS::geocode_Mixin::process_district_update
+  #
+
+  my %cust_main_county =
+    map { $_->district => $_ }
+    qsearch(
+      cust_main_county => {
+        district => { op => '!=', value => undef },
+        state    => 'WA',
+        source   => 'wa_sales',
+        taxclass => $opts{c},
+      }
+    );
+
+  # Work within a SQL transaction
+  local $FS::UID::AutoCommit = 0;
+
+  my $insert_count = 0;
+  my $update_count = 0;
+
+  for my $district ( @$tax_districts ) {
+    if ( my $row = $cust_main_county{ $district->{district} } ) {
+
+      $row->city( uc $district->{city} );
+      $row->county( uc $district->{county} );
+      $row->taxclass( $opts{c} || undef );
+      $row->taxname( $opts{t} || undef );
+      $row->tax( $district->{tax_combined} * 100 );
+
+      if ( my $error = $row->replace ) {
+        dbh->rollback;
+        local $FS::UID::AutoCommit = 1;
+        log_error_and_die(
+          sprintf
+            "Error updating cust_main_county row %s for district %s: %s",
+            $row->taxnum,
+            $district->{district},
+            $error
+        );
+      }
+
+      $update_count++;
+
     } else {
-      $rate->set('tax', $tax);
-      my $error = $rate->replace;
-      die "error updating district $district: $error\n" if $error;
-      $changed++;
+      my $row = FS::cust_main_county->new({
+        district => $district->{district},
+        city     => uc $district->{city},
+        county   => uc $district->{county},
+        state    => 'WA',
+        country  => 'US',
+        taxclass => $opts{c} || undef,
+        taxname  => $opts{t} || undef,
+        tax      => $district->{tax_combined} * 100,
+        source   => 'wa_sales',
+      });
+
+      if ( my $error = $row->insert ) {
+        dbh->rollback;
+        local $FS::UID::AutoCommit = 1;
+        log_error_and_die(
+          sprintf
+            "Error inserting cust_main_county row for district %s: %s",
+            $district->{district},
+            $error
+        );
+      }
+
+      $cust_main_county{ $district->{district} } = $row;
+      $insert_count++;
     }
   }
-  print "$district: updated $changed, skipped $skipped\n"
-    if $changed or $skipped;
-  $total_changed += $changed;
-  $total_skipped += $skipped;
-}
-print "Updated $total_changed tax rates.\nSkipped $total_skipped unchanged rates.\n";
-dbh->commit;
 
-sub usage {
-  "usage:
-  wa_tax_rate_update [ -c taxclass ] [ -t taxname ] user
-";
+  dbh->commit;
+
+  local $FS::UID::AutoCommit = 1;
+  log_info_and_warn(
+    sprintf
+      "WA tax table update completed. Inserted %s rows, updated %s rows",
+      $insert_count,
+      $update_count
+  );
+
+}
+
+sub parse_xlsx_file {
+  my $parse_fn = shift;
+
+  # About the file format:
+  #
+  # The current spreadsheet contains the following @columns.
+  # Rows 1 and 2 are a marquee header
+  # Row 3 is the column labels.  We will test these to detect
+  #   changes in the data format
+  # Rows 4+ are the tax district data
+  #
+  # The "city" column is being parsed from "Location"
+
+  my @columns = qw( city county district tax_local tax_state tax_combined );
+
+  log_error_and_die( "Unable to access XLSX file: $parse_fn" )
+    unless -r $parse_fn;
+
+  my $xls_parser = Spreadsheet::XLSX->new( $parse_fn )
+    or log_error_and_die( "Error parsing XLSX file: $!" );
+
+  my $sheet = $xls_parser->{Worksheet}->[0]
+    or log_error_and_die(" Unable to access worksheet 1 in XLSX file" );
+
+  my $cells = $sheet->{Cells}
+    or log_error_and_die( "Unable to read cells in XLSX file" );
+
+  # Read the column labels and verify
+  my %labels =
+    map{ $columns[$_] => $cells->[2][$_]->{Val} }
+    0 .. scalar(@columns)-1;
+
+  my %expected_labels = (
+    city         => 'Location',
+    county       => 'County',
+    district     => 'Location Code',
+    tax_local    => 'Local Rate',
+    tax_state    => 'State Rate',
+    tax_combined => 'Combined Sales Tax',
+  );
+
+  if (
+    my @error_labels =
+      grep { lc $labels{$_} ne lc $expected_labels{$_} }
+      @columns
+  ) {
+    my $error = "Error parsing XLS file - ".
+                "Data format may have been updated with WA DOR! ";
+    $error .= "Expected column $expected_labels{$_}, found $labels{$_}! "
+      for @error_labels;
+    log_error_and_die( $error );
+  }
+
+  # Parse the rows into an array of hashes
+  my @districts;
+  for my $row ( 3..$sheet->{MaxRow} ) {
+    my %district = (
+      map { $columns[$_] => $cells->[$row][$_]->{Val} }
+      0 .. scalar(@columns)-1
+    );
+
+    if (
+         $district{city}
+      && $district{county}
+      && $district{district}     =~ /^\d+$/
+      && $district{tax_local}    =~ /^\d?\.\d+$/
+      && $district{tax_state}    =~ /^\d?\.\d+$/
+      && $district{tax_combined} =~ /^\d?\.\d+$/
+    ) {
+
+      # For some reason, city may contain line breaks!
+      $district{city} =~ s/[\r\n]//g;
+
+      push @districts, \%district;
+    } else {
+      log_warn_and_warn(
+        "Non-usable row found in spreadsheet:\n" . Dumper( \%district )
+      );
+    }
+
+  }
+
+  log_error_and_die( "No \@districts found in data file!" )
+    unless @districts;
+
+  log_info_and_warn(
+    sprintf "Parsed %s districts from data file", scalar @districts
+  );
+
+  \@districts;
+}
+
+sub fetch_xlsx_file {
+  # Download file to temporary storage, return filename
+
+  my $url_base = 'https://dor.wa.gov'.
+                 '/sites/default/files/legacy/Docs/forms/ExcsTx/LocSalUseTx';
+
+  my $year = $opts{y}    || DateTime->now->year;
+  my $quarter = $opts{q} || DateTime->now->quarter;
+  $year = substr( $year, 2, 2 ) if $year >= 1000;
+  my $fn = sprintf( 'ExcelLocalSlsUserates_%s_Q%s.xlsx', $year, $quarter );
+  my $url = "$url_base/$fn";
+
+  my $write_fn = "$temp_dir/$fn";
+
+  log_info_and_warn( "Begin download from url: $url" );
+
+  my $ua = LWP::UserAgent->new;
+  my $res = $ua->get( $url );
+
+  log_error_and_die( "Download error: ".$res->status_line )
+    unless $res->is_success;
+
+  local $@;
+  eval { write_file( $write_fn, $res->decoded_content ); };
+  log_error_and_die( "Problem writing download to disk: $@" )
+    if $@;
+
+  log_info_and_warn( "Temporary file: $write_fn" );
+  $write_fn;
+}
+
+
+sub HELP_MESSAGE {
+  print "
+    Tool to update city/district sales tax rates in I<cust_main_county> from
+    the Washington State Department of Revenue website.
+
+    Usage: [-f filename] [-c taxclass] [-t taxname] [-y year] [-q quarter]
+
+    Optional Options:
+      -f filename   Skip download, and process the specified filename
+      -c taxclass   Update or create records within this taxclass
+                    defaults as NULL
+      -t taxname    Apply tax name value to created or updated records
+                    defaults as conf value 'tax_district_taxname'
+      -y year       Year for data file download
+      -q quarter    Quarter of data file to download
+
+  ";
+  exit;
+}
+
+sub log_info_and_warn {
+  my $log_message = shift;
+  warn "$log_message\n";
+  $log->info( $log_message );
+}
+
+sub log_warn_and_warn {
+  my $log_message = shift;
+  warn "$log_message\n";
+  $log->warn( $log_message );
+}
+
+sub log_error_and_die {
+  my $log_message = shift;
+  $log->error( $log_message );
+  die( "$log_message\n" );
 }
