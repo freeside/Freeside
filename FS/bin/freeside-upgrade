@@ -157,7 +157,7 @@ while ( $cf = $cfsth->fetchrow_hashref ) {
     my $name = $cf->{'name'};
     $name = lc($name) unless driver_name =~ /^mysql/i;
 
-    @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+(h_|)$tbl\s+DROP\s+COLUMN\s+cf_$name\s*$/i }
+    @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+(h_|)$tbl DROP\s+COLUMN\s+cf_$name/i }
                                                                     @statements;
     push @statements, 
         "ALTER TABLE $tbl ADD COLUMN cf_$name varchar(".$cf->{'length'}.")"
