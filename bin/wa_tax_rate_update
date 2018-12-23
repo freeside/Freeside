@@ -139,7 +139,7 @@ sub HELP_MESSAGE {
                     defaults as conf value 'tax_district_taxname'
       -y year       Year for data file download
       -q quarter    Quarter of data file to download
-      -t lookup     Try to fix cust_location records without a district
+      -l lookup     Try to fix cust_location records without a district
 
   ";
   exit;
