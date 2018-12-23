@@ -131,7 +131,7 @@ sub HELP_MESSAGE {
     Tool to update city/district sales tax rates in I<cust_main_county> from
     the Washington State Department of Revenue website.
 
-    Usage: [-f filename] [-t taxname] [-y year] [-q quarter] [-l] freeside_username
+    Usage: wa_tax_rate_update [-f filename] [-t taxname] [-y year] [-q quarter] [-l] freeside_username
 
     Optional Options:
       -f filename   Skip download, and process the specified filename

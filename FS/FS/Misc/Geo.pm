@@ -147,7 +147,7 @@ sub get_district {
 
 Expects output of location_hash() as parameter
 
-Dies on error, or if tax rate cannot be found using given address
+Returns undef on error, or if tax rate cannot be found using given address
 
 Query the WA State Dept of Revenue API with an address, and return
 tax district information for that address.
@@ -172,12 +172,23 @@ Returns a hashref with the following keys:
   - country         US
   - exempt_amount   0
 
+If api returns no district for address, generates system log error
+and returns undef
+
 =cut
 
 sub wa_sales {
+
+  #
+  # no die():
+  # freeside-queued will issue dbh->rollback on die() ... this will
+  # also roll back system log messages about errors :/  freeside-queued
+  # doesn't propgate die messages into the system log.
+  #
+
   my $location_hash = shift;
 
-  # Return without die() when called with pointless context
+  # Return when called with pointless context
   return
     unless $location_hash
         && ref $location_hash
@@ -227,8 +238,10 @@ sub wa_sales {
     my $error =
       sprintf "Problem parsing XML from API URL(%s): %s",
       $prepared_url, $@;
+
     $log->error( $error );
-    die $error;
+    warn $error;
+    return;
   }
 
   my ($res_root)        = $dom->findnodes('/response');
@@ -255,8 +268,10 @@ sub wa_sales {
           $res_code ? $api_response_codes[$res_code] : 'n/a',
           $location_hash->{address1},
           $prepared_url;
+
       $log->error( $error );
-      die "$error\n";
+      warn "$error\n";
+      return;
   }
 
   my %response = (

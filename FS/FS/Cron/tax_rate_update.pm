@@ -117,10 +117,14 @@ sub wa_sales {
 
 =head2 wa_sales_log_customer_without_tax_district
 
-For any active customers with cust_location records in WA state,
-if a cust_location record has no tax district, find the correct
-district using WA DOR API, or if not possible, generate an error
-message into system log so address can be corrected
+For any cust_location records
+* In WA state
+* Attached to non cancelled packages
+* With no tax district
+
+Classify the tax district for the record using the WA State Dept of
+Revenue API.  If this fails, generate an error into system log so
+address can be corrected
 
 =cut
 
@@ -144,12 +148,31 @@ sub wa_sales_log_customer_without_tax_district {
       state    => 'WA',
       district => undef,
     },
-    addl_from => 'LEFT JOIN cust_main USING (custnum)',
-    extra_sql => sprintf 'AND ( %s ) ', FS::cust_main->active_sql,
+    addl_from => '
+      LEFT JOIN cust_main USING (custnum)
+      LEFT JOIN cust_pkg ON cust_location.locationnum = cust_pkg.locationnum
+    ',
+    extra_sql => sprintf(
+      '
+        AND cust_pkg.pkgnum IS NOT NULL
+        AND (
+             cust_pkg.cancel > %s
+          OR cust_pkg.cancel IS NULL
+        )
+      ', time()
+    ),
   );
 
   for my $cust_location ( qsearch( \%qsearch_cust_location )) {
     local $@;
+    log_info_and_warn(
+      sprintf
+        'Attempting to classify district for cust_location ' .
+        'locationnum(%s) address(%s)',
+          $cust_location->locationnum,
+          $cust_location->address1,
+    );
+
     eval {
       FS::geocode_Mixin::process_district_update(
         'FS::cust_location',
@@ -158,15 +181,12 @@ sub wa_sales_log_customer_without_tax_district {
     };
 
     if ( $@ ) {
+      # Error indicates a crash, not an error looking up district
+      # process_district_udpate will generate log messages for those errors
       log_error_and_warn(
-        sprintf "Failed to classify district for cust_location(%s): %s",
+        sprintf "Classify district error for cust_location(%s): %s",
           $cust_location->locationnum,
           $@
-      );
-    } else {
-      log_info_and_warn(
-        sprintf "Classified district for cust_location(%s)",
-          $cust_location->locationnum
       );
     }
 
@@ -289,8 +309,6 @@ sub wa_sales_update_tax_table {
 
 Create or update the L<FS::cust_main_county> records with new data
 
-
-
 =cut
 
 sub wa_sales_update_cust_main_county {
@@ -337,7 +355,9 @@ sub wa_sales_update_cust_main_county {
 
         if (
           $row->tax == ( $district->{tax_combined} * 100 )
-          && $row->taxname eq $args->{taxname}
+          &&    $row->taxname eq    $args->{taxname}
+          && uc $row->county  eq uc $district->{county}
+          && uc $row->city    eq uc $district->{city}
         ) {
           $same_count++;
           next;
