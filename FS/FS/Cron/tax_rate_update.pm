@@ -144,22 +144,22 @@ sub wa_sales_log_customer_without_tax_district {
       cust_location.state,
       cust_location.zip
     ',
-    hashref => {
-      state    => 'WA',
-      district => undef,
-    },
     addl_from => '
       LEFT JOIN cust_main USING (custnum)
       LEFT JOIN cust_pkg ON cust_location.locationnum = cust_pkg.locationnum
     ',
-    extra_sql => sprintf(
-      '
+    extra_sql => sprintf(q{
+        WHERE cust_location.state = 'WA'
+        AND (
+             cust_location.district IS NULL
+          or cust_location.district = ''
+        )
         AND cust_pkg.pkgnum IS NOT NULL
         AND (
              cust_pkg.cancel > %s
           OR cust_pkg.cancel IS NULL
         )
-      ', time()
+      }, time()
     ),
   );
 
@@ -353,14 +353,19 @@ sub wa_sales_update_cust_main_county {
         # creating an entire separate set of tax rows with
         # the new taxname, update the taxname on existing records
 
-        if (
-          $row->tax == ( $district->{tax_combined} * 100 )
-          &&    $row->taxname eq    $args->{taxname}
-          && uc $row->county  eq uc $district->{county}
-          && uc $row->city    eq uc $district->{city}
-        ) {
-          $same_count++;
-          next;
+        {
+          # Supress warning on taxname comparison, when taxname is undef
+          no warnings 'uninitialized';
+
+          if (
+            $row->tax == ( $district->{tax_combined} * 100 )
+            &&    $row->taxname eq    $args->{taxname}
+            && uc $row->county  eq uc $district->{county}
+            && uc $row->city    eq uc $district->{city}
+          ) {
+            $same_count++;
+            next;
+          }
         }
 
         $row->city( uc $district->{city} );
