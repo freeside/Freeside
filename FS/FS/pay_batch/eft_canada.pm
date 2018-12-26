@@ -51,6 +51,62 @@ my %holiday = (
              9 => { map {$_=>1}  3 }, #labour day
             10 => { map {$_=>1}  8 }, #thanksgiving
           },
+  2019 => {  2 => { map {$_=>1} 18 }, #family day
+             4 => { map {$_=>1} 19 }, #good friday
+             4 => { map {$_=>1} 22 }, #easter monday
+             5 => { map {$_=>1} 20 }, #victoria day
+             8 => { map {$_=>1}  5 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  2 }, #labour day
+            10 => { map {$_=>1} 14 }, #thanksgiving
+          },
+  2020 => {  2 => { map {$_=>1} 17 }, #family day
+             4 => { map {$_=>1} 10 }, #good friday
+             4 => { map {$_=>1} 13 }, #easter monday
+             5 => { map {$_=>1} 18 }, #victoria day
+             8 => { map {$_=>1}  3 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  7 }, #labour day
+            10 => { map {$_=>1} 12 }, #thanksgiving
+          },
+  2021 => {  2 => { map {$_=>1} 15 }, #family day
+             4 => { map {$_=>1}  2 }, #good friday
+             4 => { map {$_=>1}  5 }, #easter monday
+             5 => { map {$_=>1} 24 }, #victoria day
+             8 => { map {$_=>1}  2 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  6 }, #labour day
+            10 => { map {$_=>1} 11 }, #thanksgiving
+          },
+  2022 => {  2 => { map {$_=>1} 21 }, #family day
+             4 => { map {$_=>1} 15 }, #good friday
+             4 => { map {$_=>1} 18 }, #easter monday
+             5 => { map {$_=>1} 23 }, #victoria day
+             8 => { map {$_=>1}  1 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  5 }, #labour day
+            10 => { map {$_=>1} 10 }, #thanksgiving
+          },
+  2023 => {  2 => { map {$_=>1} 20 }, #family day
+             4 => { map {$_=>1}  7 }, #good friday
+             4 => { map {$_=>1} 10 }, #easter monday
+             5 => { map {$_=>1} 22 }, #victoria day
+             8 => { map {$_=>1}  7 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  4 }, #labour day
+            10 => { map {$_=>1}  9 }, #thanksgiving
+          },
+  2024 => {  2 => { map {$_=>1} 19 }, #family day
+             3 => { map {$_=>1} 29 }, #good friday
+             4 => { map {$_=>1}  1 }, #easter monday
+             5 => { map {$_=>1} 20 }, #victoria day
+             8 => { map {$_=>1}  5 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  2 }, #labour day
+            10 => { map {$_=>1} 14 }, #thanksgiving
+          },
+  2025 => {  2 => { map {$_=>1} 17 }, #family day
+             4 => { map {$_=>1} 18 }, #good friday
+             4 => { map {$_=>1} 21 }, #easter monday
+             5 => { map {$_=>1} 19 }, #victoria day
+             8 => { map {$_=>1}  4 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  1 }, #labour day
+            10 => { map {$_=>1} 13 }, #thanksgiving
+          },
 );
 
 sub is_holiday {
