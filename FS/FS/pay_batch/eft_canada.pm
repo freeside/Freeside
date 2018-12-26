@@ -44,6 +44,22 @@ my %holiday = (
              9 => { map {$_=>1}  4 }, #labour day
             10 => { map {$_=>1}  9 }, #thanksgiving
           },
+  2018 => {  2 => { map {$_=>1} 19 }, #family day
+             3 => { map {$_=>1} 30 }, #good friday
+             4 => { map {$_=>1}  2 }, #easter monday
+             5 => { map {$_=>1} 21 }, #victoria day
+             8 => { map {$_=>1}  6 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  3 }, #labour day
+            10 => { map {$_=>1}  8 }, #thanksgiving
+          },
+  2019 => {  2 => { map {$_=>1} 18 }, #family day
+             4 => { map {$_=>1} 19 }, #good friday
+             4 => { map {$_=>1} 22 }, #easter monday
+             5 => { map {$_=>1} 20 }, #victoria day
+             8 => { map {$_=>1}  5 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  2 }, #labour day
+            10 => { map {$_=>1} 14 }, #thanksgiving
+          },
 );
 
 sub is_holiday {
