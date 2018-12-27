@@ -40,8 +40,8 @@
                     );
 
   ## Don't show CHEK or DCHK option if ACH is read only
-  delete( $payby_index{'CHEK'} ) unless !$ach_read_only;
-  delete( $payby_index{'DCHK'} ) unless !$ach_read_only;
+  delete( $payby_index{'CHEK'} ) if ($ach_read_only && $payby ne "CHEK");
+  delete( $payby_index{'DCHK'} ) if ($ach_read_only && $payby ne "DCHK");
 
   tie my %options, 'Tie::IxHash', ();
   foreach my $payby_option ( grep { exists( $payby_index{$_} ) } @paybys ) {
