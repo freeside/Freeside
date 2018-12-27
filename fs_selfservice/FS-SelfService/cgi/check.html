@@ -1,3 +1,9 @@
+<%=
+  $OUT = '';
+  if ($ach_read_only) {
+    $OUT .= qq!<TR><TD COLSPAN=2><FONT COLOR="red">You only have read only access</TD></TR>!;
+  }
+%>
 <TR>
   <TD ALIGN="right">Account&nbsp;type</TD>
   <TD <%= ($ach_read_only ? ' BGCOLOR="#ffffff"' : '') %> >
