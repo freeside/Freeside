@@ -5,6 +5,7 @@ use vars qw( $DEBUG );
 use Date::Parse 'str2time';
 use Date::Format 'time2str';
 use FS::UID qw(adminsuidsetup dbh);
+use FS::Log;
 use FS::cdr;
 use DBI;
 use Getopt::Std;
@@ -21,10 +22,21 @@ my $dsn = "dbi:$engine";
 $dsn .= ":database=$opt{D}"; # if $opt{D};
 $dsn .= ";host=$opt{H}" if $opt{H};
 
-my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
-  or die $DBI::errstr;
-
 adminsuidsetup $user;
+
+my $log = FS::Log->new( 'freeside-cdr-asterisk_sql' );
+
+my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) ;
+
+if ( $dbi ) {
+  log_msg( info => "Established connection to CDR database at dsn($dsn)" );
+} else {
+  log_and_die( error =>
+    sprintf 'Fatal error connecting to CDR database at dsn(%s): %s',
+      $dsn,
+      $DBI::errstr
+  );
+}
 
 my $fsdbh = FS::UID::dbh;
 
@@ -34,11 +46,11 @@ my $table = $opt{T} || 'cdr';
 if ( $engine =~ /^mysql/ ) {
   my $status = $dbi->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
   if( ! @$status ) {
-    warn "Adding freesidestatus column...\n" if $DEBUG;
+    log_msg( warn => "Adding freesidestatus column" );
     $dbi->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
-      or die $dbi->errstr;
+      or log_and_die( error => $dbi->errstr );
   } else {
-    warn "freesidestatus column present\n" if $DEBUG;
+    log_msg( info => "freesidestatus column present" );
   }
 }
 
@@ -68,14 +80,24 @@ if ( $engine =~ /^mysql/ ) {
 my $sql =
   'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
 my $sth = $dbi->prepare($sql);
-$sth->execute;
-warn "Importing ".$sth->rows." records...\n" if $DEBUG;
+$sth->execute
+  or log_and_die( error => $sth->errstr );
+
+log_msg( info => sprintf 'Importing %s records', $sth->rows );
 
 my $cdr_batch = new FS::cdr_batch({ 
     'cdrbatch' => 'sql-import-'. time2str('%Y/%m/%d-%T',time),
   });
-my $error = $cdr_batch->insert;
-die $error if $error;
+if ( my $error = $cdr_batch->insert ) {
+  log_and_die( error => $error );
+} else {
+  log_msg( info =>
+      sprintf 'cdrbatch %s %s',
+        $cdr_batch->cdrbatch,
+        $cdr_batch->cdrbatchnum
+  );
+}
+
 my $cdrbatchnum = $cdr_batch->cdrbatchnum;
 
 my $imports = 0;
@@ -97,9 +119,13 @@ while ( my $row = $sth->fetchrow_hashref ) {
 
   $cdr->cdrbatchnum($cdrbatchnum);
 
-  my $error = $cdr->insert;
-  if ($error) {
-    warn "failed import: $error\n";
+  if ( my $error = $cdr->insert ) {
+    log_msg( error =>
+      sprintf 'Non-fatal failure to import acctid(%s) from table(%s): %s',
+        $row->acctid,
+        $table,
+        $error
+    );
   } else {
 
     $imports++;
@@ -117,15 +143,43 @@ while ( my $row = $sth->fetchrow_hashref ) {
     if ( $dbi->do($usql, @args) ) {
       $updates++;
     } else {
-      warn "failed to set status: ".$dbi->errstr."\n";
+      log_msg( error =>
+        sprintf 'Non-fatal failure set status(done) acctid(%s) table(%s): %s',
+          $row->acctid,
+          $table,
+          $dbi->errstr
+      );
     }
 
   }
 
 }
 
-warn "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
+log_and_warn(
+  info => "Done.\nImported $imports CDRs, marked $updates CDRs as done"
+);
+
 $dbi->disconnect;
+
+sub log_and_die {
+  my ( $level, $message ) = @_;
+  $log->$level( $message );
+  die "[$level] $message\n";
+}
+
+sub log_msg {
+  my ( $level, $message ) = @_;
+  $log->$level( $message );
+  warn "[$level] $message\n"
+    if $opt{v};
+}
+
+sub log_and_warn {
+  my ( $level, $message ) = @_;
+  $log->$level( $message );
+  warn "$message\n";
+}
+
 
 sub usage {
   "Usage: \n  freeside-cdr-asterisk_sql\n\t-e mysql|Pg|... [ -H host ]n\t-D database\n\t[ -T table ]\n\t[ -V asterisk_version]\n\t-U user\n\t-P password\n\tfreesideuser\n";
