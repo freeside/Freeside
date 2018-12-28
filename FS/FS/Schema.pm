@@ -2289,6 +2289,7 @@ sub tables_hashref {
         'setuptax',    'char', 'NULL',       1, '', '', # Y = setup tax exempt
         'recurtax',    'char', 'NULL',       1, '', '', # Y = recur tax exempt
         'source',   'varchar', 'NULL', $char_d, '', '',
+        'charge_prediscount', 'char', 'NULL', 1, '', '', # Y = charge this tax pre discount
       ],
       'primary_key' => 'taxnum',
       'unique' => [],
