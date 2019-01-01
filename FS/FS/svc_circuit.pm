@@ -40,42 +40,68 @@ supported:
 
 =over 4
 
-=item svcnum - primary key; see also L<FS::cust_svc>
+=item svcnum
 
-=item typenum - circuit type (such as DS1, DS1-PRI, DS3, OC3, etc.); foreign
+primary key; see also L<FS::cust_svc>
+
+=item typenum
+
+circuit type (such as DS1, DS1-PRI, DS3, OC3, etc.); foreign
 key to L<FS::circuit_type>.
 
-=item providernum - circuit provider (telco); foreign key to 
+=item providernum
+
+circuit provider (telco); foreign key to 
 L<FS::circuit_provider>.
 
-=item termnum - circuit termination type; foreign key to 
+=item termnum
+
+circuit termination type; foreign key to 
 L<FS::circuit_termination>
 
-=item circuit_id - provider circuit ID string defined by the provider
+=item circuit_id
 
-=item desired_due_date - the requested date for completion of the circuit
+provider circuit ID string defined by the provider
+
+=item desired_due_date
+
+the requested date for completion of the circuit
 order
 
-=item due_date - the provider's committed date for completion of the circuit
+=item due_date
+
+the provider's committed date for completion of the circuit
 order
 
-=item vendor_order_id - the provider's order number
+=item vendor_order_id
 
-=item vendor_qual_id - the qualification number, if a qualification was 
+the provider's order number
+
+=item vendor_qual_id
+
+the qualification number, if a qualification was 
 performed
 
-=item vendor_order_type -
+=item vendor_order_type
 
-=item vendor_order_status - the order status: ACCEPTED, PENDING, COMPLETED,
+=item vendor_order_status
+
+the order status: ACCEPTED, PENDING, COMPLETED,
 etc.
 
-=item endpoint_ip_addr - the IP address of the endpoint equipment, if any. 
+=item endpoint_ip_addr
+
+the IP address of the endpoint equipment, if any. 
 This will be validated as an IP address but not assigned from managed address
 space or checked for uniqueness.
 
-=item endpoint_mac_addr - the MAC address of the endpoint.
+=item endpoint_mac_addr
 
-=item internal_circuit_id - internal circuit ID string
+the MAC address of the endpoint.
+
+=item internal_circuit_id
+
+internal circuit ID string
 
 =back
 
