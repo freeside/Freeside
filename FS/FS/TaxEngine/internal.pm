@@ -105,6 +105,15 @@ sub taxline {
     my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur
       or next; # don't create zero-amount exemptions
 
+    ## re-add the discounted amount if the tax needs to be charged pre discount
+    if ($tax_object->charge_prediscount) {
+      my $discount_amount = 0;
+      foreach my $discount (@{$cust_bill_pkg->discounts}) {
+        $discount_amount += $discount->amount;
+      }
+      $taxable_charged += $discount_amount;
+    }
+
     # XXX the following procedure should probably be in cust_bill_pkg
 
     if ( $exempt_cust ) {

@@ -14,6 +14,7 @@ use Data::Dumper;
 use FS::Conf;
 use FS::Log;
 use Locale::Country;
+use XML::LibXML;
 
 FS::UID->install_callback( sub {
   $conf = new FS::Conf;
@@ -141,102 +142,170 @@ sub get_district {
   &$method($location);
 }
 
+
+=head2 wa_sales location_hash
+
+Expects output of location_hash() as parameter
+
+Returns undef on error, or if tax rate cannot be found using given address
+
+Query the WA State Dept of Revenue API with an address, and return
+tax district information for that address.
+
+Documentation for the API can be found here:
+
+L<https://dor.wa.gov/find-taxes-rates/retail-sales-tax/destination-based-sales-tax-and-streamlined-sales-tax/wa-sales-tax-rate-lookup-url-interface>
+
+This API does not return consistent usable county names, as the county
+name may include appreviations or labels referring to PTBA (public transport
+benefit area) or CEZ (community empowerment zone).  It's recommended to use
+the tool wa_tax_rate_update to fully populate the city/county/districts for
+WA state every financial quarter.
+
+Returns a hashref with the following keys:
+
+  - district        the wa state tax district id
+  - tax             the combined total tax rate, as a percentage
+  - city            the API rate name
+  - county          The API address PTBA
+  - state           WA
+  - country         US
+  - exempt_amount   0
+
+If api returns no district for address, generates system log error
+and returns undef
+
+=cut
+
 sub wa_sales {
-  my $location = shift;
-  my $error = '';
-  return '' if $location->{state} ne 'WA';
 
-  my $return = { %$location };
-  $return->{'exempt_amount'} = 0.00;
+  #
+  # no die():
+  # freeside-queued will issue dbh->rollback on die() ... this will
+  # also roll back system log messages about errors :/  freeside-queued
+  # doesn't propgate die messages into the system log.
+  #
 
-  my $url = 'http://webgis2.dor.wa.gov/TaxRateLookup_AGS/TaxReport.aspx';
-  my $ua = new LWP::UserAgent;
+  my $location_hash = shift;
 
-  my $delim = '<|>'; # yes, <|>
-  my $year  = (localtime)[5] + 1900;
-  my $month = (localtime)[4] + 1;
-  my @zip = split('-', $location->{zip});
+  # Return when called with pointless context
+  return
+    unless $location_hash
+        && ref $location_hash
+        && $location_hash->{state} eq 'WA'
+        && $location_hash->{address1}
+        && $location_hash->{zip}
+        && $location_hash->{city};
 
-  my @args = (
-    'TaxType=S',  #sales; 'P' = property
-    'Src=0',      #does something complicated
-    'TAXABLE=',
-    'Addr='.uri_escape($location->{address1}),
-    'City='.uri_escape($location->{city}),
-    'Zip='.$zip[0],
-    'Zip1='.($zip[1] || ''), #optional
-    'Year='.$year,
-    'SYear='.$year,
-    'Month='.$month,
-    'EMon='.$month,
+  my $log = FS::Log->new('wa_sales');
+
+  warn "wa_sales() called with location_hash:\n".Dumper( $location_hash)."\n"
+    if $DEBUG;
+
+  my $api_url = 'http://webgis.dor.wa.gov/webapi/AddressRates.aspx';
+  my @api_response_codes = (
+    'The address was found',
+    'The address was not found, but the ZIP+4 was located.',
+    'The address was updated and found, the user should validate the address record',
+    'The address was updated and Zip+4 located, the user should validate the address record',
+    'The address was corrected and found, the user should validate the address record',
+    'Neither the address or ZIP+4 was found, but the 5-digit ZIP was located.',
+    'The address, ZIP+4, and ZIP could not be found.',
+    'Invalid Latitude/Longitude',
+    'Internal error'
   );
-  
-  my $query_string = join($delim, @args );
-  $url .= "?$query_string";
-  warn "\nrequest:  $url\n\n" if $DEBUG > 1;
 
-  my $res = $ua->request( GET( "$url?$query_string" ) );
+  my %get_query = (
+    output => 'xml',
+    addr   => $location_hash->{address1},
+    city   => $location_hash->{city},
+    zip    => substr( $location_hash->{zip}, 0, 5 ),
+  );
+  my $get_string = join '&' => (
+    map{ sprintf "%s=%s", $_, uri_escape( $get_query{$_} ) }
+    keys %get_query
+  );
 
-  warn $res->as_string
-  if $DEBUG > 2;
+  my $prepared_url = "${api_url}?$get_string";
 
-  if ($res->code ne '200') {
-    $error = $res->message;
+  warn "API call to URL: $prepared_url\n"
+    if $DEBUG;
+
+  my $dom;
+  local $@;
+  eval { $dom = XML::LibXML->load_xml( location => $prepared_url ); };
+  if ( $@ ) {
+    my $error =
+      sprintf "Problem parsing XML from API URL(%s): %s",
+      $prepared_url, $@;
+
+    $log->error( $error );
+    warn $error;
+    return;
   }
 
-  my $content = $res->content;
-  my $p = new HTML::TokeParser \$content;
-  my $js = '';
-  while ( my $t = $p->get_tag('script') ) {
-    my $u = $p->get_token; #either enclosed text or the </script> tag
-    if ( $u->[0] eq 'T' and $u->[1] =~ /tblSales/ ) {
-      $js = $u->[1];
-      last;
-    }
-  }
-  if ( $js ) { #found it
-    # strip down to the quoted string, which contains escaped single quotes.
-    $js =~ s/.*\('tblSales'\);c.innerHTML='//s;
-    $js =~ s/(?<!\\)'.*//s; # (?<!\\) means "not preceded by a backslash"
-    warn "\n\n  innerHTML:\n$js\n\n" if $DEBUG > 2;
+  my ($res_root)        = $dom->findnodes('/response');
+  my ($res_addressline) = $dom->findnodes('/response/addressline');
+  my ($res_rate)        = $dom->findnodes('/response/rate');
 
-    $p = new HTML::TokeParser \$js;
-    TD: while ( my $td = $p->get_tag('td') ) {
-      while ( my $u = $p->get_token ) {
-        next TD if $u->[0] eq 'E' and $u->[1] eq 'td';
-        next if $u->[0] ne 'T'; # skip non-text
-        my $text = $u->[1];
+  my $res_code = $res_root->getAttribute('code')
+    if $res_root;
 
-        if ( lc($text) eq 'location code' ) {
-          $p->get_tag('td'); # skip to the next column
-          undef $u;
-          $u = $p->get_token until ($u->[0] || '') eq 'T'; # and then skip non-text
-          $return->{'district'} = $u->[1];
-        }
-        elsif ( lc($text) eq 'total tax rate' ) {
-          $p->get_tag('td');
-          undef $u;
-          $u = $p->get_token until ($u->[0] || '') eq 'T';
-          $return->{'tax'} = $u->[1];
-        }
-      } # get_token
-    } # TD
+  unless (
+       ref $res_root
+    && ref $res_addressline
+    && ref $res_rate
+    && $res_code <= 5
+    && $res_root->getAttribute('rate') > 0
+  ) {
+    my $error =
+      sprintf
+        "Problem querying WA DOR tax district - " .
+        "code( %s %s ) " .
+        "address( %s ) " .
+        "url( %s )",
+          $res_code || 'n/a',
+          $res_code ? $api_response_codes[$res_code] : 'n/a',
+          $location_hash->{address1},
+          $prepared_url;
 
-    # just to make sure
-    if ( $return->{'district'} =~ /^\d+$/ and $return->{'tax'} =~ /^.\d+$/ ) {
-      $return->{'tax'} *= 100; #percentage
-      warn Dumper($return) if $DEBUG > 1;
-      return $return;
-    }
-    else {
-      $error = 'district code/tax rate not found';
-    }
-  }
-  else {
-    $error = "failed to parse document";
+      $log->error( $error );
+      warn "$error\n";
+      return;
   }
 
-  die "WA tax district lookup error: $error";
+  my %response = (
+    exempt_amount => 0,
+    state         => 'WA',
+    country       => 'US',
+    district      => $res_root->getAttribute('loccode'),
+    tax           => $res_root->getAttribute('rate') * 100,
+    county        => uc $res_addressline->getAttribute('ptba'),
+    city          => uc $res_rate->getAttribute('name')
+  );
+
+  $response{county} =~ s/ PTBA//i;
+
+  if ( $DEBUG ) {
+    warn "XML document: $dom\n";
+    warn "API parsed response: ".Dumper( \%response )."\n";
+  }
+
+  my $info_message =
+    sprintf
+      "Tax district(%s) selected for address(%s %s %s %s)",
+      $response{district},
+      $location_hash->{address1},
+      $location_hash->{city},
+      $location_hash->{state},
+      $location_hash->{zip};
+
+  $log->info( $info_message );
+  warn "$info_message\n"
+    if $DEBUG;
+
+  \%response;
+
 }
 
 ###### USPS Standardization ######

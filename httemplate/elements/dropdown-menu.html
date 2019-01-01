@@ -5,11 +5,16 @@
   border: none;
 }
 
+% if ( $opt{id} !~ /customer_/ ) {
+% # Fix for changes to how jQuery UI applies state classes
+
 #<% $opt{id} %> .ui-state-active {
   color: inherit;
   background-color: transparent;
   border-color: transparent;
 }
+
+% }
 
 #<% $opt{id} %> li {
   float: left;

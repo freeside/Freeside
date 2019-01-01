@@ -27,6 +27,8 @@ my @taxnum = split(',', $1);
 $cgi->param('action') =~ /^(add|edit)$/ or die "unknown action";
 my $action = $1;
 
+my $rate_only = $cgi->param('rate_only') if $cgi->param('rate_only');
+
 my $error = '';
 foreach my $taxnum ( @taxnum ) {
 
@@ -35,8 +37,13 @@ foreach my $taxnum ( @taxnum ) {
 
   if ( $action eq 'edit' || $cust_main_county->tax == 0 ) { #let's replace
 
-    foreach (qw( taxname tax exempt_amount setuptax recurtax )) {
-      $cust_main_county->set( $_ => scalar($cgi->param($_)) )
+    if ($rate_only) {
+      $cust_main_county->set( tax => scalar($cgi->param('tax')) );
+    }
+    else {
+      foreach (qw( taxname tax exempt_amount setuptax recurtax )) {
+        $cust_main_county->set( $_ => scalar($cgi->param($_)) )
+      }
     }
 
     $error = $cust_main_county->replace and last;
