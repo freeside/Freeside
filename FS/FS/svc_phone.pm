@@ -827,9 +827,9 @@ either the "src" or the "charged_party" field of the CDR matches the
 "phonenum" field of the service.  To access the CDRs themselves, call
 "->fetch" on the resulting object.
 
-=over 2
-
 Accepts the following options:
+
+=over 2
 
 =item for_update => 1: SELECT the CDRs "FOR UPDATE".
 
