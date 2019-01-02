@@ -215,6 +215,14 @@ sub report {
     WHERE cust_bill._date >= $beginning AND cust_bill._date <= $ending
     GROUP BY cust_credit_bill_pkg.billpkgnum, taxnum
     ";
+
+  # Each row here is the sum of the discounts where taxes were applied pre discount
+  my $discount = "SELECT SUM(cust_bill_pkg_discount.amount) AS discount_amount, cust_bill_pkg_discount.billpkgnum
+                  FROM cust_bill_pkg_discount
+                  LEFT JOIN cust_bill_pkg_tax_location ON (cust_bill_pkg_tax_location.taxable_billpkgnum = cust_bill_pkg_discount.billpkgnum)
+                  LEFT JOIN cust_main_county USING (taxnum)
+                  WHERE cust_main_county.charge_prediscount = 'Y'
+                  GROUP BY cust_bill_pkg_discount.billpkgnum";
   
   if ( $opt{credit_date} eq 'cust_credit_bill' ) {
     $sales_credit =~ s/cust_bill._date/cust_credit_bill._date/g;
@@ -268,6 +276,7 @@ sub report {
       - COALESCE(exempt_charged, 0)
       - COALESCE(credited, 0)
       + COALESCE(exempt_credited, 0)
+      + COALESCE(discount_amount, 0)
     )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
@@ -275,6 +284,7 @@ sub report {
     LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
     LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
     LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    LEFT JOIN ($discount) AS pkg_discount USING (billpkgnum)
     $join_cust_pkg $where AND $nottax 
     $group";
 
@@ -283,6 +293,7 @@ sub report {
       - COALESCE(exempt_charged, 0)
       - COALESCE(credited, 0)
       + COALESCE(exempt_credited, 0)
+      + COALESCE(discount_amount, 0)
     )
     FROM cust_main_county
     JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
@@ -290,6 +301,7 @@ sub report {
     LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
     LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
     LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    LEFT JOIN ($discount) AS pkg_discount USING (billpkgnum)
     $join_cust_pkg $where AND $nottax 
     $group_all";
 
@@ -303,6 +315,7 @@ sub report {
       - COALESCE(exempt_charged, 0)
       - COALESCE(credited, 0)
       + COALESCE(exempt_credited, 0)
+      + COALESCE(discount_amount, 0)
       )
     )
     FROM cust_main_county
@@ -311,6 +324,7 @@ sub report {
     LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
     LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
     LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    LEFT JOIN ($discount) AS pkg_discount USING (billpkgnum)
     $join_cust_pkg $where AND $nottax 
     $group";
 
@@ -320,6 +334,7 @@ sub report {
       - COALESCE(exempt_charged, 0)
       - COALESCE(credited, 0)
       + COALESCE(exempt_credited, 0)
+      + COALESCE(discount_amount, 0)
       )
     )
     FROM cust_main_county
@@ -328,6 +343,7 @@ sub report {
     LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum, taxnum)
     LEFT JOIN ($sales_credit) AS sales_credit USING (billpkgnum)
     LEFT JOIN ($exempt_credit) AS exempt_credit USING (billpkgnum, taxnum)
+    LEFT JOIN ($discount) AS pkg_discount USING (billpkgnum)
     $join_cust_pkg $where AND $nottax 
     $group_all";
 
