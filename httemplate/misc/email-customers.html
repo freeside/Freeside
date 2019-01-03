@@ -168,7 +168,7 @@ Template:
     },
   &>
    </div>
-% if ($send_to_domain) {
+% if ($send_to_domain && $cgi->param('custnum')) {
    <div>
      <INPUT TYPE="checkbox" NAME="emailtovoice"  ID="emailtovoice" VALUE="ON" onclick="toggleDiv(this)">Email to voice
    </div>
@@ -294,6 +294,15 @@ else {
   # have had multiple values, only whether it does.
   @search{keys %search} = map { /\0/ ? [ split /\0/, $_ ] : $_ } values %search;
 }
+
+# rebuild contacts hash
+delete $search{contacts}
+    if exists $search{contacts} && ref $search{contacts};
+$search{'contacts'} = {
+  map { $_ => $search{$_}, }
+    grep { /^(contacts_*)/ && $search{$_} }
+      keys %search
+};
 
 &{$opt{'post_search_hook'}}(
   'conf'   => $conf,
