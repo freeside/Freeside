@@ -243,8 +243,13 @@ for my $col (@report) {
 
 my $classnum_url_part;
 if (@classnum) {
-  $classnum_url_part = join '', map{ "&classnums=$_" } @classnum, @dest;
+  $classnum_url_part = join '', map{ "&classnums=$_" } @classnum;
   $classnum_url_part .= '&classnums=0' if $classnum_null;
+}
+
+my $dest_url_part;
+if (@dest) {
+  $dest_url_part = join '', map{ "&dest=$_" } @dest;
 }
 
 # E-mail pipeline, from email-customers.html through to email queue job,
@@ -262,6 +267,7 @@ if ($link eq 'cust_main') {
       '&refnum=1'.
       '&with_email=on'.
       $classnum_url_part.
+      $dest_url_part.
     "\">Email a notice to these customers</a>";
 }
 
