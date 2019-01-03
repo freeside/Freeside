@@ -143,6 +143,8 @@ if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') )
   # URI::query_from does not support hashref
   #   results in: ...&contacts=HASH(0x55e16cb81da8)&...
   my %query_hash = %search_hash;
+  foreach (keys %{$query_hash{contacts}}) { $query_hash{$_} = $query_hash{contacts}{$_}; }
+
   delete $query_hash{contacts}
     if exists $query_hash{contacts} && ref $query_hash{contacts};
 
