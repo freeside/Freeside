@@ -22,7 +22,14 @@ sub condition {
   my($self, $cust_bill, %opt) = @_;
 
   ## search actions for invoice send events.
-  my $extra_sql = " AND (action LIKE 'cust_bill_send%' OR action LIKE 'cust_bill_email%')";
+  my @send_actions = (
+    "action LIKE 'cust_bill_send%'",
+    "action LIKE 'cust_bill_email%'",
+    "action LIKE 'cust_bill_print%'",
+    "action LIKE 'cust_bill_fsinc_print%'",
+  );
+  my $actions = join ' OR ', @send_actions;
+  my $extra_sql = " AND ($actions)";
 
   my $event = qsearchs( {
     'table'     => 'cust_event',
