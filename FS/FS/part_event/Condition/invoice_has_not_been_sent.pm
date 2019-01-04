@@ -21,15 +21,19 @@ sub eventtable_hashref {
 sub condition {
   my($self, $cust_bill, %opt) = @_;
 
+  ## search actions for invoice send events.
+  my $extra_sql = " AND (action LIKE 'cust_bill_send%' OR action LIKE 'cust_bill_email%')";
+
   my $event = qsearchs( {
     'table'     => 'cust_event',
     'addl_from' => 'LEFT JOIN part_event USING ( eventpart )',
     'hashref'   => {
-    		'tablenum'  => $cust_bill->{Hash}->{invnum},
-    		'eventtable'  => 'cust_bill',
-		'status'    => 'done',
-    	},
+      'tablenum'   => $cust_bill->{Hash}->{invnum},
+      'eventtable' => 'cust_bill',
+      'status'     => 'done',
+    },
     'order_by'  => " LIMIT 1",
+    'extra_sql' => $extra_sql,
   } );
 
   return 0 if $event;
