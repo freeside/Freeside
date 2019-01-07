@@ -45,10 +45,12 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+% my $QueueObj = RT::Queue->new($session{'CurrentUser'});
 <div class="quick-create">
 <&| /Widgets/TitleBox, title => loc('Quick ticket creation') &>
 <form
     method="post"
+    enctype="multipart/form-data"
     action="<%RT->Config->Get('WebPath')%>/index.html"
 % $m->callback(CallbackName => 'InFormElement');
 >
@@ -74,6 +76,7 @@
 <tr class="input-row">
 <td class="labeltop"><&|/l&>Content</&>:</td>
 <td colspan="3" class="value"><textarea name="Content" cols="50" rows="3"><% $args->{Content} || ''%></textarea></td></tr>
+<& /Ticket/Elements/AddAttachments, %ARGS, QueueObj => $QueueObj &>
 </table>
 <& /Elements/Submit, Label => loc('Create') &>
 </form>
