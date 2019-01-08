@@ -57,7 +57,10 @@ my $conf = new FS::Conf;
 
 my @agents;
 if ( $conf->exists('batch-spoolagent') ) {
-  @agents = qsearch('agent', { 'disabled' => '' });
+  local $@;
+  eval { @agents = qsearch('agent', { 'disabled' => '' }); };
+  log_error_and_die("Fatal database error: $@")
+    if $@;
 } else {
   @agents = (1);
 }
