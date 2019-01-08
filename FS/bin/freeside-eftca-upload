@@ -31,13 +31,25 @@ log_info( "EFT Canada upload started\n" );
 my @batches; 
 
 if($opt_a) {
-  @batches = qsearch('pay_batch', { 'status' => 'O', 'payby' => 'CHEK' })
-    or log_info_and_die( "Finished: No open batches found.\n" );
+  local $@;
+  eval {
+    @batches = qsearch('pay_batch', { 'status' => 'O', 'payby' => 'CHEK' })
+  };
+  log_error_and_die ("Fatal database error: $@")
+    if $@;
+
+  log_info_and_die( "Finished: No open batches found.\n" )
+    unless @batches;
 }
 else {
   my $batchnum = shift;
   die &HELP_MESSAGE if !$batchnum;
-  @batches = qsearchs('pay_batch', { batchnum => $batchnum } );
+
+  local $@;
+  eval { @batches = qsearchs('pay_batch', { batchnum => $batchnum } ); };
+  log_error_and_die("Fatal database error: $@")
+    if $@;
+
   log_error_and_die( "Can't find payment batch '$batchnum'\n" ) if !@batches;
 }
 
@@ -84,11 +96,18 @@ foreach my $pay_batch (@batches) {
   # Auto-approve and close the batch.  Some false laziness with manual_approve.
   my $batchnum = $pay_batch->batchnum;
   my $error;
-  foreach my $cpb ( qsearch('cust_pay_batch', { 'batchnum' => $batchnum } ) ) {
-    $cpb->setfield('paid', $cpb->amount);
-    $error = $cpb->approve($batchnum);
-    last if $error;
-  }
+
+  local $@;
+  eval {
+    foreach my $cpb ( qsearch('cust_pay_batch', { 'batchnum' => $batchnum } )) {
+      $cpb->setfield('paid', $cpb->amount);
+      $error = $cpb->approve($batchnum);
+      last if $error;
+    }
+  };
+  log_error_and_die("Fatal database error: $@")
+    if $@;
+
   $error ||= $pay_batch->set_status('R');
   log_error_and_die( "error closing batch $batchnum: $error\n\n" )
     if $error;
