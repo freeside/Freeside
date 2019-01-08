@@ -1,4 +1,3 @@
-<% include('/elements/init_overlib.html') %>
 <% include('/browse/elements/browse.html',
      'title'         => 'Log email condition configuration',
      'name_singular' => 'condition',
@@ -42,6 +41,7 @@
                       ],
 
    ) %>
+<% include('/elements/init_overlib.html') %>
 
 <%init>
 
@@ -73,15 +73,10 @@ my $actions = sub {
   qq!<A HREF="javascript:areyousure_delete_log_email($logemailnum)">(delete)</A>!;
 };
 
-my $areyousure_onclick = include('/elements/popup_link_onclick.html',
-  'js_action' => q(') . $p . q(misc/delete-log_email.html?logemailnum=' + logemailnum),
-  'actionlabel' => 'Delete log email condition',
-);
-
 my $areyousure = <<EOF;
 function areyousure_delete_log_email(logemailnum) {
   if (confirm('Are you sure you want to delete log email condition #'+logemailnum+'?')) {
-${areyousure_onclick}
+    window.top.location = "${fsurl}misc/delete-log_email.html?logemailnum=" + logemailnum;
   }
 }
 EOF

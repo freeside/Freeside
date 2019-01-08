@@ -201,7 +201,7 @@ my %colors = (
 
 my $color_sub = sub { $colors{ $_[0]->level }; };
 
-my @contexts = ('', sort FS::log_context->contexts);
+my @contexts = ('', FS::log_context->contexts);
 </%once>
 <%init>
 my $curuser = $FS::CurrentUser::CurrentUser;
