@@ -34,8 +34,8 @@ Example:
 % }
 
 % unless ( $nocss ) {
-  <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
-  <link href="<%$fsurl%>elements/freeside-print.css" type="text/css" rel="stylesheet" media="print">
+  <link href="<%$fsurl%>elements/freeside.css?v=<% $FS::VERSION %>" type="text/css" rel="stylesheet">
+  <link href="<%$fsurl%>elements/freeside-print.css?v=<% $FS::VERSION %>" type="text/css" rel="stylesheet" media="print">
 % }
 
 %   unless ( $no_jquery ) {
