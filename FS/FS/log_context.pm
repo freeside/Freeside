@@ -4,8 +4,9 @@ use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
 
-my @contexts = ( qw(
-  test
+# Items in @default_contexts will always be included in the
+# output of contexts() method
+my @default_contexts = ( qw(
   bill_and_collect
   FS::cust_main::Billing::bill_and_collect
   FS::cust_main::Billing::bill
@@ -25,6 +26,11 @@ my @contexts = ( qw(
   freeside-ipifony-download
   freeside-paymentech-upload
   freeside-paymentech-download
+  test
+  FS::TaxEngine::billsoft
+  wa_sales
+  wa_tax_rate_update
+  tax_rate_update
 ) );
 
 =head1 NAME
@@ -121,11 +127,25 @@ sub check {
 
 =item contexts
 
-Returns a list of all valid contexts.
+Returns a list of all log contexts, by combining @default_contexts
+with all context values seen in the log_context table
 
 =cut
 
-sub contexts { @contexts }
+sub contexts {
+  my $self = shift;
+
+  my %contexts = map { $_ => 1 } @default_contexts;
+
+  $contexts{ $_->context } = 1
+    for qsearch({
+      select  => 'DISTINCT context AS context',
+      table   => 'log_context',
+      hashref => {},
+    });
+
+  sort { lc $a cmp lc $b } keys %contexts;
+}
 
 =back
 
