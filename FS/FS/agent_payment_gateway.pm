@@ -119,10 +119,10 @@ sub _upgrade_data {
       'table' => 'agent_payment_gateway',
       'extra_sql' => ' WHERE taxclass IS NOT NULL AND taxclass != \'\'',
     });
-  die "Non ACH (E-check) Agent cardtype override no longer supported"
+  die "Agent cardtype override no longer supported"
     if qsearch({
       'table' => 'agent_payment_gateway',
-      'extra_sql' => ' WHERE cardtype IS NOT NULL AND cardtype != \'\' AND cardtype != \'ACH\'',
+      'extra_sql' => ' WHERE cardtype IS NOT NULL AND cardtype != \'\'',
     });
   return '';
 }
