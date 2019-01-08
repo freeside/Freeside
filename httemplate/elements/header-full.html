@@ -44,18 +44,18 @@ Example:
     %>
 
 %   unless ( $no_jquery ) {
-      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui.min.css">
-      <SCRIPT SRC="<% $fsurl %>elements/jquery.js"></SCRIPT>
+      <link rel="stylesheet" href="<% $fsurl %>elements/jquery-ui-1.12.1.min.css">
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-3.3.1.js"></SCRIPT>
       <SCRIPT SRC="<% $fsurl %>elements/jquery-migrate-3.0.1.min.js"></SCRIPT>
-      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui.min.js"></SCRIPT>
-      <SCRIPT SRC="<% $fsurl %>elements/jquery.validate.min.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery-ui-1.12.1.min.js"></SCRIPT>
+      <SCRIPT SRC="<% $fsurl %>elements/jquery.validate-1.17.0.min.js"></SCRIPT>
 %     if ( $FS::CurrentUser::CurrentUser->option('printtofit') ) {
       <SCRIPT SRC="<% $fsurl %>elements/printtofit.js"></SCRIPT>
 %     }
 %   }
 %   if ( $include_selectize ) {
-      <script src="<% $fsurl %>elements/selectize/selectize.min.js"></script>
-      <link href="<% $fsurl %>elements/selectize/selectize.css" type="text/css" rel="stylesheet">
+      <script src="<% $fsurl %>elements/selectize/selectize-0.12.6.min.js"></script>
+      <link href="<% $fsurl %>elements/selectize/selectize-0.12.6.css" type="text/css" rel="stylesheet">
       <link href="<% $fsurl %>elements/selectize/selectize-freeside.css" type="text/css" rel="stylesheet">
 % }
     <% include('init_overlib.html') |n %>
