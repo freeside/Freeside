@@ -56,7 +56,7 @@ Example:
 %   if ( $include_selectize ) {
       <script src="<% $fsurl %>elements/selectize/selectize-0.12.6.min.js"></script>
       <link href="<% $fsurl %>elements/selectize/selectize-0.12.6.css" type="text/css" rel="stylesheet">
-      <link href="<% $fsurl %>elements/selectize/selectize-freeside.css" type="text/css" rel="stylesheet">
+      <link href="<% $fsurl %>elements/selectize/selectize-freeside.css?v=<% $FS::VERSION %>" type="text/css" rel="stylesheet">
 % }
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
@@ -100,7 +100,7 @@ Example:
 
     <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
 
-<link href="<%$fsurl%>elements/freeside-menu.css" type="text/css" rel="stylesheet">
+<link href="<%$fsurl%>elements/freeside-menu.css?v=<% $FS::VERSION %>" type="text/css" rel="stylesheet">
 
 % if ( $menu_position eq 'top' ) {
 

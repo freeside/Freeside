@@ -44,7 +44,7 @@ Example:
     <& /elements/freeside.css &>
     </style>
 %   } else {
-    <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+    <link href="<%$fsurl%>elements/freeside.css?v=<% $FS::VERSION %>" type="text/css" rel="stylesheet">
 %   }
 % if ( $title || $title_noescape ) {
     <FONT SIZE=6>
