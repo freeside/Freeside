@@ -534,28 +534,36 @@ sub replace {
 
   if ( defined($self->hashref->{'emailaddress'}) ) {
 
-    #ineffecient but whatever, how many email addresses can there be?
-
+    my %contact_emails = ();
     foreach my $contact_email ( $self->contact_email ) {
-      my $error = $contact_email->delete;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
+      $contact_emails{$contact_email->emailaddress} = '1';
     }
 
     foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
  
-      my $contact_email = new FS::contact_email {
-        'contactnum'   => $self->contactnum,
-        'emailaddress' => $email,
-      };
-      $error = $contact_email->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+      unless ($contact_emails{$email}) {
+        my $contact_email = new FS::contact_email {
+          'contactnum'   => $self->contactnum,
+          'emailaddress' => $email,
+        };
+        $error = $contact_email->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
+      else { delete($contact_emails{$email}); }
 
+    }
+
+    foreach my $contact_email ( $self->contact_email ) {
+      if ($contact_emails{$contact_email->emailaddress}) {
+        my $error = $contact_email->delete;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
     }
 
   }
