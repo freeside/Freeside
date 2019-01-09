@@ -693,6 +693,14 @@ sub replace {
   '';
 }
 
+sub validate_number {
+  my ($option, $valref) = @_;
+  $$valref = 0 unless $$valref;
+  return "Invalid $option"
+    unless ($$valref) = ($$valref =~ /^\s*(\d+)\s*$/);
+  return '';
+}
+
 =item check
 
 Checks all fields to make sure this is a valid package definition.  If
