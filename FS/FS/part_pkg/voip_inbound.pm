@@ -64,9 +64,13 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                          },
 
     'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to this cdrtypenum: ',
+                          'validate' => \&FS::part_pkg::validate_number,
+                          'js_validate' => 'digits',
                          },
     
     'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to this cdrtypenum: ',
+                             'validate' => \&FS::part_pkg::validate_number,
+                             'js_validate' => 'digits',
                          },
 
     'use_calltypenum' => { 'name' => 'Only charge for CDRs where the CDR Call Type is set to this cdrtypenum: ',

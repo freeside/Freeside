@@ -784,6 +784,18 @@ Example:
       : $opt{'html_bottom'}
 %>
 
+%     ## set extra field values for validation.  ie price plan fields
+%     my $extra_fields_to_validate = $opt{'extra_fields_validate'};
+%     my %validate_error_messages = (
+%       'digits' => 'Please only enter numbers here.',
+%       'email'  => 'Please enter a valid email here.',
+%     );
+%     foreach my $extra_fields (keys %$extra_fields_to_validate) {
+%       my $validate_type = $extra_fields_to_validate->{$extra_fields};
+%       $js_form_validate->{edit_topform}->{validate_fields}{$extra_fields} = $validate_type.': true';
+%       $js_form_validate->{edit_topform}->{error_message}{$extra_fields} = $validate_error_messages{$validate_type};
+%     }
+
 % unless ($opt{'embed'}) {
 
   <BR>

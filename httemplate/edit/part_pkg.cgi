@@ -12,6 +12,7 @@
                                          include('/elements/init_calendar.html').
                                          $javascript,
               'html_bottom'           => $html_bottom,
+              'extra_fields_validate' => $validate_priceplan_fields,
               'body_etc'              =>
                 'onLoad="agent_changed(document.edit_topform.agentnum);
                          hide_supp_pkgs()"',
@@ -352,6 +353,7 @@
 
            )
 %>
+
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -772,6 +774,15 @@ tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 tie my %plan_labels, 'Tie::IxHash',
   map {  $_ => ( $plans{$_}->{'shortname'} || $plans{$_}->{'name'} ) }
       keys %plans;
+
+my $validate_priceplan_fields = {};
+foreach my $priceplan (keys %plans) {
+  my $plan_fields = $plans{$priceplan}->{fields};
+  foreach my $price_plan_field (keys %$plan_fields) {
+    $validate_priceplan_fields->{$priceplan."__".$price_plan_field} = $plan_fields->{$price_plan_field}->{"js_validate"}
+      if exists $plan_fields->{$price_plan_field}->{"js_validate"};
+  }
+}
 
 my $html_bottom = sub {
   my( $object ) = @_;
