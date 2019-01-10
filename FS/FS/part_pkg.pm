@@ -695,9 +695,20 @@ sub replace {
 
 sub validate_number {
   my ($option, $valref) = @_;
+
   $$valref = 0 unless $$valref;
   return "Invalid $option"
     unless ($$valref) = ($$valref =~ /^\s*(\d+)\s*$/);
+  return '';
+}
+
+sub validate_number_blank {
+  my ($option, $valref) = @_;
+
+  if ($$valref) {
+    return "Invalid $option"
+      unless ($$valref) = ($$valref =~ /^\s*(\d+)\s*$/);
+  }
   return '';
 }
 
