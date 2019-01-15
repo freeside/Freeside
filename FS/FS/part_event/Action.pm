@@ -152,6 +152,18 @@ sub deprecated {
   0;
 }
 
+=item will_send_invoice
+
+Action classes may define a will_send_invoice method that returns true, indicating
+that this action is sending out an invoice.
+
+=cut
+
+#default
+sub will_send_invoice {
+  0;
+}
+
 =item do_action CUSTOMER_EVENT_OBJECT
 
 Action classes must define an action method.  This method is triggered if

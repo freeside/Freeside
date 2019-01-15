@@ -10,6 +10,9 @@ sub description {
 # this event is just cust_bill_send_alternate + an implicit (and inefficient)
 # 'agent' condition
 
+## declaring that this action will send out an invoice
+sub will_send_invoice { 1; }
+
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }

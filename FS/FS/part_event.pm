@@ -585,7 +585,7 @@ foreach my $INC ( @INC ) {
     }
     $actions{$mod} = {
       ( map { $_ => "FS::part_event::Action::$mod"->$_() }
-            qw( description eventtable_hashref default_weight deprecated )
+            qw( description eventtable_hashref default_weight deprecated will_send_invoice )
             #option_fields_hashref
       ),
       'option_fields' => [ "FS::part_event::Action::$mod"->option_fields() ],
@@ -615,6 +615,20 @@ sub all_actions {
 
   grep { !$eventtable || $actions{$_}->{'eventtable_hashref'}{$eventtable} }
        keys %actions
+}
+
+=item invoice_send_actions
+
+Returns a list of action names that send invoices
+
+=cut
+
+sub invoice_send_actions {
+  my ( $class ) = @_;
+
+  grep { $actions{$_}->{'will_send_invoice'} }
+       keys %actions
+
 }
 
 =item process_initialize 'eventpart' => EVENTPART
