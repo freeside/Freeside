@@ -8,6 +8,9 @@ sub description { 'Upload CSV invoice data to an FTP server'; }
 
 sub deprecated { 1; }
 
+## declaring that this action will send out an invoice
+sub will_send_invoice { 1; }
+
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }

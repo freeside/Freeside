@@ -5,6 +5,9 @@ use base qw( FS::part_event::Action );
 
 sub description { 'Send invoice (spool PDF only)'; }
 
+## declaring that this action will send out an invoice
+sub will_send_invoice { 1; }
+
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }
