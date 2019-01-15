@@ -7,6 +7,9 @@ use MIME::Entity;
 
 sub description { 'Email a notice to the customer with invoice attached'; }
 
+## declaring that this action will send out an invoice
+sub will_send_invoice { 1; }
+
 sub eventtable_hashref {
     {
       'cust_main'      => 1,
