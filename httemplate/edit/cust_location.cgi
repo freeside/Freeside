@@ -17,10 +17,21 @@ ACTION="<% $p %>edit/process/cust_location.cgi" METHOD=POST>
 &>
 <& /elements/standardize_locations.html,
             'form'          => 'EditLocationForm',
-            'callback'      => 'document.EditLocationForm.submit();',
+            'callback'    => $conf->exists('tax_district_method')
+                              ? 'wa_state_tax_district()'
+                              : 'submit_continue()',
             'with_census'   => 1,
             'with_census_functions' => 1,
 &>
+<script>
+  <& /elements/wa_state_tax_district.js &>
+
+  // wa_sate_tax_district() will call submit_continue() upon success,
+  //   or submit_abort() upon error
+  function submit_continue() {
+    document.EditLocationForm.submit();
+  }
+</script>
 </TABLE>
 
 <BR>

@@ -743,20 +743,6 @@ sub insert {
     }
   }
 
-  # FS::geocode_Mixin::after_insert or something?
-  if ( $conf->config('tax_district_method') and !$import ) {
-    # if anything non-empty, try to look it up
-    my $queue = new FS::queue {
-      'job'     => 'FS::geocode_Mixin::process_district_update',
-      'custnum' => $self->custnum,
-    };
-    my $error = $queue->insert( ref($self), $self->custnum );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing tax district update: $error";
-    }
-  }
-
   # cust_main exports!
   warn "  exporting\n" if $DEBUG > 1;
 

@@ -7,6 +7,9 @@ my $company_longitude = $conf->config('company_longitude');
 
 my @fixups = ('standardize_locations');
 
+push @fixups, 'wa_state_tax_district'
+  if $conf->exists('tax_district_method');
+
 push @fixups, 'confirm_censustract_bill', 'confirm_censustract_ship'
     if $conf->exists('cust_main-require_censustract');
 
@@ -56,6 +59,8 @@ function do_submit() {
   'billship' => 1,
   'with_census' => 1, # no with_firm, apparently
 &>
+
+<& /elements/wa_state_tax_district.js &>
 
 % # the value in pre+'censustract' is the confirmed censustract (either from
 % # the previous saved record, or from address standardization (if the backend

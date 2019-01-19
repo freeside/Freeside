@@ -265,8 +265,15 @@ sub insert {
     return $error;
   }
 
-  #false laziness with cust_main, will go away eventually
-  if ( !$import and $conf->config('tax_district_method') ) {
+  # If using tax_district_method, for rows in state of Washington,
+  # without a tax district already specified, queue a job to find
+  # the tax district
+  if (
+       !$import
+    && !$self->district
+    && lc $self->state eq 'wa'
+    && $conf->config('tax_district_method')
+  ) {
 
     my $queue = new FS::queue {
       'job' => 'FS::geocode_Mixin::process_district_update'
@@ -943,7 +950,11 @@ sub _upgrade_data {
       die "$error (fixing whitespace in $field, locationnum ".$location->locationnum.')'
         if $error;
 
-      if ( $use_districts ) {
+      if (
+        $use_districts
+        && !$location->district
+        && lc $location->state eq 'wa'
+      ) {
         my $queue = new FS::queue {
           'job' => 'FS::geocode_Mixin::process_district_update'
         };
