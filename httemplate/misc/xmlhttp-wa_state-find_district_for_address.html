@@ -1,0 +1,76 @@
+<%doc>
+
+Expects POST keys:
+* address1
+* address2
+* city
+* state
+* zip
+* country
+
+Also accepts all the above keys with the prefixes bill_ and ship_
+
+Returns json with a key for each given address, e.g., whose value is
+the tax district number. e.g.
+{
+  address: {
+    district: 1234
+    tax: 7.9
+    exempt_amount: 0
+    city: MOXEE CITY
+    state: WA
+  },
+  bill: {
+    error: district not found
+    district:
+  },
+}
+
+</%doc>
+<% encode_json($return) %>
+<%init>
+use Data::Dumper;
+use FS::Misc::Geo;
+
+http_header('Content-Type' => 'application/json');
+
+my $DEBUG = 0;
+my %param = ( $cgi->Vars );
+my $return = {};
+
+warn '$param: '.Dumper( \%param )."\n"
+  if $DEBUG;
+
+my %address;
+for my $prefix ( '', 'bill', 'ship' ) {
+  my $addr_key = $prefix || 'address';
+  $address{$addr_key} = {};
+  $address{$addr_key}->{$_} = $param{ $prefix ? "${prefix}_${_}" : $_ }
+    for qw/ address1 address2 city state zip country /;
+  delete $address{$addr_key}
+    unless $address{$addr_key}->{address1}
+        && $address{$addr_key}->{city};
+}
+warn Dumper( \%address )
+  if $DEBUG;
+
+for my $k ( keys %address ) {
+  next unless lc $address{$k}->{state} eq 'wa';
+  my $response = FS::Misc::Geo::wa_sales( $address{$k} );
+  warn Dumper( $response )
+    if $DEBUG;
+
+  if ( ref $response ) {
+    $return->{$k} = $response;
+  } else {
+    $return->{$k} = { error => 'Lookup Failed' };
+  }
+}
+
+unless ( keys %$return ) {
+  $return->{error} = 'No WA addresses passed for lookup - nothing to do';
+}
+
+warn '$return: '.Dumper( $return )."\n"
+  if $DEBUG;
+</%init>
