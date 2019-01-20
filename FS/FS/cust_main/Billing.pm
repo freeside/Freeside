@@ -152,6 +152,41 @@ sub bill_and_collect {
     else                                                     { die    $error; }
   }
 
+  my $tax_district_method = $conf->config('tax_district_method');
+  if ( $tax_district_method && $tax_district_method eq 'wa_sales' ) {
+    # When using Washington State Sales Tax Districts,
+    # Bail out of billing customer if sales tax district for location is missing
+
+    $log->debug('checking cust_location tax districts', %logopt);
+
+    if (
+      my @cust_locations_missing_district =
+        $self->cust_locations_missing_district
+    ) {
+      $error = sprintf
+        'cust_location missing tax district: '.
+        join( ', ' => (
+          map(
+            {
+              sprintf
+                'locationnum(%s) %s %s %s %s',
+                 $_->locationnum,
+                 $_->address1,
+                 $_->city,
+                 $_->state,
+                 $_->zip
+            }
+            @cust_locations_missing_district
+          )
+        ));
+    }
+  }
+  if ( $error ) {
+    $error = "Error calculating taxes ".$self->custnum. ": $error";
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    else                                                     { die    $error; }
+  }
+
   $job->update_statustext('20,billing packages') if $job;
   $log->debug('billing packages', %logopt);
   $error = $self->bill( %options );

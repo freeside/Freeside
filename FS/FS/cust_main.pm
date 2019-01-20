@@ -5434,6 +5434,51 @@ sub pending_invoice_count {
   FS::cust_bill->count( 'custnum = '.shift->custnum."AND pending = 'Y'" );
 }
 
+=item cust_locations_missing_district
+
+Always returns empty list, unless tax_district_method eq 'wa_sales'
+
+Return cust_location rows for this customer, associated with active
+customer packages, where tax district column is empty.  Presense of
+these rows should block billing, because invoice would be generated
+with incorrect taxes
+
+=cut
+
+sub cust_locations_missing_district {
+  my ( $self ) = @_;
+
+  my $tax_district_method = FS::Conf->new->config('tax_district_method');
+
+  return ()
+    unless $tax_district_method
+        && $tax_district_method eq 'wa_sales';
+
+  qsearch({
+    table => 'cust_location',
+    select => 'cust_location.*',
+    addl_from => '
+      LEFT JOIN cust_main USING (custnum)
+      LEFT JOIN cust_pkg ON cust_location.locationnum = cust_pkg.locationnum
+    ',
+    extra_sql => sprintf(q{
+        WHERE cust_location.state = 'WA'
+        AND   cust_location.custnum = %s
+        AND (
+             cust_location.district IS NULL
+          or cust_location.district = ''
+        )
+        AND cust_pkg.pkgnum IS NOT NULL
+        AND (
+             cust_pkg.cancel > %s
+          OR cust_pkg.cancel IS NULL
+        )
+      },
+      $self->custnum, time()
+    ),
+  });
+}
+
 #starting to take quite a while for big dbs
 #   (JRNL: journaled so it only happens once per database)
 # - seq scan of h_cust_main (yuck), but not going to index paycvv, so
