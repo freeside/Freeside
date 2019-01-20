@@ -443,6 +443,26 @@ sub check {
     && $conf->exists('prospect_main-alt_address_format')
     && ! $self->location_kind;
 
+  # Do not allow bad tax district values in cust_location when
+  # using Washington State district sales tax calculation - would result
+  # in incorrect or missing sales tax on invoices.
+  my $tax_district_method = FS::Conf->new->config('tax_district_method');
+  if (
+    $tax_district_method
+    && $tax_district_method eq 'wa_sales'
+    && $self->district
+  ) {
+    my $cust_main_county = qsearchs(
+      cust_main_county => { district => $self->district }
+    );
+    unless ( ref $cust_main_county ) {
+      return sprintf (
+        'WA State tax district %s does not exist in tax table',
+        $self->district
+      );
+    }
+  }
+
   unless ( $import or qsearch('cust_main_county', {
     'country' => $self->country,
     'state'   => '',
