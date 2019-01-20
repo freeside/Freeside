@@ -33,6 +33,57 @@ Examples:
 %   }
 </TABLE>
 % }
+% if ( scalar @cust_locations_missing_district ) {
+  <div style="margin: 0 1em; padding: 1em; border: solid 1px #999; background-color: #fee;">
+    <h4 style="margin: 0; border-bottom: solid 1px #aaa; color: red;">Customer will not be billed:</h4>
+    <p style="margin: .5em;">
+    The following customer locations are missing tax districts for Washington State.<br>
+    Sales taxes cannot be calculated for this customer.<br>
+    Correct the address information, or enter a tax district number.
+    <ul>
+%   for my $cust_location ( @cust_locations_missing_district ) {
+      <li>
+        (<a href="#" onclick="overlib_edit_location(<% $cust_location->locationnum %>);">
+          EDIT
+        </a>)
+        <% $cust_location->address1 %>
+        <% $cust_location->city %>
+        <% $cust_location->state %>
+        <% $cust_location->zip %>
+        (<% $cust_location->locationnum %>)
+      </li>
+%   } # /for my $cust_location
+    </ul>
+  </div>
+  <script>
+    function overlib_edit_location(locationnum) {
+      overlib(
+        OLiframeContent(
+          '<% $fsurl %>edit/cust_location.cgi?locationnum=' + locationnum,
+          700, 355,
+          'popup-1548013977-3901-3256727185.50958',
+          0,
+          'auto'
+        ),
+        CAPTION, 'Edit location',
+        STICKY,
+        AUTOSTATUSCAP,
+        MIDX, 0,
+        MIDY, 0,
+        DRAGGABLE,
+        CLOSECLICK,
+        TEXTPADDING, 0,
+        BASE, 0,
+        BGCOLOR, '#333399',
+        CGCOLOR, '#333399',
+        FGCOLOR, '#f8f8f8',
+        CLOSETEXT, 'Close'
+      );
+      return false;
+    }
+  </script>
+  <br>
+% } # /if @cust_locations_missing_district
 <& /view/cust_main/menu.html, cust_main => $cust_main, show => $opt{'view'} &>
 <BR>
 
@@ -84,5 +135,11 @@ my $status = $cust_main->status_label;
 $status .= ' (Cancelled)' if $cust_main->is_status_delay_cancel;
 $title_noescape .= ' (<B><FONT COLOR="#'. $cust_main->statuscolor. '">'. $status.  '</FONT></B>)';
 $title .= " ($status)";
+
+my @cust_locations_missing_district;
+my $tax_district_method = $conf->config('tax_district_method');
+if ( $tax_district_method && $tax_district_method eq 'wa_sales' ) {
+  @cust_locations_missing_district = $cust_main->cust_locations_missing_district();
+}
 
 </%init>
