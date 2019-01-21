@@ -23,7 +23,7 @@ Usage:
 % if ($param{class}) {
    class="<% $param{class} %>"
 % }
-   onClick="$('#<% $param{target_id} %>').<% $param{jmethod} %>('<% $param{replace_text} |h %>');">&#x25C1;</a>
+   onClick="$('#<% $param{target_id} %>').<% $param{jmethod} %>('<% $param{replace_text} |h %>');"><% $param{link_text} %></a>
 <%init>
 
 die "template call requires a parameter hashref" unless ref $_[0];
@@ -34,7 +34,7 @@ my %param = (
     replace_text => 'REPLACEMENT_TEXT_FOR_INPUT_ELEMENT',
     element_type => 'input',
 
-    link_text    => '%#x25C1;', # ◁
+    link_text    => qq{<img src="${fsurl}images/eye.png">},
     href         => 'javascript:void(0)',
     style        => 'text-decoration:none;',
     class        => undef,
