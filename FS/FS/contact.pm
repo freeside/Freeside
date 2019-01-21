@@ -443,6 +443,33 @@ sub replace {
     $self->$_('');
   }
 
+  ## check for an existing contact with this email address other than current customer
+  ## if found, just add that contact to cust_contact with link_hash credentials
+  ## as email can not be tied to two contacts.
+  my @contact_emails = ();
+  my @contact_nums = ($self->contactnum,);
+  if ( $self->get('emailaddress') =~ /\S/ ) {
+
+    foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
+
+      my $contact_email = qsearchs('contact_email', { emailaddress=>$email } );
+        unless ($contact_email) { push @contact_emails, $email; next; }
+
+      my $contact = $contact_email->contact;
+      if ($contact->contactnum eq $self->contactnum) {
+        push @contact_emails, $email;
+      }
+      else {
+        push @contact_nums, $contact->contactnum;
+      }
+
+    }
+
+    my $emails = join(' , ', @contact_emails);
+    $self->emailaddress($emails);
+
+  }
+
   my $error = $self->SUPER::replace($old);
   if ( $old->_password ne $self->_password ) {
     $error ||= $self->insert_password_history;
@@ -458,20 +485,24 @@ sub replace {
   # pseudo-fields, and are now in %link_hash. otherwise, ignore all those
   # fields.
   if ( $custnum ) {
-    my %hash = ( 'contactnum' => $self->contactnum,
-                 'custnum'    => $custnum,
-               );
-    my $error;
-    if ( $cust_contact = qsearchs('cust_contact', \%hash ) ) {
-      $cust_contact->$_($link_hash{$_}) for keys %link_hash;
-      $error = $cust_contact->replace;
-    } else {
-      $cust_contact = new FS::cust_contact { %hash, %link_hash };
-      $error = $cust_contact->insert;
-    }
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+
+    foreach my $contactnum (@contact_nums) {
+
+      my %hash = ( 'contactnum' => $contactnum, #$self->contactnum,
+                   'custnum'    => $custnum,
+                 );
+      my $error;
+      if ( $cust_contact = qsearchs('cust_contact', \%hash ) ) {
+        $cust_contact->$_($link_hash{$_}) for keys %link_hash;
+        $error = $cust_contact->replace;
+      } else {
+        $cust_contact = new FS::cust_contact { %hash, %link_hash };
+        $error = $cust_contact->insert;
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
 
