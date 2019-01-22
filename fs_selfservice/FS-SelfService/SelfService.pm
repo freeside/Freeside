@@ -9,6 +9,7 @@ use FileHandle;
 #use IO::Handle;
 use IO::Select;
 use Storable 2.09 qw(nstore_fd fd_retrieve);
+use Time::HiRes;
 
 $VERSION = '0.03';
 
@@ -198,28 +199,57 @@ sub simple_packet {
   my $packet = shift;
   warn "sending ". $packet->{_packet}. " to server"
     if $DEBUG;
-  socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
-  connect(SOCK, sockaddr_un($socket)) or die "connect to $socket: $!";
-  nstore_fd($packet, \*SOCK) or die "can't send packet: $!";
-  SOCK->flush;
 
-  #shoudl trap: Magic number checking on storable file failed at blib/lib/Storable.pm (autosplit into blib/lib/auto/Storable/fd_retrieve.al) line 337, at /usr/local/share/perl/5.6.1/FS/SelfService.pm line 71
+  # Retry socket operation 5 times per second
+  # until successful or $max_retry
+  my $max_retry = 25;
+  my $sock_timeout = 5;
+  my $enable_sock_timeout = 0;
 
-  #block until there is a message on socket
-#  my $w = new IO::Select;
-#  $w->add(\*SOCK);
-#  my @wait = $w->can_read;
+  for my $try ( 1..$max_retry ) {
+    local $@;
 
-  warn "reading message from server"
-    if $DEBUG;
+    my $return;
 
-  my $return = fd_retrieve(\*SOCK) or die "error reading result: $!";
-  die $return->{'_error'} if defined $return->{_error} && $return->{_error};
+    eval {
+      local $SIG{ALRM} = sub{die "socket $socket: timeout ${sock_timeout}s"};
+      alarm $sock_timeout
+        if $enable_sock_timeout;
 
-  warn "returning message to client"
-    if $DEBUG;
+      socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
+      connect(SOCK, sockaddr_un($socket)) or die "connect to $socket: $!";
+      nstore_fd($packet, \*SOCK) or die "can't send packet: $!";
+      SOCK->flush;
 
-  $return;
+      # shoudl trap: Magic number checking on storable file failed at blib/lib/Storable.pm (autosplit into blib/lib/auto/Storable/fd_retrieve.al) line 337, at /usr/local/share/perl/5.6.1/FS/SelfService.pm line 71
+      # block until there is a message on socket
+      #  my $w = new IO::Select;
+      #  $w->add(\*SOCK);
+      #  my @wait = $w->can_read;
+
+      warn "reading message from server"
+        if $DEBUG;
+
+      $return = fd_retrieve(\*SOCK) or die "error reading result: $!";
+      die $return->{'_error'} if defined $return->{_error} && $return->{_error};
+
+      warn "returning message to client"
+        if $DEBUG;
+
+      return $return;
+    };
+
+    return $return
+      unless $@;
+
+    die "(Attempt $try) $@"
+      if $try == $max_retry;
+
+    warn "(Attempt $try) $@"
+      if $DEBUG;
+
+    Time::HiRes::sleep(0.2);
+  }
 }
 
 =head1 NAME
