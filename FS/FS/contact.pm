@@ -449,7 +449,8 @@ sub replace {
   ## if found, just add that contact to cust_contact with link_hash credentials
   ## as email can not be tied to two contacts.
   my @contact_emails = ();
-  my @contact_nums = ($self->contactnum,);
+  my %contact_nums = ();
+  $contact_nums{$self->contactnum} = '1' if $self->contactnum;
   if ( $self->get('emailaddress') =~ /\S/ ) {
 
     foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
@@ -462,7 +463,7 @@ sub replace {
         push @contact_emails, $email;
       }
       else {
-        push @contact_nums, $contact->contactnum;
+        $contact_nums{$contact->contactnum} = '1';
       }
 
     }
@@ -488,9 +489,9 @@ sub replace {
   # fields.
   if ( $custnum ) {
 
-    foreach my $contactnum (@contact_nums) {
+    foreach my $contactnum (keys %contact_nums) {
 
-      my %hash = ( 'contactnum' => $contactnum, #$self->contactnum,
+      my %hash = ( 'contactnum' => $contactnum,
                    'custnum'    => $custnum,
                  );
       my $error;
