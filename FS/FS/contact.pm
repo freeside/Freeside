@@ -468,6 +468,13 @@ sub replace {
 
     }
 
+    ## were all emails duplicates?  if so reset original emails
+    if (scalar @contact_emails < 1 && scalar (keys %contact_nums) > 1) {
+      foreach (qsearch('contact_email', {'contactnum' => $self->contactnum})) {
+        push @contact_emails, $_->emailaddress;
+      }
+    }
+
     my $emails = join(' , ', @contact_emails);
     $self->emailaddress($emails);
 
