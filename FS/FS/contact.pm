@@ -160,44 +160,42 @@ sub insert {
     $self->$_('');
   }
 
-  #look for an existing contact with this email address
+
+  ## check for an existing contact with this email address other than current customer
+  ## if found, just add that contact to cust_contact with link_hash credentials
+  ## as email can not be tied to two contacts.
+  my $no_new_contact;
   my $existing_contact = '';
+  my @contact_emails = ();
+  my %contact_nums = ();
+  $contact_nums{$self->contactnum} = '1' if $self->contactnum;
+
   if ( $self->get('emailaddress') =~ /\S/ ) {
-  
-    my %existing_contact = ();
 
     foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
  
-      my $contact_email = qsearchs('contact_email', { emailaddress=>$email } )
-        or next;
+      my $contact_email = qsearchs('contact_email', { emailaddress=>$email } );
+        unless ($contact_email) { push @contact_emails, $email; next; }
 
       my $contact = $contact_email->contact;
-      $existing_contact{ $contact->contactnum } = $contact;
+      if ($contact->contactnum eq $self->contactnum) {
+        push @contact_emails, $email;
+      }
+      else {
+        $contact_nums{$contact->contactnum} = '1';
+      }
 
     }
 
-    if ( scalar( keys %existing_contact ) > 1 ) {
-      $dbh->rollback if $oldAutoCommit;
-      return 'Multiple email addresses specified '.
-             ' that already belong to separate contacts';
-    } elsif ( scalar( keys %existing_contact ) ) {
-      ($existing_contact) = values %existing_contact;
-    }
+    my $emails = join(' , ', @contact_emails);
+    $self->emailaddress($emails);
+
+    $no_new_contact = '1' unless $self->emailaddress;
 
   }
 
   my $error;
-  if ( $existing_contact ) {
-
-    $self->$_($existing_contact->$_())
-      for qw( contactnum _password _password_encoding );
-    $error = $self->SUPER::replace($existing_contact);
-
-  } else {
-
-    $error = $self->SUPER::insert;
-
-  }
+  $error = $self->SUPER::insert unless $no_new_contact;
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -210,20 +208,22 @@ sub insert {
   # pseudo-fields, and are now in %link_hash. otherwise, ignore all those
   # fields.
   if ( $custnum ) {
-    my %hash = ( 'contactnum' => $self->contactnum,
-                 'custnum'    => $custnum,
-               );
-    $cust_contact =  qsearchs('cust_contact', \%hash )
-                  || new FS::cust_contact { %hash, %link_hash };
-    my $error = $cust_contact->custcontactnum ? $cust_contact->replace
+    foreach my $contactnum (keys %contact_nums) {
+      my %hash = ( 'contactnum' => $contactnum,
+                   'custnum'    => $custnum,
+                 );
+      $cust_contact =  qsearchs('cust_contact', \%hash )
+                    || new FS::cust_contact { %hash, %link_hash };
+      my $error = $cust_contact->custcontactnum ? $cust_contact->replace
                                               : $cust_contact->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
 
-  if ( $prospectnum ) {
+  if ( $prospectnum && !$no_new_contact) {
     my %hash = ( 'contactnum'  => $self->contactnum,
                  'prospectnum' => $prospectnum,
                );
@@ -238,6 +238,7 @@ sub insert {
     }
   }
 
+  unless ($no_new_contact) {
   foreach my $pf ( grep { /^phonetypenum(\d+)$/ && $self->get($_) =~ /\S/ }
                         keys %{ $self->hashref } ) {
     $pf =~ /^phonetypenum(\d+)$/ or die "wtf (daily, the)";
@@ -255,6 +256,7 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+  }
   }
 
   if ( $self->get('emailaddress') =~ /\S/ ) {
