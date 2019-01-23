@@ -168,7 +168,6 @@ sub insert {
   my $existing_contact = '';
   my @contact_emails = ();
   my %contact_nums = ();
-  $contact_nums{$self->contactnum} = '1' if $self->contactnum;
 
   if ( $self->get('emailaddress') =~ /\S/ ) {
 
@@ -201,6 +200,8 @@ sub insert {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  $contact_nums{$self->contactnum} = '1' if $self->contactnum;
 
   my $cust_contact = '';
   # if $self->custnum was set, then the customer-specific properties
