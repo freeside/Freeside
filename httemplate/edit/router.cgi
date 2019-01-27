@@ -7,7 +7,13 @@
                         'routername' => 'Name',
                         'svc_part'   => 'Service',
                         'agentnum'   => 'Agent',
-                        'manual_addr'  => 'Assign IP addresses manually',
+                        'manual_addr'  => '
+                          Assign IP addresses manually<br>
+                          <div style="font-size: .8em;">
+                            Uncheck to assign IP address<br>
+                            from router/address block
+                          </div>
+                        ',
                       },
      'fields'      => [
                         { 'field'=>'routername', 'type'=>'text', 'size'=>32 },
