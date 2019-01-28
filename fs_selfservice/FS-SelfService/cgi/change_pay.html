@@ -61,6 +61,9 @@
   delete $options{'DCRD'} unless $payby eq 'DCRD' || ! exists $options{'CARD'};
   delete $options{'DCHK'} unless $payby eq 'DCHK' || ! exists $options{'CHEK'};
 
+  $payby = (keys %options)[0]
+    if !$payby && %options;
+
   HTML::Widgets::SelectLayers->new(
     options => \%options,
     selected_layer => $payby,
