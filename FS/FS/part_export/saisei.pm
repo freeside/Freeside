@@ -399,14 +399,14 @@ sub api_call {
 
   warn "Calling $method on http://"
     .$self->{Hash}->{machine}.':'.$self->option('port')
-    ."/rest/stm/configurations/running/$path\n" if $self->option('debug');
+    ."/rest/top/configurations/running/$path\n" if $self->option('debug');
 
   my $data = encode_json($params) if keys %{ $params };
 
   my $client = REST::Client->new();
   $client->addHeader("Authorization", "Basic ".encode_base64($auth_info));
   $client->setHost('http://'.$self->{Hash}->{machine}.':'.$self->option('port'));
-  $client->$method('/rest/stm/configurations/running'.$path, $data, { "Content-type" => 'application/json'});
+  $client->$method('/rest/top/configurations/running'.$path, $data, { "Content-type" => 'application/json'});
 
   warn "Response Code is ".$client->responseCode()."\n" if $self->option('debug');
 
@@ -419,9 +419,26 @@ sub api_call {
       return;
     }
   }
+  elsif ($client->responseCode() eq '404') {
+    eval { $result = decode_json($client->responseContent()) };
+    unless ($result) {
+      $self->{'__saisei_error'} = "Error decoding json: $@";
+      return;
+    }
+    ## check if message is for empty hash.
+    my($does_not_exist) = $result->{message} =~ /'(.*)' does not exist$/;
+    $self->{'__saisei_error'} = "Error ".$result->{message} unless $does_not_exist;
+    warn "Response Content is\n".$client->responseContent."\n" if ($self->option('debug') && !$does_not_exist);
+    return;
+  }
+  elsif ($client->responseCode() eq '500') {
+    $self->{'__saisei_error'} = "Can't connect to host during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
+    warn "Response Content is\n".$client->responseContent."\n" if $self->option('debug');
+    return;
+  }
   else {
-    $self->{'__saisei_error'} = "Bad response from server during $method: " . $client->responseContent()
-    unless ($method eq "GET");
+    $self->{'__saisei_error'} = "Bad response from server during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
+#    unless ($method eq "GET");
     warn "Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return; 
   }
@@ -519,7 +536,7 @@ sub api_get_host {
 
   my $get_host = $self->api_call("GET", "/hosts/$ip");
 
-  return if $self->api_error;
+  return $self->api_error if $self->api_error;
 
   return $get_host;
 }
@@ -839,7 +856,7 @@ sub process_virtual_ap {
   my $existing_virtual_ap;
   my $virtual_name = $opt->{virtual_name};
 
-  #check if sector has been set up as an access point.
+  #check if virtual_ap has been set up as an access point.
   $existing_virtual_ap = $self->api_get_accesspoint($virtual_name);
 
   # modify the existing virtual accesspoint if changing it. this should never happen
@@ -858,7 +875,7 @@ sub process_virtual_ap {
   ) unless $existing_virtual_ap;
 
 my $update_sector;
-if ($existing_virtual_ap && ($existing_virtual_ap->{collection}->[0]->{uplink}->{link}->{name} ne $opt->{sector_name})) {
+if ($existing_virtual_ap && (ref $existing_virtual_ap->{collection}->[0]->{uplink} eq "HASH") && ($existing_virtual_ap->{collection}->[0]->{uplink}->{link}->{name} ne $opt->{sector_name})) {
   $update_sector = 1;
 }
 
@@ -903,7 +920,11 @@ sub export_provisioned_services {
   foreach my $svc (@svcs) {
     if ($status{$process_count}) { my $s = $status{$process_count}; $job->update_statustext($s); }
     ## check if service exists as host if not export it.
-    _export_insert($part_export,$svc) unless api_get_host($part_export, $svc->{Hash}->{ip_addr});
+    my $host = api_get_host($part_export, $svc->{Hash}->{ip_addr});
+    die $host->{message} if $host->{message};
+    warn "Exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
+    my $export_error = _export_insert($part_export,$svc) unless $host->{collection};
+    die $export_error if $export_error;
     $process_count++;
   }
 
