@@ -28,7 +28,7 @@ use FS::banned_pay;
 use FS::part_tag;
 use FS::cust_payby;
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
 
 =head1 NAME
