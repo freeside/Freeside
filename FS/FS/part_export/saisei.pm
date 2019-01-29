@@ -360,7 +360,7 @@ sub export_tower_sector {
       return $sector_access_point if $sector_access_point->{error};
   }
 
-  return $self->api_error;
+  return { error => $self->api_error, };
 }
 
 ## creates the rateplan name
@@ -537,7 +537,7 @@ sub api_get_host {
 
   my $get_host = $self->api_call("GET", "/hosts/$ip");
 
-  return $self->api_error if $self->api_error;
+  return { message => $self->api_error, } if $self->api_error;
 
   return $get_host;
 }
@@ -819,6 +819,7 @@ sub process_tower {
 
   my $accesspoint = $self->api_get_accesspoint($tower_name);
 
+  return { error => $self->api_error, } if $self->api_error;
   return $accesspoint;
 }
 
@@ -857,6 +858,7 @@ sub process_sector {
   # set access point to existing one or newly created one.
   my $accesspoint = $existing_sector_ap ? $existing_sector_ap : $self->api_get_accesspoint($sector_name);
 
+  return { error => $self->api_error, } if $self->api_error;
   return $accesspoint;
 }
 
