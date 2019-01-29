@@ -344,7 +344,7 @@ sub export_tower_sector {
       'sector_downrate_limit' => $tower_sector->{Hash}->{down_rate_limit},
       'modify_existing'       => '1', # modify an existing access point with this info
     };
-    my $sector_access_point = process_sector($self, $sector_opt);
+    my $sector_access_point = process_sector($self, $sector_opt) unless ($sector_name eq "_default");
       return $sector_access_point if $sector_access_point->{error};
   }
 
