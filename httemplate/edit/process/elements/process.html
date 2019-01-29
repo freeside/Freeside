@@ -481,9 +481,11 @@ foreach my $value ( @values ) {
 if ($class eq "FS::tower") {
   foreach my $part_svc_broadband_export ( FS::tower_sector->part_export_svc_broadband ) {
     if ($part_svc_broadband_export and $part_svc_broadband_export->can('export_tower_sector')) {
-      $error = $part_svc_broadband_export->export_tower_sector($new);
+      my $export_tower = $part_svc_broadband_export->export_tower_sector($new);
+      $error = $export_tower->{'error'} if $export_tower;
     }
   }
+  $cgi->param('error', $error) if $error;
 }
 
 # set up redirect URLs
