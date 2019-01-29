@@ -336,6 +336,7 @@ sub export_tower_sector {
   };
 
   my $tower_access_point = process_tower($self, $tower_opt);
+    return $tower_access_point if $tower_access_point->{error};
 
   #get list of all access points
   my $hash_opt = {
@@ -356,6 +357,7 @@ sub export_tower_sector {
       'modify_existing'       => '1', # modify an existing access point with this info
     };
     my $sector_access_point = process_sector($self, $sector_opt);
+      return $sector_access_point if $sector_access_point->{error};
   }
 
   return $self->api_error;
@@ -438,7 +440,6 @@ sub api_call {
   }
   else {
     $self->{'__saisei_error'} = "Bad response from server during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
-#    unless ($method eq "GET");
     warn "Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return; 
   }
@@ -662,7 +663,6 @@ Creates a access point.
 sub api_create_accesspoint {
   my ($self,$accesspoint, $upratelimit, $downratelimit) = @_;
 
-  # this has not been tested, but should work, if needed.
   my $new_accesspoint = $self->api_call(
       "PUT",
       "/access_points/$accesspoint",
@@ -791,6 +791,11 @@ sub api_delete_host_to_user {
 sub process_tower {
   my ($self, $opt) = @_;
 
+  if (!$opt->{tower_uprate_limit} || !$opt->{tower_downrate_limit}) {
+    $self->{'__saisei_error'} = "Can not export tower, no up or down rates attached to tower";
+    return { error => $self->api_error, };
+  }
+
   my $existing_tower_ap;
   my $tower_name = $opt->{tower_name};
 
@@ -803,14 +808,14 @@ sub process_tower {
     '', # tower does not have a uplink on sectors.
     $opt->{tower_uprate_limit},
     $opt->{tower_downrate_limit},
-  ) if $existing_tower_ap && $opt->{modify_existing};
+  ) if $existing_tower_ap->{collection} && $opt->{modify_existing};
 
   #if tower does not exist as an access point create it.
   $self->api_create_accesspoint(
       $tower_name,
       $opt->{tower_uprate_limit},
-      $opt->{tower_downrate_limit}
-  ) unless $existing_tower_ap;
+      $opt->{tower_downrate_limit},
+  ) unless $existing_tower_ap->{collection};
 
   my $accesspoint = $self->api_get_accesspoint($tower_name);
 
@@ -819,6 +824,11 @@ sub process_tower {
 
 sub process_sector {
   my ($self, $opt) = @_;
+
+  if (!$opt->{sector_uprate_limit} || !$opt->{sector_downrate_limit}) {
+    $self->{'__saisei_error'} = "Can not export sector, no up or down rates attached to sector";
+    return { error => $self->api_error, };
+  }
 
   my $existing_sector_ap;
   my $sector_name = $opt->{sector_name};
@@ -874,10 +884,10 @@ sub process_virtual_ap {
     $opt->{virtual_downrate_limit},
   ) unless $existing_virtual_ap;
 
-my $update_sector;
-if ($existing_virtual_ap && (ref $existing_virtual_ap->{collection}->[0]->{uplink} eq "HASH") && ($existing_virtual_ap->{collection}->[0]->{uplink}->{link}->{name} ne $opt->{sector_name})) {
-  $update_sector = 1;
-}
+  my $update_sector;
+  if ($existing_virtual_ap && (ref $existing_virtual_ap->{collection}->[0]->{uplink} eq "HASH") && ($existing_virtual_ap->{collection}->[0]->{uplink}->{link}->{name} ne $opt->{sector_name})) {
+    $update_sector = 1;
+  }
 
   # Attach newly created virtual ap to tower sector ap or if sector has changed.
   $self->api_modify_accesspoint($virtual_name, $opt->{sector_name}) unless ($self->{'__saisei_error'} || ($existing_virtual_ap && !$update_sector));
