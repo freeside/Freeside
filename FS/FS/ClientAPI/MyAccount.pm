@@ -930,6 +930,12 @@ sub payment_info {
   $return{credit_card_surcharge_percentage} = $conf->config('credit-card-surcharge-percentage', $cust_main->agentnum);
   $return{credit_card_surcharge_flatfee} = $conf->config('credit-card-surcharge-flatfee', $cust_main->agentnum);
 
+  # A value for 'payby' must be defined in %return
+  $return{payby} = $return{paybys}->[0]
+    if !$return{payby}
+    && ref $return{paybys}
+    && scalar @{ $return{paybys} };
+
   return { 'error' => '',
            %return,
          };
