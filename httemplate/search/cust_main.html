@@ -140,6 +140,9 @@ my $menubar = [];
 
 if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
 
+  # set so invoice emails are default if showing that field.
+  $search_hash{'classnums'} = 'invoice' if $cgi->param('cust_fields') =~ /Invoicing email/;
+
   # URI::query_from does not support hashref
   #   results in: ...&contacts=HASH(0x55e16cb81da8)&...
   my %query_hash = %search_hash;
