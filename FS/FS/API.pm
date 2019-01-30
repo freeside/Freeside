@@ -449,7 +449,7 @@ sub new_customer {
   #same for refnum like signup_server-default_refnum
   $opt{refnum} ||= FS::Conf->new->config('signup_server-default_refnum');
 
-  $class->API_insert( %opt );
+  FS::cust_main->API_insert( %opt );
 }
 
 =item update_customer
