@@ -660,13 +660,13 @@ sub time2str_local {
 
   $self->{_date_format} ||= {};
   if (!exists($self->{_dh})) {
-    my $cust_main = $self->cust_main;
-    my $locale = $cust_main->locale  if $cust_main;
-    $locale ||= 'en_US';
+    my $locale = $self->cust_main->locale if $self->cust_main;
+    $locale ||= FS::Conf->new->config('locale') || 'en_US';
+
     my %info = FS::Locales->locale_info($locale);
-    my $dh = eval { Date::Language->new($info{'name'}) } ||
-             Date::Language->new(); # fall back to English
-    $self->{_dh} = $dh;
+
+    $self->{_dh} = eval { Date::Language->new($info{'name'}) }
+      || Date::Language->new(); # fall back to English
   }
 
   if ($format eq 'short') {
