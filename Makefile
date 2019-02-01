@@ -49,6 +49,8 @@ FREESIDE_DOCUMENT_ROOT := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/ww
 #apache
 #FREESIDE_DOCUMENT_ROOT = /usr/local/apache/htdocs/freeside
 
+POD2HTML_DIR = ${FREESIDE_DOCUMENT_ROOT}/docs/library
+
 #deb, redhat, fedora, mandrake, suse, others?
 INIT_FILE = /etc/init.d/freeside
 #freebsd
@@ -328,7 +330,13 @@ install-chown:
 	chown freeside "${FREESIDE_CACHE}/cache.${DATASOURCE}"
 	chown freeside "${FREESIDE_EXPORT}/export.${DATASOURCE}"
 
-install: install-perl-modules install-docs install-init install-apache install-rt install-torrus install-texmf install-chown
+install-pod2html:
+	echo "${POD2HTML_DIR}"
+	mkdir -p "${POD2HTML_DIR}"
+	perl bin/pod2html.pl "${POD2HTML_DIR}"
+	chown freeside:freeside -R "${POD2HTML_DIR}"
+
+install: install-perl-modules install-docs install-init install-apache install-rt install-torrus install-texmf install-chown install-pod2html
 
 deploy: install
 	${HTTPD_RESTART}
