@@ -1,0 +1,47 @@
+#!/usr/bin/env perl
+
+=head1 NAME
+
+pod2html.pl
+
+=head1 DESCRIPTION
+
+Generate HTML from POD documentation
+
+=head1 SEE ALSO
+
+L<FS::Misc::Pod2Html>
+
+=cut
+
+use strict;
+use warnings;
+use v5.10;
+
+use FS::Misc::Pod2Html 'fs_pod2html';
+use FS::UID qw( checkuid );
+
+die 'Not running uid freeside!'
+  unless checkuid();
+
+my $html_dir = shift @ARGV
+  or HELP_MESSAGE('Please specify an OUTPUT_DIRECTORY');
+
+HELP_MESSAGE("Directory $html_dir: No write access!")
+  unless -w $html_dir;
+
+fs_pod2html( $html_dir );
+
+sub HELP_MESSAGE {
+  my $error = shift;
+  print " ERROR: $error \n"
+    if $error;
+  print "
+    Generate HTML from Freeside POD documentation
+
+    Usage: pod2html.pl OUTPUT_DIRECTORY
+
+  ";
+  exit;
+}
+
