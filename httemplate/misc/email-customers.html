@@ -372,6 +372,15 @@ if ( !$cgi->param('preview') ) {
     $body ||= $content->body;
   }
 
+  my $sql_query = "FS::$table"->search(\%search);
+  my $count_query = delete($sql_query->{'count_query'});
+  my $count_sth = dbh->prepare($count_query)
+    or die "Error preparing $count_query: ". dbh->errstr;
+  $count_sth->execute
+    or die "Error executing $count_query: ". $count_sth->errstr;
+  my $count_arrayref = $count_sth->fetchrow_arrayref;
+  $num_cust = $count_arrayref->[0];
+
 } else {
 
   my @checked_email_dest;
@@ -520,8 +529,8 @@ if ( my @in_classnums = $cgi->param('classnums') ) {
 $dest_ischecked{message} = 1 unless %dest_ischecked;
 
 my @optin_checkboxes = (
-  [ 'message' => { label => 'Message recipients' } ],
-  [ 'invoice' => { label => 'Invoice recipients' } ],
+  [ 'message' => { label => 'Message recipients', desc => 'send this notice to all message recipients for the '.$num_cust.' selected customers.' } ],
+  [ 'invoice' => { label => 'Invoice recipients', desc => 'send this notice to all invoice recipients for the '.$num_cust.' selected customers.' } ],
 );
 my @classnum_checkboxes = (
   [ '0' => { label => '(None)' }],

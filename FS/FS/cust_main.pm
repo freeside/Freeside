@@ -3150,6 +3150,101 @@ sub contact_list_email {
   @emails;
 }
 
+=item contact_list_email_destinations
+
+Returns a list of emails and whether they receive invoices or messages destinations.
+{ emailaddress => 'email.com', invoice => 'Y', message => '', }
+
+=cut
+
+sub contact_list_email_destinations {
+  my $self = shift;
+  warn "$me contact_list_email_destinations"
+    if $DEBUG;
+  return () if !$self->custnum; # not yet inserted
+  return map { $_ }
+    qsearch({
+        table     => 'cust_contact',
+        select    => 'emailaddress, cust_contact.invoice_dest as invoice, cust_contact.message_dest as message',
+        addl_from => ' JOIN contact USING (contactnum) '.
+                     ' JOIN contact_email USING (contactnum)',
+        hashref   => { 'custnum' => $self->custnum, },
+        order_by  => 'ORDER BY custcontactnum DESC',
+        extra_sql => '',
+    });
+}
+
+=item contact_list_emailonly
+
+Returns an array of hashes containing the emails. Used for displaying contact email field in advanced customer reports.
+[ { data => 'email.com', }, ]
+
+=cut
+
+sub contact_list_emailonly {
+  my $self = shift;
+  warn "$me contact_list_emailonly called"
+    if $DEBUG;
+  my @emails;
+  foreach ($self->contact_list_email_destinations) {
+    my $data = [
+      {
+        'data'  => $_->emailaddress,
+      },
+    ];
+    push @emails, $data;
+  }
+  return \@emails;
+}
+
+=item contact_list_cust_invoice_only
+
+Returns an array of hashes containing cust_contact.invoice_dest.  Does this email receive invoices. Used for displaying email Invoice field in advanced customer reports.
+[ { data => 'Yes', }, ]
+
+=cut
+
+sub contact_list_cust_invoice_only {
+  my $self = shift;
+  warn "$me contact_list_cust_invoice_only called"
+    if $DEBUG;
+  my @emails;
+  foreach ($self->contact_list_email_destinations) {
+    my $invoice = $_->invoice ? 'Yes' : 'No';
+    my $data = [
+      {
+        'data'  => $invoice,
+      },
+    ];
+    push @emails, $data;
+  }
+  return \@emails;
+}
+
+=item contact_list_cust_message_only
+
+Returns an array of hashes containing cust_contact.message_dest.  Does this email receive message notifications. Used for displaying email Message field in advanced customer reports.
+[ { data => 'Yes', }, ]
+
+=cut
+
+sub contact_list_cust_message_only {
+  my $self = shift;
+  warn "$me contact_list_cust_message_only called"
+    if $DEBUG;
+  my @emails;
+  foreach ($self->contact_list_email_destinations) {
+    my $message = $_->message ? 'Yes' : 'No';
+    my $data = [
+      {
+        'data'  => $message,
+      },
+    ];
+    push @emails, $data;
+  }
+  return \@emails;
+}
+
 =item referral_custnum_cust_main
 
 Returns the customer who referred this customer (or the empty string, if

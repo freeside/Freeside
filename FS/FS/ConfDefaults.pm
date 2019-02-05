@@ -56,6 +56,9 @@ sub cust_fields_avail { (
   'Cust# | Cust. Status | Name | Company' =>
     'custnum | Status | Last, First | Company',
 
+  'Cust# | Cust. Status | Name | Company | Address 1 | Address 2 | City | State | Zip | Country | Day phone | Night phone | Mobile phone | Fax number | Contact email(s) | Invoices | Messages' =>
+    'custnum | Status | Last, First | Company | (address) | (all phones) | Contact email(s)',
+
   'Cust# | Cust. Status | Name | Company | Address 1 | Address 2 | City | State | Zip | Country | Day phone | Night phone | Mobile phone | Fax number | Invoicing email(s)' =>
     'custnum | Status | Last, First | Company | (address) | (all phones) | Invoicing email(s)',
 

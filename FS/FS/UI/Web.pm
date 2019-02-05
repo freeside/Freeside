@@ -343,6 +343,9 @@ sub cust_header {
     '(service) Latitude'       => 'ship_latitude',
     '(service) Longitude'      => 'ship_longitude',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
+    'Contact email(s)'         => 'contact_list_emailonly',
+    'Invoices'                 => 'contact_list_cust_invoice_only',
+    'Messages'                 => 'contact_list_cust_message_only',
 # FS::Upgrade::upgrade_config removes this from existing cust-fields settings
 #    'Payment Type'             => 'cust_payby',
     'Current Balance'          => 'current_balance',

@@ -155,9 +155,10 @@ if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') )
   $uri->query_form( \%query_hash );
   my $query = $uri->query;
 
-  push @$menubar, emt('Email a notice to these customers') =>
-                    "${p}misc/email-customers.html?table=cust_main&$query",
-
+  push @$menubar, emt('Email a notice to these customers message recipients') =>
+                    "${p}misc/email-customers.html?table=cust_main&classnums=message&$query";
+  push @$menubar, emt('Email a notice to these customers invoice recipients') =>
+                    "${p}misc/email-customers.html?table=cust_main&classnums=invoice&$query";
 }
 
 </%init>
