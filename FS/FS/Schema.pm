@@ -5599,6 +5599,9 @@ sub tables_hashref {
         #NULL, done (or something)
         'freesidestatus', 'varchar',   'NULL',     32,   '', '', 
 
+        #additional status info (i.e. reason for "skipped" freesidestatus)
+        'freesidestatustext', 'text',  'NULL',     '',   '', '',
+
         #NULL, done (or something)
         'freesiderewritestatus', 'varchar',   'NULL',     32,   '', '', 
 
