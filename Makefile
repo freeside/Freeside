@@ -333,7 +333,7 @@ install-chown:
 install-pod2html:
 	echo "${POD2HTML_DIR}"
 	mkdir -p "${POD2HTML_DIR}"
-	perl bin/pod2html.pl "${POD2HTML_DIR}"
+	perl -MFS::Misc::Pod2Html -e "FS::Misc::Pod2Html::fs_pod2html('${POD2HTML_DIR}');"
 	chown freeside:freeside -R "${POD2HTML_DIR}"
 
 install: install-perl-modules install-docs install-init install-apache install-rt install-torrus install-texmf install-chown install-pod2html
