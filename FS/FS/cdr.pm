@@ -518,6 +518,7 @@ sub set_status_and_rated_price {
   } else {
 
     $self->freesidestatus($status);
+    $self->freesidestatustext($opt{'statustext'}) if exists($opt{'statustext'});
     $self->rated_price($rated_price);
     $self->$_($opt{$_})
       foreach grep exists($opt{$_}), map "rated_$_",
@@ -681,6 +682,7 @@ sub rate_prefix {
     return $self->set_status_and_rated_price( 'skipped',
                                               0,
                                               $opt{'svcnum'},
+                                              'statustext' => $reason,
                                             );
   }
 

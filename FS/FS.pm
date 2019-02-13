@@ -664,35 +664,7 @@ and higher SNR than the users list.  Send a blank message to
 Commercial products and services are available; see
 <http://freeside.biz/freeside/products.html> and <http://freeside.biz/freeside/services.html>.
 
-=head1 AUTHORS
-
-=head2 CORE TEAM
-
-Jeremy Davis
-
-Jason Hall
-
-Ivan Kohler
-
-Mark Wells
-
-=head2 CORE EMERITUS
-
-Peter Bowen
-
-Jeff Finucane
-
-Kristian Hoffman
-
-Erik Levinson
-
-Brian McCane
-
-Richard Siddall
-
-Matt Simerson
-
-=head2 CONTRIBUTORS
+=head1 AUTHORS AND CONTRIBUTORS
 
 See httemplate/docs/credits.html
 
