@@ -679,7 +679,7 @@ sub check_chargable {
       and $cdr->max_callers <= $self->option_cacheable('skip_max_callers');
 
   return "calldate < ". $self->option_cacheable('skip_old')
-    if $self->option_cacheable('skip_old')
+    if length($self->option_cacheable('skip_old'))
     && $cdr->calldate_unix < str2time($self->option_cacheable('skip_old')); 
 
   #all right then, rate it
