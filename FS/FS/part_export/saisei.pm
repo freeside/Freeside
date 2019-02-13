@@ -371,7 +371,7 @@ sub get_rateplan_name {
   my $service_name = $svc_name ? $svc_name : $service_part->{Hash}->{svc};
 
   my $rateplan_name = $service_name . " " . $svc_broadband->{Hash}->{speed_down} . "-" . $svc_broadband->{Hash}->{speed_up};
-  $rateplan_name =~ s/\s/_/g;
+  $rateplan_name =~ s/\s/_/g; $rateplan_name =~ s/[^A-Za-z0-9\-_]//g;
 
   return $rateplan_name;
 }
@@ -410,37 +410,39 @@ sub api_call {
   $client->setHost('http://'.$self->{Hash}->{machine}.':'.$self->option('port'));
   $client->$method('/rest/top/configurations/running'.$path, $data, { "Content-type" => 'application/json'});
 
-  warn "Response Code is ".$client->responseCode()."\n" if $self->option('debug');
+  warn "Saisei Response Code is ".$client->responseCode()."\n" if $self->option('debug');
 
   my $result;
 
   if ($client->responseCode() eq '200' || $client->responseCode() eq '201') {
     eval { $result = decode_json($client->responseContent()) };
     unless ($result) {
-      $self->{'__saisei_error'} = "Error decoding json: $@";
+      $self->{'__saisei_error'} = "Error decoding json from Saisei";
+      warn "Saisei RC 201 Response Content is not json\n".$client->responseContent()."\n" if $self->option('debug');
       return;
     }
   }
   elsif ($client->responseCode() eq '404') {
     eval { $result = decode_json($client->responseContent()) };
     unless ($result) {
-      $self->{'__saisei_error'} = "Error decoding json: $@";
+      $self->{'__saisei_error'} = "Error decoding json from Saisei";
+      warn "Saisei RC 404 Response Content is not json\n".$client->responseContent()."\n" if $self->option('debug');
       return;
     }
     ## check if message is for empty hash.
     my($does_not_exist) = $result->{message} =~ /'(.*)' does not exist$/;
     $self->{'__saisei_error'} = "Error ".$result->{message} unless $does_not_exist;
-    warn "Response Content is\n".$client->responseContent."\n" if ($self->option('debug') && !$does_not_exist);
+    warn "Saisei Response Content is\n".$client->responseContent."\n" if ($self->option('debug') && !$does_not_exist);
     return;
   }
   elsif ($client->responseCode() eq '500') {
     $self->{'__saisei_error'} = "Can't connect to host during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
-    warn "Response Content is\n".$client->responseContent."\n" if $self->option('debug');
+    warn "Saisei Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return;
   }
   else {
     $self->{'__saisei_error'} = "Bad response from server during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
-    warn "Response Content is\n".$client->responseContent."\n" if $self->option('debug');
+    warn "Saisei Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return; 
   }
 
