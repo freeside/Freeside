@@ -361,14 +361,23 @@ sub _bop_content {
 
   $content{name} = $payname if $payname;
 
-  $content{address} = $options->{'address1'};
-  my $address2 = $options->{'address2'};
-  $content{address} .= ", ". $address2 if length($address2);
+  if ( exists($options->{'address1'}) ) {
 
-  $content{city} = $options->{'city'};
-  $content{state} = $options->{'state'};
-  $content{zip} = $options->{'zip'};
-  $content{country} = $options->{'country'};
+    $content{address} = $options->{'address1'};
+    my $address2 = $options->{'address2'};
+    $content{address} .= ", ". $address2 if length($address2);
+
+    $content{$_} = $options->{$_} foreach qw( city state zip country );
+
+  } elsif ( ref($self) ) {
+
+    $content{address} = $self->address1;
+    my $address2 = $self->address2;
+    $content{address} .= ", ". $address2 if length($address2);
+
+    $content{$_} = $self->$_() foreach qw( city state zip country );
+
+  }
 
   # can't set phone if called as class method
   $content{phone} = $self->daytime || $self->night
