@@ -29,8 +29,8 @@ tie my %cdr_svc_method, 'Tie::IxHash',
 tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
 #  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
-  'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount.',
-  'single_price' => 'A single price per minute for all calls.',
+  'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount (ignoring all options to skip calls).',
+  'single_price' => 'A single price per minute for all calls (ignoring all options to skip calls).',
 ;
 
 tie my %rounding, 'Tie::IxHash',
