@@ -94,7 +94,7 @@ To use this export, follow the below instructions:
 <OL>
 <LI>
 Create a new service definition and set the table to svc_broadband.  The service name will become the Saisei rate plan name.
-Set the upload and download speed for the service. This is required to be able to export the service to Saisei.
+Set the upload speed, download speed, and tower to be required for the service. This is required to be able to export the service to Saisei.
 Attach this Saisei export to this service.
 </LI>
 <P>
@@ -110,7 +110,7 @@ Create a package for the above created service, and order this package for a cus
 </LI>
 <P>
 <LI>
-Provision the service, making sure to enter the IP address associated with this service and select the tower and sector for it's access point.
+Provision the service, making sure to enter the IP address associated with this service, the upload and download speed are correct, and select the tower and sector for it's access point.
 This provisioned service will then be exported as a host to Saisei.
 <P>
 Unprovisioning this service will set the host entry at Saisei to the default rate plan with the user and access point set to <i>none</i>.
@@ -122,7 +122,7 @@ Clicking on this link will export all services attached to this export not curre
 </LI>
 </OL>
 <P>
-
+<A HREF="http://www.freeside.biz/mediawiki/index.php/Saisei_provisioning_export" target="_new">Documentation</a>
 END
 );
 
