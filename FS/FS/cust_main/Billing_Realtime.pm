@@ -330,6 +330,8 @@ sub _bop_cust_payby_options {
 
 # can be called as class method,
 # but can't load default name/phone fields as class method
+# (why was this added?  ah, it might get called from realtime_tokenize in this
+#  fashion "to tokenize old records on upgrade")
 sub _bop_content {
   my ($self, $options) = @_;
   my %content = ();
@@ -361,7 +363,7 @@ sub _bop_content {
 
   $content{name} = $payname if $payname;
 
-  if ( exists($options->{'address1'}) ) {
+  if ( exists($options->{'address1'}) && length($options->{'address1'}) ) {
 
     $content{address} = $options->{'address1'};
     my $address2 = $options->{'address2'};
