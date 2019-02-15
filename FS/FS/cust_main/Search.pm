@@ -1069,6 +1069,54 @@ sub search {
   }
 
   ##
+  # contacts
+  ##
+  if (keys %{ $params->{'contacts'} }) {
+    my $contact_params = $params->{'contacts'};
+
+    if ($contact_params->{'contacts_firstname'} || $contact_params->{'contacts_lastname'}) {
+      my $first_query = " AND contact.first = '" . $contact_params->{'contacts_firstname'} . "'"
+        unless !$contact_params->{'contacts_firstname'};
+      my $last_query = " AND contact.last = '" . $contact_params->{'contacts_lastname'} . "'"
+        unless !$contact_params->{'contacts_lastname'};
+      push @where,
+      "EXISTS ( SELECT 1 FROM contact
+                WHERE contact.custnum = cust_main.custnum
+                $first_query $last_query
+              ) ";
+    }
+
+    if ($contact_params->{'contacts_email'}) {
+      push @where,
+      "EXISTS ( SELECT 1 FROM contact_email
+                JOIN contact USING (contactnum)
+                WHERE contact.custnum = cust_main.custnum
+                AND contact_email.emailaddress = '" . $contact_params->{'contacts_email'} . "'
+              ) ";
+    }
+
+    if ($contact_params->{'contacts_homephone'} || $contact_params->{'contacts_workphone'} || $contact_params->{'contacts_mobilephone'}) {
+      foreach my $phone (qw( contacts_homephone contacts_workphone contacts_mobilephone )) {
+        (my $num = $contact_params->{$phone}) =~ s/\W//g;
+        if ( $num =~ /^1?(\d{3})(\d{3})(\d{4})(\d*)$/ ) { $contact_params->{$phone} = "$1$2$3"; }
+      }
+      my $home_query = " AND ( contact_phone.phonetypenum = '2' AND contact_phone.phonenum = '" . $contact_params->{'contacts_homephone'} . "' )"
+        unless !$contact_params->{'contacts_homephone'};
+      my $work_query = " AND ( contact_phone.phonetypenum = '1' AND contact_phone.phonenum = '" . $contact_params->{'contacts_workphone'} . "' )"
+        unless !$contact_params->{'contacts_workphone'};
+      my $mobile_query = " AND ( contact_phone.phonetypenum = '3' AND contact_phone.phonenum = '" . $contact_params->{'contacts_mobilephone'} . "' )"
+        unless !$contact_params->{'contacts_mobilephone'};
+      push @where,
+      "EXISTS ( SELECT 1 FROM contact_phone
+                JOIN contact USING (contactnum)
+                WHERE contact.custnum = cust_main.custnum
+                $home_query $work_query $mobile_query
+              ) ";
+    }
+}
+
+
+  ##
   # setup queries, subs, etc. for the search
   ##
 
@@ -1104,44 +1152,6 @@ sub search {
   my @extra_headers     = ();
   my @extra_fields      = ();
   my @extra_sort_fields = ();
-
-  ## search contacts
-  if ($params->{'contacts'}) {
-    my $contact_params = $params->{'contacts'};
-
-    $addl_from .=
-      ' LEFT JOIN contact ON ( cust_main.custnum = contact.custnum ) ';
-
-    if ($contact_params->{'contacts_firstname'} || $contact_params->{'contacts_lastname'}) {
-      my $first_query = " AND contact.first = '" . $contact_params->{'contacts_firstname'} . "'"
-        unless !$contact_params->{'contacts_firstname'};
-      my $last_query = " AND contact.last = '" . $contact_params->{'contacts_lastname'} . "'"
-        unless !$contact_params->{'contacts_lastname'};
-      $extra_sql .= " AND ( '1' $first_query $last_query )";
-    }
-
-    if ($contact_params->{'contacts_email'}) {
-      $addl_from .= ' LEFT JOIN contact_email ON ( contact.contactnum = contact_email.contactnum ) ';
-      $extra_sql .= " AND ( contact_email.emailaddress = '" . $contact_params->{'contacts_email'} . "' )";
-    }
-
-    if ($contact_params->{'contacts_homephone'} || $contact_params->{'contacts_workphone'} || $contact_params->{'contacts_mobilephone'}) {
-      $addl_from .= ' LEFT JOIN contact_phone ON ( contact.contactnum = contact_phone.contactnum ) ';
-      my $contacts_mobilephone;
-      foreach my $phone (qw( contacts_homephone contacts_workphone contacts_mobilephone )) {
-        (my $num = $contact_params->{$phone}) =~ s/\W//g;
-        if ( $num =~ /^1?(\d{3})(\d{3})(\d{4})(\d*)$/ ) { $contact_params->{$phone} = "$1$2$3"; }
-      }
-      my $home_query = " AND ( contact_phone.phonetypenum = '2' AND contact_phone.phonenum = '" . $contact_params->{'contacts_homephone'} . "' )"
-        unless !$contact_params->{'contacts_homephone'};
-      my $work_query = " AND ( contact_phone.phonetypenum = '1' AND contact_phone.phonenum = '" . $contact_params->{'contacts_workphone'} . "' )"
-        unless !$contact_params->{'contacts_workphone'};
-      my $mobile_query = " AND ( contact_phone.phonetypenum = '3' AND contact_phone.phonenum = '" . $contact_params->{'contacts_mobilephone'} . "' )"
-        unless !$contact_params->{'contacts_mobilephone'};
-      $extra_sql .= " AND ( '1' $home_query $work_query $mobile_query )";
-    }
-
-  }
 
   my $count_query = "SELECT COUNT(DISTINCT cust_main.custnum) FROM cust_main $addl_from $extra_sql";
 
@@ -1208,7 +1218,8 @@ sub search {
 
   }
 
-  my $select = join(', ', @select);
+  # set select a customer only once. some joins create multiple customer records.
+  my $select = 'DISTINCT ON (cust_main.custnum) ' . join(', ', @select);
 
   my $sql_query = {
     'table'             => 'cust_main',
