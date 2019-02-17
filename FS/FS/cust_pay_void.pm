@@ -94,7 +94,7 @@ Desired pkgnum when using experimental package balances.
 
 =item reason - a freeform string (deprecated)
 
-=item reasonnum - Reason for voiding the payment (see L<FS::reson>)
+=item reasonnum - Reason for voiding the payment (see L<FS::reason>)
 
 =back
 

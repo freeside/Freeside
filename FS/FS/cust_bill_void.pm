@@ -93,7 +93,7 @@ freeform string (deprecated)
 
 =item reasonnum 
 
-reason for voiding the payment (see L<FS::reson>)
+reason for voiding the payment (see L<FS::reason>)
 
 =item void_usernum
 
@@ -291,7 +291,7 @@ sub cust_pkg {
 
 Class method which returns an SQL WHERE fragment to search for parameters
 specified in HASHREF.  Accepts the following parameters for 
-L<FS::cust_bill::search_sql_where>: C<_date>, C<invnum_min>, C<invnum_max>,
+L<FS::cust_bill/search_sql_where>: C<_date>, C<invnum_min>, C<invnum_max>,
 C<agentnum>, C<custnum>, C<cust_classnum>, C<refnum>.  Also 
 accepts the following:
 

@@ -1,5 +1,11 @@
 #!/usr/bin/perl
 
+=head1 NAME
+
+freeside-selfservice-xmlrpcd
+
+=cut
+
 use FS::Daemon::Preforking qw( freeside_init1 freeside_init2 daemon_run );
 
 use FS::XMLRPC_Lite; #XMLRPC::Lite for XMLRPC::Serializer

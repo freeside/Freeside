@@ -115,7 +115,7 @@ freeform string (deprecated)
 
 =item reasonnum 
 
-reason for voiding the payment (see L<FS::reson>)
+reason for voiding the payment (see L<FS::reason>)
 
 =back
 

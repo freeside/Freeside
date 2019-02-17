@@ -668,7 +668,7 @@ sub label {
 
 =item realtime_bop
 
-Runs a L<realtime_bop|FS::cust_main::Billing_Realtime::realtime_bop> transaction on this card
+Runs a L<FS::cust_main::Billing_Realtime/realtime_bop> transaction on this card
 
 =cut
 
@@ -684,7 +684,7 @@ sub realtime_bop {
 
 =item tokenize
 
-Runs a L<realtime_tokenize|FS::cust_main::Billing_Realtime::realtime_tokenize> transaction on this card
+Runs a L<FS::cust_main::Billing_Realtime/realtime_tokenize> transaction on this card
 
 =cut
 

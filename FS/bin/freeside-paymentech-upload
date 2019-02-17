@@ -126,7 +126,7 @@ freeside-paymentech-upload - Transmit a payment batch to Chase Paymentech via SF
 
 Command line tool to upload a payment batch to the Chase Paymentech gateway.
 The batch will be exported to the Paymentech XML format, packaged in a ZIP 
-file, and transmitted via SFTP.  Use L<paymentech-download> to retrieve the 
+file, and transmitted via SFTP.  Use L<freeside-paymentech-download> to retrieve the
 response file.
 
 -a: Send all open batches, instead of specifying a batchnum.

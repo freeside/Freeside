@@ -153,7 +153,7 @@ maybe batch_import should be a regular method in FS::inventory_class
 
 =head1 SEE ALSO
 
-L<inventory_class>, L<cust_svc>, L<FS::Record>, schema.html from the base
+L<FS::inventory_class>, L<FS::cust_svc>, L<FS::Record>, schema.html from the base
 documentation.
 
 =cut

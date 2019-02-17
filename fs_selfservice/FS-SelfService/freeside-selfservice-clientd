@@ -1,8 +1,14 @@
 #!/usr/bin/perl -w
-#
-# freeside-selfservice-clientd
-#
-# This is run REMOTELY over ssh by freeside-selfservice-server
+
+=head1 NAME
+
+freeside-selfservice-clientd
+
+=head1 DESCRIPTION
+
+This is run REMOTELY over ssh by freeside-selfservice-server
+
+=cut
 
 use strict;
 use subs qw(spawn logmsg lock_write unlock_write);

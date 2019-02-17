@@ -37,7 +37,7 @@ primary key
 
 =item custnum
 
-Customer (see L<FS::cust_main)
+Customer (see L<FS::cust_main>)
 
 =item history_action
 

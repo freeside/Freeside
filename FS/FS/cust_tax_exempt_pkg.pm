@@ -62,7 +62,7 @@ may be the setup fee, the recurring fee, or the sum of those.
 (cust_main.tax = 'Y').
 
 =item exempt_cust_taxname - flag indicating that the customer is exempt 
-from the tax with this name (see L<FS::cust_main_exemption).
+from the tax with this name (see L<FS::cust_main_exemption>).
 
 =item exempt_setup, exempt_recur: flag indicating that the package's setup
 or recurring fee is not taxable (part_pkg.setuptax and part_pkg.recurtax).

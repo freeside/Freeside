@@ -76,7 +76,7 @@ sub children_svc_x {
 This class provides a check subroutine which takes care of checking the
 parent_svcnum field.  The svc_ class which uses it will call SUPER::check at
 the end of its own checks, and this class will call NEXT::check to pass 
-the check "up the chain" (see L<NEXT>).
+the check "up the chain" (see L<perlfunc/next>).
 
 =cut
 

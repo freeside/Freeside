@@ -1,7 +1,10 @@
 #!/usr/bin/perl -w
-#
-# freeside-selfservice-xmlrpc-server
-#
+
+=head1 NAME
+
+freeside-selfservice-xmlrpc-server
+
+=cut
 
 use strict;
 use Fcntl qw(:flock);

@@ -57,7 +57,7 @@ FS::Record.  The following fields are currently supported:
 =item svcdb - table used for this service.  See L<FS::svc_acct>,
 L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
-=item classnum - Optional service class (see L<FS::svc_class>)
+=item classnum - Optional service class (see L<FS::part_svc_class>)
 
 =item disabled - Disabled flag, empty or `Y'
 

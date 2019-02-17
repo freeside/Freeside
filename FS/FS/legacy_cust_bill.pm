@@ -45,7 +45,7 @@ Invoice number or identifier from previous system
 
 =item custnum
 
-Customer (see L<FS::cust_main)
+Customer (see L<FS::cust_main>)
 
 =item _date
 

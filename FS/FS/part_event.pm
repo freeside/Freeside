@@ -654,7 +654,7 @@ sub _upgrade_data { #class method
 =head1 SEE ALSO
 
 L<FS::part_event_option>, L<FS::part_event_condition>, L<FS::cust_main>,
-L<FS::cust_pkg>, L<FS::svc_acct>, L<FS::cust_bill>, L<FS::cust_bill_event>, 
+L<FS::cust_pkg>, L<FS::svc_acct>, L<FS::cust_bill>, L<FS::cust_event>,
 L<FS::Record>,
 schema.html from the base documentation.
 

@@ -53,7 +53,7 @@ L<FS::Report::Table> - Report data objects
 
 L<FS::Report::Table::Monthly> - Report data objects
 
-L<FS::XMLRPC> - Backend XML::RPC server
+L<FS::ClientAPI_XMLRPC> - Backend XML::RPC server
 
 L<FS::Misc> - Miscellaneous subroutines
 
@@ -304,7 +304,7 @@ L<FS::rate_detail> - Rate plan detail for call billing
 
 L<FS::rate_tier> - Rate tiers for call billing
 
-L<FS::rate_tier_details> - Rater tier details for call billing
+L<FS::rate_tier_detail> - Rater tier details for call billing
 
 L<FS::usage_class> - Usage class class
 
@@ -546,8 +546,6 @@ L<FS::UI::bytecount> - Byte counter user-interface class
 
 L<freeside-adduser> - Command line interface to add (freeside) users.
 
-L<freeside-deluser> - Command line interface to delete (freeside) users.
-
 L<freeside-dbdef-create> - Recreate database schema cache
 
 L<freeside-setup> - Create new database
@@ -563,8 +561,6 @@ L<freeside-msa-import> - Seed MSA data
 L<freeside-daily> - Run daily billing and collection events.
 
 L<freeside-monthly> - Run monthly billing and invoice collection events.
-
-L<freeside-expiration-alerter> - Emails notifications of credit card expirations.
 
 =head3 Cron (payment batches)
 
@@ -591,8 +587,6 @@ L<freeside-username_list> - List all usernames in the sytem
 L<freeside-phonenum_list> - List all phone numbers in the system
 
 =head3 Misc. Tools (taking actions)
-
-L<freeside-fetch> - Send a freeside page to a list of employees.
 
 L<freeside-prune-applications> - Removes stray applications of credit, payment to bills, refunds, etc.
 
@@ -624,7 +618,7 @@ L<freeside-prepaidd> - Real-time daemon for prepaid packages
 
 L<freeside-queued> - Job queue daemon
 
-L<freeside-selvservice-server> - Self-service server
+L<freeside-selfservice-server> - Self-service server
 
 L<freeside-selfservice-xmlrpcd> - Self-service XML-RPC server
 
