@@ -11,6 +11,16 @@ $me = '[FS::ClientAPI]';
 
 %handler = ();
 
+=head1 NAME
+
+FS::ClientAPI
+
+=item load_clientapi_modules
+
+=cut
+
+=cut
+
 sub load_clientapi_modules {
 
   #find modules
@@ -30,6 +40,10 @@ sub load_clientapi_modules {
   }
 
 }
+
+=item dispatch [ name ]
+
+=cut
 
 sub dispatch {
   my ( $self, $name ) = ( shift, shift );

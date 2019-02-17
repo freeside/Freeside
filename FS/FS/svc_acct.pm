@@ -2395,7 +2395,7 @@ sub is_rechargable {
 =item seconds_since TIMESTAMP
 
 Returns the number of seconds this account has been online since TIMESTAMP,
-according to the session monitor (see L<FS::Session>).
+according to the session monitor (see L<FS::session>).
 
 TIMESTAMP is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.

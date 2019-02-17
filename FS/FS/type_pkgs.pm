@@ -121,7 +121,7 @@ sub agent_type {
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::agent_type>, L<FS::part_pkgs>, schema.html from the base
+L<FS::Record>, L<FS::agent_type>, L<FS::part_pkg>, schema.html from the base
 documentation.
 
 =cut

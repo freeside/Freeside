@@ -1,5 +1,11 @@
 #!/usr/bin/perl -w
 
+=head1 NAME
+
+freeside-selfservice-server
+
+=cut
+
 use strict;
 use vars qw( $FREESIDE_LOG $FREESIDE_LOCK );
 use vars qw( $Debug %kids $kids $max_kids $ssh_pid %old_ssh_pid $keepalives );

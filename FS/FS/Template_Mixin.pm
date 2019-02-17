@@ -2180,7 +2180,7 @@ notice name instead of "Invoice", optional
 
 =back
 
-Returns an argument list to be passed to L<FS::Misc::send_email>.
+Returns an argument list to be passed to L<FS::Misc/send_email>.
 
 =cut
 

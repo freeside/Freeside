@@ -285,7 +285,7 @@ sub cust_pkg {
 
 Class method which returns an SQL WHERE fragment to search for parameters
 specified in HASHREF.  Accepts the following parameters for 
-L<FS::cust_bill::search_sql_where>: C<_date>, C<invnum_min>, C<invnum_max>,
+L<FS::cust_bill/search_sql_where>: C<_date>, C<invnum_min>, C<invnum_max>,
 C<agentnum>, C<custnum>, C<cust_classnum>, C<refnum>, C<payby>.  Also 
 accepts the following:
 

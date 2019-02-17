@@ -143,7 +143,7 @@ Billing item definition (see L<FS::part_pkg>)
 
 =item locationnum
 
-Optional link to package location (see L<FS::location>)
+Optional link to package location (see L<FS::cust_location>)
 
 =item order_date
 
@@ -554,7 +554,7 @@ Available options are:
 
 =item reason
 
-can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+can be set to a cancellation reason (see L<FS::reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
 
 =item reason_otaker
 
@@ -1497,7 +1497,7 @@ Available options are:
 
 =over 4
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>),
+=item reason - can be set to a cancellation reason (see L<FS::reason>),
 either a reasonnum of an existing reason, or passing a hashref will create 
 a new reason.  The hashref should have the following keys: 
 - typenum - Reason type (see L<FS::reason_type>
@@ -4630,7 +4630,7 @@ Available options are:
 
 =item reason
 
-can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+can be set to a cancellation reason (see L<FS::reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
 
 =item reason_otaker
 

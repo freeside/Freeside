@@ -3,9 +3,11 @@
 # based on http://www.perlmonks.org/?node_id=582781 by Justin Hawkins
 # and http://poe.perl.org/?POE_Cookbook/Web_Server_With_Forking
 
-###
-# modules and constants and variables, oh my
-###
+=head1 NAME
+
+freeside-selfservice-xmlrpcd
+
+=cut
 
 use warnings;
 use strict;

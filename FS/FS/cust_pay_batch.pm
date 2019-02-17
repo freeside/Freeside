@@ -236,7 +236,7 @@ sub expmmyy {
 
 =item pay_batch
 
-Returns the payment batch this payment belongs to (L<FS::pay_batch).
+Returns the payment batch this payment belongs to (L<FS::pay_batch>).
 
 =cut
 
@@ -509,8 +509,8 @@ sub process_unbatch_and_delete {
 =item unbatch_and_delete
 
 May only be called on a record with an empty status and an associated
-L<pay_batch> with a status of 'O' (not yet in transit.)  Deletes all associated
-records from L<cust_bill_pay_batch> and then deletes this record.
+L<FS::pay_batch> with a status of 'O' (not yet in transit.)  Deletes all associated
+records from L<FS::cust_bill_pay_batch> and then deletes this record.
 If there is an error, returns the error, otherwise returns false.
 
 =cut

@@ -53,7 +53,7 @@ L<FS::Report::Table> - Report data objects
 
 L<FS::Report::Table::Monthly> - Report data objects
 
-L<FS::XMLRPC> - Backend XML::RPC server
+L<FS::ClientAPI_XMLRPC> - Backend XML::RPC server
 
 L<FS::Misc> - Miscellaneous subroutines
 
@@ -284,7 +284,7 @@ L<FS::rate_detail> - Rate plan detail for call billing
 
 L<FS::rate_tier> - Rate tiers for call billing
 
-L<FS::rate_tier_details> - Rater tier details for call billing
+L<FS::rate_tier_detail> - Rater tier details for call billing
 
 L<FS::usage_class> - Usage class class
 
@@ -529,8 +529,6 @@ L<freeside-monthly> - Run monthly billing and invoice collection events.
 L<freeside-dbdef-create> - Recreate database schema cache
 
 L<freeside-deluser> - Command line interface to delete (freeside) users.
-
-L<freeside-expiration-alerter> - Emails notifications of credit card expirations.
 
 L<freeside-email> -  Prints email addresses of all users on STDOUT
 

@@ -40,7 +40,7 @@ primary key
 
 =item agentnum
 
-agentnum
+Agent (see L<FS::agent>)
 
 =item disabled
 

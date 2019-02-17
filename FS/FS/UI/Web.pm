@@ -469,9 +469,9 @@ sub cust_sql_fields {
 =item join_cust_main [ TABLE[.CUSTNUM] ] [ LOCATION_TABLE[.LOCATIONNUM] ]
 
 Returns an SQL join phrase for the FROM clause so that the fields listed
-in L<cust_sql_fields> will be available.  Currently joins to cust_main 
+in L</cust_sql_fields> will be available.  Currently joins to cust_main
 itself, as well as cust_location (under the aliases 'bill_location' and
-'ship_location') if address fields are needed.  L<cust_header()> should have
+'ship_location') if address fields are needed.  L</cust_header> should have
 been called already.
 
 All of these will be left joins; if you want to exclude rows with no linked
