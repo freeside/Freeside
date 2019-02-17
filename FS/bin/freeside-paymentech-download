@@ -133,7 +133,7 @@ freeside-paymentech-download - Retrieve payment batch responses from Chase Payme
 
 Command line tool to download payment batch responses from the Chase Paymentech
 gateway.  These are XML files packaged in ZIP files.  This script downloads them 
-by SFTP, extracts the contents, and passes them to L<FS::pay_batch::import_result>.
+by SFTP, extracts the contents, and passes them to L<FS::pay_batch/import_results>.
 
 -v: Be verbose.
 

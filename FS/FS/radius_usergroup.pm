@@ -156,7 +156,7 @@ sub _upgrade_data {  #class method
 
 =head1 SEE ALSO
 
-L<svc_acct>, L<FS::radius_group>, L<FS::Record>, schema.html from the base documentation.
+L<FS::svc_acct>, L<FS::radius_group>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
 

@@ -44,7 +44,7 @@ Name
 
 =item agentnum
 
-Agent (see L<FS::agent)
+Agent (see L<FS::agent>)
 
 =item disabled
 

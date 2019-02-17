@@ -1900,11 +1900,11 @@ Frequency override (for calc_recur)
 
 This option is filled in by the method rather than controlling its operation.
 It is an arrayref.  Applicable discounts will be added to the arrayref, as
-L<FS::cust_bill_pkg_discount|FS::cust_bill_pkg_discount records>.
+L<FS::cust_bill_pkg_discount> records.
 
 =item real_pkgpart
 
-For package add-ons, is the base L<FS::part_pkg|package definition>, otherwise
+For package add-ons, is the base L<FS::part_pkg> package definition, otherwise
 no different than pkgpart.
 
 =item precommit_hooks
@@ -1928,7 +1928,7 @@ plan option prorate_defer_bill).
 =back
 
 Note: Don't calculate prices when not actually billing the package.  For that,
-see the L</base_setup|base_setup> and L</base_recur|base_recur> methods.
+see the L<FS::cust_pkg/base_setup> and L<FS::cust_pkg/base_recur> methods.
 
 =cut
 

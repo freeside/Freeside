@@ -272,7 +272,7 @@ Enable individual CDR spooling, empty or `Y'
 
 =item dundate
 
-A suggestion to events (see L<FS::part_bill_event">) to delay until this unix timestamp
+A suggestion to events (see L<FS::part_bill_event>) to delay until this unix timestamp
 
 =item squelch_cdr
 
@@ -2179,7 +2179,7 @@ FS::cust_pkg::cancel() methods.
 
 =item quiet - can be set true to supress email cancellation notices.
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a
+=item reason - can be set to a cancellation reason (see L<FS::reason>), either a
 reasonnum of an existing reason, or passing a hashref will create a new reason.
 The hashref should have the following keys:
 typenum - Reason type (see L<FS::reason_type>)
@@ -2730,7 +2730,7 @@ UNIX timestamps; see L<perlfunc/"time">).  Also see L<Time::Local> and
 L<Date::Parse> for conversion functions.  The empty string can be passed
 to disable that time constraint completely.
 
-Accepts the same options as L<balance_date_sql>:
+Accepts the same options as L</balance_date_sql>:
 
 =over 4
 

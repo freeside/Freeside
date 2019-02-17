@@ -31,7 +31,7 @@ while ( my $row = $search->fetch ) {
 
 =item psearch ARGUMENTS
 
-A wrapper around L<FS::Record::qsearch>.  Accepts all the same arguments 
+A wrapper around L<FS::Record/qsearch>.  Accepts all the same arguments 
 as qsearch, except for the arrayref union query mode, and returns an 
 FS::PagedSearch object to access the rows of the query one at a time.  
 If the query doesn't contain an ORDER BY clause already, it will be ordered

@@ -37,7 +37,7 @@ The following fields are currently supported:
 
 =item creditbillpkgnum -  primary key
 
-=item creditbillnum - Credit application to the overall invoice (see L<FS::cust_credit::bill>)
+=item creditbillnum - Credit application to the overall invoice (see L<FS::cust_credit_bill>)
 
 =item billpkgnum - Line item to which credit is applied (see L<FS::cust_bill_pkg>)
 

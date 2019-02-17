@@ -474,7 +474,7 @@ sub spool_upload {
 
 Retrieves the config value named CONFIG, parses it as a Text::Template,
 extracts "to" and "subject" headers, and returns a hash that can be passed
-to L<FS::Misc::send_email>.
+to L<FS::Misc/send_email>.
 
 PARAMS is a hashref to be passed to C<fill_in>.  It must contain 
 'agentnum' to look up the per-agent config.

@@ -891,7 +891,7 @@ sub owed {
 Returns the amount to be displayed as the "Balance Due" on this
 invoice.  Amount returned depends on conf flags for invoicing
 
-See L<FS::cust_bill::owed> for the true amount currently owed
+See L<FS::cust_bill/owed> for the true amount currently owed
 
 =cut
 
@@ -1372,7 +1372,7 @@ sub ftp_invoice {
 
 =item spool_invoice [ TEMPLATENAME ]
 
-Spools this invoice data (see L<FS::spool_csv>)
+Spools this invoice data (see L<FS::cust_bill/spool_csv>)
 
 TEMPLATENAME is unused?
 
@@ -3830,7 +3830,7 @@ The delete method.
 =head1 SEE ALSO
 
 L<FS::Record>, L<FS::cust_main>, L<FS::cust_bill_pay>, L<FS::cust_pay>,
-L<FS::cust_bill_pkg>, L<FS::cust_bill_credit>, schema.html from the base
+L<FS::cust_bill_pkg>, L<FS::cust_credit>, schema.html from the base
 documentation.
 
 =cut

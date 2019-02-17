@@ -372,7 +372,7 @@ Queue job for status updates.  Required.
 
 =item search
 
-Hashref of params to the L<search()> method.  Required.
+Hashref of params to the L<FS::Record/search> method.  Required.
 
 =item msgnum
 

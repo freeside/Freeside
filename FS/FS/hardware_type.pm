@@ -25,7 +25,7 @@ FS::hardware_type - Object methods for hardware_type records
 =head1 DESCRIPTION
 
 An FS::hardware_type object represents a device type (a model name or 
-number) assignable as a hardware service (L<FS::svc_hardware)>).
+number) assignable as a hardware service (L<FS::svc_hardware>).
 FS::hardware_type inherits from FS::Record.  The following fields are 
 currently supported:
 
