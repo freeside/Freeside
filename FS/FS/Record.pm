@@ -5,7 +5,7 @@ use strict;
 use charnames ':full';
 use vars qw( $AUTOLOAD
              %virtual_fields_cache %fk_method_cache $fk_table_cache
-             $money_char $lat_lower $lon_upper
+             %virtual_fields_hash_cache $money_char $lat_lower $lon_upper
              $use_placeholders
            );
 use Carp qw(carp cluck croak confess);
@@ -1808,6 +1808,41 @@ sub virtual_fields {
   }
 
   @{$virtual_fields_cache{$table}};
+
+}
+
+=item virtual_fields_hash [ TABLE ]
+
+Returns a list of virtual field records as a hash defined for the table.  This should not
+be exported, and should only be called as an instance or class method.
+
+=cut
+
+sub virtual_fields_hash {
+  my $self = shift;
+  my $table;
+  $table = $self->table or confess "virtual_fields called on non-table";
+
+  confess "Unknown table $table" unless dbdef->table($table);
+
+  return () unless dbdef->table('part_virtual_field');
+
+  unless ( $virtual_fields_hash_cache{$table} ) {
+    $virtual_fields_hash_cache{$table} = [];
+    my $concat = [ "'cf_'", "name" ];
+    my $select = concat_sql($concat).' as name, label, length';
+    my @vfields = qsearch({
+      select => $select,
+      table => 'part_virtual_field',
+      hashref => { 'dbtable' => $table, },
+    });
+
+    foreach (@vfields) {
+      push @{ $virtual_fields_hash_cache{$table} }, $_->{Hash};
+    }
+  }
+
+  @{$virtual_fields_hash_cache{$table}};
 
 }
 

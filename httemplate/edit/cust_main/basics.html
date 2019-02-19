@@ -117,7 +117,7 @@
 </SCRIPT>
 
 % foreach my $field ($cust_main->virtual_fields) {
-    <% $cust_main->pvf($field)->widget('HTML', 'edit',$cust_main->getfield($field)) %>
+    <% $cust_main->pvf($field)->widget('HTML', 'edit',$cust_main->getfield($field), 'TH') %>
 % }
 
 %# tags

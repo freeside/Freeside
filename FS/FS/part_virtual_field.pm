@@ -59,6 +59,7 @@ Create a new record.  To add the record to the database, see "insert".
 
 sub table { 'part_virtual_field'; }
 sub virtual_fields { () }
+sub virtual_fields_hash { () }
 
 =item widget UI_TYPE MODE [ VALUE ]
 
@@ -81,19 +82,20 @@ VALUE (optional) is the current value of the field.
 
 sub widget {
   my $self = shift;
-  my ($ui_type, $mode, $value) = @_;
+  my ($ui_type, $mode, $value, $header_col_type) = @_;
+  $header_col_type = 'TD' unless $header_col_type;
   my $text;
   my $label = $self->label || $self->name;
 
   if ($ui_type eq 'HTML') {
     if ($mode eq 'view') {
-      $text = q!<TR><TD ALIGN="right">! . $label . 
-              q!</TD><TD BGCOLOR="#ffffff">! . $value .
+      $text = q!<TR><!.$header_col_type.q! ALIGN="right">! . $label .
+              q!</!.$header_col_type.q!><TD BGCOLOR="#ffffff">! . $value .
               q!</TD></TR>! . "\n";
     } elsif ($mode eq 'edit') {
-      $text = q!<TR><TD ALIGN="right">! . $label .
-              q!</TD><TD>!;
-        $text .= q!<INPUT NAME="! . $self->name .
+      $text = q!<TR><!.$header_col_type.q! ALIGN="right">! . $label .
+              q!</!.$header_col_type.q!><TD>!;
+        $text .= q!<INPUT TYPE=text NAME="! . $self->name .
                 q!" VALUE="! . escapeHTML($value) . q!"!;
         if ($self->length) {
           $text .= q! SIZE="! . $self->length . q!"!;

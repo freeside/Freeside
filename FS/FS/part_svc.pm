@@ -707,6 +707,11 @@ sub _svc_defs {
         warn "skipping disabled service FS::$mod" if $DEBUG;
         next;
       }
+
+      foreach ("FS::$mod"->virtual_fields_hash) {
+        $info->{'fields'}->{$_->{'name'}} = $_->{'label'};
+      }
+
       $info{$mod} = $info;
 
       # all svc_* modules are required to have h_svc_* modules for invoice
