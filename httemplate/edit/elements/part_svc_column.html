@@ -98,7 +98,7 @@ that field.
     <TD ROWSPAN=2 CLASS="grid">
       <INPUT NAME="<% $svcdb %>__<% $field %>_label"
              STYLE="text-align: right"
-             VALUE="<% $part_svc_column->columnlabel || $def->{'label'} |h %>">
+             VALUE="<% $part_svc_column->columnlabel || escapeHTML($def->{'label'}) |h %>">
     </TD>
 
     <TD ROWSPAN=1 CLASS="grid">

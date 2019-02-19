@@ -113,6 +113,11 @@ my $new = new FS::cust_main ( {
 
 $new->invoice_noemail( ($cgi->param('invoice_email') eq 'Y') ? '' : 'Y' );
 
+# add any virtual fields to the new cust_main record
+foreach ($new->virtual_fields) {
+  $new->setfield($_, scalar($cgi->param($_)));
+}
+
 if ( $duplicate_of ) {
   # then negate all changes to the customer; the only change we should
   # make is to order a package, if requested
