@@ -97,6 +97,11 @@ my $new = new FS::cust_main ( {
   (map { ( "ship_$_", '' ) } (FS::cust_main->location_fields))
 } );
 
+# add any virtual fields to the new cust_main record
+foreach ($new->virtual_fields) {
+  $new->setfield($_, scalar($cgi->param($_)));
+}
+
 warn Dumper( $new ) if $DEBUG > 1;
 
 if ( $duplicate_of ) {

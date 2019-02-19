@@ -42,6 +42,9 @@
 
 my $act = 'add';
 
+## make cgi->param("name") lowercase
+$cgi->param('name' => lc $cgi->param('name'));
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 

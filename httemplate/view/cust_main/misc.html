@@ -172,7 +172,7 @@
 % }
 
 % foreach (sort { $a cmp $b } $cust_main->virtual_fields) {
-    <% $cust_main->pvf($_)->widget('HTML', 'view', $cust_main->getfield($_)) %>
+    <% $cust_main->pvf($_)->widget('HTML', 'view', $cust_main->getfield($_), 'TH') %>
 % }
 
 </TABLE>
