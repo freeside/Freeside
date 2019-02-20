@@ -49,6 +49,7 @@ export MASON_HANDLER=$(TMP)-webui/usr/local/etc/freeside/handler.pl
 export APACHE_VERSION        := $(shell /usr/sbin/apache2 -v | grep -q '\/2\.4\.' && echo '2.4' || echo '2')
 export APACHE_DOCUMENT_ROOT  := $(shell [ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html' || echo '/var/www')
 export FREESIDE_DOCUMENT_ROOT = $(TMP)$(APACHE_DOCUMENT_ROOT)/freeside
+export POD2HTML_DOCUMENT_ROOT = $(FREESIDE_DOCUMENT_ROOT)/docs/library
 export INIT_FILE              = $(TMP).init
 export INIT_INSTALL           = /bin/true
 export HTTPD_RESTART          = /bin/true
@@ -286,6 +287,10 @@ install-stamp: build-stamp
 		s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
 		s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
 		" ${RT_PATH}/etc/RT_SiteConfig.pm
+
+	# Build pod2html documentation
+	install -d ${POD2HTML_DOCUMENT_ROOT}
+	perl -IFS -MFS::Misc::Pod2Html -e "FS::Misc::Pod2Html::fs_pod2html_from_src('${POD2HTML_DOCUMENT_ROOT}');"
 
 	dh_install
 
