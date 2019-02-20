@@ -3,19 +3,4 @@
 # Rebuild ls-R filename databases used by TeX
 texhash /usr/local/share/texmf
 
-# Generate HTML documentation from perl POD
-if [ -z "$APACHE_VERSION" ]; then
-  export APACHE_VERSION=`/usr/sbin/apache2 -v | grep -q '\/2\.4\.' && echo '2.4' || echo '2'`
-fi
-
-if [ -z "$APACHE_DOCUMENT_ROOT" ]; then
-  export APACHE_DOCUMENT_ROOT=`[ ${APACHE_VERSION} = '2.4' ] && echo '/var/www/html' || echo '/var/www'`
-fi
-
-export POD2HTML_DOCUMENT_ROOT="${APACHE_DOCUMENT_ROOT}/freeside/docs/library"
-
-mkdir -p "$POD2HTML_DOCUMENT_ROOT"
-perl -MFS::Misc::Pod2Html -e "FS::Misc::Pod2Html::fs_pod2html('$POD2HTML_DOCUMENT_ROOT');"
-chown -R freeside "$POD2HTML_DOCUMENT_ROOT"
-
 exit 0
