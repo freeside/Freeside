@@ -209,16 +209,7 @@ process();
   </HTML>
 
 %} else {
-%  my $cookie;
-%  $cookie = CGI::Cookie->new(
-%                        -name    => 'freeside_status',
-%                        -value   => $messages,
-%                        -expires => '+5m',
-%                      ) if $messages;
-   <% $cgi->redirect( -uri    => $redirect,
-                      -cookie => $cookie,
-      )
-   %>
+<% $cgi->redirect($redirect) %>
 %}
 <%init>
 
