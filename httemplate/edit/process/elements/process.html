@@ -34,6 +34,11 @@ Example:
 
    'clear_on_error' => [ 'form_field1', 'form_field2', ... ],
 
+   ## message will be returned to redirect page as cookie and read by header.html
+   ## append =status, =warning, =error to change color of message box.  Default is status
+   ## status is green, warning is yellow, and error is red
+   'message'        => [ 'My message=status', 'Please restart=warning' ],
+
                   #pass an arrayref of hashrefs for multiple m2ms or m2names
                   #be certain you incorporate m2m_Common if you see error: param
 
@@ -208,7 +213,16 @@ process();
   </HTML>
 
 %} else {
-<% $cgi->redirect($redirect) %>
+%  my $cookie;
+%  $cookie = CGI::Cookie->new(
+%                        -name    => 'freeside_status',
+%                        -value   => $messages,
+%                        -expires => '+5m',
+%                      ) if $messages;
+   <% $cgi->redirect( -uri    => $redirect,
+                      -cookie => $cookie,
+      )
+   %>
 %}
 <%init>
 
@@ -509,6 +523,8 @@ if ( !$error ) {
   
   }
 }
+
+my $messages = $opt{'message'} ? $opt{'message'} : '';
 
 my $edit_ext = $opt{'edit_ext'} || 'html';
 my $error_redirect = $opt{'error_redirect'}

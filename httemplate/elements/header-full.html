@@ -204,8 +204,10 @@ Example:
 % if ( $cookies{freeside_status} ) {
     <BR>
 %   foreach my $status_msg ( $cookies{freeside_status}->value ) {
-      <TABLE CLASS="fsinnerbox" STYLE="background-color:#eeffee"><TR>
-        <TD><IMG SRC="<% $fsurl %>images/tick.png"> <% $status_msg |h %></TD>
+%     my ($message, $type) = split /=/, $status_msg;
+%     $type ||= 'status';
+      <TABLE CLASS="fsinnerbox" STYLE="background-color:<% $status_color{$type} %>"><TR>
+        <TD><IMG SRC="<% $fsurl %>images/tick.png"> <% $message |h %></TD>
       </TR></TABLE>
 %   }
     <script src="<% $fsurl %>elements/js.cookie.js"></script>
@@ -269,5 +271,8 @@ if ( scalar(@agentnums) == 1 ) {
   $company_name = $conf->config('company_name');
   $company_url  = $conf->config('company_url');
 }
+
+## status->green(#eeffee), warning->yellow(#fdfd96), error->red(#f97c7c)
+my %status_color = ( 'status' => '#eeffee', 'warning' => '#fefbd0', 'error' => '#f97c7c', );
 
 </%init>
