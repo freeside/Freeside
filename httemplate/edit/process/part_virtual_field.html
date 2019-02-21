@@ -29,8 +29,10 @@
             my $dbdef_file = "/usr/local/etc/freeside/dbdef.".datasrc;
             my $dbdef = new_native DBIx::DBSchema $dbh;
             $dbdef->save($dbdef_file);
-            delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
-            reload_dbdef($dbdef_file);
+            ## Stop reload of db schema as only reload current process and not others. Could be a pain to diagnose error.  
+            ## Restart Apache to reload DB Schema for all.
+            #delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
+            #reload_dbdef($dbdef_file);
             
             warn "cf add done schema modification, time=".time;
         }
