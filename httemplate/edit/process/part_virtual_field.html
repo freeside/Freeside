@@ -1,6 +1,7 @@
 <% include( 'elements/process.html',
     'table'          => 'part_virtual_field',
     'viewall_dir'    => 'browse',
+    'message'        => [ 'Your custom field has been created, but will not be available untill Apache has been restarted.=warning', ],
     'precheck_callback' => sub {
         my ($cgi) = @_;
         $act = 'edit' if $cgi->param('vfieldpart');
@@ -25,7 +26,7 @@
             $dbh->commit or die $dbh->errstr; 
 
             # reload schema
-            my $dbdef_file = "/usr/local/etc/freeside/dbdef.".datasrc # XXX: fix this
+            my $dbdef_file = "/usr/local/etc/freeside/dbdef.".datasrc;
             my $dbdef = new_native DBIx::DBSchema $dbh;
             $dbdef->save($dbdef_file);
             delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
