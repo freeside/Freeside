@@ -19,8 +19,6 @@ FS::ClientAPI
 
 =cut
 
-=cut
-
 sub load_clientapi_modules {
 
   #find modules
