@@ -2,7 +2,7 @@ package FS::part_virtual_field;
 use base qw(FS::Record);
 
 use strict;
-use CGI qw(escapeHTML);
+use HTML::Entities;
 use FS::Schema qw( dbdef );
 
 =head1 NAME
@@ -89,14 +89,14 @@ sub widget {
 
   if ($ui_type eq 'HTML') {
     if ($mode eq 'view') {
-      $text = q!<TR><!.$header_col_type.q! ALIGN="right">! . $label .
-              q!</!.$header_col_type.q!><TD BGCOLOR="#ffffff">! . $value .
+      $text = q!<TR><!.$header_col_type.q! ALIGN="right">! . encode_entities($label) .
+              q!</!.$header_col_type.q!><TD BGCOLOR="#ffffff">! . encode_entities($value) .
               q!</TD></TR>! . "\n";
     } elsif ($mode eq 'edit') {
-      $text = q!<TR><!.$header_col_type.q! ALIGN="right">! . $label .
+      $text = q!<TR><!.$header_col_type.q! ALIGN="right">! . encode_entities($label) .
               q!</!.$header_col_type.q!><TD>!;
         $text .= q!<INPUT TYPE=text NAME="! . $self->name .
-                q!" VALUE="! . escapeHTML($value) . q!"!;
+                q!" VALUE="! . encode_entities($value) . q!"!;
         if ($self->length) {
           $text .= q! SIZE="! . $self->length . q!"!;
         }
