@@ -17,8 +17,6 @@
 %>
 <%init>
 
-use CGI qw(escapeHTML);
-
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Broadband configuration')
   || $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
@@ -50,8 +48,8 @@ my @links = ( [ "${p2}edit/router.cgi?", 'routernum' ],
             );
 
 foreach (FS::router->virtual_fields_hash) {
-  push @header_fields, escapeHTML($_->{'label'});
-  push @fields, escapeHTML($_->{'name'});
+  push @header_fields, encode_entities($_->{'label'});
+  push @fields, encode_entities($_->{'name'});
   push @links, '';
 }
 
