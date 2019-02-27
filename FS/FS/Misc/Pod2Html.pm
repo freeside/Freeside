@@ -65,12 +65,11 @@ Generates Freeside-themed HTML docuemtnation from installed perl modules
 sub fs_pod2html {
   fs_pod2html_from_dirs(
     shift,
-    '/usr/local/share/perl/5.24.1',
+    grep( {-d} glob('/usr/local/share/perl/*')),
     '/usr/local/bin',
     $include_system_perl_modules ? (
       '/usr/share/perl5',
-      '/usr/share/perl/5.24',
-      '/usr/share/perl/5.24.1',
+      grep {-d} glob('/usr/share/perl/*'),
     ) : (),
   );
 }
@@ -92,12 +91,9 @@ sub fs_pod2html_from_src {
     'bin',
     'FS',
     'fs_selfservice/FS-SelfService',
-    # '/usr/local/share/perl/5.24.1',
-    # '/usr/local/bin',
     $include_system_perl_modules ? (
       '/usr/share/perl5',
-      '/usr/share/perl/5.24',
-      '/usr/share/perl/5.24.1',
+      grep {-d} glob('/usr/share/perl/*'),
     ) : (),
   );
 
