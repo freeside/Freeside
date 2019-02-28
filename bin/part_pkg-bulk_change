@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_r $opt_m $opt_p $opt_o $opt_v $opt_t $opt_s $opt_S $opt_z $opt_Z );
+use vars qw( $opt_r $opt_m $opt_C $opt_p $opt_o $opt_v $opt_t $opt_s $opt_S $opt_z $opt_Z $opt_e $opt_u );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 use FS::part_pkg_option;
 
-getopts('rm:p:o:v:t:sSzZ');
+getopts('rm:C:p:o:v:t:sSzZe:u:');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
@@ -16,6 +16,7 @@ adminsuidsetup $user;
 my %search = ();
 $search{'plan'} = $opt_p if $opt_p;
 $search{'comment'} = $opt_m if $opt_m;
+$search{'classnum'} = { op=>'NOT IN', value=>"($opt_C)" } if $opt_C;
 
 foreach my $part_pkg ( qsearch('part_pkg',\%search) ) {
   next if ! $part_pkg->freq && $opt_r;
@@ -44,6 +45,40 @@ foreach my $part_pkg ( qsearch('part_pkg',\%search) ) {
 
   }
 
+  if ( $opt_e ) {
+    my %hash = (
+      'pkgpart'    => $part_pkg->pkgpart,
+      'optionname' => 'setup_fee',
+    );
+
+    my $part_pkg_option = qsearchs('part_pkg_option', \%hash);
+
+    if ( $part_pkg_option ) {
+      $part_pkg_option->optionvalue(
+        sprintf('%.2f', $part_pkg_option->optionvalue * $opt_e)
+      );
+      my $error = $part_pkg_option->replace;
+      die $error if $error;
+    }
+  }
+
+  if ( $opt_u ) {
+    my %hash = (
+      'pkgpart'    => $part_pkg->pkgpart,
+      'optionname' => 'recur_fee',
+    );
+
+    my $part_pkg_option = qsearchs('part_pkg_option', \%hash);
+
+    if ( $part_pkg_option ) {
+      $part_pkg_option->optionvalue(
+        sprintf('%.2f', $part_pkg_option->optionvalue * $opt_u)
+      );
+      my $error = $part_pkg_option->replace;
+      die $error if $error;
+    }
+  }
+
   if ( $opt_t || $opt_s || $opt_S || $opt_z || $opt_Z ) {
 
     $part_pkg->taxclass($opt_t) if $opt_t;
@@ -59,7 +94,7 @@ foreach my $part_pkg ( qsearch('part_pkg',\%search) ) {
 }
 
 sub usage {
-  die "usage: part_pkg-bulk_change [ -r ] [ -p plan ] [ -m comment ] [ -o option_name -v option_value ] [ -t new_taxclass ] [ -s | -S ] [ -z | -Z ] employee_username\n";
+  die "usage: part_pkg-bulk_change [ -r ] [ -p plan ] [ -m comment ] [ -C classnum,classnum ] [ -o option_name -v option_value ] [ -t new_taxclass ] [ -s | -S ] [ -z | -Z ]  [ -e multiplier ] [ -u multiplier ] employee_username\n";
 }
 
 =head1 NAME
@@ -68,7 +103,7 @@ cust_main-bulk_change
 
 =head1 SYNOPSIS
 
-  part_pkg-bulk_change [ -r ] [ -p plan ] [ -m comment ] [ -o option_name -v option_value ] [ -t new_taxclass ] [ -s | -S ] [ -z | -Z ] employee_username
+  part_pkg-bulk_change [ -r ] [ -p plan ] [ -m comment ] [ -C classnum,classnum ] [ -o option_name -v option_value ] [ -t new_taxclass ] [ -s | -S ] [ -z | -Z ] [ -e multiplier ] [ -u multiplier ] employee_username
 
 =head1 DESCRIPTION
 
@@ -81,6 +116,8 @@ Search options:
 -p: packages with this price plan only
 
 -m: packages with this comment only
+
+-C: excluding package classnum or classnums (comma-separated list)
 
 Change options:
 
@@ -97,6 +134,10 @@ Change options:
 -z: Turn off "Show zero recurring"
 
 -Z: Turn on "Show zero recurring"
+
+-e: Multiply setup fee by this value (i.e. 1.05 for a 5% price increase)
+
+-u: Multiply recurring fee by this value (i.e. 1.05 for a 5% price increase)
 
 employee_username
 
