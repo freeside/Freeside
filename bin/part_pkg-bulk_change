@@ -16,9 +16,18 @@ adminsuidsetup $user;
 my %search = ();
 $search{'plan'} = $opt_p if $opt_p;
 $search{'comment'} = $opt_m if $opt_m;
-$search{'classnum'} = { op=>'NOT IN', value=>"($opt_C)" } if $opt_C;
 
-foreach my $part_pkg ( qsearch('part_pkg',\%search) ) {
+my $extra_sql = '';
+$extra_sql = ( keys(%search) ? 'AND' : 'WHERE' ).
+             " classnum NOT IN ($opt_C)"
+  if $opt_C;
+
+foreach my $part_pkg ( qsearch({ 'table'     => 'part_pkg',
+                                 'hashref'   => \%search,
+                                 'extra_sql' => $extra_sql,
+                              })
+                     )
+{
   next if ! $part_pkg->freq && $opt_r;
 
   if ( $opt_o ) {
