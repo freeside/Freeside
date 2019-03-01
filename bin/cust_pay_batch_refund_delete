@@ -37,7 +37,7 @@ foreach (@batch_refunds) {
 
      ## delete the refund from the batch.
      unless ($delete_cust_refund_error) {
-     	my $delete_cust_pay_batch_error = $_->delete;
+     	my $delete_cust_pay_batch_error = $_->unbatch_and_delete;
      	warn "could not delete cust refund $delete_cust_pay_batch_error\n" if $delete_cust_pay_batch_error;
      }
 
