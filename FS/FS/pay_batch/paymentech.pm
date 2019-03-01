@@ -128,13 +128,13 @@ my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
           ecpDelvMethod   => 'A',
         ),
                            # truncate_egc will die() on empty string
-        avsZip      => $_->zip      ? truncate_egc($_->zip,      10) : undef,
-        avsAddress1 => $_->address1 ? truncate_egc($_->address1, 30) : undef,
-        avsAddress2 => $_->address2 ? truncate_egc($_->address2, 30) : undef,
-        avsCity     => $_->city     ? truncate_egc($_->city,     20) : undef,
-        avsState    => $_->state    ? truncate_egc($_->state,     2) : undef,
+        avsZip      => $_->zip      ? truncate_egc($_->zip,      10, '') : undef,
+        avsAddress1 => $_->address1 ? truncate_egc($_->address1, 30, '') : undef,
+        avsAddress2 => $_->address2 ? truncate_egc($_->address2, 30, '') : undef,
+        avsCity     => $_->city     ? truncate_egc($_->city,     20, '') : undef,
+        avsState    => $_->state    ? truncate_egc($_->state,     2, '') : undef,
         avsName     => ($_->first || $_->last)
-                       ? truncate_egc($_->first. ' '. $_->last, 30) : undef,
+                       ? truncate_egc($_->first. ' '. $_->last, 30, '') : undef,
         ( $paymentech_countries{ $_->country }
           ? ( avsCountryCode  => $_->country )
           : ()
