@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_pay_refund;
+use Data::Dumper;
+
+adminsuidsetup shift or die usage();
+
+## get a list of all refunds in batches.
+
+my $extrasql = " LEFT JOIN pay_batch USING ( batchnum ) WHERE cust_pay_batch.paycode = 'C' AND pay_batch.download IS NULL";
+
+my @batch_refunds = qsearch({
+  'table'   => 'cust_pay_batch',
+  'select'  => 'cust_pay_batch.*',
+  'extra_sql' => $extrasql,
+});
+
+warn "found ".scalar @batch_refunds." batch refunds.\n";
+warn "Searching for their cust refunds...\n" if (scalar @batch_refunds > 0);
+
+
+## find the cust_pay_refund for all those
+foreach (@batch_refunds) {
+	my $extra_batch_refund_sql = " WHERE custnum = '".$_->{Hash}->{custnum}."' AND refund = '".$_->{Hash}->{amount}."' ORDER BY _date DESC LIMIT 1";
+	my $cust_refund = qsearchs({ 
+       'table'  => 'cust_refund',
+       'extra_sql' => $extra_batch_refund_sql,
+	});
+
+	warn "found cust refund number ".$cust_refund->{Hash}->{refundnum}.", now to delete it.\n";
+
+	## delete the cust_pay_refund
+	my $delete_cust_refund_error = $cust_refund->delete;
+	warn "could not delete cust refund $delete_cust_refund_error\n" if $delete_cust_refund_error;
+
+     ## delete the refund from the batch.
+     unless ($delete_cust_refund_error) {
+     	my $delete_cust_pay_batch_error = $_->delete;
+     	warn "could not delete cust refund $delete_cust_pay_batch_error\n" if $delete_cust_pay_batch_error;
+     }
+
+     if ($delete_cust_refund_error || $delete_cust_pay_batch_error) { die "Could no delete cust_pay_batch refund\n"; }
+     else { warn "cust refund ".$cust_refund->{Hash}->{refundnum}." deleted\n"; }
+}
+
+
+
+warn "all done!\n";
+
+sub usage {
+  "Usage: Call script as user freeside\n Example: cust_pay_batch_refund_delete <freeside username> ";
+}
