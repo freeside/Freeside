@@ -29,10 +29,10 @@ foreach (@batch_refunds) {
        'extra_sql' => $extra_batch_refund_sql,
 	});
 
-	warn "found cust refund number ".$cust_refund->{Hash}->{refundnum}.", now to delete it.\n";
+	warn "found cust refund number ".$cust_refund->{Hash}->{refundnum}.", now to delete it.\n" if $cust_refund;
 
 	## delete the cust_pay_refund
-	my $delete_cust_refund_error = $cust_refund->delete;
+	my $delete_cust_refund_error = $cust_refund->delete if cust_refund;
 	warn "could not delete cust refund $delete_cust_refund_error\n" if $delete_cust_refund_error;
 
      ## delete the refund from the batch.
