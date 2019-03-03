@@ -9,7 +9,7 @@ use vars qw(
 );
 use subs qw( getsecrets );
 use Carp qw( carp croak cluck confess );
-use DBI;
+use FS::DBI;
 use IO::File;
 use FS::CurrentUser;
 
@@ -172,14 +172,16 @@ sub callback_setup {
 }
 
 sub myconnect {
-  my $handle = DBI->connect( getsecrets(), { 'AutoCommit'         => 0,
-                                             'ChopBlanks'         => 1,
-                                             'ShowErrorStatement' => 1,
-                                             'pg_enable_utf8'     => 1,
-                                             #'mysql_enable_utf8'  => 1,
-                                           }
-                           )
-    or die "DBI->connect error: $DBI::errstr\n";
+  my $handle = FS::DBI->connect(
+    getsecrets(),
+    {
+      'AutoCommit'         => 0,
+      'ChopBlanks'         => 1,
+      'ShowErrorStatement' => 1,
+      'pg_enable_utf8'     => 1,
+      # 'mysql_enable_utf8'  => 1,
+    }
+  ) or die "FS::DBI->connect error: $FS::DBI::errstr\n";
 
   $FS::Conf::conf_cache = undef;
 
