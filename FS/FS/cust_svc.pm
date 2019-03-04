@@ -16,6 +16,7 @@ use FS::part_export;
 use FS::cdr;
 use FS::UI::Web;
 use FS::export_cust_svc;
+use FS::DBI;
 
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
@@ -743,9 +744,9 @@ sub seconds_since_sqlradacct {
     warn "$mes connecting to sqlradius database\n"
       if $DEBUG;
 
-    my $dbh = DBI->connect( map { $part_export->option($_) }
+    my $dbh = FS::DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
-      or die "can't connect to sqlradius database: ". $DBI::errstr;
+      or die "can't connect to sqlradius database: ". $FS::DBI::errstr;
 
     warn "$mes connected to sqlradius database\n"
       if $DEBUG;
@@ -888,9 +889,9 @@ sub attribute_since_sqlradacct {
     warn "$mes connecting to sqlradius database\n"
       if $DEBUG;
 
-    my $dbh = DBI->connect( map { $part_export->option($_) }
+    my $dbh = FS::DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
-      or die "can't connect to sqlradius database: ". $DBI::errstr;
+      or die "can't connect to sqlradius database: ". $FS::DBI::errstr;
 
     warn "$mes connected to sqlradius database\n"
       if $DEBUG;
@@ -959,9 +960,9 @@ sub attribute_last_sqlradacct {
     warn "$mes connecting to sqlradius database\n"
       if $DEBUG;
 
-    my $dbh = DBI->connect( map { $part_export->option($_) }
+    my $dbh = FS::DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
-      or die "can't connect to sqlradius database: ". $DBI::errstr;
+      or die "can't connect to sqlradius database: ". $FS::DBI::errstr;
 
     warn "$mes connected to sqlradius database\n"
       if $DEBUG;

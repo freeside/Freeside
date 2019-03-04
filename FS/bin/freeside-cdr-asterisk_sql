@@ -7,7 +7,7 @@ use Date::Format 'time2str';
 use FS::UID qw(adminsuidsetup dbh);
 use FS::Log;
 use FS::cdr;
-use DBI;
+use FS::DBI;
 use Getopt::Std;
 
 $DEBUG = 0;
@@ -26,7 +26,7 @@ adminsuidsetup $user;
 
 my $log = FS::Log->new( 'freeside-cdr-asterisk_sql' );
 
-my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) ;
+my $dbi = FS::DBI->connect($dsn, $opt{U}, $opt{P}) ;
 
 if ( $dbi ) {
   log_msg( info => "Established connection to CDR database at dsn($dsn)" );
@@ -34,7 +34,7 @@ if ( $dbi ) {
   log_and_die( error =>
     sprintf 'Fatal error connecting to CDR database at dsn(%s): %s',
       $dsn,
-      $DBI::errstr
+      $FS::DBI::errstr
   );
 }
 

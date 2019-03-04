@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use vars qw( %info );
 use Tie::IxHash;
+use FS::DBI;
 
 tie my %options, 'Tie::IxHash', %{__PACKAGE__->sql_options};
 delete $options{$_} for qw( table schema static primary_key );
@@ -33,8 +34,8 @@ sub _export_unsuspend {}
 sub export_getstatus {
   my($self, $svc_acct, $htmlref, $hashref) = @_;
 
-  my $dbh = DBI->connect( map $self->option($_), qw(datasrc username password) )
-    or return "can't connect: ".  $DBI::errstr;
+  my $dbh = FS::DBI->connect( map $self->option($_), qw(datasrc username password) )
+    or return "can't connect: ".  $FS::DBI::errstr;
 
   ###
   #vacation settings

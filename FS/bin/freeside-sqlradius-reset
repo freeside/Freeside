@@ -3,6 +3,7 @@
 use strict;
 use vars qw( $opt_n );
 use Getopt::Std;
+use FS::DBI;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
@@ -31,9 +32,9 @@ if ( @ARGV ) {
 
 unless ( $opt_n ) {
   foreach my $export ( @exports ) {
-    my $icradius_dbh = DBI->connect(
+    my $icradius_dbh = FS::DBI->connect(
       map { $export->option($_) } qw( datasrc username password )
-    ) or die $DBI::errstr;
+    ) or die $FS::DBI::errstr;
     my $usergroup = $export->option('usergroup') || 'usergroup';
     my @attr_tables;
     @attr_tables = qw( radgroupcheck radgroupreply )

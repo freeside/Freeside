@@ -2,7 +2,7 @@
 
 use strict;
 
-use DBI;
+use FS::DBI;
 use Date::Format 'time2str';
 use Date::Parse 'str2time';
 use Getopt::Long;
@@ -65,8 +65,8 @@ if ($enddate) {
 }
 $enddate ||= time2str("%Y-%m-%d %H:%M:%S",$now);
 
-my $cdbh = DBI->connect("dbi:Pg:database=$db;host=$host", $username, $password) 
-  or die $DBI::errstr;
+my $cdbh = FS::DBI->connect("dbi:Pg:database=$db;host=$host", $username, $password) 
+  or die $FS::DBI::errstr;
 
 # selecting by end_time rather than start_time 
 # so we don't lose records between batches

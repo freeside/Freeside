@@ -11,6 +11,7 @@ use FS::export_svc;
 use Carp qw( cluck );
 use NEXT;
 use Net::OpenSSH;
+use FS::DBI;
 
 @ISA = qw(FS::part_export);
 @EXPORT_OK = qw( sqlradius_connect );
@@ -624,7 +625,7 @@ sub sqlradius_delete { #subroutine, not method
 sub sqlradius_connect {
   #my($datasrc, $username, $password) = @_;
   #DBI->connect($datasrc, $username, $password) or die $DBI::errstr;
-  DBI->connect(@_) or die $DBI::errstr;
+  FS::DBI->connect(@_) or die $FS::DBI::errstr;
 }
 
 # on success, returns '' in scalar context, ('',$jobnum) in list context
@@ -1320,10 +1321,10 @@ sub _upgrade_exporttype {
 
 sub import_attrs {
   my $self = shift;
-  my $dbh =  DBI->connect( map $self->option($_),
+  my $dbh =  FS::DBI->connect( map $self->option($_),
                                    qw( datasrc username password ) );
   unless ( $dbh ) {
-    warn "Error connecting to RADIUS server: $DBI::errstr\n";
+    warn "Error connecting to RADIUS server: $FS::DBI::errstr\n";
     return;
   }
 

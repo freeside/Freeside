@@ -5,7 +5,7 @@
 
 use strict;
 use vars qw( $sdbh );
-use DBI;
+use FS::DBI;
 use FS::UID qw( adminsuidsetup dbh );
 use FS::Schema qw( dbdef );
 use DBI;
@@ -62,8 +62,8 @@ $FS::svc_Common::noexport_hack = 1;
 
 # source(remote) setup
 
-$sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
-  or die $DBI::errstr;
+$sdbh = FS::DBI->connect($source_datasrc, $source_user, $source_pw)
+  or die $FS::DBI::errstr;
 
 $sdbh->{ChopBlanks} = 1;
 

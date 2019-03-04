@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use DBI;
+use FS::DBI;
 
 my $s_datasrc = 'DBI:mysql:host=ns1.enetonline.net;port=3307;user=ivan;dbname=freeside';
 my $s_dbuser = 'ivan';
@@ -120,8 +120,10 @@ svc_www
 type_pkgs
 );
 
-my $s_dbh = DBI->connect($s_datasrc, $s_dbuser, $s_dbpass) or die $DBI::errstr;
-my $d_dbh = DBI->connect($d_datasrc, $d_dbuser, $d_dbpass) or die $DBI::errstr;
+my $s_dbh = FS::DBI->connect($s_datasrc, $s_dbuser, $s_dbpass)
+  or die $FS::DBI::errstr;
+my $d_dbh = FS::DBI->connect($d_datasrc, $d_dbuser, $d_dbpass)
+  or die $FS::DBI::errstr;
 
 foreach my $table ( @tables ) {
   $d_dbh->do("delete from $table");

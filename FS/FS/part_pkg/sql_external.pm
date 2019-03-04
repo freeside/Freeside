@@ -3,7 +3,7 @@ use base qw( FS::part_pkg::discount_Mixin FS::part_pkg::recur_Common );
 
 use strict;
 use vars qw( %info );
-use DBI;
+use FS::DBI;
 #use FS::Record qw(qsearch qsearchs);
 
 tie our %query_style, 'Tie::IxHash', (
@@ -75,10 +75,10 @@ sub calc_recur {
   my $price = 0;
   my $quantity; # can be overridden; if not we use the default
 
-  my $dbh = DBI->connect( map { $self->option($_) }
+  my $dbh = FS::DBI->connect( map { $self->option($_) }
                               qw( datasrc db_username db_password )
                         )
-    or die $DBI::errstr;
+    or die $FS::DBI::errstr;
 
   my $sth = $dbh->prepare( $self->option('query') )
     or die $dbh->errstr;

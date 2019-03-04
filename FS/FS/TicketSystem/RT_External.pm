@@ -10,6 +10,7 @@ use FS::UID qw(dbh);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
 use Carp qw(cluck);
+use FS::DBI;
 
 $me = '[FS::TicketSystem::RT_External]';
 $DEBUG = 0;
@@ -36,8 +37,8 @@ FS::UID->install_callback( sub {
   $dbh = dbh;
   if ($conf->config('ticket_system') eq 'RT_External') {
     my ($datasrc, $user, $pass) = $conf->config('ticket_system-rt_external_datasrc');
-    $dbh = DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 })
-      or die "RT_External DBI->connect error: $DBI::errstr\n";
+    $dbh = FS::DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 })
+      or die "RT_External FS::DBI->connect error: $FS::DBI::errstr\n";
 
     $external_url = $conf->config('ticket_system-rt_external_url');
   }

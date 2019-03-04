@@ -124,16 +124,20 @@ sub dbh
 
     if( not defined( $dbh ) )
     {
-        $dbh = DBI->connect( $attrs->{'dsn'},
-                             $attrs->{'username'},
-                             $attrs->{'password'},
-                             { 'PrintError' => 0,
-                               'AutoCommit' => 0 } );
+        $dbh = FS::DBI->connect(
+            $attrs->{'dsn'},
+            $attrs->{'username'},
+            $attrs->{'password'},
+            {
+                'PrintError' => 0,
+                'AutoCommit' => 0,
+            }
+        );
 
         if( not defined( $dbh ) )
         {
             Error('Error connecting to DBI source ' . $attrs->{'dsn'} . ': ' .
-                  $DBI::errstr);
+                  $FS::DBI::errstr);
         }
         else
         {

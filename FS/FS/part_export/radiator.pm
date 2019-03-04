@@ -3,6 +3,7 @@ package FS::part_export::radiator;
 use vars qw(@ISA %info $radusers);
 use Tie::IxHash;
 use FS::part_export::sqlradius;
+use FS::DBI;
 
 tie my %options, 'Tie::IxHash', %FS::part_export::sqlradius::options;
 
@@ -163,7 +164,7 @@ sub radiator_delete { #subroutine, not method
 sub radiator_connect {
   #my($datasrc, $username, $password) = @_;
   #DBI->connect($datasrc, $username, $password) or die $DBI::errstr;
-  DBI->connect(@_) or die $DBI::errstr;
+  FS::DBI->connect(@_) or die $FS::DBI::errstr;
 }
 
 1;

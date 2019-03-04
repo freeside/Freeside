@@ -7,7 +7,7 @@
 
 use strict;
 use vars qw( $sdbh );
-use DBI;
+use FS::DBI;
 use FS::UID qw( adminsuidsetup dbh );
 use FS::Schema qw( dbdef );
 use FS::Record qw( qsearchs );
@@ -95,8 +95,8 @@ my $void_paynum = 2147483646; #top of int range
 
 # source(remote) setup
 
-$sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
-  or die $DBI::errstr;
+$sdbh = FS::DBI->connect($source_datasrc, $source_user, $source_pw)
+  or die $FS::DBI::errstr;
 
 $sdbh->{ChopBlanks} = 1;
 
