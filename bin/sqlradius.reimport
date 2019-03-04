@@ -3,7 +3,7 @@
 use strict;
 use vars qw(%part_svc %domain_part_svc);
 #use Date::Parse;
-use DBI;
+use FS::DBI;
 use Term::Query qw(query);
 use FS::UID qw(adminsuidsetup); #datasrc
 use FS::Record qw(qsearch qsearchs);
@@ -74,8 +74,8 @@ print "\n\n";
 
 ###
 
-my $dbh = DBI->connect( $datasrc, $db_user, $db_pass )
-  or die $DBI::errstr;
+my $dbh = FS::DBI->connect( $datasrc, $db_user, $db_pass )
+  or die $FS::DBI::errstr;
 
 my $sth = $dbh->prepare('SELECT DISTINCT UserName, Realm FROM radcheck')
   or die $dbh->errstr;

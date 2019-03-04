@@ -3,6 +3,7 @@ use base qw( FS::part_export );
 
 use strict;
 use Tie::IxHash;
+use FS::DBI;
 
 tie my %options, 'Tie::IxHash',
   'datasrc'            => { label => 'DBI data source' },
@@ -208,7 +209,7 @@ sub sql_Common_replace { #subroutine, not method
 sub sql_Common_connect {
   #my($datasrc, $username, $password) = @_;
   #DBI->connect($datasrc, $username, $password) or die $DBI::errstr;
-  DBI->connect(@_) or die $DBI::errstr;
+  FS::DBI->connect(@_) or die $FS::DBI::errstr;
 }
 
 1;

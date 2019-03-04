@@ -6,6 +6,7 @@ use Digest::MD5 qw(md5_hex);
 use FS::Record qw(qsearchs);
 use FS::part_export;
 use FS::svc_domain;
+use FS::DBI;
 
 @ISA = qw(FS::part_export);
 
@@ -174,7 +175,7 @@ sub sqlmail_replace {
 }
 
 sub sqlmail_connect {
-  DBI->connect(@_) or die $DBI::errstr;
+  FS::DBI->connect(@_) or die $FS::DBI::errstr;
 }
 
 sub update_values {

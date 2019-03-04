@@ -11,6 +11,7 @@ use FS::Record qw(qsearchs qsearch str2time_sql);
 use FS::queue;
 use FS::upgrade_journal;
 use FS::Setup qw( enable_banned_pay_pad );
+use FS::DBI;
 
 use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;
@@ -642,11 +643,11 @@ sub upgrade_sqlradius {
     my $errmsg = 'Error adding FreesideStatus to '.
                  $part_export->option('datasrc'). ': ';
 
-    my $dbh = DBI->connect(
+    my $dbh = FS::DBI->connect(
       ( map $part_export->option($_), qw ( datasrc username password ) ),
       { PrintError => 0, PrintWarn => 0 }
     ) or do {
-      warn $errmsg.$DBI::errstr;
+      warn $errmsg.$FS::DBI::errstr;
       next;
     };
 

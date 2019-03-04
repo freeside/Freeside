@@ -11,6 +11,7 @@ use FS::svc_phone;
 use Locale::Country qw(country_code2code);
 use Date::Format qw(time2str);
 use Carp qw( cluck );
+use FS::DBI;
 
 @ISA = qw(FS::part_export);
 
@@ -55,11 +56,11 @@ END
 
 sub dbh {
   my $self = shift;
-  $self->{dbh} ||= DBI->connect(
+  $self->{dbh} ||= FS::DBI->connect(
                       $self->option('datasrc'),
                       $self->option('username'),
                       $self->option('password')
-                      ) or die $DBI::errstr;
+                      ) or die $FS::DBI::errstr;
 
   $self->{dbh}->trace(1, '%%%FREESIDE_LOG%%%/a2b_exportlog.'.$self->exportnum)
     if $DEBUG;

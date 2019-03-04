@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use DBI;
+use FS::DBI;
 use FS::UID qw(adminsuidsetup); #datasrc
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::nas;
@@ -22,7 +22,7 @@ my $part_export = qsearchs('part_export', { exportnum => $exportnum })
 $part_export->isa('FS::part_export::sqlradius')
   or die "export $exportnum is not an sqlradius export.\n";
 
-my $raddbh = DBI->connect(
+my $raddbh = FS::DBI->connect(
   $part_export->option('datasrc'),
   $part_export->option('username'),
   $part_export->option('password')

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -Tw
 
 use strict;
-use DBI;
+use FS::DBI;
 use HTML::TableParser;
 use Date::Parse;
 use Text::CSV_XS;
@@ -60,7 +60,7 @@ my @args = (
            );
 
 
-$s_dbh = DBI->connect($s_dbname, $s_dbuser, $s_dbpass,
+$s_dbh = FS::DBI->connect($s_dbname, $s_dbuser, $s_dbpass,
                            { 'AutoCommit' => 0,
                              'ChopBlanks' => 1,
                              'ShowErrorStatement' => 1

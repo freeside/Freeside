@@ -3,7 +3,7 @@ use base qw( FS::part_export );
 
 use vars qw( %info ); # $DEBUG );
 use Tie::IxHash;
-use DBI;
+use FS::DBI;
 #use FS::Record qw( qsearch ); #qsearchs );
 #use FS::svc_phone;
 #use FS::Schema qw( dbdef );
@@ -61,7 +61,8 @@ sub _export_insert {
 
 sub nibblebill_insert {
   my($datasrc, $username, $password, $phonenum, $amount) = @_;
-  my $dbh = DBI->connect($datasrc, $username, $password) or die $DBI::errstr; 
+  my $dbh = FS::DBI->connect($datasrc, $username, $password)
+    or die $FS::DBI::errstr; 
 
   #check for existing account
   $dbh->{FetchHashKeyName} = 'NAME_lc';
@@ -119,7 +120,8 @@ sub _adjust {
 
 sub nibblebill_adjust_cash {
   my($datasrc, $username, $password, $phonenum, $amount) = @_;
-  my $dbh = DBI->connect($datasrc, $username, $password) or die $DBI::errstr; 
+  my $dbh = FS::DBI->connect($datasrc, $username, $password)
+    or die $FS::DBI::errstr; 
 
   my $sth = $dbh->prepare('UPDATE accounts SET cash = cash + ? WHERE id = ?')
     or die $dbh->errsrr;
@@ -129,8 +131,8 @@ sub nibblebill_adjust_cash {
 sub export_getstatus {                                                          
   my( $self, $svc_phone, $htmlref, $hashref ) = @_;             
 
-  my $dbh = DBI->connect( map $self->option($_), qw( datasrc username password ) )
-    or return $DBI::errstr; 
+  my $dbh = FS::DBI->connect( map $self->option($_), qw( datasrc username password ) )
+    or return $FS::DBI::errstr; 
 
   my $sth = $dbh->prepare('SELECT cash FROM accounts WHERE id = ?')
     or return $dbh->errstr;
