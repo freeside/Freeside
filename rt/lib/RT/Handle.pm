@@ -138,6 +138,11 @@ sub Connect {
         ($version) = $version =~ /^(\d+\.\d+)/;
         $self->dbh->{pg_server_prepare} = 0 if $version > 9.1; #and we're using a deb-7 version DBD::Pg?
         $self->dbh->do("SET bytea_output = 'escape'") if $version >= 9.0;
+
+        # Force UTF8, even when database encoding is not UTF8
+        # DBD::Pg used to do this for us prior to v3
+        $self->dbh->do('SET client_encoding TO UTF8;');
+        $self->dbh->{pg_enable_utf8} = -1;
     }
 
 
