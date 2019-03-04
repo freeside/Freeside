@@ -80,6 +80,7 @@ use FS::cust_payby;
 use FS::contact;
 use FS::reason;
 use FS::Misc::Savepoint;
+use FS::DBI;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -1246,7 +1247,7 @@ sub delete {
     $ticket_dbh = $dbh;
   } elsif ($conf->config('ticket_system') eq 'RT_External') {
     my ($datasrc, $user, $pass) = $conf->config('ticket_system-rt_external_datasrc');
-    $ticket_dbh = DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 });
+    $ticket_dbh = FS::DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 });
       #or die "RT_External DBI->connect error: $DBI::errstr\n";
   }
 

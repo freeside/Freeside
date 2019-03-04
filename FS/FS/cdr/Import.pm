@@ -4,7 +4,7 @@ use strict;
 use Date::Format 'time2str';
 use FS::UID qw(adminsuidsetup dbh);
 use FS::cdr;
-use DBI;
+use FS::DBI;
 use Getopt::Std;
 
 use vars qw( $DEBUG );
@@ -77,8 +77,8 @@ sub dbi_import {
   my $dsn = 'dbi:'. $dbd_type . $queries->{connect_type};
   $dsn .= ";database=$database" if $database;
 
-  my $dbi = DBI->connect($dsn, $opt{U}, $opt{P}) 
-    or die $DBI::errstr;
+  my $dbi = FS::DBI->connect($dsn, $opt{U}, $opt{P})
+    or die $FS::DBI::errstr;
 
   adminsuidsetup $user;
 

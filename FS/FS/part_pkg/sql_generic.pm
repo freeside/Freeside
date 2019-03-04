@@ -2,7 +2,7 @@ package FS::part_pkg::sql_generic;
 
 use strict;
 use vars qw(@ISA %info);
-use DBI;
+use FS::DBI;
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg::flat;
 
@@ -50,10 +50,10 @@ sub price_info {
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
 
-  my $dbh = DBI->connect( map { $self->option($_) }
+  my $dbh = FS::DBI->connect( map { $self->option($_) }
                               qw( datasrc db_username db_password )
                         )
-    or die $DBI::errstr;
+    or die $FS::DBI::errstr;
 
   my $sth = $dbh->prepare( $self->option('query') )
     or die $dbh->errstr;

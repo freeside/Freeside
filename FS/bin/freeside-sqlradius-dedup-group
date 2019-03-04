@@ -3,6 +3,7 @@
 use strict;
 use vars qw( %seen @dups );
 use Getopt::Std;
+use FS::DBI;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
@@ -28,7 +29,7 @@ if ( !defined($export_x) ) {
   or die "No sqlradius exports specified.";
 
 foreach my $part_export ( @part_export ) {
-  my $dbh = DBI->connect( map $part_export->option($_),
+  my $dbh = FS::DBI->connect( map $part_export->option($_),
                            qw ( datasrc username password ) );
 
   my $sth = $dbh->prepare("SELECT id,username,groupname

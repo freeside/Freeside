@@ -2,6 +2,7 @@
 
 use strict;
 use Getopt::Std;
+use FS::DBI;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs str2time_sql);
 use FS::Conf;
@@ -34,7 +35,7 @@ if ( !defined($export_x) ) {
 
 
 foreach my $part_export ( @part_export ) {
-  my $dbh = DBI->connect( map $part_export->option($_),
+  my $dbh = FS::DBI->connect( map $part_export->option($_),
                            qw ( datasrc username password ) );
 
   my $str2time = str2time_sql( $dbh->{Driver}->{Name} );

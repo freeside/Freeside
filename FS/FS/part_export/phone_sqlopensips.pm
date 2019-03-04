@@ -8,6 +8,7 @@ use FS::part_export;
 use FS::svc_phone;
 use FS::export_svc;
 use LWP::UserAgent;
+use FS::DBI;
 
 @ISA = qw(FS::part_export);
 
@@ -51,8 +52,8 @@ sub _export_insert {
 
 sub opensips_connect {
     my $self = shift;
-    DBI->connect($self->option('datasrc'),$self->option('username'),
-			$self->option('password')) or die $DBI::errstr;
+    FS::DBI->connect($self->option('datasrc'),$self->option('username'),
+			$self->option('password')) or die $FS::DBI::errstr;
 }
 
 sub _export_replace {
