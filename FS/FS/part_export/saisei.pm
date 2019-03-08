@@ -405,7 +405,7 @@ sub api_call {
   if ($client->responseCode() eq '200' || $client->responseCode() eq '201') {
     eval { $result = decode_json($client->responseContent()) };
     unless ($result) {
-      $self->{'__saisei_error'} = "Error decoding json from Saisei";
+      $self->{'__saisei_error'} = "There was an error decoding the JSON data from Saisei.  Bad JSON data logged in error log if debug option was set.";
       warn "Saisei RC 201 Response Content is not json\n".$client->responseContent()."\n" if $self->option('debug');
       return;
     }
@@ -413,23 +413,23 @@ sub api_call {
   elsif ($client->responseCode() eq '404') {
     eval { $result = decode_json($client->responseContent()) };
     unless ($result) {
-      $self->{'__saisei_error'} = "Error decoding json from Saisei";
+      $self->{'__saisei_error'} = "There was an error decoding the JSON data from Saisei.  Bad JSON data logged in error log if debug option was set.";
       warn "Saisei RC 404 Response Content is not json\n".$client->responseContent()."\n" if $self->option('debug');
       return;
     }
     ## check if message is for empty hash.
     my($does_not_exist) = $result->{message} =~ /'(.*)' does not exist$/;
-    $self->{'__saisei_error'} = "Error ".$result->{message} unless $does_not_exist;
+    $self->{'__saisei_error'} = "Saisei Error: ".$result->{message} unless $does_not_exist;
     warn "Saisei Response Content is\n".$client->responseContent."\n" if ($self->option('debug') && !$does_not_exist);
     return;
   }
   elsif ($client->responseCode() eq '500') {
-    $self->{'__saisei_error'} = "Can't connect to host during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
+    $self->{'__saisei_error'} = "Could not connect to the host (".$self->{Hash}->{machine}.':'.$self->option('port').") during $method , we received the responce code: " . $client->responseCode();
     warn "Saisei Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return;
   }
   else {
-    $self->{'__saisei_error'} = "Bad response from server during $method , received responce code: " . $client->responseCode() . " and message: " . $client->responseContent();
+    $self->{'__saisei_error'} = "Received Bad response from server during $method , we received responce code: " . $client->responseCode();
     warn "Saisei Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return; 
   }
@@ -461,7 +461,7 @@ sub api_get_policies {
 
   my $get_policies = $self->api_call("GET", '/policies/?token=1&order=name&start=0&limit=20&select=name%2Cpercent_rate%2Cassured%2C');
   return if $self->api_error;
-  $self->{'__saisei_error'} = "Did not receive any global policies"
+  $self->{'__saisei_error'} = "Did not receive any global policies from Saisei."
     unless $get_policies;
 
   return $get_policies->{collection};
@@ -541,8 +541,8 @@ Creates a rateplan.
 sub api_create_rateplan {
   my ($self, $svc, $rateplan) = @_;
 
-  $self->{'__saisei_error'} = "No downrate listed for service $rateplan" if !$svc->{Hash}->{speed_down};
-  $self->{'__saisei_error'} = "No uprate listed for service $rateplan" if !$svc->{Hash}->{speed_up};
+  $self->{'__saisei_error'} = "There is no download speed set for the service $rateplan with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
+  $self->{'__saisei_error'} = "There is no upload speed set for the service $rateplan with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
 
   my $new_rateplan = $self->api_call(
       "PUT", 
@@ -553,7 +553,7 @@ sub api_create_rateplan {
       },
   ) unless $self->{'__saisei_error'};
 
-  $self->{'__saisei_error'} = "Rate Plan not created"
+  $self->{'__saisei_error'} = "Saisei could not create the rate plan $rateplan."
     unless ($new_rateplan || $self->{'__saisei_error'});
 
   return $new_rateplan;
@@ -586,7 +586,7 @@ sub api_modify_rateplan {
       },
     );
 
-    $self->{'__saisei_error'} = "Rate Plan not modified after create"
+    $self->{'__saisei_error'} = "Saisei could not modify the rate plan $rateplan_name after it was created."
       unless ($modified_rateplan || $self->{'__saisei_error'}); # should never happen
     
   }
@@ -613,7 +613,7 @@ sub api_modify_existing_rateplan {
     },
   );
 
-    $self->{'__saisei_error'} = "Rate Plan not modified"
+    $self->{'__saisei_error'} = "Saisei could not modify the rate plan $rateplan_name."
       unless ($modified_rateplan || $self->{'__saisei_error'}); # should never happen
 
   return;
@@ -637,7 +637,7 @@ sub api_create_user {
       },
   );
 
-  $self->{'__saisei_error'} = "User not created"
+  $self->{'__saisei_error'} = "Saisei could not create the user $user"
     unless ($new_user || $self->{'__saisei_error'}); # should never happen
 
   return $new_user;
@@ -662,7 +662,7 @@ sub api_create_accesspoint {
       },
   );
 
-  $self->{'__saisei_error'} = "Access point not created"
+  $self->{'__saisei_error'} = "Saisei could not create the access point $accesspoint"
     unless ($new_accesspoint || $self->{'__saisei_error'}); # should never happen
   return;
 
@@ -685,7 +685,7 @@ sub api_modify_accesspoint {
     },
   );
 
-  $self->{'__saisei_error'} = "Rate Plan not modified"
+  $self->{'__saisei_error'} = "Saisei could not modify the access point $accesspoint after it was created."
     unless ($modified_accesspoint || $self->{'__saisei_error'}); # should never happen
 
   return;
@@ -711,7 +711,7 @@ sub api_modify_existing_accesspoint {
     },
   );
 
-    $self->{'__saisei_error'} = "Access point not modified"
+    $self->{'__saisei_error'} = "Saisei could not modify the access point $accesspoint."
       unless ($modified_accesspoint || $self->{'__saisei_error'}); # should never happen
 
   return;
@@ -737,7 +737,7 @@ sub api_add_host_to_user {
       },
   );
 
-  $self->{'__saisei_error'} = "Host not created"
+  $self->{'__saisei_error'} = "Saisei could not create the host $ip"
     unless ($new_host || $self->{'__saisei_error'}); # should never happen
 
   return $new_host;
@@ -756,7 +756,7 @@ sub api_delete_host_to_user {
 
   my $default_rate_plan = $self->api_call("GET", '?token=1&select=default_rate_plan');
     return if $self->api_error;
-  $self->{'__saisei_error'} = "Did not receive a default rate plan"
+  $self->{'__saisei_error'} = "Can not delete the host as Saisei did not return a default rate plan. Please make sure Saisei has a default rateplan setup."
     unless $default_rate_plan;
 
   my $default_rateplan_name = $default_rate_plan->{collection}->[0]->{default_rate_plan}->{link}->{name};
@@ -771,7 +771,7 @@ sub api_delete_host_to_user {
       },
   );
 
-  $self->{'__saisei_error'} = "Host not created"
+  $self->{'__saisei_error'} = "Saisei could not delete the host $ip"
     unless ($delete_host || $self->{'__saisei_error'}); # should never happen
 
   return $delete_host;
@@ -782,7 +782,7 @@ sub process_tower {
   my ($self, $opt) = @_;
 
   if (!$opt->{tower_uprate_limit} || !$opt->{tower_downrate_limit}) {
-    $self->{'__saisei_error'} = "Can not export tower, no up or down rates attached to tower";
+    $self->{'__saisei_error'} = "Could not export tower ".$opt->{tower_name}." because there was no up or down rates attached to the tower.  Saisei requires a up and down rate be attached to each tower.";
     return { error => $self->api_error, };
   }
 
@@ -817,7 +817,7 @@ sub process_sector {
   my ($self, $opt) = @_;
 
   if (!$opt->{sector_uprate_limit} || !$opt->{sector_downrate_limit}) {
-    $self->{'__saisei_error'} = "Can not export sector, no up or down rates attached to sector";
+    $self->{'__saisei_error'} = "Could not export sector ".$opt->{tower_name}." because there was no up or down rates attached to the sector.  Saisei requires a up and down rate be attached to each sector.";
     return { error => $self->api_error, };
   }
 
@@ -895,7 +895,7 @@ sub export_provisioned_services {
   my $param = thaw(decode_base64(shift));
 
   my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
-  or die "unknown exportnum $param->{export_provisioned_services_exportnum}";
+  or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
   bless $part_export;
 
   my @svcparts = FS::Record::qsearch({
@@ -923,10 +923,13 @@ sub export_provisioned_services {
     if ($status{$process_count}) { my $s = $status{$process_count}; $job->update_statustext($s); }
     ## check if service exists as host if not export it.
     my $host = api_get_host($part_export, $svc->{Hash}->{ip_addr});
-    die $host->{message} if $host->{message};
+    die ("Please double check your credentials as ".$host->{message}."\n") if $host->{message};
     warn "Exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
     my $export_error = _export_insert($part_export,$svc) unless $host->{collection};
-    die $export_error if $export_error;
+    if ($export_error) {
+      warn "Error exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
+      die ("$export_error\n");
+    }
     $process_count++;
   }
 
