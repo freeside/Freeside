@@ -67,7 +67,7 @@ sub pay_batch_submit {
     my ($gateway, $payby, $agentnum) = @$config;
     if ( $gateway->batch_processor->can('default_transport') ) {
 
-      my $search = { status => 'O', payby => $payby };
+      my $search = { status => 'O', payby => $payby, type => 'DEBIT' };
       $search->{agentnum} = $agentnum if $agentnum;
 
       foreach my $pay_batch ( qsearch('pay_batch', $search) ) {

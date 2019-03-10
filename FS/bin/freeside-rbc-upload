@@ -33,6 +33,7 @@ my @batches;
 if($opt_a) {
   my %criteria = (status => 'O');
   $criteria{'payby'} = uc($opt_p) if $opt_p;
+  $criteria{'type'} = 'DEBIT' unless FS::pay_batch->can_handle_electronic_refunds('RBC');
   @batches = qsearch('pay_batch', \%criteria);
   die "No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n" 
     if !@batches;

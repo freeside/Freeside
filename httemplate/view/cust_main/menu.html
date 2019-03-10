@@ -467,6 +467,9 @@ my @menu = (
            actionlabel => 'Enter electronic check refund',
            width       => 440,
            acl         => ['Post refund' ],
+           condition   => sub {
+             FS::pay_batch->can_handle_electronic_refunds
+           },
         },
 
       ],
