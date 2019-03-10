@@ -39,6 +39,8 @@ $cgi->param('reasonnum') =~ /^(-?\d+)$/ or die "Illegal reasonnum";
 my ($reasonnum, $error) = $m->comp('/misc/process/elements/reason');
 $cgi->param('reasonnum', $reasonnum) unless $error;
 
+$error = "No batch download format configured that allows electronic refunds" unless (FS::pay_batch->can_handle_electronic_refunds && !$error);
+
 if ( $error ) {
   # do nothing
 } elsif ( $payby =~ /^(CARD|CHEK)$/ ) { 

@@ -33,9 +33,11 @@
                                     ],
 		 'align'         => 'rcllrrrrc',
 		 'fields'        => [ 'batchnum',
-		                      sub { 
-				        FS::payby->shortname(shift->payby);
-				      },
+		                      sub {
+                my $self = shift;
+                my $type = $self->type eq 'CREDIT' ? 'CREDIT' : '';
+                $type ." " . FS::payby->shortname($self->payby);
+				                  },
                                       sub {
 				        my $self = shift;
 				        my $_date = $self->download;

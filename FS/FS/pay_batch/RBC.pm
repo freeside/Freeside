@@ -154,7 +154,8 @@ $name = 'RBC';
     my $pay_batch = shift;
     my $mode = $testmode ? 'TEST' : 'PROD';
     my $filenum = $testmode ? 'TEST' : sprintf("%04u", $pay_batch->batchnum);
-    '$$AAPASTD0152['.$mode.'[NL$$'."\n".
+    my $qualifier = $pay_batch->type eq 'CREDIT' ? 'D' : 'A';
+    '$$AAP'.$qualifier.'STD0152['.$mode.'[NL$$'."\n".
     '000001'.
     'A'.
     'HDR'.
@@ -221,13 +222,15 @@ $name = 'RBC';
   },
   footer => sub {
     my ($pay_batch, $batchcount, $batchtotal) = @_;
+
+    my $batch_info = '0' x 20 . sprintf("%06u", $batchcount) . sprintf("%014.0f", $batchtotal*100);
+    $batch_info = sprintf("%06u", $batchcount) . sprintf("%014.0f", $batchtotal*100) . '0' x 20 if ($pay_batch->type eq 'CREDIT');
+
     sprintf("%06u", $i + 1).
     'Z'.
     'TRL'.
     sprintf("%10s", $client_num).
-    '0' x 20 .
-    sprintf("%06u", $batchcount).
-    sprintf("%014.0f", $batchtotal*100).
+    $batch_info.
     '00' .
     '000000' . # total number of customer information records
     ' ' x 84

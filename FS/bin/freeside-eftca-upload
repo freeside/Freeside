@@ -32,8 +32,12 @@ my @batches;
 
 if($opt_a) {
   local $@;
+
+  my %criteria= ( 'status' => 'O', 'payby' => 'CHEK' );
+  $criteria{'type'} = 'DEBIT' unless FS::pay_batch->can_handle_electronic_refunds('eft_canada');
+
   eval {
-    @batches = qsearch('pay_batch', { 'status' => 'O', 'payby' => 'CHEK' })
+    @batches = qsearch('pay_batch', \%criteria)
   };
   log_error_and_die ("Fatal database error: $@")
     if $@;

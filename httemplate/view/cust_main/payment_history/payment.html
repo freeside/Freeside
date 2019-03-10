@@ -177,6 +177,7 @@ if (    $cust_pay->closed !~ /^Y/i
             qq! TITLE="! . $refundtitle
             . '">' . emt('refund') . '</A>)';
 }
+$refund = '' if ($cust_pay->batchnum && !FS::pay_batch->can_handle_electronic_refunds);
 
 my $void = '';
 my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK)$/
