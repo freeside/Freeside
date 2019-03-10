@@ -56,6 +56,10 @@ from FS::Record.  The following fields are currently supported:
 
 =item title - unique batch identifier
 
+=item processor_id -
+
+=item type - batch type payents (DEBIT), or refunds (CREDIT)
+
 For incoming batches, the combination of 'title', 'payby', and 'agentnum'
 must be unique.
 
@@ -1154,7 +1158,136 @@ sub manual_approve {
   return;
 }
 
+=item batch_download_formats
+
+returns a hash of batch download formats.
+
+my %download_formats = FS::pay_batch::batch_download_formats;
+
+=cut
+
+sub batch_download_formats {
+
+  my @formats = (
+    ''              =>
+        'Default batch mode',
+    'NACHA'         =>
+        '94 byte NACHA',
+    'csv-td_canada_trust-merchant_pc_batch' =>
+        'CSV file for TD Canada Trust Merchant PC Batch',
+    'csv-chase_canada-E-xactBatch' =>
+        'CSV file for Chase Canada E-xactBatch',
+    'PAP'           =>
+        '80 byte file for TD Canada Trust PAP Batch',
+    'BoM'           =>
+        'Bank of Montreal ECA batch',
+    'ach-spiritone' =>
+        'Spiritone ACH batch',
+    'paymentech'    =>
+        'XML file for Chase Paymentech',
+    'RBC'           =>
+        'Royal Bank of Canada PDS batch',
+    'td_eft1464'    =>
+        '1464 byte file for TD Commercial Banking EFT',
+    'eft_canada'    =>
+        'EFT Canada CSV batch',
+    'CIBC'          =>
+        '80 byte file for Canadian Imperial Bank of Commerce',
+    # insert new batch formats here
+  );
+
+}
+
+=item batch_download_formats
+
+returns a hash of batch download formats.
+
+my %download_formats = FS::pay_batch::batch_download_formats;
+
+=cut
+
+sub can_handle_electronic_refunds {
+
+  my $self = shift;
+  my $format = shift;
+  my $conf = new FS::Conf;
+
+  tie my %download_formats, 'Tie::IxHash', batch_download_formats;
+
+  my %paybatch_mods = (
+    'NACHA'                                 => 'nacha',
+    'csv-td_canada_trust-merchant_pc_batch' => 'td_canada_trust',
+    'csv-chase_canada-E-xactBatch'          => 'chase-canada',
+    'PAP'                                   => 'PAP',
+    'BoM'                                   => 'BoM',
+    'ach-spiritone'                         => 'ach_spiritone',
+    'paymentech'                            => 'paymentech',
+    'RBC'                                   => 'RBC',
+    'td_eft1464'                            => 'td_eft1464',
+    'eft_canada'                            => 'eft_canada',
+    'CIBC'                                  => 'CIBC',
+  );
+
+  %download_formats = ( $format => $download_formats{$format}, ) if $format;
+
+  foreach my $key (keys %download_formats) {
+    my $mod = "FS::pay_batch::".$paybatch_mods{$key};
+    if ($mod->can('can_handle_credits')) {
+      return '1' if $conf->exists('batchconfig-'.$key);
+    }
+  }
+
+  return;
+
+}
+
+use FS::upgrade_journal;
 sub _upgrade_data {
+
+  # check if there are any pending batch refunds and no download format configured
+  # that allows electronic refunds.
+  unless ( FS::upgrade_journal->is_done('removed_refunds_nodownload_format') ) {
+
+    ## get a list of all refunds in batches.
+    my $extrasql = " LEFT JOIN pay_batch USING ( batchnum ) WHERE cust_pay_batch.paycode = 'C' AND pay_batch.download IS NULL";
+
+    my @batch_refunds = qsearch({
+      'table'   => 'cust_pay_batch',
+      'select'  => 'cust_pay_batch.*',
+      'extra_sql' => $extrasql,
+    });
+
+    warn "found ".scalar @batch_refunds." batch refunds.\n";
+    warn "Searching for their cust refunds...\n" if (scalar @batch_refunds > 0);
+    my ($delete_cust_refund_error, $delete_cust_pay_batch_error);
+
+    ## find the cust_pay_refund for all those
+    foreach (@batch_refunds) {
+      my $extra_batch_refund_sql = " WHERE custnum = '".$_->{Hash}->{custnum}."' AND refund = '".$_->{Hash}->{amount}."' ORDER BY _date DESC LIMIT 1";
+      my $cust_refund = qsearchs({
+        'table'  => 'cust_refund',
+        'extra_sql' => $extra_batch_refund_sql,
+      });
+
+      warn "found cust refund number ".$cust_refund->{Hash}->{refundnum}.", now to delete it.\n" if $cust_refund;
+
+      ## delete the cust_pay_refund
+      $delete_cust_refund_error = $cust_refund->delete if $cust_refund;
+      warn "could not delete cust refund $delete_cust_refund_error\n" if $delete_cust_refund_error;
+
+      ## delete the refund from the batch.
+      unless ($delete_cust_refund_error) {
+        $delete_cust_pay_batch_error = $_->unbatch_and_delete;
+        warn "could not delete cust refund $delete_cust_pay_batch_error\n" if $delete_cust_pay_batch_error;
+      }
+
+      if ($delete_cust_refund_error || $delete_cust_pay_batch_error) { die "Could no delete cust_pay_batch refund\n"; }
+      else { warn "cust refund ".$cust_refund->{Hash}->{refundnum}." deleted\n"; }
+    }
+
+    FS::upgrade_journal->set_done('removed_refunds_nodownload_format');
+  }
+
   # Set up configuration for gateways that have a Business::BatchPayment
   # module.
   

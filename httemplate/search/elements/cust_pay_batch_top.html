@@ -135,23 +135,7 @@ my $batchnum = $pay_batch->batchnum;
 
 my $fixed = $conf->config("batch-fixed_format-$payby");
 
-tie my %download_formats, 'Tie::IxHash', (
-  '' => 'Default batch mode',
-  'NACHA' => '94 byte NACHA',
-  'csv-td_canada_trust-merchant_pc_batch' => 
-                'CSV file for TD Canada Trust Merchant PC Batch',
-  'csv-chase_canada-E-xactBatch' =>
-                'CSV file for Chase Canada E-xactBatch',
-  'PAP' => '80 byte file for TD Canada Trust PAP Batch',
-  'BoM' => 'Bank of Montreal ECA batch',
-  'ach-spiritone' => 'Spiritone ACH batch',
-  'paymentech' => 'XML file for Chase Paymentech',
-  'RBC' => 'Royal Bank of Canada PDS batch',
-  'td_eft1464' => '1464 byte file for TD Commercial Banking EFT',
-  'eft_canada' => 'EFT Canada CSV batch',
-  'CIBC'       => '80 byte file for Canadian Imperial Bank of Commerce',
-# insert new batch formats here
-);
+tie my %download_formats, 'Tie::IxHash', FS::pay_batch::batch_download_formats;
 
 tie my %upload_formats, 'Tie::IxHash', (
   %download_formats,
@@ -160,7 +144,13 @@ tie my %upload_formats, 'Tie::IxHash', (
   'td_eftret' => 'TD EFT Returned Items',
 );
 delete $upload_formats{'td_eft1464'};
-$upload_formats{'PAP'} = '264 byte results for TD Canada Trust PAP Batch',
+$upload_formats{'PAP'} = '264 byte results for TD Canada Trust PAP Batch';
+
+if ($pay_batch->type eq "CREDIT") {
+  foreach my $key (keys %download_formats) {
+    delete $download_formats{$key} unless FS::pay_batch->can_handle_electronic_refunds($key);
+  }
+}
 
 my %statustext = ( 'O' => 'open', 'I' => 'in transit', 'R' => 'resolved' );
 

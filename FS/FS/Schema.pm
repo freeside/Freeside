@@ -2711,6 +2711,7 @@ sub tables_hashref {
         'upload',         @date_type,     '', '', 
         'title',   'varchar', 'NULL',255, '', '',
         'processor_id',   'varchar', 'NULL',255, '', '',
+        'type',      'char',  '',  6, 'DEBIT', '', # DEBIT/CREDIT
       ],
       'primary_key'  => 'batchnum',
       'unique'       => [],
