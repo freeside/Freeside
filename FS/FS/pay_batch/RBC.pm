@@ -94,13 +94,10 @@ $name = 'RBC';
   },
   'begin_condition' => sub {
       my $hash = shift;
-      # Debit Detail Record
-      if ($hash->{recordtype} eq '1') {
+      # Detail Record
+      if ($hash->{recordtype} eq '1' || $hash->{recordtype} eq '2') {
         $declined = {};
         $totaloffset = 0;
-        return 1;
-      # Credit Detail Record, will immediately trigger end condition & error
-      } elsif ($hash->{recordtype} eq '2') { 
         return 1;
       } else {
         return 0;
@@ -108,8 +105,6 @@ $name = 'RBC';
   },
   'end_hook'    => sub {
       my( $hash, $total, $line ) = @_;
-      return "Can't process Credit Detail Record, aborting import"
-        if ($hash->{'recordtype'} eq '2');
       $total += $totaloffset;
       $total = sprintf("%.2f", $total);
       # We assume here that this is an 'All Records' or 'Input Records' report.
@@ -120,8 +115,7 @@ $name = 'RBC';
   },
   'end_condition' => sub {
       my $hash = shift;
-      return ($hash->{recordtype} eq '4')  # Client Trailer Record
-          || ($hash->{recordtype} eq '2'); # Credit Detail Record, will throw error in end_hook
+      return ($hash->{recordtype} eq '4');  # Client Trailer Record
   },
   'skip_condition' => sub {
       my $hash = shift;
