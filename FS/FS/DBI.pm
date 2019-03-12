@@ -49,7 +49,7 @@ sub connect {
   my $class = shift;
   my $dbh = $class->SUPER::connect( @_ );
 
-  if ( $_[0] =~ /^DBI::Pg/ ) {
+  if ( $_[0] =~ /^DBI:Pg/ ) {
     $dbh->do('SET client_encoding TO UTF8;')
       or die sprintf 'Error setting client_encoding to UTF8: %s', $dbh->errstr;
 
