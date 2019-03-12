@@ -4,6 +4,7 @@
 http_header('Content-Type' => 'text/plain' ); # not necessarily correct...
 
 my $batchnum;
+
 if ( $cgi->param('batchnum') =~ /^(\d+)$/ ) {
   $batchnum = $1;
 } else {
@@ -29,7 +30,7 @@ die "Batch not found: '$batchnum'" if !$pay_batch;
 
 if ($pay_batch->{Hash}->{arecredits}) {
   my $export_format = "FS::pay_batch::".$opt{'format'};
-    die "This format can not handle refunds." unless $export_format->can('can_handle_credits');
+  die "You are trying to download a credit (batch refund) batch and The format ".$opt{'format'}." can not handle refunds.\n" unless $export_format->can('can_handle_credits');
 }
 
 </%init>

@@ -55,6 +55,12 @@ else {
     if $@;
 
   log_error_and_die( "Can't find payment batch '$batchnum'\n" ) if !@batches;
+
+  if ($batches[0]->type eq "CREDIT") {
+    warn "running credit\n";
+    log_error_and_die( "Batch number $batchnum is a credit (batch refund) batch, and this format can not handle batch refunds.\n" )
+      unless FS::pay_batch->can_handle_electronic_refunds('eft_canada');
+  }
 }
 
 my $conf = new FS::Conf;
