@@ -82,11 +82,11 @@ Class method which returns an SQL fragment to search for the given string.
 
 =cut
 
-#if we only have a quantity, then there's nothing to search on except svcnum
-sub search_sql {
-  my($class, $string) = @_;
-  $class->search_sql_field('svcnum', $string);
-}
+#if we only have a quantity, then there's nothing to search on
+#sub search_sql {
+#  my($class, $string) = @_;
+#  $class->search_sql_field('somefield', $string);
+#}
 
 
 =item label
