@@ -2775,6 +2775,10 @@ sub batch_card {
                               );
   }
 
+  my $paycode = $options{paycode} || '';
+  my $batch_type = "DEBIT";
+  $batch_type = "CREDIT" if $paycode eq 'C';
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -2787,6 +2791,7 @@ sub batch_card {
   my %pay_batch = (
     'status' => 'O',
     'payby'  => FS::payby->payby2payment($payby),
+    'type' => $batch_type,
   );
   $pay_batch{agentnum} = $self->agentnum if $conf->exists('batch-spoolagent');
 
