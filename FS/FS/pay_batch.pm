@@ -1243,7 +1243,7 @@ sub _upgrade_data {
   unless ( FS::upgrade_journal->is_done('removed_refunds_nodownload_format') ) {
 
     ## get a list of all refunds in batches.
-    my $extrasql = " LEFT JOIN pay_batch USING ( batchnum ) WHERE cust_pay_batch.paycode = 'C' AND pay_batch.download IS NULL";
+    my $extrasql = " LEFT JOIN pay_batch USING ( batchnum ) WHERE cust_pay_batch.paycode = 'C' AND pay_batch.download IS NULL AND pay_batch.type = 'DEBIT' ";
 
     my @batch_refunds = qsearch({
       'table'   => 'cust_pay_batch',
@@ -1253,33 +1253,43 @@ sub _upgrade_data {
 
     warn "found ".scalar @batch_refunds." batch refunds.\n";
     warn "Searching for their cust refunds...\n" if (scalar @batch_refunds > 0);
-    my ($delete_cust_refund_error, $delete_cust_pay_batch_error);
 
-    ## find the cust_pay_refund for all those
-    foreach (@batch_refunds) {
-      my $extra_batch_refund_sql = " WHERE custnum = '".$_->{Hash}->{custnum}."' AND refund = '".$_->{Hash}->{amount}."' ORDER BY _date DESC LIMIT 1";
-      my $cust_refund = qsearchs({
-        'table'  => 'cust_refund',
-        'extra_sql' => $extra_batch_refund_sql,
-      });
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
 
-      warn "found cust refund number ".$cust_refund->{Hash}->{refundnum}.", now to delete it.\n" if $cust_refund;
+    ## move refund to credit batch.
+    my %pay_batch = (
+      'status' => 'O',
+      'payby'  => 'CHEK',
+      'type'   => 'CREDIT',
+    );
 
-      ## delete the cust_pay_refund
-      $delete_cust_refund_error = $cust_refund->delete if $cust_refund;
-      warn "could not delete cust refund $delete_cust_refund_error\n" if $delete_cust_refund_error;
+    my $pay_batch = qsearchs( 'pay_batch', \%pay_batch );
 
-      ## delete the refund from the batch.
-      unless ($delete_cust_refund_error) {
-        $delete_cust_pay_batch_error = $_->unbatch_and_delete;
-        warn "could not delete cust refund $delete_cust_pay_batch_error\n" if $delete_cust_pay_batch_error;
+    unless ( $pay_batch ) {
+      $pay_batch = new FS::pay_batch \%pay_batch;
+      my $error = $pay_batch->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+          warn "error creating a credit batch: $error\n";
       }
-
-      if ($delete_cust_refund_error || $delete_cust_pay_batch_error) { die "Could no delete cust_pay_batch refund\n"; }
-      else { warn "cust refund ".$cust_refund->{Hash}->{refundnum}." deleted\n"; }
     }
 
-    FS::upgrade_journal->set_done('removed_refunds_nodownload_format');
+    my $replace_error;
+    foreach my $cust_pay_batch (@batch_refunds) {
+      $cust_pay_batch->batchnum($pay_batch->batchnum);
+      $replace_error = $cust_pay_batch->replace();
+      if ( $replace_error ) {
+        $dbh->rollback if $oldAutoCommit;
+          warn "Unable o move credit to a credit batch: $replace_error";
+      }
+      else {
+        warn "Moved cust pay credit ".$cust_pay_batch->paybatchnum." to credit batch ".$cust_pay_batch->batchnum."\n";
+      }
+    }
+
+    FS::upgrade_journal->set_done('removed_refunds_nodownload_format') unless $replace_error;
   }
 
   # Set up configuration for gateways that have a Business::BatchPayment

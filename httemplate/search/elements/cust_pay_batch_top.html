@@ -149,6 +149,10 @@ $upload_formats{'PAP'} = '264 byte results for TD Canada Trust PAP Batch';
 if ($pay_batch->type eq "CREDIT") {
   foreach my $key (keys %download_formats) {
     delete $download_formats{$key} unless FS::pay_batch->can_handle_electronic_refunds($key);
+    ## remove default format if unable to handle electronic refunds
+    if ($key eq '') {
+      delete $download_formats{$key} unless FS::pay_batch->can_handle_electronic_refunds($conf->config("batch-default_format"));
+    }
   }
 }
 

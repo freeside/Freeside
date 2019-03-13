@@ -43,8 +43,10 @@
 				        my $_date = $self->download;
 				        if ( $_date ) {
 					  time2str("%a %b %e %T %Y", $_date);
-					} elsif ( $self->status eq 'O' ) {
-					  'Download batch';
+					} elsif ( $self->status eq 'O' && $self->type eq 'CREDIT') {
+					  'Download credit batch';
+          } elsif ( $self->status eq 'O' && $self->type eq 'DEBIT') {
+            'Download batch';
 					} else {
 					  '';
 					}
