@@ -97,6 +97,10 @@ if ( $cgi->param('paynum') > 0) {
       $_, scalar($cgi->param($_))
     } fields('cust_refund');
 
+    $hash{'payinfo'} = $cust_main->payinfo;
+    $hash{'paymask'} = $cust_main->paymask;
+    $hash{'paycardtype'} = $cust_main->paycardtype;
+
     ## unapply payment before creating refund.
     while ( $cust_pay && $cust_pay->unapplied < $refund ) {
       my @cust_bill_pay = $cust_pay->cust_bill_pay;
