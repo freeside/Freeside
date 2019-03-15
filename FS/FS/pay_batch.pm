@@ -1272,20 +1272,38 @@ sub _upgrade_data {
       my $error = $pay_batch->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-          warn "error creating a credit batch: $error\n";
+          warn "error creating a check credit batch: $error\n";
+      }
+    }
+
+    my %card_pay_batch = (
+      'status' => 'O',
+      'payby'  => 'CARD',
+      'type'   => 'CREDIT',
+    );
+
+    my $card_pay_batch = qsearchs( 'pay_batch', \%card_pay_batch );
+
+    unless ( $card_pay_batch ) {
+      $card_pay_batch = new FS::pay_batch \%card_pay_batch;
+      my $error = $card_pay_batch->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+          warn "error creating a card credit batch: $error\n";
       }
     }
 
     my $replace_error;
     foreach my $cust_pay_batch (@batch_refunds) {
-      $cust_pay_batch->batchnum($pay_batch->batchnum);
+      if ($cust_pay_batch->payby eq "CARD") { $cust_pay_batch->batchnum($card_pay_batch->batchnum); }
+      else { $cust_pay_batch->batchnum($pay_batch->batchnum); }
       $replace_error = $cust_pay_batch->replace();
       if ( $replace_error ) {
         $dbh->rollback if $oldAutoCommit;
           warn "Unable o move credit to a credit batch: $replace_error";
       }
       else {
-        warn "Moved cust pay credit ".$cust_pay_batch->paybatchnum." to credit batch ".$cust_pay_batch->batchnum."\n";
+        warn "Moved cust pay credit ".$cust_pay_batch->paybatchnum." to ".$cust_pay_batch->payby." credit batch ".$cust_pay_batch->batchnum."\n";
       }
     }
 

@@ -328,6 +328,9 @@ sub approve {
   if ( $error ) {
     return "error approving paybatchnum $paybatchnum: $error\n";
   }
+
+  return if $new->paycode eq "C";
+
   my $cust_pay = new FS::cust_pay ( {
       'custnum'   => $new->custnum,
       'payby'     => $new->payby,

@@ -55,7 +55,7 @@ if ( $error ) {
              'CHEK' => 'electronic check (ACH)',
              );
 
-my( $cust_pay, $cust_payby, $payinfo, $paycvv, $month, $year, $payname );
+my( $cust_pay, $cust_payby, $payinfo, $paycvv, $month, $year, $payname, $paycardtype );
 my $paymask = '';
 
 ## get cust pay info if paynum exists

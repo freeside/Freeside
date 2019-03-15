@@ -146,7 +146,7 @@ tie my %upload_formats, 'Tie::IxHash', (
 delete $upload_formats{'td_eft1464'};
 $upload_formats{'PAP'} = '264 byte results for TD Canada Trust PAP Batch';
 
-if ($pay_batch->type eq "CREDIT") {
+if ($pay_batch->type eq "CREDIT" && $pay_batch->payby eq "CHEK") {
   foreach my $key (keys %download_formats) {
     delete $download_formats{$key} unless FS::pay_batch->can_handle_electronic_refunds($key);
     ## remove default format if unable to handle electronic refunds

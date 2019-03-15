@@ -33,8 +33,17 @@ my @batches;
 if($opt_a) {
   my %criteria = (status => 'O');
   $criteria{'payby'} = uc($opt_p) if $opt_p;
-  $criteria{'type'} = 'DEBIT' unless FS::pay_batch->can_handle_electronic_refunds('RBC');
-  @batches = qsearch('pay_batch', \%criteria);
+
+  my $extra_sql;
+  $extra_sql = " AND ((payby = 'CHEK' AND type != 'CREDIT') OR (payby != 'CHEK'))" unless FS::pay_batch->can_handle_electronic_refunds('RBC');
+
+  my %hash = (
+    table => 'pay_batch',
+    hashref   => \%criteria,
+    extra_sql => $extra_sql,
+  );
+
+  @batches = qsearch(\%hash);
   die "No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n" 
     if !@batches;
 }
@@ -45,7 +54,7 @@ else {
   die "Can't find payment batch '$batchnum'\n" if !@batches;
   if ($batches[0]->type eq "CREDIT") {
     warn "running credit\n";
-    log_and_die( "Batch number $batchnum is a credit (batch refund) batch, and this format can not handle batch refunds.\n" )
+    die( "Batch number $batchnum is a credit (batch refund) batch, and this format can not handle batch refunds.\n" )
       unless FS::pay_batch->can_handle_electronic_refunds('RBC');
   }
 }
