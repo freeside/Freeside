@@ -151,7 +151,7 @@ sub batch_card {
                   ),
     'exp'      => $options{paydate}  || $cust_payby->paydate,
     'payname'  => $options{payname}  || $cust_payby->payname,
-    'paytype'  => $options{paytype}  || $cust_payby->paytype,
+    'paytype'  => $options{paytype}  || $cust_payby->{'Hash'}->{'paytype'},
     'amount'   => $amount,                         # consolidating
     'paycode'  => $options{paycode}  || '',
   } );

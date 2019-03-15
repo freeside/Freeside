@@ -55,7 +55,7 @@ if ( $error ) {
              'CHEK' => 'electronic check (ACH)',
              );
 
-my( $cust_pay, $cust_payby, $payinfo, $paycvv, $month, $year, $payname );
+my( $cust_pay, $cust_payby, $payinfo, $paycvv, $month, $year, $payname, $paycardtype );
 my $paymask = '';
 
 ## get cust pay info if paynum exists
@@ -89,6 +89,7 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
 } elsif ( $cgi->param('paynum') > 0) {
 
   $payinfo = $cust_pay->payinfo;
+  $paycardtype = $cust_pay->paycardtype;
   $payname = $cust_pay->payname;
 
 } else {
@@ -234,6 +235,10 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
     my %hash = map {
       $_, scalar($cgi->param($_))
     } fields('cust_refund');
+
+    $hash{'payinfo'} = $payinfo;
+    $hash{'paymask'} = $paymask;
+    $hash{'paycardtype'} = $paycardtype;
 
     ## unapply payment before creating refund.
     while ( $cust_pay && $cust_pay->unapplied < $refund ) {

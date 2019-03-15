@@ -41,8 +41,17 @@ my @batches;
 if($opt_a) {
   my %criteria = (status => 'O');
   $criteria{'payby'} = uc($opt_p) if $opt_p;
-  $criteria{'type'} = 'DEBIT' unless FS::pay_batch->can_handle_electronic_refunds('paymentech');
-  @batches = qsearch('pay_batch', \%criteria);
+
+  my $extra_sql;
+  $extra_sql = " AND ((payby = 'CHEK' AND type != 'CREDIT') OR (payby != 'CHEK'))" unless FS::pay_batch->can_handle_electronic_refunds('paymentech');
+
+  my %hash = (
+    table => 'pay_batch',
+    hashref   => \%criteria,
+    extra_sql => $extra_sql,
+  );
+
+  @batches = qsearch(\%hash);
   log_and_die("No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n")
     if !@batches;
 }
