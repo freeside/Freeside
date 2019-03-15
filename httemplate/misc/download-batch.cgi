@@ -28,11 +28,6 @@ my $pay_batch = qsearchs({ 'select'    => "*, $credit_transactions",
                          });
 die "Batch not found: '$batchnum'" if !$pay_batch;
 
-if ($pay_batch->{Hash}->{arecredits}) {
-  my $export_format = "FS::pay_batch::".$opt{'format'};
-  die "You are trying to download a credit (batch refund) batch and The format ".$opt{'format'}." can not handle refunds.\n" unless $export_format->can('can_handle_credits');
-}
-
 my $exporttext = $pay_batch->export_batch(%opt);
 unless ($exporttext) {
   http_header('Content-Type' => 'text/html' );
