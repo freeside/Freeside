@@ -69,10 +69,13 @@ foreach my $svcpart ( @svcpart ) {
 $svcpart_limit = " and pkg_svc.svcpart in (". join(',',@svcpart) . ")"
     if scalar(@svcpart);
 
+## here is the agent virtualization
+my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
+
 my $search = " where cust_pkg.cancel is null and pkg_svc.quantity > 0 and "
 	    . " pkg_svc.quantity > (select count(1) from cust_svc where "
 	    . " cust_svc.pkgnum = cust_pkg.pkgnum and "
-	    . " cust_svc.svcpart = pkg_svc.svcpart) $svcpart_limit";
+	    . " cust_svc.svcpart = pkg_svc.svcpart) $svcpart_limit and $agentnums_sql";
 
 my $addl_from = " join pkg_svc using (pkgpart) ".
             FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
