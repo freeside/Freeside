@@ -65,8 +65,6 @@ FS::cdr::thinq - ThinQ cdr import.
 
 =head1 DESCRIPTION
 
-https://support.thinq.com/hc/en-us/articles/229251907-Defining-the-CDR-for-LCR
-
 https://support.thinq.com/hc/en-us/articles/229251987-Defining-the-CDR-for-Origination
 
 File format is csv, fields below.
@@ -90,35 +88,5 @@ File format is csv, fields below.
 17  rate         - charge per minute  0.00250000
 18  billsec      - billable seconds  6
 19  total_charge - charge for this call  0.00025000
-
-ThinQ cdr field definitions
-
-01  from_ani     - The number dialed from
-02  to_did       - The number dialed to
-03  lrn          - 10-digit number that identifies a switch port for a central office
-04  prefix_match - extension number to rate international calls
-05  country      - country call was terminated to
-06  callid       - The unique idenitifer for a call
-07  time         - time when the call was placed in GMT/UTC format
-08  account_id   - Your account Identifier
-09  Profile_id   - The profile identifier the call was sent though
-10  src_ip       - The source IP address
-11  carrier_id   - Our ID number for each carrier
-12  rate         - The current rate of charge per minute
-13  total        - total price of the call
-14  from_state   - orginating state from USA
-15  to_state     - terminationg state of the USA
-16  rc           - Rate Center = geographical area used by a Local Exchange Carrier (LEC) to determine the boundaries
-                   for local calling, billing and assigning phone numbers
-17  from_rc      - originating rc
-18  to_rc        - terminating rc
-19  lata         - area that is covered by local exchange carriers (LECs)
-20  from_lata    - originating lata
-21  to_lata      - terminating lata
-22  ocn          - Operating Company Number is a 4 character ID for North American phone companies assigned by NECA and used to identify companies
-23  from_ocn     - originating ocn
-24  to_ocn       - terminating ocn
-25  bill_sec     - billable seconds
-26  jurisdiction - how we rate the call for International, Intrastate, Interstate
 
 =cut
