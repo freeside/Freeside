@@ -673,7 +673,7 @@ sub send_receipt {
         'cust_main'      => $cust_main,
         'cust_bill'      => $opt->{cust_bill},
         'cust_pkg'       => $opt->{cust_pkg},
-        'invoicing_list' => @invoicing_list,
+        'invoicing_list' => \@invoicing_list,
         'msgnum'         => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
     );
 
@@ -710,9 +710,6 @@ sub send_receipt {
 
       $error = $queue->insert(%opt);
     }
-
-
-
   }
 
   warn "send_receipt: $error\n" if $error;
@@ -725,7 +722,7 @@ $error = $self->send_message_receipt(
         'cust_main'      => $cust_main,
         'cust_bill'      => $opt->{cust_bill},
         'cust_pkg'       => $opt->{cust_pkg},
-        'invoicing_list' => @invoicing_list,
+        'invoicing_list' => \@invoicing_list,
         'msgnum'         => $conf->config('payment_receipt_msgnum', $cust_main->agentnum)
       );
 
@@ -736,7 +733,7 @@ sub send_message_receipt {
   my $cust_main      = $opt{'cust_main'};
   my $cust_bill      = $opt{'cust_bill'};
   my $cust_pkg       = $opt{'cust_pkg'};
-  my @invoicing_list = $opt{'invoicing_list'};
+  my @invoicing_list = ref($opt{'invoicing_list'}) ? @{ $opt{'invoicing_list'} } : ( $opt{'invoicing_list'} );
   my $msgnum         = $opt{'msgnum'};
   my $error = '';
 
