@@ -110,10 +110,13 @@
     <TD BGCOLOR="#ffffff"><% FS::payby->payname($real_payby) %> # <% $real_paymask %></TD>
   </TR>
 
-%  if ( $conf->exists("batch-enable")
-%      || grep $real_payby eq $_, $conf->config('batch-enable_payby')
-%  ) {
-%     if ( grep $real_payby eq $_, $conf->config('realtime-disable_payby') ) {
+% if ($payby eq "CARD" || $payby eq "DCRD") {
+          <INPUT TYPE="hidden" NAME="batch" VALUE="">
+% }
+% elsif ( $conf->exists("batch-enable")
+%      || grep $payby eq $_, $conf->config('batch-enable_payby')
+% ) {
+%     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
           <INPUT TYPE="hidden" NAME="batch" VALUE="1">
 %     } else {
         <TR>
