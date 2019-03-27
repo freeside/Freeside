@@ -146,7 +146,10 @@
   &>
 % }
 
-% if ( $conf->exists("batch-enable")
+% if ($payby eq "CARD" || $payby eq "DCRD") {
+          <INPUT TYPE="hidden" NAME="batch" VALUE="">
+% }
+% elsif ( $conf->exists("batch-enable")
 %      || grep $payby eq $_, $conf->config('batch-enable_payby')
 % ) {
 %     if ( grep $payby eq $_, $conf->config('realtime-disable_payby') ) {
