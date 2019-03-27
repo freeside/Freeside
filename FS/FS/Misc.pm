@@ -300,6 +300,7 @@ sub send_email {
     push @env_to, map { $_->address } Email::Address->parse($dest);
   }
 
+  local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
                               from      => $from,
