@@ -752,8 +752,13 @@ sub edit_info {
 
     ## get default cust_payby and change it. For old v3 selfservice that upgraded to v4.  this is for v4 only
     my ($cust_payby) = $cust_main->cust_payby();
-    $p->{'custpaybynum'} = $cust_payby->custpaybynum;
-    update_payby($p);
+    if ($cust_payby) {
+      $p->{'custpaybynum'} = $cust_payby->custpaybynum;
+      update_payby($p);
+    }
+    else {
+      insert_payby($p);
+    }
   }
 
   my $new = new FS::cust_main { $cust_main->hash };
@@ -1702,6 +1707,9 @@ sub insert_payby {
        or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
      my $payinfo2 = $1;
      $p->{'payinfo'} = $payinfo1. '@'. $payinfo2;
+   }
+   elsif ($p->{'payby'} eq 'CARD') {
+    $p->{paydate} = $p->{year} . '-' . $p->{month} . '-01' unless $p->{paydate};
    }
 
   my $cust_payby = new FS::cust_payby {
