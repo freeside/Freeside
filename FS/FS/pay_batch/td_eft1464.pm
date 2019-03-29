@@ -48,6 +48,7 @@ my $i;
 
 $name = 'td_eft1464';
 # TD Bank EFT 1464 Byte format
+# https://www.payments.ca/sites/default/files/standard-005.pdf
 
 %import_info = ( filetype => 'NONE' ); 
 # just to suppress warning; importing this format is a fatal error
@@ -145,19 +146,28 @@ $name = 'td_eft1464';
   },
   footer => sub {
     my ($pay_batch, $batchcount, $batchtotal) = @_;
+    my $totaldebittxns = $pay_batch->type eq "DEBIT" ? $batchtotal*100 : 0;
+    my $countdebittxns = $pay_batch->type eq "DEBIT" ? $batchcount : 0;
+    my $totalcredittxns = $pay_batch->type eq "CREDIT" ? $batchtotal*100 : 0;
+    my $countcredittxns = $pay_batch->type eq "CREDIT" ? $batchcount : 0;
     join('',
       'Z',
       sprintf('%09u', $batchcount + 2),
       $opt{'origid'}, 
       $opt{'fcn'},
-      sprintf('%014.0f', $batchtotal*100), # total of debit txns
-      sprintf('%08u', $batchcount), # number of debit txns
-      '0' x 14, # total of credit txns
-      '0' x 8, # total of credit txns
+      sprintf('%014.0f', $totaldebittxns), # total of debit txns
+      sprintf('%08u', $countdebittxns), # number of debit txns
+      sprintf('%014.0f', $totalcredittxns), # total of debit txns
+      sprintf('%08u', $countcredittxns), # number of debit txns
       ' ' x 1396,
     )
   },
 );
+
+## this format can handle credit transactions
+sub can_handle_credits {
+  1;
+}
 
 sub _upgrade_gateway {
   my $conf = FS::Conf->new;
