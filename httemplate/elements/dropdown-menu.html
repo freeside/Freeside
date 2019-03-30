@@ -92,16 +92,8 @@
   background-image: url("<% $p %>images/arrow.right.black.png");
   width: 3px;
   height: 6px;
-  margin-top:4px;
+  margin-top:5px;
 }
-
-/* Firefox hack
-@-moz-document url-prefix() {
-  #<% $opt{id} %> a .arrow {
-    margin-top:-.8em;
-  }
-}
-*/
 
 </style>
 
@@ -195,8 +187,9 @@ sub entry2link {
 
     if ( $entry->{submenu} ) {
 
-      my $a = '<a href="javascript:void(0);">'. $label.
+      my $a = '<a href="javascript:void(0);">'.
               '<span class="arrow"></span>'.
+              $label.
               '</a><ul class="customer_subsubmenu">';
       foreach my $submenu (@{ $entry->{submenu} }) {
         $a .= '<li>'. entry2link($submenu, $opt->{cust_main}, $opt->{show}), '</li>';
