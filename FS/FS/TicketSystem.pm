@@ -409,7 +409,12 @@ sub _upgrade_data {
     my $groups = RT::Groups->new(RT->SystemUser);
     $groups->LimitToEnabled;
     $groups->LimitToSystemInternalGroups;
-    $groups->Limit(FIELD => 'Type', VALUE => 'Privileged', OPERATOR => '=');
+    $groups->Limit(
+      FIELD         => 'Name',
+      VALUE         => 'Privileged',
+      OPERATOR      => '=',
+      CASESENSITIVE => 0,
+    );
     my $group = $groups->First
       or die "No RT internal group found for Privileged users";
     my ($val, $msg) = $group->PrincipalObj->GrantRight(
