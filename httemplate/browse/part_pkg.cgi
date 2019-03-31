@@ -60,6 +60,7 @@ my $conf = new FS::Conf;
 my $taxclasses = $conf->exists('enable_taxclasses');
 my $taxvendor = $conf->config('tax_data_vendor');
 my $money_char = $conf->config('money_char') || '$';
+my $disable_counts = $conf->exists('config-disable_counts') ? 1 : 0;
 
 my $select = '*';
 my $orderby = 'pkgpart';
@@ -143,40 +144,43 @@ my $count_cust_pkg_cancel = "
       AND cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0
 ";
 
-$select = "
+unless ( $disable_counts ) {
+  $select = "
 
-  *,
+    *,
 
-  ( $count_cust_pkg
-      AND ( setup IS NULL OR setup = 0 )
-      AND ( cancel IS NULL OR cancel = 0 )
-      AND ( susp IS NULL OR susp = 0 )
-  ) AS num_not_yet_billed,
+    ( $count_cust_pkg
+        AND ( setup IS NULL OR setup = 0 )
+        AND ( cancel IS NULL OR cancel = 0 )
+        AND ( susp IS NULL OR susp = 0 )
+    ) AS num_not_yet_billed,
 
-  ( $count_cust_pkg
-      AND setup IS NOT NULL AND setup != 0
-      AND ( cancel IS NULL OR cancel = 0 )
-      AND ( susp IS NULL OR susp = 0 )
-  ) AS num_active,
+    ( $count_cust_pkg
+        AND setup IS NOT NULL AND setup != 0
+        AND ( cancel IS NULL OR cancel = 0 )
+        AND ( susp IS NULL OR susp = 0 )
+    ) AS num_active,
 
-  ( $count_cust_pkg
-      AND ( cancel IS NULL OR cancel = 0 )
-      AND susp IS NOT NULL AND susp != 0
-      AND setup IS NOT NULL AND setup != 0
-  ) AS num_suspended,
+    ( $count_cust_pkg
+        AND ( cancel IS NULL OR cancel = 0 )
+        AND susp IS NOT NULL AND susp != 0
+        AND setup IS NOT NULL AND setup != 0
+    ) AS num_suspended,
 
-  ( $count_cust_pkg
-      AND ( cancel IS NULL OR cancel = 0 )
-      AND susp IS NOT NULL AND susp != 0
-      AND ( setup IS NULL OR setup = 0 )
-  ) AS num_on_hold,
+    ( $count_cust_pkg
+        AND ( cancel IS NULL OR cancel = 0 )
+        AND susp IS NOT NULL AND susp != 0
+        AND ( setup IS NULL OR setup = 0 )
+    ) AS num_on_hold,
 
-  ( $count_cust_pkg_cancel
-      AND (cust_pkg_next.pkgnum IS NULL
-           OR cust_pkg_next.pkgpart != cust_pkg.pkgpart)
-  ) AS num_cancelled
+    ( $count_cust_pkg_cancel
+        AND (cust_pkg_next.pkgnum IS NULL
+            OR cust_pkg_next.pkgpart != cust_pkg.pkgpart)
+    ) AS num_cancelled
 
-";
+  ";
+}
+
 # About the num_cancelled expression: packages that were changed, but 
 # kept the same pkgpart, are considered "moved", not "canceled" (because
 # this is the part_pkg UI).  We could show the count of those but it's 
@@ -544,7 +548,7 @@ if ( $acl_edit_global ) {
                                                   : ''
                                               ),
                                  'align' => 'left',
-                                 'link'  => ( $part_pkg->get("num_$_")
+                                 'link'  => ( $part_pkg->get("num_$_") || $disable_counts
                                                 ? $cust_pkg_link.
                                                   $part_pkg->pkgpart.
                                                   ";magic=$magic"
