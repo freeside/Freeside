@@ -64,7 +64,6 @@ function part_export_areyousure(href) {
     <TH CLASS="grid" BGCOLOR="#cccccc" STYLE="font-size: smaller;">Required</TH>
 
   </TR>
-% my $conf = FS::Conf->new;
 % foreach my $part_svc ( @part_svc ) {
 %     my $svcdb = $part_svc->svcdb;
 %     my $svc_x = "FS::$svcdb"->new( { svcpart => $part_svc->svcpart } );
@@ -137,12 +136,12 @@ function part_export_areyousure(href) {
     <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
 % my $svcurl_active = svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart . "&cancelled=0");
 % my $svcurl_cancel = svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart . "&cancelled=1");
-      <FONT COLOR="#00CC00"><B><% $num_cust_svc_active{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_cust_svc_active{$part_svc->svcpart} ? $svcurl_active : '' %>active<% $num_cust_svc_active{$part_svc->svcpart} ? '</A>' : '' %>
-% if ( $num_cust_svc_cancelled{$part_svc->svcpart} ) { 
+      <FONT COLOR="#00CC00"><B><% $num_cust_svc_active{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_cust_svc_active{$part_svc->svcpart} || $disable_counts ? $svcurl_active : '' %>active<% $num_cust_svc_active{$part_svc->svcpart} || $disable_counts ? '</A>' : '' %>
+% if ( $num_cust_svc_cancelled{$part_svc->svcpart} || $disable_counts ) {
         <BR><FONT COLOR="#FF0000"><B><% $num_cust_svc_cancelled{$part_svc->svcpart} %></B></FONT>&nbsp;<% $svcurl_cancel %>cancelled</A>
 % }
-% if ( $num_cust_svc{$part_svc->svcpart} ) { 
-        <BR><FONT SIZE="-1">[ <A HREF="<%$p%>edit/bulk-cust_svc.html?svcpart=<% $part_svc->svcpart %>">change</A> ]</FONT>
+% if ( $num_cust_svc{$part_svc->svcpart} || $disable_counts ) {
+        <BR><FONT SIZE="-1"><nobr>[ <A HREF="<%$p%>edit/bulk-cust_svc.html?svcpart=<% $part_svc->svcpart %>">change</A> ]</nobr></FONT>
 % } 
 
     </TD>
@@ -239,6 +238,9 @@ function part_export_areyousure(href) {
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+my $conf = FS::Conf->new;
+my $disable_counts = $conf->exists('config-disable_counts') ? 1 : 0;
+
 #code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
 my %flag = (
   ''  => '',
@@ -276,10 +278,13 @@ my $total = scalar(@part_svc);
 my %num_cust_svc_active;
 my %num_cust_svc_cancelled;
 my %num_cust_svc;
-foreach my $part_svc (@part_svc) {
-  $num_cust_svc{$part_svc->svcpart} = $part_svc->num_cust_svc;
-  $num_cust_svc_cancelled{$part_svc->svcpart} = $part_svc->num_cust_svc_cancelled;
-  $num_cust_svc_active{$part_svc->svcpart} = $num_cust_svc{$part_svc->svcpart} - $num_cust_svc_cancelled{$part_svc->svcpart};
+
+unless ( $disable_counts ) {
+  foreach my $part_svc (@part_svc) {
+    $num_cust_svc{$part_svc->svcpart} = $part_svc->num_cust_svc;
+    $num_cust_svc_cancelled{$part_svc->svcpart} = $part_svc->num_cust_svc_cancelled;
+    $num_cust_svc_active{$part_svc->svcpart} = $num_cust_svc{$part_svc->svcpart} - $num_cust_svc_cancelled{$part_svc->svcpart};
+  }
 }
 
 if ( $cgi->param('orderby') eq 'active' ) {
