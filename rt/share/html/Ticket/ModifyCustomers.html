@@ -20,9 +20,9 @@
 <form action="ModifyCustomers.html" method="post">
 <input type="hidden" name="id" value="<%$Ticket->id%>">
 
-<& /Elements/TitleBoxStart, title => loc('Edit Customer Links'), color => "#7f007b"&>
+<& /Widgets/TitleBoxStart, title => loc('Edit Customer Links'), color => "#7f007b"&>
 <& Elements/EditCustomers, Ticket => $Ticket, CustomerString => $CustomerString, ServiceString => $ServiceString &>
-<& /Elements/TitleBoxEnd &>
+<& /Widgets/TitleBoxEnd &>
 <& /Elements/Submit, color => "#7f007b", Label => loc('Save Changes') &>
 </form>
 

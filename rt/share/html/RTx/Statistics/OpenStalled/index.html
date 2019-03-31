@@ -15,7 +15,7 @@ viewed once (Open) and how many have had their status changed to stalled.</p>
 
 
 %my $title = "New, Open and Stalled Tickets in " . join(', ', @queues);
-<& /Elements/TitleBoxStart, title => $title, title_href => $RT::WebPath."/RTx/Statistics/OpenStalled/index.html?$QueryString"&>
+<& /Widgets/TitleBoxStart, title => $title, title_href => $RT::WebPath."/RTx/Statistics/OpenStalled/index.html?$QueryString"&>
 <TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH="100%">
 % if ($ShowHeader) {
 <& /RTx/Statistics/Elements/CollectionAsTable/Header, 
@@ -63,7 +63,7 @@ viewed once (Open) and how many have had their status changed to stalled.</p>
 %    $values{Statistics_Totals} = $totals{"Totals"};
 <&   /RTx/Statistics/Elements/CollectionAsTable/Row, Format => \@BoldRowFormat, i => $line+1, record => $record, maxitems => $maxitems &>
 </table>
-<& /Elements/TitleBoxEnd&>
+<& /Widgets/TitleBoxEnd&>
 
 % use Data::Dumper;
 % Statistics::DebugLog("Dump of data array is " . Dumper(@data) . "\n");

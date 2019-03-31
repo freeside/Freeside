@@ -63,9 +63,9 @@ that this will genereate code which will not work in RT 2.1.3. I need
 to add a bit of framework to make it work in 2.1.4
 
 
-The string	<& /Elements/TitleBoxStart, width=> "40%", titleright => "RT $RT::VERSION for ". RT->Config->Get('rtname'), title => 'Login' &>
+The string	<& /Widgets/TitleBoxStart, width=> "40%", titleright => "RT $RT::VERSION for ". RT->Config->Get('rtname'), title => 'Login' &>
 
-should become 	<& /Elements/TitleBoxStart, 
+should become 	<& /Widgets/TitleBoxStart, 
 			width=> "40%",
 			titleright => loc("RT [_1] for [_2]",$RT::VERSION, RT->Config->Get('rtname')),
 			title => loc('Login'),
