@@ -405,6 +405,6 @@ if ( $cgi->param('showdisabled')
 }
 
 my $conf = new FS::Conf;
-my $disable_counts = $conf->exists('agent-disable_counts');
+my $disable_counts = $conf->exists('config-disable_counts');
 
 </%init>

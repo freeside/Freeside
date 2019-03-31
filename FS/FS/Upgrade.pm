@@ -206,6 +206,13 @@ If you need to continue using the old Form 477 report, turn on the
     FS::upgrade_journal->set_done('deprecate_unmask_ss');
   }
 
+  # Rename agent-disable_counts as config-disable_counts, flag now
+  # affects several configuration pages
+  for my $row ( qsearch( conf => { name => 'agent-disable_counts' } )) {
+    $row->name('config-disable_counts');
+    $row->replace;
+  }
+
 }
 
 sub upgrade_overlimit_groups {

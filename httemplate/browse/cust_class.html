@@ -23,8 +23,7 @@ my $html_init =
   'Customer classes define groups of customer for reporting.<BR><BR>'.
   qq!<A HREF="${p}edit/cust_class.html"><I>Add a customer class</I></A><BR><BR>!;
 
-#cust_class-disable_counts?  or just migrate this to one config probably
-#my $disable_counts = $conf->exists('agent-disable_counts');
+#my $disable_counts = $conf->exists('config-disable_counts');
 my $disable_counts = 0; 
 
 my $customers_sub = sub {
