@@ -6048,8 +6048,15 @@ and customer address. Include units.',
 
   {
     'key'         => 'agent-disable_counts',
-    'section'     => 'scalability',
+    'section'     => 'deprecated',
     'description' => 'On the agent browse page, disable the customer and package counts.  Typically used for very large installs when this page takes too long to render.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'config-disable_counts',
+    'section'     => 'scalability',
+    'description' => 'Disable the customer and package counts on the Agents, Packages, and Services pages. Use for very large installs where these pages take too long to render.',
     'type'        => 'checkbox',
   },
 
