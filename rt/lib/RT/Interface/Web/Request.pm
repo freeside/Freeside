@@ -85,6 +85,12 @@ By default is false, otherwise runs callbacks only once per
 process of the server. Such callbacks can be used to fill
 structures.
 
+=item ReturnComponentOutput
+
+By default, callback returns the status codes of all rendered components, and
+prints the rendered components to STDOUT. If this argument is true, callback
+returns the rendered components instead of printing them to STDOUT.
+
 =back
 
 Searches for callback components in
@@ -102,6 +108,7 @@ sub callback {
 
     my $name = delete $args{'CallbackName'} || 'Default';
     my $page = delete $args{'CallbackPage'} || $self->callers(0)->path;
+    my $use_scomp = delete $args{'ReturnComponentOutput'} ? 1 : 0;
     unless ( $page ) {
         $RT::Logger->error("Couldn't get a page name for callbacks");
         return;
@@ -134,10 +141,16 @@ sub callback {
     }
 
     my @rv;
+    my $scomp_out;
     foreach my $cb ( @$callbacks ) {
-        push @rv, scalar $self->comp( $cb, %args );
+        if ( $use_scomp ) {
+            no warnings 'uninitialized';
+            $scomp_out .= $self->scomp( $cb, %args );
+        } else {
+            push @rv, scalar $self->comp( $cb, %args );
+        }
     }
-    return @rv;
+    return $use_scomp ? $scomp_out : @rv;
 }
 
 sub clear_callback_cache {

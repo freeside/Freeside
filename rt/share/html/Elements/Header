@@ -148,8 +148,11 @@ jQuery(document).ready(function(){
 
 }
 
-# $m->callback( %ARGS, CallbackName => 'Head' );
-$head .= $m->scomp( '/Elements/Callback', _CallbackName => 'Head', %ARGS );
+$head .= $m->callback(
+  %ARGS,
+  CallbackName => 'Head',
+  ReturnComponentOutput => 1,
+);
 
 #XXX $head .= <& /Elements/Framekiller &>;
 
