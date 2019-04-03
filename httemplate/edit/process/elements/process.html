@@ -479,7 +479,7 @@ foreach my $value ( @values ) {
 
 }
 
-if ($class eq "FS::tower") {
+if ($class eq "FS::tower" && !$error) {
   foreach my $part_svc_broadband_export ( FS::tower_sector->part_export_svc_broadband ) {
     if ($part_svc_broadband_export and $part_svc_broadband_export->can('export_tower_sector')) {
       my $export_tower = $part_svc_broadband_export->export_tower_sector($new);
