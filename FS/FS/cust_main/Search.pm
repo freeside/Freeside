@@ -618,7 +618,7 @@ sub search {
   my $dbh = dbh;
 
   my @where = ();
-  my $orderby;
+  my $orderby = "ORDER BY cust_main.custnum";
 
   # initialize these to prevent warnings
   $params = {
@@ -937,7 +937,7 @@ sub search {
       }
     }
 
-    $orderby ||= "ORDER BY cust_main.$field";
+    $orderby .= ", cust_main.$field";
 
   }
 
@@ -1115,7 +1115,7 @@ sub search {
   # setup queries, subs, etc. for the search
   ##
 
-  $orderby ||= 'ORDER BY custnum';
+  $orderby ||= 'ORDER BY cust_main.custnum';
 
   # here is the agent virtualization
   push @where,
