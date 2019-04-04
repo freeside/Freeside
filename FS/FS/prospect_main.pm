@@ -462,7 +462,7 @@ sub search {
   # here is the agent virtualization
   push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
 
-  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+  my $extra_sql = scalar(@where) ? ' WHERE prospect_main.custnum IS NULL AND '. join(' AND ', @where) : '';
 
   my $count_query = "SELECT COUNT(*) FROM prospect_main $extra_sql";
   
