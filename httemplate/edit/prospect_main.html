@@ -1,7 +1,22 @@
+<SCRIPT>
+  function checkPasswordValidation(fieldid)  {
+    var validationResult = document.getElementById(fieldid+'_result').innerHTML;
+    if (validationResult.match(/Password valid!/)) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+</SCRIPT>
+
+<& '/elements/validate_password_js.html', &>
+
 <% include('elements/edit.html',
      'name_singular'   => 'prospect',
      'table'           => 'prospect_main',
      'labels'          => { 'prospectnum' => 'Prospect',
+                            'disabled'    => 'Disabled',
                             'agentnum'    => 'Agent',
                             'refnum'      => 'Advertising source',
                             'company'     => 'Company',
@@ -23,6 +38,10 @@
          'type'     => 'radio',
          'options'  => [ 'Residential', 'Commercial', ],
          'onchange' => 'rescom_changed',
+       },
+       { 'field'    => 'disabled',
+         'type'     => 'checkbox',
+         'value'    => 'Y',
        },
        { 'field'    => 'company',
          'type'     => 'text',
