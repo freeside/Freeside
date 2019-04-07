@@ -619,7 +619,7 @@ sub search {
   my $dbh = dbh;
 
   my @where = ();
-  my $orderby = "ORDER BY cust_main.custnum";
+  my $orderby;
 
   # initialize these to prevent warnings
   $params = {
@@ -909,7 +909,7 @@ sub search {
       }
     }
 
-    $orderby .= ", cust_main.$field";
+    $orderby ||= "ORDER BY cust_main.$field";
 
   }
 
@@ -1218,8 +1218,7 @@ sub search {
 
   }
 
-  # set select a customer only once. some joins create multiple customer records.
-  my $select = 'DISTINCT ON (cust_main.custnum) ' . join(', ', @select);
+  my $select = join(', ', @select);
 
   my $sql_query = {
     'table'             => 'cust_main',
