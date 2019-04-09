@@ -473,6 +473,7 @@ sub default_superuser_rights {
     'View legacy typeset statments',
     'Detach customer package',
     'Delete fees',
+    'Employee preference telephony integration',
   );
 
   no warnings 'uninitialized';
