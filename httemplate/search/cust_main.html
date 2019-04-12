@@ -161,4 +161,13 @@ if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') )
                     "${p}misc/email-customers.html?table=cust_main&classnums=invoice&$query";
 }
 
+###
+# agent transfer link
+###
+
+my $agent_transfer_link = include('/elements/agent_transfer_link.html', {
+     'search' => \%search_hash,
+});
+push @$menubar, emt('popup') => '<div style="display:inline-block">'.$agent_transfer_link.'</div>';
+
 </%init>

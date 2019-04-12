@@ -599,6 +599,102 @@ sub process_email_search_result {
 
 }
 
+sub customer_agent_transfer_search_result {
+  my($class, $param) = @_;
+
+  my $newagentnum = $param->{agentnum};
+  my $error = '';
+  my @customers;
+
+  my $job = delete $param->{'job'}
+    or die "customer_agent_transfer_search_result must run from the job queue.\n";
+
+  my $list = $param->{'list'};
+
+  if ($param->{'search'}) {
+    my $sql_query = $class->search($param->{'search'});
+    $sql_query->{'select'} = $sql_query->{'table'} . '.*';
+    @customers = qsearch($sql_query);
+  }
+
+  @customers = @$list if !@customers && $list;
+  my $num_cust = scalar(@customers);
+
+  my( $num, $last, $min_sec ) = (0, time, 5); #progresbar
+
+  # Transactionize
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $obj ( @customers ) {
+
+    #progressbar first, so that the count is right
+    $num++;
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int( 100 * $num / $num_cust )
+      );
+      die $error if $error;
+      $last = time;
+    }
+
+    my $cust_main = $obj->cust_main;
+    if ( !$cust_main ) {
+      next; # unlinked object nothing to do
+    }
+
+    $cust_main->agentnum($newagentnum);
+    $error = $cust_main->replace;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "transfering to new agent: $error";
+    }
+
+  } # foreach $obj
+
+  $dbh->commit if $oldAutoCommit;
+  return '';
+}
+
+=item process_customer_agent_transfer_search_result
+
+Mass transfers customers to new agent.
+
+Is Transactionized so entire list transfers or none.
+
+excepts either a list of cust_main objects in the base64 encoded cgi param list
+or a list of search fields in the base64 encoded  cgi param search.
+
+=cut
+
+sub process_customer_agent_transfer_search_result {
+  my $job = shift;
+
+  my $param = shift;
+  warn Dumper($param) if $DEBUG;
+
+  $param->{'job'} = $job;
+
+  $param->{'search'} = thaw(decode_base64($param->{'search'}))
+    or die "process_customer_agent_transfer_search_result.\n" if $param->{'search'};
+
+  $param->{'list'} = thaw(decode_base64($param->{'list'}))
+    or die "process_customer_agent_transfer_search_result.\n" if $param->{'list'};;
+
+  my $table = $param->{'table'}
+    or die "process_customer_agent_transfer_search_result.\n";
+
+  eval "use FS::$table;";
+  die "error loading FS::$table: $@\n" if $@;
+
+  my $error = "FS::$table"->customer_agent_transfer_search_result( $param );
+
+  die $error if $error;
+
+}
+
 =item conf
 
 Returns a configuration handle (L<FS::Conf>) set to the customer's locale, 
