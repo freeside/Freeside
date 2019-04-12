@@ -37,6 +37,10 @@
         ( <a href="<% $cgi->self_url %>"><% mt("$linklabel canceled customers") |h %></a> )
 %  }
 
+%  unless ($cgi->param('browse')) {
+    <& /elements/agent_transfer_link.html, {'list' => \@cust_main} &>
+%  }
+
 %  if ( $cgi->param('referral_custnum') ) {
 %    $cgi->param('referral_custnum') =~ /^(\d+)$/
 %      or errorpage(emt("Illegal referral_custnum"));

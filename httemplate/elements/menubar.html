@@ -52,7 +52,12 @@ while (@_) {
 
   }
 
-  push @html, qq!<A HREF="$url_base$url" $style>$item</A>!;
+  if ($item eq 'popup') {
+   push @html, $url;
+  }
+  else {
+    push @html, qq!<A HREF="$url_base$url" $style>$item</A>!;
+  }
 
 }
 
