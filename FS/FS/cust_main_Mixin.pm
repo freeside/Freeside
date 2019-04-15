@@ -650,7 +650,7 @@ or a list of search fields in the base64 encoded  cgi param search.
 sub process_customer_agent_transfer_search_result {
   my $job = shift;
 
-  my $param = shift;
+  my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
 
   $param->{'job'} = $job;
