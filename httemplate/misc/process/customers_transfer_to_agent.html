@@ -1,0 +1,6 @@
+<% $server->process %>
+<%init>
+
+my $server = new FS::UI::Web::JSRPC 'FS::cust_main_Mixin::process_customer_agent_transfer_search_result', $cgi; 
+
+</%init>

@@ -1,0 +1,37 @@
+  <FORM NAME="agent_transfer_form">
+  <INPUT TYPE="hidden" NAME="search" VALUE="<% $search %>">
+  <INPUT TYPE="hidden" NAME="list" VALUE="<% $list %>">
+  <INPUT TYPE="hidden" NAME="table" VALUE="cust_main">
+  <& /elements/progress-init.html,
+                 'agent_transfer_form',
+                 [ qw( search list table agentnum) ],
+                 $process_url,
+                 $pdest,
+  &>  
+  <& /elements/select-agent.html, 'empty_label' => 'Transfer these customers to agent', 'onchange' => 'areyousure()' &>
+  </FORM>
+
+  <SCRIPT>
+      function areyousure(href) {
+        var sel = document.getElementById("agentnum");
+        if (sel.selectedIndex == 0) { alert("Please select a new agent to transfer to."); }
+        else if (confirm("Transfer these customers to agent " + sel.options[sel.selectedIndex].text )) {
+          process();
+          sel.selectedIndex = 0;
+        }
+        else {
+          sel.selectedIndex = 0;
+        }
+      }
+  </SCRIPT>
+
+<%init>
+
+my $opt = shift;
+my ($search, $list);
+$search = encode_base64(nfreeze($opt->{'search'})) if ref ($opt->{'search'}) eq 'HASH';
+$list = encode_base64(nfreeze($opt->{'list'})) if ref ($opt->{'list'}) eq 'ARRAY';
+my $process_url = "${p}misc/process/customers_transfer_to_agent.html";
+my $pdest = { 'message' => 'Transfer Complete' };
+
+</%init>
