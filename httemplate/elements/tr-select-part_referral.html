@@ -11,7 +11,9 @@
     </FONT>
 %   } elsif ( scalar( @{$opt{'part_referrals'}} ) == 1 ) {
 
-     <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'refnum' %>" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
+     <TR><TD COLSPAN="<% $colspan %>">
+       <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'refnum' %>" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
+     </TD></TR>
 
 % } else { 
      <& /elements/tr-td-label.html, label => 'Advertising source', %opt &>
