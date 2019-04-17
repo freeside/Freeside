@@ -180,6 +180,6 @@ my $js = qq(
       else { document.getElementById("changepw$id\_password").disabled = 'true'; }
       return false;
     }
-);
+) unless $opt{'for_prospect'};
 
 </%init>
