@@ -3,7 +3,7 @@
     table       => 'tower_sector',
     name_col    => 'description',
     addl_from   => 'JOIN tower USING (towernum)',
-    extra_sql   => q(WHERE disabled = '' OR disabled IS NULL),
+    extra_sql   => $extra_sql,
     order_by    => 'ORDER BY towernum,sectorname',
     empty_label => ' ',
     @_ 
@@ -67,4 +67,7 @@ foreach my $towernum (keys %sectors_of) {
 }
 
 my $empty_label = $opt{'empty_label'} || 'Include services with no sector';
+
+my $extra_sql = q(WHERE (disabled = '' OR disabled IS NULL));
+$extra_sql .= q( AND sectorname != '_default') if $opt{'sectorsonly'};
 </%init>
