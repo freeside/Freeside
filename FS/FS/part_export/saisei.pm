@@ -197,6 +197,7 @@ sub _export_insert {
       'sector_name'           => $sector_name,
       'sector_uprate_limit'   => $tower_sector->{Hash}->{sector_upratelimit},
       'sector_downrate_limit' => $tower_sector->{Hash}->{sector_downratelimit},
+      'rateplan'              => $rateplan_name,
     };
     my $accesspoint = process_sector($self, $sector_opt);
     return $self->api_error if $self->{'__saisei_error'};
@@ -828,6 +829,11 @@ sub process_tower {
 sub process_sector {
   my ($self, $opt) = @_;
 
+  if (!$opt->{sector_name} || $opt->{sector_name} eq '_default') {
+    $self->{'__saisei_error'} = "No sector attached to Tower (".$opt->{tower_name}.") for service ".$opt->{'rateplan'}.".  Saisei requires a tower sector to be attached to each service that is exported to Saisei.";
+    return { error => $self->api_error, };
+  }
+
   if (!$opt->{sector_uprate_limit} || !$opt->{sector_downrate_limit}) {
     $self->{'__saisei_error'} = "Could not export sector ".$opt->{tower_name}." because there was no up or down rates attached to the sector.  Saisei requires a up and down rate be attached to each sector.";
     return { error => $self->api_error, };
@@ -862,6 +868,16 @@ sub process_sector {
 
   return { error => $self->api_error, } if $self->api_error;
   return $accesspoint;
+}
+
+=head2 require_tower_and_sector
+
+sets whether the service export requires a sector with it's tower.
+
+=cut
+
+sub require_tower_and_sector {
+  1;
 }
 
 sub process_virtual_ap {
