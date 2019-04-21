@@ -90,6 +90,7 @@ Example:
     <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %></OPTION>
 % }
 
+% my $curr_option_found;
 % foreach my $record ( 
 % # we have the order_by parameter for this
 % #sort {    $a->$name_col() cmp $b->$name_col()
@@ -108,6 +109,7 @@ Example:
 %     $selected =    ( ref($value) && $value->{$recvalue} )
 %                 || ( $value && $value eq $recvalue ); #not == because of value_col
 %   }
+%   $curr_option_found = $selected unless $curr_option_found;
     <OPTION VALUE="<% $recvalue %>"
             <% $selected ? ' SELECTED' : '' %>
 %           foreach my $att ( @{ $opt{'extra_option_attributes'} } ) {
@@ -129,6 +131,11 @@ Example:
     <OPTION VALUE="<% $post_opt %>"
             <% $selected ? 'SELECTED' : '' %>
     ><% $post_label %></OPTION>
+% }
+
+% my $non_option_label = $opt{'non_option_label'};
+% if (!$curr_option_found && $non_option_label && $value) {
+    <OPTION VALUE="<% $value %>" SELECTED><% $non_option_label %></OPTION>
 % } 
 
 </SELECT>

@@ -101,7 +101,21 @@ END
 
 my @fields = (
   qw( description speed_down speed_up speed_test_down speed_test_up speed_test_latency),
-  { field=>'sectornum', type=>'select-tower_sector', },
+  { field=>'sectornum', type=>'select-tower_sector',
+    include_opt_callback => sub {
+      my $svc_broadband = shift;
+      my $part_svc = $svc_broadband->part_svc;
+      my $sectors_only;
+      foreach ($part_svc->part_export()) {
+        $sectors_only = '1' if $_->can('require_tower_and_sector');
+      }
+      ## incase export requires a sector and service only has tower attached it will not show on edit.
+      my $non_option_label;
+      my $sector = qsearchs({'table' => 'tower_sector', 'hashref' => { 'sectornum' => $svc_broadband->sectornum }, });
+      $non_option_label = $sector->description if $sector;
+      return ('sectorsonly' => $sectors_only, 'non_option_label' => $non_option_label);
+    },
+  },
   { field=>'routernum', type=>'select-router_block_ip', 
     include_opt_callback => sub { 
       my $svc_broadband = shift;
