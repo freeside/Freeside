@@ -47,6 +47,6 @@ if ( $cust_pkg->setup or !$cust_pkg->susp ) {
 
 if ( $error ) {
   $cgi->param('error', $error);
-  print $cgi->redirect($fsurl.'misc/unhold_pkg.html?', $cgi->query_string);
+  print $cgi->redirect($fsurl.'misc/unhold_pkg.html?'. $cgi->query_string);
 }
 </%init>
