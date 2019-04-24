@@ -649,7 +649,7 @@ sub _export_suspend {
   #warn "warning: _export_suspened unimplemented for". ref($self);
   my $svc_x = shift;
   my $new = $svc_x->clone_suspended;
-  $self->_export_replace( $new, $svc_x );
+  $self->export_replace( $new, $svc_x );
 }
 
 sub _export_unsuspend {
@@ -657,7 +657,7 @@ sub _export_unsuspend {
   #warn "warning: _export_unsuspend unimplemented for ". ref($self);
   my $svc_x = shift;
   my $old = $svc_x->clone_kludge_unsuspend;
-  $self->_export_replace( $svc_x, $old );
+  $self->export_replace( $svc_x, $old );
 }
 
 =item get_remoteid SVC
