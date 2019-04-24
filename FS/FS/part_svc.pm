@@ -899,6 +899,18 @@ sub process {
       $exportnums{$exportnum} = $role;
     }
   }
+
+  ## make sure export required fields are marked required.
+  my @required_fields;
+  foreach (keys %exportnums) {
+    my $export = qsearchs('part_export', { 'exportnum' => $_ })
+      if $exportnums{$_};
+    if ($export) {
+      push @required_fields, $export->required_fields if $export->can('required_fields');
+    }
+  }
+  foreach (@required_fields) { $new->set($_, 'Y'); }
+
   my $error;
   if ( $param->{'svcpart'} ) {
     $error = $new->replace( $old,
