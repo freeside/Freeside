@@ -10,6 +10,8 @@
                                  'Router',
                                  @tower_header,
                                  'IP Address',
+                                 'Upload Speed (Kbps)',
+                                 'Download Speed (Kbps)',
                                  @header_pkg,
                                  emt('Pkg. Status'),
                                  FS::UI::Web::cust_header($cgi->param('cust_fields')),
@@ -22,6 +24,8 @@
                                  },
                                  @tower_fields,
                                  'ip_addr',
+                                 'speed_up',
+                                 'speed_down',
                                  @fields_pkg,
                                  sub {
                                    $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
@@ -35,6 +39,8 @@
                                  '', #$link_router,
                                  (map '', @tower_fields),
                                  $link, # ip_addr
+                                 $link, # speed_up
+                                 $link, # speed_down
                                  @blank_pkg,
                                  '', # pkg status
                                  ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
@@ -42,7 +48,7 @@
                                  ),
                                ],
               'align'       => 'rll'.('r' x @tower_fields).
-                                'r'. # ip_addr
+                                'rrr'. # ip_addr, speed_up, speed_down
                                 $align_pkg.
                                 'r'. # pkg status
                                 FS::UI::Web::cust_aligns(),
@@ -52,6 +58,8 @@
                                  '',
                                  (map '', @tower_fields),
                                  '', # ip_addr
+                                 '', # speed_up
+                                 '', # speed_down
                                  @blank_pkg,
                                  sub {
                                    $cust_pkg_cache{$_[0]->svcnum} ||= $_[0]->cust_svc->cust_pkg;
@@ -67,6 +75,8 @@
                                  '',
                                  (map '', @tower_fields),
                                  '',  # ip_addr
+                                 '', # speed_up
+                                 '', # speed_down
                                  @blank_pkg,
                                  'b', # pkg status
                                  FS::UI::Web::cust_styles(),
