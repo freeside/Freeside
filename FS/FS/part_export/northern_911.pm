@@ -1,10 +1,11 @@
 package FS::part_export::northern_911;
+use base 'FS::part_export';
 
 use strict;
 use vars qw(@ISA %info);
 use Tie::IxHash;
 use FS::Record qw(qsearch dbh);
-use base 'FS::part_export';
+use WebService::Northern911;
 use Data::Dumper;
 
 tie my %options, 'Tie::IxHash',
@@ -22,9 +23,6 @@ tie my %options, 'Tie::IxHash',
   'options' => \%options,
   'no_machine' => 1,
   'notes'   => <<'END'
-Requires installation of
-<a href="http://search.cpan.org/dist/WebService-Northern911">WebService::Northern911</a>
-from CPAN.
 END
 );
 
@@ -32,9 +30,6 @@ sub client {
   my $self = shift;
 
   if (!$self->get('client')) {
-    local $@;
-    eval "use WebService::Northern911";
-    return "error loading WebService::Northern911 ($@)" if $@;
     $self->set('client',
       WebService::Northern911->new(
         vendor_code => $self->option('vendor_code'),
