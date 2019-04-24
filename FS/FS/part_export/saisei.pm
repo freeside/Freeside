@@ -880,6 +880,11 @@ sub require_tower_and_sector {
   1;
 }
 
+sub required_fields {
+  my @fields = ('svc_broadband__ip_addr_required', 'svc_broadband__speed_up_required', 'svc_broadband__speed_down_required', 'svc_broadband__sectornum_required');
+  return @fields;
+}
+
 sub process_virtual_ap {
   my ($self, $opt) = @_;
 
