@@ -63,6 +63,8 @@ if ( $cgi->param('error') ) {
   $part_export = new FS::part_export ( {
     map { $_, scalar($cgi->param($_)) } fields('part_export')
   } );
+} elsif ( $cgi->param('exportnum') ) {
+  $part_export = qsearchs('part_export', { 'exportnum' => $cgi->param('exportnum') } );
 } elsif ( $query =~ /^(\d+)$/ ) {
   $part_export = qsearchs('part_export', { 'exportnum' => $1 } );
 } else {
@@ -296,7 +298,12 @@ my $widget = new HTML::Widgets::SelectLayers(
               $part_export->exporttype,
               [ $script.'_exportnum', $script.'_script' ],
               rooturl().'view/svc_export/run_script.cgi',
-              rooturl().'edit/part_export.cgi?'.$part_export->{Hash}->{exportnum},
+              {
+                'error_url' => rooturl().$exports->{$layer}{scripts}{$script}->{error_url}."exportnum=".$part_export->{Hash}->{exportnum},
+                'reload_with_error' => '1',
+                'url'       => rooturl().'edit/part_export.cgi?'.$part_export->{Hash}->{exportnum},
+                'message'   => $exports->{$layer}{scripts}{$script}->{success_message},
+              },
               $script,
         ) .
         '<INPUT TYPE="hidden" NAME="'.$script.'_exportnum" VALUE="'.$part_export->{Hash}->{exportnum}.'">
