@@ -155,7 +155,7 @@ my %dest_info;
 if ( ref($url_or_message) ) { #its a message or something
   %dest_info = map { $_ => $url_or_message->{$_} }
                grep { $url_or_message->{$_} }
-               qw( message url popup_url error_url );
+               qw( message url popup_url error_url reload_with_error );
 } else {
   # it can also just be a url
   %dest_info = ( 'url' => $url_or_message );

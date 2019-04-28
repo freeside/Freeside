@@ -5,6 +5,7 @@
 %  my $popup_url = $cgi->param('popup_url');
 %  my $formname = scalar($cgi->param('formname'));
 %  my $error_url = $cgi->param('error_url');
+%  my $reload_with_error = $cgi->param('reload_with_error');
 %
 
 <HTML>
@@ -86,7 +87,13 @@ function updateStatus( status_statustext ) {
 % # default behavior: just close the popup
 % my $onClick = 'parent.nd(1);';
 % if ( $error_url ) { # then on clicking to confirm, redirect somewhere
-%   $onClick = "window.top.location.href = \\'$error_url\\';";
+%   if ( $reload_with_error ) {
+       var encodedString = btoa(statustext);
+       parent.nd(1);
+       window.top.location.href = '<% $error_url."&error_link="  %>'+encodedString;
+%   }
+%
+%     $onClick = "window.top.location.href = \\'$error_url\\';";
 % }
 
     document.getElementById("progress_message").innerHTML = '<FONT SIZE="+1" COLOR="#FF0000">Error: ' + statustext + '</FONT>';
@@ -132,4 +139,3 @@ function updateStatus( status_statustext ) {
 
   </BODY>
 </HTML>
-

@@ -62,6 +62,8 @@ tie my %scripts, 'Tie::IxHash',
                                       label     => 'Export provisioned services',
                                       description => 'will export provisioned services of part service with Saisei export attached.',
                                       html_label => '<b>Export provisioned services attached to this export.</b>',
+                                      error_url  => '/edit/part_export.cgi?',
+                                      success_message => 'Saisei export of provisioned services successful',
                                     },
 ;
 
@@ -169,6 +171,7 @@ sub _export_insert {
                       tower.up_rate_limit as tower_upratelimit,
                       tower.down_rate_limit as tower_downratelimit,
                       tower_sector.sectorname,
+                      tower_sector.towernum,
                       tower_sector.up_rate_limit as sector_upratelimit,
                       tower_sector.down_rate_limit as sector_downratelimit ',
       'addl_from' => 'LEFT JOIN tower USING ( towernum )',
@@ -182,6 +185,7 @@ sub _export_insert {
 
     my $tower_opt = {
       'tower_name'           => $tower_name,
+      'tower_num'            => $tower_sector->{Hash}->{towernum},
       'tower_uprate_limit'   => $tower_sector->{Hash}->{tower_upratelimit},
       'tower_downrate_limit' => $tower_sector->{Hash}->{tower_downratelimit},
     };
@@ -194,6 +198,7 @@ sub _export_insert {
 
     my $sector_opt = {
       'tower_name'            => $tower_name,
+      'tower_num'             => $tower_sector->{Hash}->{towernum},
       'sector_name'           => $sector_name,
       'sector_uprate_limit'   => $tower_sector->{Hash}->{sector_upratelimit},
       'sector_downrate_limit' => $tower_sector->{Hash}->{sector_downratelimit},
@@ -319,6 +324,7 @@ sub export_tower_sector {
   $tower_name =~ s/\s/_/g;
   my $tower_opt = {
     'tower_name'           => $tower_name,
+    'tower_num'            => $tower->{Hash}->{towernum},
     'tower_uprate_limit'   => $tower->{Hash}->{up_rate_limit},
     'tower_downrate_limit' => $tower->{Hash}->{down_rate_limit},
     'modify_existing'      => '1', # modify an existing access point with this info
@@ -340,6 +346,7 @@ sub export_tower_sector {
     $sector_name =~ s/\s/_/g;
     my $sector_opt = {
       'tower_name'            => $tower_name,
+      'tower_num'             => $tower_sector->{Hash}->{towernum},
       'sector_name'           => $sector_name,
       'sector_uprate_limit'   => $tower_sector->{Hash}->{up_rate_limit},
       'sector_downrate_limit' => $tower_sector->{Hash}->{down_rate_limit},
@@ -425,7 +432,7 @@ sub api_call {
     return;
   }
   elsif ($client->responseCode() eq '500') {
-    $self->{'__saisei_error'} = "Could not connect to the host (".$self->{Hash}->{machine}.':'.$self->option('port').") during $method , we received the responce code: " . $client->responseCode();
+    $self->{'__saisei_error'} = "Could not connect to the Saisei export host machine (".$self->{Hash}->{machine}.':'.$self->option('port').") during $method , we received the responce code: " . $client->responseCode();
     warn "Saisei Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return;
   }
@@ -542,8 +549,8 @@ Creates a rateplan.
 sub api_create_rateplan {
   my ($self, $svc, $rateplan) = @_;
 
-  $self->{'__saisei_error'} = "There is no download speed set for the service $rateplan with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
-  $self->{'__saisei_error'} = "There is no upload speed set for the service $rateplan with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
+  $self->{'__saisei_error'} = "There is no download speed set for the service !--service,".$svc->svcnum.",".$rateplan."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
+  $self->{'__saisei_error'} = "There is no upload speed set for the service !--service,".$svc->svcnum.",".$rateplan."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
 
   my $new_rateplan = $self->api_call(
       "PUT", 
@@ -604,6 +611,9 @@ Modify a existing rateplan.
 
 sub api_modify_existing_rateplan {
   my ($self,$svc,$rateplan_name) = @_;
+
+  $self->{'__saisei_error'} = "There is no download speed set for the service !--service,".$svc->svcnum.",".$rateplan_name."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
+  $self->{'__saisei_error'} = "There is no upload speed set for the service !--service,".$svc->svcnum.",".$rateplan_name."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
 
   my $modified_rateplan = $self->api_call(
     "PUT",
@@ -783,7 +793,7 @@ sub process_tower {
   my ($self, $opt) = @_;
 
   if (!$opt->{tower_uprate_limit} || !$opt->{tower_downrate_limit}) {
-    $self->{'__saisei_error'} = "Could not export tower ".$opt->{tower_name}." because there was no up or down rates attached to the tower.  Saisei requires a up and down rate be attached to each tower.";
+    $self->{'__saisei_error'} = "Could not export tower !--tower,".$opt->{tower_num}.",".$opt->{tower_name}."--! because there was no up or down rates attached to the tower.  Saisei requires a up and down rate be attached to each tower.";
     return { error => $self->api_error, };
   }
 
@@ -823,7 +833,7 @@ sub process_sector {
   }
 
   if (!$opt->{sector_uprate_limit} || !$opt->{sector_downrate_limit}) {
-    $self->{'__saisei_error'} = "Could not export sector ".$opt->{tower_name}." because there was no up or down rates attached to the sector.  Saisei requires a up and down rate be attached to each sector.";
+    $self->{'__saisei_error'} = "Could not export sector !--tower,".$opt->{tower_num}.",".$opt->{sector_name}."--! because there was no up or down rates attached to the sector.  Saisei requires a up and down rate be attached to each sector.";
     return { error => $self->api_error, };
   }
 
