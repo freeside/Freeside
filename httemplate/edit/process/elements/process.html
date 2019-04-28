@@ -499,7 +499,11 @@ if ($class eq "FS::tower" && !$error) {
       $error = $export_tower->{'error'} if $export_tower;
     }
   }
-  $cgi->param('error', $error) if $error;
+  if ($error) {
+    my $encoded_error = encode_base64($error);
+    $cgi->param('error_link', $encoded_error) if $error;
+
+  }
 }
 
 # set up redirect URLs

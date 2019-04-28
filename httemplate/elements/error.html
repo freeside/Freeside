@@ -1,5 +1,28 @@
 % if ( $cgi->param('error') ) { 
 %   $m->notes('error', $cgi->param('error'));
   <FONT SIZE="+1" COLOR="#ff0000"><% mt("Error: [_1]", $cgi->param('error')) |h %></FONT>
-  <BR><BR>
-% } 
+  <BR>
+% }
+
+% if ( $cgi->param('error_link') ) {
+%   $m->notes('error', $error_link);
+  <FONT SIZE="+1" COLOR="#ff0000"><% $error_link %></FONT>
+  <BR>
+% }
+<BR>
+
+<%init>
+
+my %type_error_links = (
+  'service' => rooturl()."/view/svc_broadband.cgi?",
+  'tower'   => rooturl()."/edit/tower.html?",
+);
+
+my $error_link;
+
+if ( $cgi->param('error_link') ) {
+  $error_link = encode_entities(decode_base64($cgi->param('error_link')));
+  $error_link =~ s/!--(.*)\,(.*)\,(.*)--!/<a href=$type_error_links{$1}$2><font color=red><b>$3<\/b><\/font><\/a>/g;
+}
+
+</%init>
