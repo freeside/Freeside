@@ -549,8 +549,8 @@ Creates a rateplan.
 sub api_create_rateplan {
   my ($self, $svc, $rateplan) = @_;
 
-  $self->{'__saisei_error'} = "There is no download speed set for the service !--service,".$svc->svcnum.",".$rateplan."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
-  $self->{'__saisei_error'} = "There is no upload speed set for the service !--service,".$svc->svcnum.",".$rateplan."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
+  $self->{'__saisei_error'} = "There is no download speed set for the service !--service,".$svc->{Hash}->{svcnum}.",".$rateplan."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
+  $self->{'__saisei_error'} = "There is no upload speed set for the service !--service,".$svc->{Hash}->{svcnum}.",".$rateplan."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
 
   my $new_rateplan = $self->api_call(
       "PUT", 
@@ -612,8 +612,8 @@ Modify a existing rateplan.
 sub api_modify_existing_rateplan {
   my ($self,$svc,$rateplan_name) = @_;
 
-  $self->{'__saisei_error'} = "There is no download speed set for the service !--service,".$svc->svcnum.",".$rateplan_name."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
-  $self->{'__saisei_error'} = "There is no upload speed set for the service !--service,".$svc->svcnum.",".$rateplan_name."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
+  $self->{'__saisei_error'} = "There is no download speed set for the service !--service,".$svc->{Hash}->{svcnum}.",".$rateplan_name."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a download speed set for them." if !$svc->{Hash}->{speed_down};
+  $self->{'__saisei_error'} = "There is no upload speed set for the service !--service,".$svc->{Hash}->{svcnum}.",".$rateplan_name."--! with host (".$svc->{Hash}->{ip_addr}."). All services that are to be exported to Saisei need to have a upload speed set for them." if !$svc->{Hash}->{speed_up};
 
   my $modified_rateplan = $self->api_call(
     "PUT",
@@ -965,6 +965,139 @@ sub export_provisioned_services {
   }
 
   return;
+
+}
+
+sub test_export_report {
+  my ($self, $opts) = @_;
+  my @export_error;
+
+  ##  check all part services for export errors
+  my @exports = FS::Record::qsearch('part_export', { 'exporttype' => "saisei", } );
+  my $export_nums = join "', '", map { $_->{Hash}->{exportnum} } @exports;
+
+  my $svc_part_export_error;
+  my @svcparts = FS::Record::qsearch({
+    'table' => 'part_svc',
+    'addl_from' => 'LEFT JOIN export_svc USING ( svcpart  ) ',
+    'extra_sql' => " WHERE export_svc.exportnum in ('".$export_nums."')",
+  });
+  my $part_count = scalar @svcparts;
+
+  my $svc_part_error;
+  foreach (@svcparts) {
+    my $part_error->{'description'} = $_->svc;
+    $part_error->{'link'} = $opts->{'fsurl'}."/edit/part_svc.cgi?".$_->svcpart;
+
+    foreach my $s ('speed_up', 'speed_down') {
+      my $speed = $_->part_svc_column($s);
+      if ($speed->columnflag eq "" || $speed->columnflag eq "D") {
+        $part_error->{'errors'}->{$speed->columnname} = "Field ".$speed->columnname." is not set to be required and can be set while provisioning the service." unless $speed->required eq "Y";
+      }
+      elsif ($speed->columnflag eq "F" || $speed->columnflag eq "S") {
+        $part_error->{'errors'}->{$speed->columnname} = "Field ".$speed->columnname." is set to auto fill while provisioning the service but there is no value set." unless $speed->columnvalue;
+      }
+      elsif ($speed->columnflag eq "P") {
+        my $fcc_speed_name = "broadband_".$speed->columnvalue."stream";
+        foreach my $part_pkg ( FS::Record::qsearchs({
+                                 'table'   => 'part_pkg',
+                                 'addl_from' => 'LEFT JOIN pkg_svc USING ( pkgpart  ) ',
+                                 'extra_sql' => " WHERE pkg_svc.svcpart = ".$_->svcpart,
+                              })) {
+          my $pkglink = '<a href="'.$opts->{'fsurl'}.'/edit/part_pkg.cgi?'.$part_pkg->pkgpart.'"><FONT COLOR="red"><B>'.$part_pkg->pkg.'</B></FONT></a>';
+          $part_error->{'errors'}->{$speed->columnname} = "Field ".$speed->columnname." is set to package FCC 477 information, but package ".$pkglink." does not have FCC ".$fcc_speed_name." set."
+            unless $part_pkg->fcc_option($fcc_speed_name);
+        }
+      }
+    }
+    $part_error->{'errors'}->{'ip_addr'}    = "Field IP Address is not set to required" if $_->part_svc_column("ip_addr")->required ne "Y";
+    $svc_part_error->{$_->svcpart} = $part_error if $part_error->{'errors'};
+  }
+
+  $svc_part_export_error->{"services"}->{'description'} = "Service definitions";
+  $svc_part_export_error->{"services"}->{'count'} = $part_count;
+  $svc_part_export_error->{"services"}->{'errors'} = $svc_part_error if $svc_part_error;
+
+  push @export_error, $svc_part_export_error;
+
+  ##  check all provisioned cust services for export errors
+  my $parts = join "', '", map { $_->{Hash}->{svcpart} } @svcparts;
+  my $cust_svc_export_error;
+  my @svcs = FS::Record::qsearch({
+    'table' => 'cust_svc',
+    'addl_from' => 'LEFT JOIN svc_broadband USING ( svcnum  ) ',
+    'extra_sql' => " WHERE svcpart in ('".$parts."')",
+  }) unless !$parts;
+  my $svc_count = scalar @svcs;
+
+  my $cust_svc_error;
+  foreach (@svcs) {
+    my $svc_error->{'description'} = $_->description;
+    $svc_error->{'link'} = $opts->{'fsurl'}."/edit/svc_broadband.cgi?".$_->svcnum;
+
+    foreach my $s ('speed_up', 'speed_down', 'ip_addr') {
+        $svc_error->{'errors'}->{$s} = "Field ".$s." is not set and is required for this service to be exported to Saisei." unless $_->$s;
+    }
+
+    my $sector = FS::Record::qsearchs({
+        'table' => 'tower_sector',
+        'extra_sql' => " WHERE sectornum = ".$_->sectornum." AND sectorname != '_default'",
+    }) if $_->sectornum;
+    if (!$sector) {
+      $svc_error->{'errors'}->{'sectornum'} = "No tower sector is set for this service. There needs to be a tower and sector set to be exported to Saisei.";
+    }
+    else {
+      foreach my $s ('up_rate_limit', 'down_rate_limit') {
+        $svc_error->{'errors'}->{'sectornum'} = "The sector ".$sector->description." does not have a ".$s." set. The sector needs a ".$s." set to be exported to Saisei."
+          unless $sector->$s;
+      }
+    }
+    $cust_svc_error->{$_->svcnum} = $svc_error if $svc_error->{'errors'};
+  }
+
+  $cust_svc_export_error->{"provisioned_services"}->{'description'} = "Provisioned services";
+  $cust_svc_export_error->{"provisioned_services"}->{'count'} = $svc_count;
+  $cust_svc_export_error->{"provisioned_services"}->{'errors'} = $cust_svc_error if $cust_svc_error;
+
+  push @export_error, $cust_svc_export_error;
+
+
+  ##  check all towers and sectors for export errors
+  my $tower_sector_export_error;
+  my @towers = FS::Record::qsearch({
+    'table' => 'tower',
+  });
+  my $tower_count = scalar @towers;
+
+  my $towers_error;
+  foreach (@towers) {
+    my $tower_error->{'description'} = $_->towername;
+    $tower_error->{'link'} = $opts->{'fsurl'}."/edit/tower.html?".$_->towernum;
+
+    foreach my $s ('up_rate_limit', 'down_rate_limit') {
+        $tower_error->{'errors'}->{$s} = "Field ".$s." is not set for the tower, this is required for this tower to be exported to Saisei." unless $_->$s;
+    }
+
+    my @sectors = FS::Record::qsearch({
+        'table' => 'tower_sector',
+        'extra_sql' => " WHERE towernum = ".$_->towernum." AND sectorname != '_default' AND (up_rate_limit IS NULL OR down_rate_limit IS NULL)",
+    }) if $_->towernum;
+    foreach my $sector (@sectors) {
+      foreach my $s ('up_rate_limit', 'down_rate_limit') {
+        $tower_error->{'errors'}->{'sector_'.$s} = "The sector ".$sector->description." does not have a ".$s." set. The sector needs a ".$s." set to be exported to Saisei."
+          if !$sector->$s;
+      }
+    }
+    $towers_error->{$_->towernum} = $tower_error if $tower_error->{'errors'};
+  }
+
+  $tower_sector_export_error->{"tower_sector"}->{'description'} = "Tower / Sector";
+  $tower_sector_export_error->{"tower_sector"}->{'count'} = $tower_count;
+  $tower_sector_export_error->{"tower_sector"}->{'errors'} = $towers_error if $towers_error;
+
+  push @export_error, $tower_sector_export_error;
+
+  return [@export_error];
 
 }
 
