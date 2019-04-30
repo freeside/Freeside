@@ -274,6 +274,25 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
 
 }
 
+## adding export test reports
+tie my %report_exports, 'Tie::IxHash';
+my $exports = FS::part_export::export_info();
+my $exportname;
+tie my %export_list, 'Tie::IxHash',
+  '' => '',
+  map { $_ => "$_ - ". $exports->{$_}{desc} }
+  sort { $a cmp $b }
+  keys %$exports;
+;
+
+foreach my $export (keys %export_list) {
+  $report_exports{"$export export test"} =
+    [ $fsurl. 'search/report_svc_export_test.cgi?export='.$export,
+      "Report of invalid service setup for services tied to $export export",
+    ] if "FS::part_export::$export"->can('test_export_report');
+}
+$report_services{'exports'} = [ \%report_exports, "Exports" ];
+
 tie my %report_packages, 'Tie::IxHash';
 $report_packages{'Package definitions (by # active)'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ]
   if    $curuser->access_right('Edit package definitions')
