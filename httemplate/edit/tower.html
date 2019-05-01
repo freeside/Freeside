@@ -50,16 +50,20 @@ my $m2_error_callback = sub { # reconstruct the list
     sectorname ip_addr height freq_mhz direction width tilt v_width db_high db_low sector_range up_rate_limit down_rate_limit
   );
 
-  map {
-    my $k = $_;
-    new FS::tower_sector {
-      'towernum'  => $object->towernum,
-      'sectornum' => scalar( $cgi->param($k) ),
-      map { $_ => scalar( $cgi->param($k.'_'.$_) ) } @fields,
-    };
-  } grep length($cgi->param($_.'_sectorname')),
-      grep /^sectornum\d+$/,
-        ($cgi->param);
+  my @sectors;
+  foreach my $k ($cgi->param) {
+    if ($k =~ /^sectornum\d+$/) {
+      my $sectornum = $cgi->param($k);
+      my $sector = FS::tower_sector->new({
+        'sectornum' => $sectornum,
+        'towernum'  => $object->towernum,
+        map { $_ => scalar($cgi->param($k.'_'.$_)) } @fields,
+      });
+      push @sectors, $sector if length($sector->sectorname) && $sector->sectorname ne '_default';
+    }
+  }
+
+  return @sectors;
 };
 
 my $default_ip_addr_callback = sub {
