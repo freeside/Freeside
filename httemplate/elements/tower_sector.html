@@ -53,16 +53,16 @@ my %size = ( 'title' => 12 );
 tie my %label, 'Tie::IxHash',
   'sectorname'   => 'Name',
   'ip_addr'      => 'IP Address',
-  'height'       => 'Height',
+  'height'       => 'Height (feet)',
   'freq_mhz'     => 'Freq. (MHz)',
-  'direction'    => 'Direction', # or a button to set these to 0 for omni
-  'downtilt'     => 'Downtilt',
-  'width'        => 'Horiz. width',
-  'v_width'      => 'Vert. width',
-  'sector_range' => 'Range',
+  'direction'    => 'Direction (&deg; from north)', # or a button to set these to 0 for omni
+  'downtilt'     => 'Downtilt (&deg; below horizontal)',
+  'width'        => 'Horiz. width (&deg; 0 - 360)',
+  'v_width'      => 'Vert. width (&deg; 0 - 360)',
+  'sector_range' => 'Range (miles)',
   'margin'       => 'Signal margin (dB)',
-  'up_rate_limit' => 'Up rate limit',
-  'down_rate_limit' => 'Down rate limit',
+  'up_rate_limit' => 'Up rate limit (kbps)',
+  'down_rate_limit' => 'Down rate limit (kbps)',
 ;
 
 my @fields = keys %label;
