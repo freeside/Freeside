@@ -878,6 +878,27 @@ sub require_tower_and_sector {
   1;
 }
 
+=head2 tower_sector_required_fields
+
+required fields needed for tower and sector export.
+
+=cut
+
+sub tower_sector_required_fields {
+  my $fields = {
+    'tower' => {
+      'up_rate_limit'   => '1',
+      'down_rate_limit' => '1',
+    },
+    'sector' => {
+      'up_rate_limit'   => '1',
+      'down_rate_limit' => '1',
+      'ip_addr'         => '1',
+    },
+  };
+  return $fields;
+}
+
 sub required_fields {
   my @fields = ('svc_broadband__ip_addr_required', 'svc_broadband__speed_up_required', 'svc_broadband__speed_down_required', 'svc_broadband__sectornum_required');
   return @fields;
