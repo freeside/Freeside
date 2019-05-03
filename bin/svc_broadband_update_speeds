@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_broadband;
+use Data::Dumper;
+
+###
+# parse command line
+###
+
+use vars qw( $opt_h $opt_v $opt_e $opt_s $opt_c $opt_r $opt_p $opt_d );
+getopts('hves:c:r:pd:');
+
+warn ("running\n");
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+sub usage { "
+  Usage:
+      svc_broadband_update_speeds [ -h help] [ -v verbose] [ -e export service ] [ -s service_part_num (required) ] [ -c sibling service_part_num ] [ -r (speed rate in KB 'up,down') ] [ -p (get speed from package fcc rate) ] [ -d directory for exception file (required) ] user (required)\n
+      A directory for the exception file, freeside user name and a service to update is required.\n
+      Must set one or more of options p, c, or r. \n
+      Also must run this report as user freeside.\n
+      Option r up and down speed seperated by a comma in kbps.
+      Getting speed from option p (package fcc rates) first if set, if no rates found then checks for option c (rate of sibling service) if set, if still no rates found checks for rate in option r if set.  If no rates found service will be placed in exception file.
+      By default serivce will not export if there is a export assigned to service.  Setting option e will perform the export.
+" }
+
+unless ($opt_d && $opt_s) { die &usage(); }
+if ($opt_h) { die &usage(); }
+unless ($opt_p || $opt_c || $opt_r) { die &usage(); }
+
+my $extra_sql;
+$extra_sql = " WHERE cust_svc.svcpart = $opt_s" if $opt_s;
+
+### get list of all provisioned services
+my @services = qsearch({
+    'select'    => 'svc_broadband.*, cust_svc.svcpart, cust_svc.pkgnum, cust_pkg.pkgpart',
+    'table'     => 'svc_broadband',
+    'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum ) LEFT JOIN cust_pkg USING (pkgnum)',
+    'extra_sql' => $extra_sql,
+});
+my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
+my @unprovisioned_services = qsearchs({
+    'table'     => 'cust_pkg',
+    'addl_from' => 'JOIN pkg_svc using (pkgpart)',
+    'extra_sql' => $ups_extra_sql,
+});
+
+my $speed;
+$speed = 'package' if $opt_p;
+
+foreach my $svc (@services) {
+  _update_service($svc);
+}
+
+sub _update_service {
+  my $service = shift;
+  my $speed_up;
+  my $speed_down;
+
+  my $package = qsearchs({
+     'table'     => 'part_pkg',
+     'hashref'   => { 'pkgpart' => $service->pkgpart, },
+  });
+
+  ## get speed from package fcc option first if option p
+  if ($opt_p) {
+  	warn ("Getting speed for service ".$service->description."(".$service->svcnum.") from package fcc info\n") if $opt_v;
+     $speed_up = $package->fcc_option('broadband_upstream') * 1000;
+     $speed_down = $package->fcc_option('broadband_downstream') * 1000;
+  }
+
+  ## if no fcc option get speed from sibling broadband service if option c
+  if ((!$speed_up || !$speed_down) && $opt_c) {
+  	warn ("Getting speed for service ".$service->description."(".$service->svcnum.") from sibling service of package ".$service->pkgnum) if $opt_v;
+     my $sibling_service = qsearchs({
+       'select'    => 'svc_broadband.*, cust_svc.svcpart',
+       'table'     => 'svc_broadband',
+       'addl_from' => ' LEFT JOIN cust_svc USING ( svcnum )',
+       'extra_sql' => ' WHERE cust_svc.pkgnum = '.$service->pkgnum.' AND cust_svc.svcpart = '.$opt_c.' AND (svc_broadband.speed_up IS NOT NULL AND svc_broadband.speed_down IS NOT NULL)',
+     });
+     $speed_up = $sibling_service->speed_up if $sibling_service;
+     $speed_down = $sibling_service->speed_down if $sibling_service;
+  }
+     
+  ## if no fcc options and no speed from sibling service than get speed from option r if option r is set.
+  if ((!$speed_up || !$speed_down) && $opt_r) {
+  	warn ("Getting speed for service ".$service->description."(".$service->svcnum.") from option r ($opt_r)\n") if $opt_v;
+     ($speed_up, $speed_down) = split /\,/, $opt_r;
+     warn ("Option r speeds not correct.  Must be in kbps up and down seperated by comma. [ -r xxxxxx,xxxxxx ]\n") if $opt_v && (!$speed_up || !$speed_down);
+  }
+
+  ## update service with new speed.
+  if ($speed_up && $speed_down) {
+    $service->set('speed_up', $speed_up);
+    $service->set('speed_down', $speed_down);
+
+    warn("updating service ".$service->description."(".$service->svcnum.") with upload speed ($speed_up) and download speed ($speed_down)\n") if $opt_v;
+    $service->set('no_export', $opt_e);
+    my $error = $service->replace();
+    warn($error) if $error;
+    ###todo: if no error provision service if not provisioned ie new svc_broadband.
+  }
+  else {
+    open(FILE, ">$opt_d/svcbroadband_update_exceptions.txt")
+      or die "can't open $opt_d: $!";
+      print FILE $service->description."(".$service->svcnum.") Has no up or download speed and could not set one.\n";
+    close FILE or die "can't close $opt_d: $!";
+    warn($service->description."(".$service->svcnum.") Has no up or download speed\n") if $opt_v;
+  }
+  return;
+}
+
+exit;
