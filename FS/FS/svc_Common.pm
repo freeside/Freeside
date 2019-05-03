@@ -486,6 +486,7 @@ passed to export commands.
 
 sub replace {
   my $new = shift;
+  $noexport_hack = $new->no_export if $new->no_export;
 
   my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
               ? shift
