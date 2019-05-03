@@ -34,16 +34,16 @@ unless ($opt_d && $opt_s) { die &usage(); }
 if ($opt_h) { die &usage(); }
 unless ($opt_p || $opt_c || $opt_r) { die &usage(); }
 
-my $extra_sql;
-$extra_sql = " WHERE cust_svc.svcpart = $opt_s" if $opt_s;
-
 ### get list of all provisioned services
+my $extra_sql = " WHERE cust_svc.svcpart = $opt_s";
 my @services = qsearch({
     'select'    => 'svc_broadband.*, cust_svc.svcpart, cust_svc.pkgnum, cust_pkg.pkgpart',
     'table'     => 'svc_broadband',
     'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum ) LEFT JOIN cust_pkg USING (pkgnum)',
     'extra_sql' => $extra_sql,
 });
+
+### get list of all unprovisioned services
 my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
 my @unprovisioned_services = qsearchs({
     'table'     => 'cust_pkg',
@@ -117,3 +117,20 @@ sub _update_service {
 }
 
 exit;
+
+=head2 svc_broadband_update_speeds
+
+This script allows for the mas update of up and down speeds for a svc_broadband service.
+
+the script will obtain the new speed from option p (package fcc rates) first if set, 
+if no rates found then checks for option c (rate of sibling service) if set, 
+if still no rates found checks for rate in option r if set.  
+If no rates found service will be placed in exception file. 
+
+Script must be run as user freeside.
+Options -s, -d and freeside user are required.
+
+example:
+sudo -u freeside ./svc_broadband_update_speeds -v -s 4 -c 2 -r 148000,248000 -p -d /home/freeside/ freesideuser
+
+=cut
