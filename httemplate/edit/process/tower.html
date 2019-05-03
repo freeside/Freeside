@@ -8,4 +8,35 @@
                        sector_range up_rate_limit down_rate_limit
                      )],
                    },
+    'precheck_callback' => sub {
+      my ($cgi) = @_;
+      my @required_tower_fields;
+      my @required_sector_fields;
+
+      foreach my $part_svc_broadband_export ( FS::tower_sector->part_export_svc_broadband ) {
+        if ($part_svc_broadband_export and $part_svc_broadband_export->can('tower_sector_required_fields')) {
+          my $required_fields = $part_svc_broadband_export->tower_sector_required_fields;
+          foreach (keys %$required_fields) {
+            my $fields = $required_fields->{$_};
+            push @required_tower_fields, keys(%$fields) if $_ eq "tower";
+            push @required_sector_fields, keys(%$fields) if $_ eq "sector";
+          }
+        }
+      }
+
+      foreach (@required_tower_fields){
+        return "The tower $_ field is required" unless $cgi->param($_);
+      }
+
+      foreach (@required_sector_fields){
+        foreach my $k ($cgi->param) {
+          if ($k =~ /^sectornum\d+$/) {
+           if ( $cgi->param($k.'_sectorname') ) {
+             return "The sector(".$cgi->param($k.'_sectorname').") $_ field is required" unless $cgi->param($k.'_'.$_);
+           }
+          }
+        }
+      }
+      '';
+    },
 &>
