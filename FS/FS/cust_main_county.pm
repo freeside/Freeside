@@ -4,6 +4,7 @@ use base qw( FS::Record );
 use strict;
 use vars qw( @EXPORT_OK $conf
              @cust_main_county %cust_main_county $countyflag ); # $cityflag );
+use Carp qw( croak );
 use Exporter;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_bill_pkg;
@@ -12,6 +13,7 @@ use FS::cust_pkg;
 use FS::part_pkg;
 use FS::cust_tax_exempt;
 use FS::cust_tax_exempt_pkg;
+use FS::Log;
 use FS::upgrade_journal;
 
 @EXPORT_OK = qw( regionselector );
@@ -683,33 +685,74 @@ END
 }
 
 sub _merge_into {
-  # for internal use: takes another cust_main_county object, transfers
-  # all existing references to this record to that one, and deletes this
-  # one.
-  my $record = shift;
-  my $other = shift or die "record to merge into must be provided";
-  my $new_taxnum = $other->taxnum;
-  my $old_taxnum = $record->taxnum;
-  if ($other->tax != $record->tax or
-      $other->exempt_amount != $record->exempt_amount) {
-    # don't assume these are the same.
-    warn "Found duplicate taxes (#$new_taxnum and #$old_taxnum) but they have different rates and can't be merged.\n";
-  } else {
-    warn "Merging tax #$old_taxnum into #$new_taxnum\n";
-    foreach my $table (qw(
-      cust_bill_pkg_tax_location
-      cust_bill_pkg_tax_location_void
-      cust_tax_exempt_pkg
-      cust_tax_exempt_pkg_void
-    )) {
-      foreach my $row (qsearch($table, { 'taxnum' => $old_taxnum })) {
-        $row->set('taxnum' => $new_taxnum);
-        my $error = $row->replace;
-        die $error if $error;
+  # For internal use:
+  #
+  # When given two cust_main_county row objects, rewrite all database foreign
+  # key references referring to $row_to_merge->taxnum as references to
+  # $row_to_keep->taxnum, so $row_to_merge can be safely deleted from
+  # cust_main_county
+  #
+  # Usage (class method):
+  #    $row_to_merge->_merge_into( $row_to_keep )
+  #
+  # Usage (package function):
+  #    FS::cust_main_county::_merge_into( $row_to_merge, $row_to_keep )
+  #
+  # Optionally, allow merge when records don't match
+  #      (useful during tax table update routines)
+  #     $row_to_merge->_merge_info(
+  #       $row_to_keep,
+  #       { identical_record_check => 0 }
+  #     );
+
+  my $row_to_merge = shift;
+  my $row_to_keep  = shift
+    or croak 'record to merge into must be provided';
+
+  my $args = shift || { identical_record_check => 1 };
+  croak 'invalid arguments hashref' unless ref $args;
+
+  my $log = FS::Log->new('FS::cust_main_county');
+
+  my $keep_taxnum  = $row_to_keep->taxnum;
+  my $merge_taxnum = $row_to_merge->taxnum;
+
+  if (
+    $args->{identical_record_check}
+    && (
+      $row_to_keep->tax != $row_to_merge->tax
+      || $row_to_keep->exempt_amount != $row_to_merge->exempt_amount
+    )
+  ) {
+    my $msg = "Found duplicate taxes (#$keep_taxnum and #$merge_taxnum) "
+            . "but they have different rates and can't be merged.";
+    $log->warn( $msg );
+    warn "$msg\n";
+    return;
+  }
+
+  my $msg = "Merging tax #$merge_taxnum into #$keep_taxnum";
+  $log->warn( $msg );
+  warn "$msg\n";
+
+  foreach my $table (qw(
+    cust_bill_pkg_tax_location
+    cust_bill_pkg_tax_location_void
+    cust_tax_exempt_pkg
+    cust_tax_exempt_pkg_void
+  )) {
+    foreach my $row (qsearch($table, { 'taxnum' => $merge_taxnum })) {
+      $row->set('taxnum' => $keep_taxnum);
+      if ( my $error = $row->replace ) {
+        $log->error( $error );
+        die $error;
       }
     }
-    my $error = $record->delete;
-    die $error if $error;
+  }
+
+  if ( my $error = $row_to_merge->delete ) {
+    $log->error( $error );
+    die $error;
   }
 }
 
