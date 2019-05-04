@@ -332,17 +332,64 @@ sub wa_sales_update_cust_main_county {
   for my $taxclass ( FS::part_pkg_taxclass->taxclass_names ) {
     $taxclass ||= undef; # trap empty string when taxclasses are disabled
 
-    my %cust_main_county =
-      map { $_->district => $_ }
+    # Dupe detection/remediation:
+    #
+    # Previous code for washington state tax district was creating
+    # duplicate entries for tax districts.  This could lead to customers
+    # being double-taxed
+    #
+    # The following code detects and eliminates duplicates that
+    # were created by wa_sales district code (source=wa_sales)
+    # before updating the tax table with the newly downloaded
+    # data
+
+    my %cust_main_county;
+    my %cust_main_county_dupe;
+
+    for my $row (
       qsearch(
         cust_main_county => {
-          district => { op => '!=', value => undef },
-          state    => 'WA',
-          country  => 'US',
-          source   => 'wa_sales',
-          taxclass => $taxclass,
+          source    => 'wa_sales',
+          district  => { op => '!=', value => undef },
+          tax_class => $taxclass,
         }
-      );
+      )
+    ) {
+      my $district = $row->district;
+
+      # Row belongs to a known dupe group of districts
+      if ( $cust_main_county_dupe{$district} ) {
+        push @{ $cust_main_county_dupe{$district} }, $row;
+        next;
+      }
+
+      # Row is the first seen dupe for the given district
+      if ( $cust_main_county{$district} ) {
+        $cust_main_county_dupe{$district} = [
+          delete $cust_main_county{$district},
+          $row
+        ];
+        next;
+      }
+
+      # Row is the first seen with this district
+      $cust_main_county{$district} = $row;
+    }
+
+    # Merge any dupes, place resulting non-dupe row in %cust_main_county
+    #  Merge, even if one of the dupes has a $0 tax, or some other
+    #  variation on tax row data.  Data for this row will get corrected
+    #  during the following tax import
+    for my $dupe_district_aref ( values %cust_main_county_dupe ) {
+      my $row_to_keep = shift @$dupe_district_aref;
+      while ( my $row_to_merge = shift @$dupe_district_aref ) {
+        $row_to_merge->_merge_into(
+          $row_to_keep,
+          { identical_record_check => 0 },
+        );
+      }
+      $cust_main_county{$row_to_keep->district} = $row_to_keep;
+    }
 
     for my $district ( @{ $args->{tax_districts} } ) {
       if ( my $row = $cust_main_county{ $district->{district} } ) {
