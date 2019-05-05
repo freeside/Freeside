@@ -1,0 +1,438 @@
+#!/usr/bin/env perl
+use v5.10;
+use strict;
+use warnings;
+
+our $VERSION = '1.0';
+
+use Data::Dumper;
+use DateTime;
+use DateTime::Format::DateParse;
+use FS::cust_credit;
+use FS::cust_credit_bill;
+use FS::Log;
+use FS::Record qw( qsearch qsearchs );
+use FS::UID qw( adminsuidsetup );
+use Getopt::Long;
+use Pod::Usage;
+
+# Begin transaction
+local $FS::UID::AutoCommit = 0;
+
+my (
+  $csv_dir,
+  $start_date,
+  $end_date,
+  $taxnums,
+  @taxnums,
+  $credit_reasonnum,
+  $credit_addlinfo,
+  $insert_credits,
+  $apply_credits,
+  $freeside_user,
+);
+
+GetOptions(
+  'csv_dir=s'           => \$csv_dir,
+  'start-date=s'        => \$start_date,
+  'end-date=s'          => \$end_date,
+  'taxnums=s'           => \@taxnums,
+  'credit-reasonnum:s'  => \$credit_reasonnum,
+  'credit-addlinfo:s'   => \$credit_addlinfo,
+  'insert-credits'      => \$insert_credits,
+  'apply-credits'       => \$apply_credits,
+);
+
+validate_opts();
+
+print_opts();
+
+my $dbh = adminsuidsetup( $freeside_user )
+  or die "Bad  username: $freeside_user\n";
+
+my $log = FS::Log->new('freeside-issue-credit-for-taxnums');
+
+my @tax_rows = get_tax_rows()
+  or die "No tax rows found matching search criteria\n";
+
+say sprintf 'Found %s rows from cust_bill_pkg_tax_location', scalar @tax_rows;
+
+write_tax_rows_csv_file( \@tax_rows );
+
+my @credits = get_cust_credit_amounts( \@tax_rows );
+
+# warn Dumper({ credits => \@credits }); exit;
+
+write_cust_credit_summary_csv_file( @credits );
+
+unless ( $insert_credits ) {
+  die "
+    Option --apply-credits was not specified, no credits written to customers
+
+    Please review the generated CSV files, and re-run with --apply-credits
+    to issue credit adjustments
+  \n\n"
+}
+
+apply_cust_credits( @credits );
+
+$dbh->commit();
+$FS::UID::AutoCommit = 1;
+say "Done - credits written to database";
+
+exit();
+
+sub apply_cust_credits {
+  my @credits = shift;
+
+  my $csv_fn = "$csv_dir/cust_credit.csv";
+
+  open my $csv_fh, '>', $csv_fn
+    or die "Unable to write to CSV file $csv_fn: $!";
+
+  my @csv_cols = qw(
+    crednum
+    invnum
+    custnum
+    _date
+    amount
+    usernum
+    reasonnum
+    addlinfo
+  );
+
+  say $csv_fh join ',' => @csv_cols;
+
+  for my $credit ( @credits ) {
+
+    my $cust_credit = FS::cust_credit->new({
+      custnum    => $credit->{custnum},
+      amount     => $credit->{amount},
+      reasonnum  => $credit_reasonnum,
+      addlinfo   => $credit_addlinfo,
+      usernum    => 6, # nobody
+    });
+
+    if ( my $error = $cust_credit->insert ) {
+      die $error;
+    }
+
+    say $log->info(
+      sprintf 'Issued credit to custnum:%s for invnum:%s for amount %s',
+        $credit->{custnum},
+        $credit->{invnum},
+        $credit->{amount},
+    );
+
+    say $csv_fh join ',' => (
+      map { $_ =~ /\D/ ? qq["$_"] : $_ } (
+        $cust_credit->crednum,
+        $credit->{invnum},
+        $credit->{custnum},
+        map { $cust_credit->$_ }
+          qw/ _date amount usernum reasonnum addlinfo/
+      )
+    );
+
+    if ( $apply_credits ) {
+      my $cust_credit_bill = FS::cust_credit_bill->new({
+        crednum => $cust_credit->crednum,
+        invnum  => $credit->{invnum},
+        amount  => $credit->{amount},
+      });
+      if ( my $error = $cust_credit_bill->insert ) {
+        die $error;
+      }
+    }
+
+  }
+
+  close $csv_fh;
+
+  say sprintf 'Wrote %s customer credits to [%s]', scalar( @credits ), $csv_fn;
+}
+
+sub write_cust_credit_summary_csv_file {
+  my @credits = @_;
+
+  my $csv_fn = "$csv_dir/customer_adjustments.csv";
+
+  open my $csv_fh, '>', $csv_fn
+    or die "Unable to write to CSV file $csv_fn: $!";
+
+  say $csv_fh join ',' => qw(
+    credit_amount
+    custnum
+    invnum
+    first
+    last
+    address
+    city
+    state
+    zip
+  );
+
+  for my $credit ( @credits ) {
+    my $cust_main = qsearchs( cust_main => { custnum => $credit->{custnum} })
+      or die "Error finding custnum($credit->{custnum}) in database!";
+
+    say $csv_fh join ',' => (
+      map { $_ =~ /\D/ ? qq["$_"] : $_ } (
+        sprintf('%.2f', $credit->{amount}),
+        $credit->{custnum},
+        $credit->{invnum},
+        $cust_main->first,
+        $cust_main->last,
+        $cust_main->ship_location->address1,
+        $cust_main->ship_location->city,
+        $cust_main->ship_location->state,
+        $cust_main->ship_location->zip
+      ),
+    );
+  }
+
+  close $csv_fh;
+
+  say sprintf 'Wrote %s customer credits to [%s]', scalar( @credits ), $csv_fn;
+}
+
+sub get_cust_credit_amounts {
+  my $tax_rows = shift;
+
+  my @credits;
+
+  for my $row (@$tax_rows ) {
+    push @credits, {
+      custnum => $row->cust_bill_pkg->cust_bill->custnum,
+      invnum  => $row->cust_bill_pkg->cust_bill->invnum,
+      amount  => $row->amount,
+    };
+  }
+
+  @credits;
+}
+
+sub write_tax_rows_csv_file {
+
+  my $tax_rows = shift;
+
+  my $csv_fn = "$csv_dir/cust_bill_pkg_tax_location.csv";
+
+  open my $csv_fh, '>', $csv_fn
+    or die "Unable to write to CSV file $csv_fn: $!";
+
+  my @cols = qw(
+    billpkgtaxlocationnum
+    billpkgnum
+    taxnum
+    taxtype
+    pkgnum
+    locationnum
+    amount
+    currency
+    taxable_billpkgnum
+    custnum
+    invnum
+  );
+
+  say $csv_fh join ',' => @cols;
+
+  for my $row ( @$tax_rows ) {
+    say $csv_fh join ',' => (
+      (
+        map { $_ =~ /\D/ ? qq["$_"] : $_ }
+        map { $row->$_ }
+        @cols
+      ),
+      $row->cust_bill_pkg->cust_bill->custnum,
+      $row->cust_bill_pkg->invnum,
+    );
+  }
+
+  close $csv_fh;
+
+  say sprintf 'Wrote %s matched rows into [%s]', scalar(@$tax_rows), $csv_fn;
+
+}
+
+sub get_tax_rows {
+  my $start_epoch =
+    DateTime::Format::DateParse
+      ->parse_datetime( $start_date )
+      ->set_hour(0)
+      ->set_minute(0)
+      ->set_second(0)
+      ->epoch();
+  my $end_eopch =
+    DateTime::Format::DateParse
+      ->parse_datetime( $end_date )
+      ->set_hour(23)
+      ->set_minute(59)
+      ->set_second(59)
+      ->epoch();
+
+  return qsearch({
+    table => 'cust_bill_pkg_tax_location',
+    addl_from => "
+      LEFT JOIN cust_bill_pkg USING (billpkgnum)
+      LEFT JOIN cust_bill ON cust_bill_pkg.invnum = cust_bill.invnum
+    ",
+    extra_sql => "
+      WHERE cust_bill_pkg_tax_location.taxnum IN (".join(',',@taxnums).")
+      AND taxtype = 'FS::cust_main_county'
+      AND cust_bill._date >= $start_epoch
+      AND cust_bill._date <= $end_eopch
+    "
+  });
+}
+
+sub validate_opts {
+
+  $freeside_user = shift @ARGV
+    or error_and_help('freesidee_user parameter required');
+
+  error_and_help( '--csv_dir is required' )
+    unless $csv_dir;
+  error_and_help( '--start_date is required' )
+    unless $start_date;
+  error_and_help( '--end-date is required' )
+    unless $end_date;
+  error_and_help( '--taxnums is required' )
+    unless @taxnums;
+  error_and_help( '--credit-reasonnum is required with --apply-credits' )
+    if $insert_credits && !$credit_reasonnum;
+  error_and_help( '--credit-addlinfo is required with --apply-credits' )
+    if $insert_credits && !$credit_addlinfo;
+
+  error_and_help( "csv dir ($csv_dir) is not a writable directoryu" )
+    unless -d $csv_dir && -r $csv_dir;
+
+  error_and_help( "start_date($start_date) is not a valid date string")
+    unless DateTime::Format::DateParse->parse_datetime( $start_date );
+  error_and_help( "end_date($end_date) is not a valid date string")
+    unless DateTime::Format::DateParse->parse_datetime( $end_date );
+
+  @taxnums = split(/,/,join(',',@taxnums));
+  error_and_help( "taxnum($_) is not a valid integer" )
+    for grep { $_ =~ /\D/ } @taxnums;
+
+  error_and_help( "credit-reasonnum($credit_reasonnum) is not a valid integer" )
+    if $credit_reasonnum && $credit_reasonnum =~ /\D/;
+}
+
+sub print_opts {
+  $Data::Dumper::Sortkeys = 1;
+  $Data::Dumper::Indent   = 1;
+  $Data::Dumper::Varname  = 'OPTIONS';
+
+  say "\nProceeding with options:\n";
+
+  say Dumper({
+    '--csv_dir'          => $csv_dir,
+    '--start-date'       => $start_date,
+    '--end_date'         => $end_date,
+    '--taxnums'          => join(',',@taxnums),
+    '--credit-reasonnum' => $credit_reasonnum || 'undef',
+    '--credit-addlinfo'  => $credit_addlinfo || 'undef',
+    '--insert-credits'   => $insert_credits ? 'True' : 'False',
+    '--apply-credits'    => $apply_credits ? 'True' : 'False',
+  })."\n";
+
+  if ( $insert_credits ) {
+    print "\nYou have chosed to write credits to the database\n"
+        . "Please review your choices\n\n"
+        . "Continue? [y/N]";
+    my $yn = <STDIN>; chomp $yn;
+    die "ABORT!\n\n" unless lc $yn eq 'y';
+  }
+}
+
+sub error_and_help {
+  pod2usage({
+    -message => sprintf( "\n\nError:\n\t%s\n\n", shift ),
+    -exitval => 2,
+    verbose => 1,
+  });
+}
+
+__END__
+
+=head1 NAME
+
+freeside-issue-credit-for-taxnums
+
+=head1 SYNOPSIS
+
+freeside freeside-issue-credit-for-taxnums [options] [freeside_user]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--help>
+
+Display help and exit
+
+=item B<--csv_dir> [directory]
+
+Directory to save CSV reports into
+
+=over 4
+
+=item cust_bill_pkg_location.csv
+
+Contains a list of all rows from cust_bill_pkg to be credited
+
+=item cust_adjustments.csv
+
+Contains a list of all intended customer adjustments amounts
+
+=item cust_credit.csv
+
+Contains all rows created in cust_credit to issue customer adjustments
+
+=back
+
+=item B<--start-date> [yyyy-mm-dd]
+
+The start of the date range to search for invoices containing taxes to credit
+
+=item B<--end-date> [yyyy-mm-dd]
+
+The end of the date range to search for invoices containing taxes to credit
+
+=item B<--taxnums> [123,124,125,126]
+
+A comma separated list, with no spaces, of taxnums to issue credits for
+
+=item B<--credit-reasonnum> [22]
+
+The credit num to be attached to issued credits
+
+=item B<--credit-addlinfo> "[Credits happen for this reason]"
+
+Comment field attached to issued creits.  Enclose text within quotes.
+
+=item B<--insert-credits>
+
+Unless this flag is set, no changes will be written to customer accounts
+
+=item B<--apply-credits>
+
+If this flag is set, created credits will be applied to the original bill
+that created the charge to be refunded.  If you want the credit to be
+created as an unapplied credit, do not set this flag
+
+=back
+
+=head1 DESCRIPTION
+
+Tool to issue credit to customers when taxes were charged in error
+
+Given a list of taxnums, and a date range, utility will compile a CSV report
+of customer charges for those taxnums.
+
+When directed, utility will issue a credit to the account of each of those
+customers, and generate a CSV report describing those credits for reporting
+
+=cut
