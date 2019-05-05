@@ -159,8 +159,8 @@ L<https://dor.wa.gov/find-taxes-rates/retail-sales-tax/destination-based-sales-t
 This API does not return consistent usable county names, as the county
 name may include appreviations or labels referring to PTBA (public transport
 benefit area) or CEZ (community empowerment zone).  It's recommended to use
-the tool wa_tax_rate_update to fully populate the city/county/districts for
-WA state every financial quarter.
+the tool freeside-wa-tax-table-update to fully populate the
+city/county/districts for WA state every financial quarter.
 
 Returns a hashref with the following keys:
 
