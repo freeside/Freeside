@@ -83,7 +83,7 @@ say "Done - credits written to database";
 exit();
 
 sub apply_cust_credits {
-  my @credits = shift;
+  my @credits = @_;
 
   my $csv_fn = "$csv_dir/cust_credit.csv";
 
@@ -117,12 +117,12 @@ sub apply_cust_credits {
       die $error;
     }
 
-    say $log->info(
-      sprintf 'Issued credit to custnum:%s for invnum:%s for amount %s',
+    my $msg = sprintf 'Issued credit to custnum:%s for invnum:%s for amount %s',
         $credit->{custnum},
         $credit->{invnum},
-        $credit->{amount},
-    );
+        $credit->{amount};
+    say $msg;
+    $log->info( $msg );
 
     say $csv_fh join ',' => (
       map { $_ =~ /\D/ ? qq["$_"] : $_ } (
@@ -407,11 +407,11 @@ A comma separated list, with no spaces, of taxnums to issue credits for
 
 =item B<--credit-reasonnum> [22]
 
-The credit num to be attached to issued credits
+The credit reasonnum to be attached to issued credits
 
 =item B<--credit-addlinfo> "[Credits happen for this reason]"
 
-Comment field attached to issued creits.  Enclose text within quotes.
+Comment field attached to issued credits.  Enclose text within quotes.
 
 =item B<--insert-credits>
 
