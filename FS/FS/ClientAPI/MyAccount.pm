@@ -3130,7 +3130,11 @@ sub reset_passwd {
   my $cust_main = '';
   if ( $p->{'email'} ) { #new-style, changes contact and svc_acct
   
-    $contact = FS::contact->by_selfservice_email($p->{'email'});
+    $contact = FS::contact->by_selfservice_email($p->{'email'}, 'case_insensitive');
+
+    if ($conf->exists('username-uppercase') || $conf->exists('username-uppercase', $contact->cust_main->agentnum)) {
+      $contact = FS::contact->by_selfservice_email_custnum($p->{email}, $contact->custnum);
+    }
 
     $cust_main = $contact->cust_main if $contact;
 
