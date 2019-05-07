@@ -216,9 +216,9 @@ sub login {
   my $p = shift;
 
   my $conf = new FS::Conf;
-
   my $svc_x = '';
   my $session = {};
+
   if ( $p->{'domain'} eq 'svc_phone'
        && $conf->exists('selfservice_server-phone_login') ) { 
 
@@ -237,9 +237,16 @@ sub login {
     $svc_x = $svc_phone;
 
   } elsif ( $p->{email}
-              && (my $contact = FS::contact->by_selfservice_email($p->{email}))
+              && (my $contact = FS::contact->by_selfservice_email($p->{email},'case_insensitive'))
           )
   {
+    if ($conf->exists('username-uppercase') || $conf->exists('username-uppercase', $contact->cust_main->agentnum)) {
+      $contact = FS::contact->by_selfservice_email_custnum($p->{email}, $contact->custnum);
+    }
+
+    return { error => 'Email '.$p->{email}.' not found!'}
+      unless $contact;
+
     return { error => 'Incorrect contact password.' }
       unless $contact->authenticate_password($p->{'password'});
 

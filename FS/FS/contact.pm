@@ -586,7 +586,33 @@ has that email address.
 =cut
 
 sub by_selfservice_email {
-  my($class, $email) = @_;
+  my($class, $email, $case_insensitive) = @_;
+
+  my $email_search = "emailaddress = '".$email."'";
+  $email_search = "LOWER(emailaddress) = LOWER('".$email."')" if $case_insensitive;
+
+  my $contact_email = qsearchs({
+    'table'     => 'contact_email',
+    'addl_from' => ' LEFT JOIN contact USING ( contactnum ) ',
+    'extra_sql' => " WHERE $email_search".
+                   " AND selfservice_access = 'Y' ".
+                   " AND ( disabled IS NULL OR disabled = '' )",
+  }) or return '';
+
+  $contact_email->contact;
+
+}
+
+=item by_selfservice_email_custnum EMAILADDRESS, CUSTNUM
+
+Alternate search constructor (class method).  Given an email address and custnum, returns
+the contact for that address and custnum. If that contact doesn't have selfservice access,
+or there isn't one, returns the empty string.
+
+=cut
+
+sub by_selfservice_email_custnum {
+  my($class, $email, $custnum) = @_;
 
   my $contact_email = qsearchs({
     'table'     => 'contact_email',
