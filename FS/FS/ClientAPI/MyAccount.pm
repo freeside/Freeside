@@ -217,9 +217,9 @@ sub login {
   my $p = shift;
 
   my $conf = new FS::Conf;
-
   my $svc_x = '';
   my $session = {};
+
   if ( $p->{'domain'} eq 'svc_phone'
        && $conf->exists('selfservice_server-phone_login') ) { 
 
@@ -238,15 +238,28 @@ sub login {
     $svc_x = $svc_phone;
 
   } elsif ( $p->{email}
-              && (my $contact = FS::contact->by_selfservice_email($p->{email}))
+              && (my $contact = FS::contact->by_selfservice_email($p->{email},'case_insensitive'))
           )
   {
+    my @customers = grep $_->selfservice_access, $contact->cust_contact;
+    my @cust_contact;
+
+    foreach my $customer (@customers) {
+      if ($conf->exists('username-uppercase') || $conf->exists('username-uppercase', $customer->cust_main->agentnum)) {
+        my $check_contact = FS::contact->by_selfservice_email_custnum($p->{email}, $customer->custnum);
+        push @cust_contact, $customer if $check_contact;
+      }
+      else { push @cust_contact, $customer; }
+    }
+
+    return { error => 'Email '.$p->{email}.' not found!'}
+      unless @cust_contact;
+
     return { error => 'Incorrect contact password.' }
       unless $contact->authenticate_password($p->{'password'});
 
     $session->{'contactnum'} = $contact->contactnum;
 
-    my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
     if ( scalar(@cust_contact) == 1 ) {
       $session->{'custnum'} = $cust_contact[0]->custnum;
     } elsif ( scalar(@cust_contact) ) {
