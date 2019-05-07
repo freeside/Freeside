@@ -252,7 +252,7 @@ sub login {
       else { push @cust_contact, $customer; }
     }
 
-    return { error => 'Email '.$p->{email}.' not found!'}
+    return { error => 'Username '.$p->{email}.' not found!'}
       unless @cust_contact;
 
     return { error => 'Incorrect contact password.' }
