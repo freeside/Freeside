@@ -3305,12 +3305,21 @@ sub reset_passwd {
   my $cust_main = '';
   if ( $p->{'email'} ) { #new-style, changes contact and svc_acct
   
-    $contact = FS::contact->by_selfservice_email($p->{'email'});
+    $contact = FS::contact->by_selfservice_email($p->{'email'}, 'case_insensitive');
 
-    if ( $contact ) {
-      my @cust_contact = grep $_->selfservice_access, $contact->cust_contact;
-      $cust_main = $cust_contact[0]->cust_main if scalar(@cust_contact) == 1;
+    my @customers = grep $_->selfservice_access, $contact->cust_contact;
+    my @cust_contact;
+
+    foreach my $customer (@customers) {
+      if ($conf->exists('username-uppercase') || $conf->exists('username-uppercase', $customer->cust_main->agentnum)) {
+        my $check_contact = FS::contact->by_selfservice_email_custnum($p->{email}, $customer->custnum);
+        push @cust_contact, $customer if $check_contact;
+      }
+      else { push @cust_contact, $customer; }
     }
+
+    $contact = '' unless @cust_contact;
+    $cust_main = $cust_contact[0]->cust_main if scalar(@cust_contact) == 1;
 
     #also look for an svc_acct, otherwise it would be super confusing
 
