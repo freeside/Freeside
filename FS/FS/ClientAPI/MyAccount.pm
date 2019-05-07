@@ -244,7 +244,7 @@ sub login {
       $contact = FS::contact->by_selfservice_email_custnum($p->{email}, $contact->custnum);
     }
 
-    return { error => 'Email '.$p->{email}.' not found!'}
+    return { error => 'Username '.$p->{email}.' not found!'}
       unless $contact;
 
     return { error => 'Incorrect contact password.' }
