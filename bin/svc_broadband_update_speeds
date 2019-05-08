@@ -11,17 +11,15 @@ use Data::Dumper;
 # parse command line
 ###
 
-use vars qw( $opt_h $opt_v $opt_e $opt_s $opt_c $opt_r $opt_p $opt_d );
-getopts('hves:c:r:pd:');
-
-warn ("running\n");
+use vars qw( $opt_h $opt_v $opt_n $opt_e $opt_s $opt_c $opt_r $opt_p $opt_d );
+getopts('hvnes:c:r:pd:');
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
 sub usage { "
   Usage:
-      svc_broadband_update_speeds [ -h help] [ -v verbose] [ -e export service ] [ -s service_part_num (required) ] [ -c sibling service_part_num ] [ -r (speed rate in KB 'up,down') ] [ -p (get speed from package fcc rate) ] [ -d directory for exception file (required) ] user (required)\n
+      svc_broadband_update_speeds [ -h help] [ -v verbose] [ -n only update services with a null up/down speed] [ -e export service ] [ -s service_part_num (required) ] [ -c sibling service_part_num ] [ -r (speed rate in KB 'up,down') ] [ -p (get speed from package fcc rate) ] [ -d directory for exception file (required) ] user (required)\n
       A directory for the exception file, freeside user name and a service to update is required.\n
       Must set one or more of options p, c, or r. \n
       Also must run this report as user freeside.\n
@@ -34,8 +32,11 @@ unless ($opt_d && $opt_s) { die &usage(); }
 if ($opt_h) { die &usage(); }
 unless ($opt_p || $opt_c || $opt_r) { die &usage(); }
 
+my $exception_file = "$opt_d/svcbroadband_update_exceptions_".time().".txt";
+
 ### get list of all provisioned services
-my $extra_sql = " WHERE cust_svc.svcpart = $opt_s";
+my $only_null_speed_services = " AND (svc_broadband.speed_up IS NULL OR svc_broadband.speed_down IS NULL)" if $opt_n;
+my $extra_sql = " WHERE cust_svc.svcpart = $opt_s $only_null_speed_services";
 my @services = qsearch({
     'select'    => 'svc_broadband.*, cust_svc.svcpart, cust_svc.pkgnum, cust_pkg.pkgpart',
     'table'     => 'svc_broadband',
@@ -55,11 +56,12 @@ my $speed;
 $speed = 'package' if $opt_p;
 
 foreach my $svc (@services) {
-  _update_service($svc);
+  _update_service($svc, $exception_file);
 }
 
 sub _update_service {
   my $service = shift;
+  my $exception_file = shift;
   my $speed_up;
   my $speed_down;
 
@@ -107,11 +109,11 @@ sub _update_service {
     ###todo: if no error provision service if not provisioned ie new svc_broadband.
   }
   else {
-    open(FILE, ">$opt_d/svcbroadband_update_exceptions.txt")
+    open(FILE, ">>$exception_file")
       or die "can't open $opt_d: $!";
-      print FILE $service->description."(".$service->svcnum.") Has no up or download speed and could not set one.\n";
+      print FILE "Service ".$service->description."(".$service->svcnum.") could not set a up or download speed.\n";
     close FILE or die "can't close $opt_d: $!";
-    warn($service->description."(".$service->svcnum.") Has no up or download speed\n") if $opt_v;
+    warn($service->description."(".$service->svcnum.") could not set a up or download speed, added to exception file.\n") if $opt_v;
   }
   return;
 }
