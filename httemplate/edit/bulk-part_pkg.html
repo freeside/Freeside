@@ -56,12 +56,12 @@ Edit report classes
   </TABLE>
 </DIV>
 <BR>
-<INPUT TYPE="checkbox" ID="package_fees" NAME="package_fees" VALUE="1" onChange='toggle_section(this);'>
-Edit package fees.
+<INPUT TYPE="checkbox" ID="pricing" NAME="pricing" VALUE="1" onChange='toggle_section(this);'>
+Edit pricing fields.
 <BR>
-<DIV ID="package_fees_div" STYLE="display: none;">
+<DIV ID="pricing_div" STYLE="display: none;">
  <& /elements/table-grid.html &>\
-  <& /elements/tr-justtitle.html, value => mt('Package fees') &>
+  <& /elements/tr-justtitle.html, value => mt('Package pricing') &>
   <TR>
     <TD>Percentage of setup fee increase </TD>
     <TD><INPUT TYPE="text" ID="setup_fee_increase" NAME="setup_fee_increase">%</TD>
