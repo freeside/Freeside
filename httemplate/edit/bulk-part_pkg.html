@@ -1,5 +1,4 @@
-<& /elements/header.html, 'Edit package report classes' &>
-%# change that title if we add any other editing controls
+<% include('/elements/header-popup.html', 'Bulk edit packages') %>
 
 %# this should be centralized somewhere
 <STYLE TYPE="text/css">
@@ -8,36 +7,83 @@
 </STYLE>
 <& /elements/error.html &>
 
+<SCRIPT>
+  function areyousure() {
+    var warning = 'Edit these packages?';
+    if(confirm(warning)) { process(); }
+  }
+
+  function toggle_section(what) {
+    var id = what.id;
+    var isDisabled;
+    if (document.getElementById(id).checked == true)  { isDisabled = false; }
+    else { isDisabled = true; }
+
+    var whatDiv = document.getElementById(id+'_div');
+    if (isDisabled) { whatDiv.style.display = "none"; }
+    else { whatDiv.style.display = "block"; }
+
+  }
+</SCRIPT>
+
 <FORM ACTION="process/bulk-part_pkg.html" METHOD="POST">
-<DIV>
-The following packages will be changed:<BR>
-% foreach my $pkgpart (sort keys(%part_pkg)) {
-<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $pkgpart %>">
-<% $part_pkg{$pkgpart}->pkg_comment |h %><BR>
-% }
-</DIV>
+<TABLE>
+  <TR>
+    <TD VALIGN="top">
+<B>Select the package information to change</B><BR>
+<INPUT TYPE="checkbox" ID="report_class" NAME="report_class" VALUE="1" onChange='toggle_section(this);'>
+Edit report classes
 <BR>
-<& /elements/table-grid.html &>\
-<& /elements/tr-justtitle.html, value => mt('Report classes') &>
+<DIV ID="report_class_div" STYLE="display: none;">
+ <& /elements/table-grid.html &>\
+  <& /elements/tr-justtitle.html, value => mt('Report classes') &>
 % my $row = 0;
 % foreach my $num (sort keys %report_class) {
-  <TR CLASS="row<%$row % 2%>">
-    <TD>
+    <TR CLASS="row<%$row % 2%>">
+     <TD>
 %   if ( $initial_state{$num} == -1 ) {
 %     # needs to be a tristate so that you can say "don't change it"
       <& /elements/checkbox-tristate.html, field => 'report_option_'.$num &>
 %   } else {
 %# for visual consistency
-      <INPUT TYPE="checkbox" CLASS="partial" NAME="report_option_<%$num%>" VALUE="1" <% $initial_state{$num} ? 'CHECKED':'' %>><LABEL />
+      <INPUT TYPE="checkbox" CLASS="partial" ID="report_option_<%$num%>" NAME="report_option_<%$num%>" VALUE="1" <% $initial_state{$num} ? 'CHECKED':'' %>><LABEL />
 %   }
-    </TD>
-    <TD><% $report_class{$num}->name %></TD>
-  </TR>
+     </TD>
+      <TD><% $report_class{$num}->name %></TD>
+    </TR>
 %   $row++;
 % }
-</TABLE>
+  </TABLE>
+</DIV>
 <BR>
-<INPUT TYPE="submit">
+<INPUT TYPE="checkbox" ID="package_fees" NAME="package_fees" VALUE="1" onChange='toggle_section(this);'>
+Edit package fees.
+<BR>
+<DIV ID="package_fees_div" STYLE="display: none;">
+ <& /elements/table-grid.html &>\
+  <& /elements/tr-justtitle.html, value => mt('Package fees') &>
+  <TR>
+    <TD>Percentage of setup fee increase </TD>
+    <TD><INPUT TYPE="text" ID="setup_fee_increase" NAME="setup_fee_increase">%</TD>
+  </TR>
+    <TD>Percentage of recurring fee increase </TD>
+    <TD><INPUT TYPE="text" ID="recurring_fee_increase" NAME="recurring_fee_increase">%</TD>
+  </TR>
+ </TABLE>
+</DIV>
+<BR>
+<INPUT TYPE="submit" VALUE="Bulk change packages" onclick="areyousure()">
+    </TD>
+    <TD WIDTH="5">&nbsp;</TD>
+    <TD VALIGN="top">
+      <B>The following packages will be changed:</B><BR>
+%     foreach my $pkgpart (sort keys(%part_pkg)) {
+        <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $pkgpart %>">
+        <% $part_pkg{$pkgpart}->pkg_comment |h %><BR>
+%     }
+    </TD>
+  </TR>
+</TABLE>
 </FORM>
 <& /elements/footer.html &>
 <%init>

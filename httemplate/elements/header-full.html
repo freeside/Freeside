@@ -207,7 +207,7 @@ Example:
 %     my ($message, $type) = split /=/, $status_msg;
 %     $type ||= 'status';
       <TABLE CLASS="fsinnerbox" STYLE="background-color:<% $status_color{$type} %>"><TR>
-        <TD><IMG SRC="<% $fsurl %>images/tick.png"> <% $message |h %></TD>
+        <TD><IMG SRC="<% $fsurl %><% $status_image{$type} %>"> <% $message |h %></TD>
       </TR></TABLE>
 %   }
     <script src="<% $fsurl %>elements/js.cookie.js"></script>
@@ -274,5 +274,6 @@ if ( scalar(@agentnums) == 1 ) {
 
 ## status->green(#eeffee), warning->yellow(#fdfd96), error->red(#f97c7c)
 my %status_color = ( 'status' => '#eeffee', 'warning' => '#fefbd0', 'error' => '#f97c7c', );
+my %status_image = ( 'status' => 'images/tick.png', 'warning' => 'images/tick.png', 'error' => 'images/error.png', );
 
 </%init>
