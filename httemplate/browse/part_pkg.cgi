@@ -27,6 +27,15 @@
                  'html_foot'             => $html_foot,
              )
 %>
+
+<%def .style>
+  <SCRIPT TYPE="text/javascript">
+    $(document).ready(function(){
+      $(this).scrollTop(0);
+    });
+  </SCRIPT>
+</%def>
+
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -683,8 +692,18 @@ if ( $acl_edit_bulk ) {
   $html_form = qq!<FORM ACTION="${p}edit/bulk-part_pkg.html" METHOD="POST">!;
   $html_foot = include('/search/elements/checkbox-foot.html',
                  actions => [
-                   { submit => 'edit report classes', },
-                   { label  => 'change customer packages',
+                   { label  => 'edit packages',
+                     onclick=> include('/elements/popup_link_onclick.html',
+                                 'label'       => 'edit',
+                                 'js_action'   => qq{
+                                   '${p}edit/bulk-part_pkg.html?' + \$('input[name=pkgpart]').serialize()
+                                 },
+                                 'actionlabel' => 'Bulk edit packages',
+                                 'width'       => 960,
+                                 'height'      => 420,
+                               )
+                   },
+                   { label  => 'change customers packages',
                      onclick=> include('/elements/popup_link_onclick.html',
                                  'label'       => 'change',
                                  'js_action'   => qq{
