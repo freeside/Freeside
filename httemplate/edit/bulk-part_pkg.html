@@ -8,11 +8,6 @@
 <& /elements/error.html &>
 
 <SCRIPT>
-  function areyousure() {
-    var warning = 'Edit these packages?';
-    if(confirm(warning)) { process(); }
-  }
-
   function toggle_section(what) {
     var id = what.id;
     var isDisabled;
@@ -26,7 +21,7 @@
   }
 </SCRIPT>
 
-<FORM ACTION="process/bulk-part_pkg.html" METHOD="POST">
+<FORM ACTION="process/bulk-part_pkg.html" METHOD="POST" onsubmit="return confirm('Edit these packages?');">
 <TABLE>
   <TR>
     <TD VALIGN="top">
@@ -72,7 +67,7 @@ Edit pricing fields.
  </TABLE>
 </DIV>
 <BR>
-<INPUT TYPE="submit" VALUE="Bulk change packages" onclick="areyousure()">
+<INPUT TYPE="submit" VALUE="Bulk change packages">
     </TD>
     <TD WIDTH="5">&nbsp;</TD>
     <TD VALIGN="top">
