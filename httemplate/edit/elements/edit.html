@@ -488,12 +488,15 @@ Example:
 %     }
 %     foreach my $name_obj ( @existing ) {
 %
+%       my $m2_label = $f->{'m2_label'};
+%       $m2_label = &{ $f->{'m2_label_callback'} }($name_obj) if $f->{'m2_label_callback'};
+%
 %       my $ex_label = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this '.
 %                      lc($f->{'m2_label'}).
 %                      qq(" onClick="remove_$field($fieldnum);").
 %                      ' STYLE="color:#ff0000;font-weight:bold;'.
 %                              'padding-left:2px;padding-right:2px"'.
-%                      '>&nbsp;'. ($f->{'m2_label'} || $field ). ' ';
+%                      '>&nbsp;'. ($m2_label || $field ). ' ';
 %       
 %       if ( $f->{'layer_values_callback'} ) {
 %         my %switches = ( 'mode' => $mode );

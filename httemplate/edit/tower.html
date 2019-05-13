@@ -18,6 +18,7 @@
                           type              => 'tower_sector',
                           o2m_table         => 'tower_sector',
                           m2_label          => 'Sector',
+                          m2_label_callback => sub { 'Sector #'.shift->sectornum; },
                           m2_error_callback => $m2_error_callback,
                         },
                       ],
