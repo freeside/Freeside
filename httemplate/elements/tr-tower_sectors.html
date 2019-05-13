@@ -184,7 +184,10 @@ $(function() {
 % my $id = $opt{id}; # sectornumX
 <div id="<% $id %>">
 % # no id on this one, the panel gets the "sectornumX" id
-  <input type="hidden" name="<% $id %>" value="<% $sector->sectornum |h %>">
+  <p>
+    <label><% emt('Sector number') %></label> <% $sector->sectornum |h %>
+    <input type="hidden" name="<% $id %>" value="<% $sector->sectornum |h %>">
+  </p>
   <p>
     <label><% emt('Sector name') %></label>
     <input style="text-align: left"
