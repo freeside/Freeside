@@ -39,7 +39,12 @@ $cgi->param('reasonnum') =~ /^(-?\d+)$/ or die "Illegal reasonnum";
 my ($reasonnum, $error) = $m->comp('/misc/process/elements/reason');
 $cgi->param('reasonnum', $reasonnum) unless $error;
 
-$error = "No batch download format configured that allows electronic refunds" unless (FS::pay_batch->can_handle_electronic_refunds && !$error);
+if ( $cgi->param('batch') ) {
+  $error = "No batch download format configured that allows electronic refunds via batch processing."
+    unless (FS::pay_batch->can_handle_electronic_refunds && !$error);
+}
+
+#die "my error\n".$error;
 
 if ( $error ) {
   # do nothing
