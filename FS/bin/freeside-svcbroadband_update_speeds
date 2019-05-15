@@ -1,0 +1,178 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_broadband;
+use Data::Dumper;
+
+###
+# parse command line
+###
+
+use vars qw( $opt_h $opt_v $opt_n $opt_e $opt_a $opt_s $opt_c $opt_r $opt_p $opt_t $opt_d );
+getopts('hvneas:c:r:pt:d:');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+sub usage { "
+  Usage:
+      svc_broadband_update_speeds: [ -h help] [ -v verbose] [ -n only update services with a null up/down speed] [ -e export service ] [ -a update tower_sector_num ] [ -s service_part_num (required) ] [ -c sibling service_part_num ] [ -r (speed rate in KB 'up,down') ] [ -p (get speed from package fcc rate) ] [ -t tower_sector_num ] [ -d directory for exception file (required) ] user (required)\n
+      A directory for the exception file, freeside user name and a service to update is required.\n
+      Must set one or more of options p, c, or r. \n
+      Also must run this report as user freeside.\n
+      Option r up and down speed seperated by a comma in kbps.
+      Getting speed from option p (package fcc rates) first if set, if no rates found then checks for option c (rate of sibling service) if set, if still no rates found checks for rate in option r if set.  If no rates found service will be placed in exception file.
+      Option a will update tower/sector with that of sibling service if tower sector is null.
+      If option t is set, svc tower/sector will be set to sibling service set in -c, if no sibling service tower/sector found will set tower_sector to option t value.  This will only update services with a null tower/sector field.
+      By default serivce will not export if there is a export assigned to service.  Setting option e will perform the export.
+" }
+
+unless ($opt_d && $opt_s) { die &usage(); }
+if ($opt_h) { die &usage(); }
+unless ($opt_p || $opt_c || $opt_r) { die &usage(); }
+
+my $exception_file = "$opt_d/svcbroadband_update_exceptions_".time().".txt";
+
+### get list of all provisioned services
+my $only_null_speed_services = " AND (svc_broadband.speed_up IS NULL OR svc_broadband.speed_down IS NULL)" if $opt_n;
+my $extra_sql = " WHERE cust_svc.svcpart = $opt_s $only_null_speed_services";
+my @services = qsearch({
+    'select'    => 'svc_broadband.*, cust_svc.svcpart, cust_svc.pkgnum, cust_pkg.pkgpart',
+    'table'     => 'svc_broadband',
+    'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum ) LEFT JOIN cust_pkg USING (pkgnum)',
+    'extra_sql' => $extra_sql,
+});
+
+### get list of all unprovisioned services
+my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
+my @unprovisioned_services = qsearchs({
+    'table'     => 'cust_pkg',
+    'addl_from' => 'JOIN pkg_svc using (pkgpart)',
+    'extra_sql' => $ups_extra_sql,
+});
+
+my $speed;
+$speed = 'package' if $opt_p;
+
+foreach my $svc (@services) {
+  _update_service($svc, $exception_file);
+}
+
+sub _update_service {
+  my $service = shift;
+  my $exception_file = shift;
+  my $speed_up;
+  my $speed_down;
+
+  my $package = qsearchs({
+     'table'     => 'part_pkg',
+     'hashref'   => { 'pkgpart' => $service->pkgpart, },
+  });
+
+  ## get speed from package fcc option first if option p
+  if ($opt_p) {
+  	warn ("Getting speed for service ".$service->description."(".$service->svcnum.") from package fcc info\n") if $opt_v;
+     $speed_up = $package->fcc_option('broadband_upstream') * 1000;
+     $speed_down = $package->fcc_option('broadband_downstream') * 1000;
+  }
+
+  ## if no fcc option get speed from sibling broadband service if option c
+  if ((!$speed_up || !$speed_down) && $opt_c) {
+  	warn ("Getting speed for service ".$service->description."(".$service->svcnum.") from sibling service of package ".$service->pkgnum) if $opt_v;
+     my $sibling_service = qsearchs({
+       'select'    => 'svc_broadband.*, cust_svc.svcpart',
+       'table'     => 'svc_broadband',
+       'addl_from' => ' LEFT JOIN cust_svc USING ( svcnum )',
+       'extra_sql' => ' WHERE cust_svc.pkgnum = '.$service->pkgnum.' AND cust_svc.svcpart = '.$opt_c.' AND (svc_broadband.speed_up IS NOT NULL AND svc_broadband.speed_down IS NOT NULL)',
+     });
+     $speed_up = $sibling_service->speed_up if $sibling_service;
+     $speed_down = $sibling_service->speed_down if $sibling_service;
+  }
+     
+  ## if no fcc options and no speed from sibling service than get speed from option r if option r is set.
+  if ((!$speed_up || !$speed_down) && $opt_r) {
+  	warn ("Getting speed for service ".$service->description."(".$service->svcnum.") from option r ($opt_r)\n") if $opt_v;
+     ($speed_up, $speed_down) = split /\,/, $opt_r;
+     warn ("Option r speeds not correct.  Must be in kbps up and down seperated by comma. [ -r xxxxxx,xxxxxx ]\n") if $opt_v && (!$speed_up || !$speed_down);
+  }
+
+  if ($speed_up && $speed_down) {
+    $service->set('speed_up', $speed_up);
+    $service->set('speed_down', $speed_down);
+  }
+
+  ## if option t, then update tower/sector for service.
+  if ($opt_a) {
+    warn ("Getting tower/sector for service ".$service->description."(".$service->svcnum.") from sibling service of package ".$service->pkgnum) if $opt_v;
+    my $tower_sector;
+    my $sibling_service = qsearchs({
+       'select'    => 'svc_broadband.*, cust_svc.svcpart',
+       'table'     => 'svc_broadband',
+       'addl_from' => ' LEFT JOIN cust_svc USING ( svcnum )',
+       'extra_sql' => ' WHERE cust_svc.pkgnum = '.$service->pkgnum.' AND cust_svc.svcpart = '.$opt_c.' AND svc_broadband.sectornum IS NOT NULL',
+    }) if $opt_c;
+    $tower_sector = $sibling_service->sectornum if $sibling_service;
+    $tower_sector = $opt_t if (!$tower_sector && $opt_t);
+    $service->set('sectornum', $tower_sector) if $tower_sector;
+  }
+
+  ## update service with new speed and tower/sector num.
+  if ($service->speed_up && $service->speed_down && $service->sectornum) {
+    warn("updating service ".$service->description."(".$service->svcnum.") with upload speed (".$service->speed_up.") and download speed (".$service->speed_down.") and sector num (".$service->sectornum.")\n") if $opt_v;
+    $service->set('no_export', $opt_e);
+    my $error = $service->replace();
+    warn($error) if $error;
+    ###todo: if no error provision service if not provisioned ie new svc_broadband.
+  }
+  else {
+    my $error;
+    $error .= " no download speed set," unless $service->speed_down;
+    $error .= " no upload speed set," unless $service->speed_up;
+    $error .= " no tower sector set" unless $service->sectornum;
+
+    open(FILE, ">>$exception_file")
+      or die "can't open $opt_d: $!";
+      print FILE "Service ".$service->description."(".$service->svcnum.") could not be updated.$error.\n";
+    close FILE or die "can't close $opt_d: $!";
+    warn("Service ".$service->description."(".$service->svcnum.") could not be updated.$error. added to exception file.\n") if $opt_v;
+  }
+  return;
+}
+
+exit;
+
+=head2 svc_broadband_update_speeds
+
+This script allows for the mas update of up and down speeds for a svc_broadband service.
+
+the script will obtain the new speed from option p (package fcc rates) first if set, 
+if no rates found then checks for option c (rate of sibling service) if set, 
+if still no rates found checks for rate in option r if set.  
+If no rates found service will be placed in exception file.
+
+If option a is set, will also update tower/sector num with that of sibling service or option t
+
+Script must be run as user freeside.
+Options -s, -d and freeside user are required.
+
+example:
+sudo -u freeside ./svc_broadband_update_speeds -v -s 4 -c 2 -r 148000,248000 -p -d /home/freeside/ freesideuser
+
+available options:
+[ -h help]
+[ -v verbose]
+[ -n only update services with a null up/down speed]
+[ -e export service ]
+[ -a update tower_sector_num ]
+[ -s service_part_num (required) ]
+[ -c sibling service_part_num ]
+[ -r (speed rate in KB 'up,down') ]
+[ -p (get speed from package fcc rate) ]
+[ -t tower_sector_num ]
+[ -d directory for exception file (required) ]
+freesideuser
+
+=cut
