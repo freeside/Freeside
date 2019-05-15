@@ -414,7 +414,14 @@ sub cust_sort_fields {
   cust_header(@_) if( @_ or !@cust_fields );
   #inefficientish, but tiny lists and only run once per page
 
-  map { $_ eq 'custnum' ? 'custnum' : '' } @cust_fields;
+  my @sort_fields;
+  foreach (@cust_fields) {
+    if ($_ eq "custnum") { push @sort_fields, 'custnum'; }
+    elsif ($_ eq "contact" || $_ eq "name") { push @sort_fields, '(last, first)'; }
+    elsif ($_ eq "company") { push @sort_fields, 'company'; }
+    else { push @sort_fields, ''; }
+  }
+  return @sort_fields;
 
 }
 
