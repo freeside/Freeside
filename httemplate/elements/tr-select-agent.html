@@ -22,6 +22,9 @@ Example:
   );
 
 </%doc>
+
+% $required = '<FONT COLOR="red">*</FONT>' if $opt{'required'};
+
 % if ( scalar(@agents) == 1 || $opt{'fixed'} ) { 
 
   <INPUT TYPE  = "hidden"
@@ -32,7 +35,7 @@ Example:
 
 %   if ( scalar(@agents) != 1 ) {
       <TR>
-        <TH ALIGN="right"><% $opt{'label'} || emt('Agent') %></TD>
+        <TH ALIGN="right"><% $required %> <% $opt{'label'} || emt('Agent') %></TD>
         <TD BGCOLOR="#dddddd" <% $colspan %>>
 %         my $agent = qsearchs('agent', { 'agentnum' => $agentnum });
           <% $agent ? $agent->agent : '(all)' |h %>
@@ -47,7 +50,7 @@ Example:
 % } else { 
 
   <TR>
-    <TH ALIGN="right"><% $opt{'label'} || emt('Agent') %></TD>
+    <TH ALIGN="right"><% $required %> <% $opt{'label'} || emt('Agent') %></TD>
     <TD <% $colspan %>>
       <& /elements/select-agent.html,
                      'curr_value' => $agentnum,
@@ -63,6 +66,7 @@ Example:
 
 my %opt = @_;
 my $agentnum = $opt{'curr_value'} || $opt{'value'};
+my $required;
 
 my @agents =
   $opt{'agents'}

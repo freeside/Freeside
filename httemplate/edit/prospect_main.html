@@ -25,16 +25,12 @@
          'type'        => 'select-agent',
          'empty_label' => 'Select agent',
          'colspan'     => 7,
+         'required'    => 1,
        },
        { 'field'       => 'refnum',
          'type'        => 'select-part_referral',
          'empty_label' => 'Select advertising source',
          'colspan'     => 7,
-       },
-       { 'field'    => 'company',
-         'type'     => 'text',
-         'size'     => 50,
-         'colspan'  => 7,
        },
        { 'field'                => 'contactnum',
          'type'                 => 'contact',
@@ -46,6 +42,11 @@
          'm2_error_callback'    => $m2_error_callback,
          'include_opt_callback' => sub { 'for_prospect' => 1 },
          'js_spawn_test'        => 'document.edit_topform.residential_commercial_Commercial.checked',
+       },
+       { 'field'    => 'company',
+         'type'     => 'text',
+         'size'     => 50,
+         'colspan'  => 7,
        },
        { 'field'         => 'locationnum',
          'type'          => 'select-cust_location',
@@ -74,6 +75,7 @@
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $conf = new FS::Conf;
+my @agentnums = $curuser->agentnums;
 
 my $prospectnum;
 if ( $cgi->param('error') ) {
@@ -144,6 +146,12 @@ my $new_callback = sub {
   #config to default to commercial and/or disable residential when someone needs
   $prospect_main->set('residential_commercial', 'Residential');
 
+  # config to set default agent
+  $prospect_main->agentnum( $agentnums[0] )
+    if scalar(@agentnums) == 1;
+  $prospect_main->agentnum( $conf->config('default_agentnum') )
+    if $conf->exists('default_agentnum');
+
 };
 
 my $edit_callback = sub {
@@ -205,8 +213,6 @@ my $m2_error_callback = sub {
       }
       $cgi->param;
 };
-
-#my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
 
 my $javascript = q|
   <SCRIPT TYPE="text/javascript">
