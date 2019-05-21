@@ -186,15 +186,22 @@ if ( (my $custpaybynum = scalar($cgi->param('custpaybynum'))) > 0 ) {
       %saveopt = map { $_ => scalar($cgi->param($_)) } @{$payby2fields{$payby}};
     }
 
-    my $error = $cust_main->save_cust_payby(
-      'saved_cust_payby' => \$cust_payby,
-      'payment_payby' => $payby,
-      'auto'          => scalar($cgi->param('auto')),
-      'weight'        => scalar($cgi->param('weight')),
-      'payinfo'       => $payinfo,
-      'payname'       => $payname,
-      %saveopt
-    );
+    my $error;
+    {
+      local $@;
+      eval {
+        $error = $cust_main->save_cust_payby(
+          'saved_cust_payby' => \$cust_payby,
+          'payment_payby' => $payby,
+          'auto'          => scalar($cgi->param('auto')),
+          'weight'        => scalar($cgi->param('weight')),
+          'payinfo'       => $payinfo,
+          'payname'       => $payname,
+          %saveopt
+        );
+      };
+      $error ||= $@;
+    }
 
     errorpage("error saving info, payment not processed: $error")
       if $error;	
