@@ -323,7 +323,8 @@ sub _bop_cust_payby_options {
 
     if ( $cust_payby->locationnum ) {
       my $cust_location = $cust_payby->cust_location;
-      $options->{$_} = $cust_location->$_() for qw( address1 address2 city state zip );
+      $options->{$_} = $cust_location->$_()
+        for qw( address1 address2 city state zip country );
     }
   }
 }
