@@ -2008,10 +2008,7 @@ sub _op_usage {
   die "Can't update $column for svcnum". $self->svcnum
     if $rv == 0;
 
-  if (    $conf->exists('radius-chillispot-max')
-       || scalar($conf->config('support_packages'))
-     )
-  {
+  if ( $conf->exists('radius-chillispot-max') ) {
     #$self->snapshot; #not necessary, we retain the old values
     #create an object with the updated usage values
     my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
