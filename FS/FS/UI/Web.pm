@@ -7,7 +7,7 @@ use Carp qw( confess );
 use HTML::Entities;
 use FS::Conf;
 use FS::Misc::DateTime qw( parse_datetime day_end );
-use FS::Record qw(dbdef);
+use FS::Record qw(dbdef qsearch);
 use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 
 #use vars qw(@ISA);
@@ -353,6 +353,25 @@ sub cust_header {
   );
   $header2method{'Cust#'} = 'display_custnum'
     if $conf->exists('cust_main-default_agent_custid');
+
+foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+  $header2method{'Contact '.$phone_type->typename.' phone(s)'} = sub {
+    my $self = shift;
+    my $num = $phone_type->phonetypenum;
+
+    my @phones;
+    foreach ($self->contact_list_name_phones) {
+      my $data = [
+        {
+          'data'  => $_->first.' '.$_->last.' '.FS::contact_phone::phonenum_pretty($_),
+        },
+      ];
+      push @phones, $data if $_->phonetypenum eq $phone_type->phonetypenum;
+    }
+  return \@phones;
+  };
+
+}
 
   my %header2colormethod = (
     'Cust. Status' => 'cust_statuscolor',

@@ -12,21 +12,12 @@
       <TH ALIGN="right" VALIGN="center"><% mt('Email') |h %></TH>
       <TD><INPUT TYPE="text" NAME="<%$field_prefix%>email" SIZE=54></TD>
     </TR>
-
+% foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
     <TR>
-      <TH ALIGN="right" VALIGN="center"><% mt('Home Phone') |h %></TH>
-      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>homephone" SIZE=54></TD>
+      <TH ALIGN="right" VALIGN="center"><% $phone_type->typename. ' Phone' |h %></TH>
+      <TD><INPUT TYPE="text" NAME="<% $field_prefix %>phonetypenum<% $phone_type->phonetypenum %>" SIZE=54></TD>
     </TR>
-
-    <TR>
-      <TH ALIGN="right" VALIGN="center"><% mt('Work Phone') |h %></TH>
-      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>workphone" SIZE=54></TD>
-    </TR>
-
-    <TR>
-      <TH ALIGN="right" VALIGN="center"><% mt('Mobile Phone') |h %></TH>
-      <TD><INPUT TYPE="text" NAME="<%$field_prefix%>mobilephone" SIZE=54></TD>
-    </TR>
+% }
 
 <%init>
 
