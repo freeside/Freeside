@@ -1,8 +1,14 @@
 <%init>
   my( $cust_fields, %opt ) = @_;
 
-  use FS::ConfDefaults;
-  $opt{'avail_fields'} ||= [ FS::ConfDefaults->cust_fields_avail() ];
+  my @fields = FS::ConfDefaults->cust_fields_avail();
+  my $contact_phone_list;
+  foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+    $contact_phone_list .= " | Contact ".$phone_type->typename." phone(s)";
+  }
+  @fields = map {s/\| Contact phone\(s\)/$contact_phone_list/g; $_; } @fields;
+
+  $opt{'avail_fields'} ||= [ @fields ];
 
   tie my %hash, 'Tie::IxHash', @{ $opt{'avail_fields'} };
 </%init>
