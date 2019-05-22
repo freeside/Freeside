@@ -3175,6 +3175,32 @@ sub contact_list_email_destinations {
     });
 }
 
+=item contact_list_name_phones
+
+Returns a list of contact phone numbers.
+{ phonetypenum => '1', phonenum => 'xxxxxxxxxx', first => 'firstname', last => 'lastname', countrycode => '1' }
+
+=cut
+
+sub contact_list_name_phones {
+  my $self = shift;
+  my $phone_type = shift;
+
+  warn "$me contact_list_phones" if $DEBUG;
+
+  return () if !$self->custnum; # not yet inserted
+  return map { $_ }
+    qsearch({
+        table     => 'cust_contact',
+        select    => 'phonetypenum, phonenum, first, last, countrycode',
+        addl_from => ' JOIN contact USING (contactnum) '.
+                     ' JOIN contact_phone USING (contactnum)',
+        hashref   => { 'custnum' => $self->custnum, 'phonetypenum' => $phone_type, },
+        order_by  => 'ORDER BY custcontactnum DESC',
+        extra_sql => '',
+    });
+}
+
 =item contact_list_emailonly
 
 Returns an array of hashes containing the emails. Used for displaying contact email field in advanced customer reports.

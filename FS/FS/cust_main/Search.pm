@@ -1090,25 +1090,24 @@ sub search {
               ) ";
     }
 
-    if ($contact_params->{'contacts_homephone'} || $contact_params->{'contacts_workphone'} || $contact_params->{'contacts_mobilephone'}) {
-      foreach my $phone (qw( contacts_homephone contacts_workphone contacts_mobilephone )) {
+    if ( grep { /^contacts_phonetypenum(\d+)$/ } keys %{ $contact_params } ) {
+      my $phone_query;
+      foreach my $phone ( grep { /^contacts_phonetypenum(\d+)$/ } keys %{ $contact_params } ) {
+        $phone =~ /^contacts_phonetypenum(\d+)$/ or die "No phone type num $1 from $phone";
+        my $phonetypenum = $1;
         (my $num = $contact_params->{$phone}) =~ s/\W//g;
         if ( $num =~ /^1?(\d{3})(\d{3})(\d{4})(\d*)$/ ) { $contact_params->{$phone} = "$1$2$3"; }
+        $phone_query .= " AND ( contact_phone.phonetypenum = '".$phonetypenum."' AND contact_phone.phonenum = '" . $contact_params->{$phone} . "' )"
+        unless !$contact_params->{$phone};
       }
-      my $home_query = " AND ( contact_phone.phonetypenum = '2' AND contact_phone.phonenum = '" . $contact_params->{'contacts_homephone'} . "' )"
-        unless !$contact_params->{'contacts_homephone'};
-      my $work_query = " AND ( contact_phone.phonetypenum = '1' AND contact_phone.phonenum = '" . $contact_params->{'contacts_workphone'} . "' )"
-        unless !$contact_params->{'contacts_workphone'};
-      my $mobile_query = " AND ( contact_phone.phonetypenum = '3' AND contact_phone.phonenum = '" . $contact_params->{'contacts_mobilephone'} . "' )"
-        unless !$contact_params->{'contacts_mobilephone'};
       push @where,
       "EXISTS ( SELECT 1 FROM contact_phone
                 JOIN cust_contact USING (contactnum)
                 WHERE cust_contact.custnum = cust_main.custnum
-                $home_query $work_query $mobile_query
+                $phone_query
               ) ";
     }
-}
+  }
 
 
   ##
