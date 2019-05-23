@@ -80,7 +80,7 @@
 %}
 <%once>
 
-my @phone_type = qsearch({table=>'phone_type', order_by=>'weight'});
+my @phone_type = FS::phone_type->get_phone_types();
 
 </%once>
 <%init>

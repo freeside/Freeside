@@ -91,6 +91,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item get_phone_types
+
+returns a list of phone_types.
+
+=cut
+
+sub get_phone_types {
+  ## only using mobile(3) and work(1) right now.
+  my @phone_types = qsearch({table=>'phone_type', order_by=>'ORDER BY weight DESC', extra_sql => " WHERE phonetypenum IN ('1','3')"});
+  return @phone_types;
+}
+
 # Used by FS::Setup to initialize a new database.
 sub _populate_initial_data {
   my ($class, %opts) = @_;

@@ -3,7 +3,7 @@
 
   my @fields = FS::ConfDefaults->cust_fields_avail();
   my $contact_phone_list;
-  foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+  foreach my $phone_type ( FS::phone_type->get_phone_types() ) {
     $contact_phone_list .= " | Contact ".$phone_type->typename." phone(s)";
   }
   @fields = map {s/\| Contact phone\(s\)/$contact_phone_list/g; $_; } @fields;
