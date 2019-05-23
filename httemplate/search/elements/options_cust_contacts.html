@@ -12,7 +12,7 @@
       <TH ALIGN="right" VALIGN="center"><% mt('Email') |h %></TH>
       <TD><INPUT TYPE="text" NAME="<%$field_prefix%>email" SIZE=54></TD>
     </TR>
-% foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+% foreach my $phone_type ( FS::phone_type->get_phone_types() ) {
     <TR>
       <TH ALIGN="right" VALIGN="center"><% $phone_type->typename. ' Phone' |h %></TH>
       <TD><INPUT TYPE="text" NAME="<% $field_prefix %>phonetypenum<% $phone_type->phonetypenum %>" SIZE=54></TD>

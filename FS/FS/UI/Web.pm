@@ -354,7 +354,7 @@ sub cust_header {
   $header2method{'Cust#'} = 'display_custnum'
     if $conf->exists('cust_main-default_agent_custid');
 
-foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+foreach my $phone_type ( FS::phone_type->get_phone_types() ) {
   $header2method{'Contact '.$phone_type->typename.' phone(s)'} = sub {
     my $self = shift;
     my $num = $phone_type->phonetypenum;
@@ -370,7 +370,6 @@ foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
     }
   return \@phones;
   };
-
 }
 
   my %header2colormethod = (
