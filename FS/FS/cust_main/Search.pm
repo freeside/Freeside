@@ -791,6 +791,21 @@ sub search {
     )";
   }
 
+  ##
+  # phones
+  ##
+
+  foreach my $phonet (qw(daytime night mobile)) {
+    if ($params->{$phonet}) {
+      $params->{$phonet} =~ s/\D//g;
+      $params->{$phonet} =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
+        or next;
+      my $phonen = "$1-$2-$3";
+      if ($4) { push @where, "cust_main.".$phonet." = '".$phonen." x$4'"; }
+      else { push @where, "cust_main.".$phonet." like '".$phonen."%'"; }
+    }
+  }
+
   ###
   # refnum
   ###
