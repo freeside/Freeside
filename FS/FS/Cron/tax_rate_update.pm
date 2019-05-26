@@ -294,6 +294,11 @@ sub wa_sales_update_tax_table {
     )
   );
 
+  # The checks themselves will fully log details about the problem,
+  # so simple error message is sufficient here
+  log_error_and_die('abort tax table update, sanity checks failed')
+    unless wa_sales_update_tax_table_sanity_check();
+
   $args->{temp_dir} ||= tempdir();
 
   $args->{filename} ||= wa_sales_fetch_xlsx_file( $args );
@@ -635,6 +640,26 @@ sub wa_sales_fetch_xlsx_file {
 
 }
 
+=head2 wa_sales_update_tax_table_sanity_check
+
+There should be no duplicate tax table entries in the tax table,
+with the same district value, within a tax class, where source=wa_sales.
+
+If there are, custome taxes may have been user-entered in the
+freeside UI, and incorrectly labelled as source=wa_sales.  Or, the
+dupe record may have been created by issues with older wa_sales code.
+
+If these dupes exist, the sysadmin must solve the problem by hand
+with the freeeside-wa-tax-table-resolve script
+
+Returns 1 unless problem sales tax entries are detected
+
+=cut
+
+sub wa_sales_update_tax_table_sanity_check {
+  FS::cust_main_county->find_wa_tax_dupes ? 0 : 1;
+}
+
 sub log {
   state $log = FS::Log->new('tax_rate_update');
   $log;
@@ -655,6 +680,7 @@ sub log_warn_and_warn {
 sub log_error_and_die {
   my $log_message = shift;
   &log()->error( $log_message );
+  warn( "$log_message\n" );
   die( "$log_message\n" );
 }
 

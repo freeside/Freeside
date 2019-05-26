@@ -562,6 +562,40 @@ sub taxline {
   return $tax_item;
 }
 
+=head1 find_wa_tax_dupes
+
+Return a list of cust_main_county Record objects that are detected
+as duplicate washington state sales tax rows (source=wa_state)
+within their respective tax classes
+
+=cut
+
+sub find_wa_tax_dupes {
+  my %cust_main_county;
+  my @dupes;
+
+  for my $row ( qsearch( cust_main_county => { source => 'wa_sales' } ) ) {
+    my $taxclass = $row->taxclass || 'none';
+    $cust_main_county{$taxclass} ||= {};
+
+    my $district = $row->district || 'none';
+    $cust_main_county{$taxclass}->{$district} ||= [];
+
+    push @{ $cust_main_county{$taxclass}->{$district} }, $row;
+  }
+
+  for my $taxclass ( keys %cust_main_county ) {
+    for my $district ( keys %{ $cust_main_county{$taxclass} } ) {
+      my $tax_rows = $cust_main_county{$taxclass}->{$district};
+      if ( scalar @$tax_rows > 1 ) {
+        push @dupes, @$tax_rows;
+      }
+    }
+  }
+
+  @dupes;
+}
+
 =back
 
 =head1 SUBROUTINES

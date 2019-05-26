@@ -1,0 +1,304 @@
+#!/usr/bin/env perl
+use v5.10;
+use strict;
+use warnings;
+
+our $VERSION = '1.0';
+
+use Data::Dumper;
+use FS::cust_main_county;
+use FS::Log;
+use FS::Record qw( qsearch qsearchs );
+use FS::UID qw( adminsuidsetup );
+use Getopt::Long;
+use Pod::Usage;
+
+# Begin transaction
+local $FS::UID::AutoCommit = 0;
+
+my(
+  $dbh,
+  $freeside_user,
+  $opt_check,
+  @opt_merge,
+  @opt_set_source_null,
+);
+
+GetOptions(
+  'check'             => \$opt_check,
+  'merge=s'           => \@opt_merge,
+  'set-source-null=s' => \@opt_set_source_null,
+);
+@opt_merge = split(',',join(',',@opt_merge));
+@opt_set_source_null = split(',',join(',',@opt_set_source_null));
+
+
+# say Dumper({
+#   check => $opt_check,
+#   merge => \@opt_merge,
+#   set_source_numm => \@opt_set_source_null,
+# });
+
+validate_opts();
+
+$dbh = adminsuidsetup( $freeside_user )
+  or die "Bad  username: $freeside_user\n";
+
+my $log = FS::Log->new('freeside-wa-tax-table-resolve');
+
+if ( $opt_check ) {
+  check();
+} elsif ( @opt_merge ) {
+  merge();
+} elsif ( @opt_set_source_null ) {
+  set_source_null();
+} else {
+  error_and_help('No options selected');
+}
+
+# Commit transaction
+$dbh->commit;
+local $FS::UID::AutoCommit = 1;
+
+exit;
+
+
+sub set_source_null {
+  my @cust_main_county;
+  for my $taxnum ( @opt_set_source_null ) {
+    my $row = qsearchs( cust_main_county => { taxnum => $taxnum } );
+    if ( $row ) {
+      push @cust_main_county, $row;
+    } else {
+      error_and_help("Invalid taxnum specified: $taxnum");
+    }
+  }
+
+  say "=== Specified tax rows ===";
+  print_taxnum($_) for @cust_main_county;
+
+  confirm_to_continue("
+
+    The source column will be set to NULL for each of the
+    tax rows listed.  The tax row will no longer be managed
+    by the washington state sales tax table update utilities.
+
+    The listed taxes should be manually created taxes, that
+    were never intended to be managed by the auto updater.
+
+  ");
+
+  for my $row ( @cust_main_county ) {
+
+    $row->setfield( source => undef );
+    my $error = $row->replace;
+
+    if ( $error ) {
+      $dbh->rollback;
+
+      my $message = sprintf 'Error setting source=null taxnum %s: %s',
+          $row->taxnum, $error;
+
+      $log->error( $message );
+      say $message;
+
+      return;
+    }
+
+    my $message = sprintf 'Source column set to null for taxnum %s',
+      $row->taxnum;
+
+    $log->warn( $message );
+    say $message;
+  }
+}
+
+sub merge {
+  my $source = qsearchs( cust_main_county => { taxnum => $opt_merge[0] });
+  my $target = qsearchs( cust_main_county => { taxnum => $opt_merge[1] });
+
+  error_and_help("Invalid source taxnum: $opt_merge[0]")
+    unless $source;
+  error_and_help("Invalid target taxnum: $opt_merge[1]")
+    unless $target;
+
+  local $| = 1; # disable output buffering
+
+  say '==== source row ====';
+  print_taxnum( $source );
+
+  say '==== target row ====';
+  print_taxnum( $target );
+
+  confirm_to_continue("
+  
+    The source tax will be merged into the target tax.
+    All references to the source tax on customer invoices
+    will be replaced with references to the target tax.
+    The source tax will be removed from the tax tables.
+
+  ");
+
+  local $@;
+  eval { $source->_merge_into( $target, { identical_record_check => 0 } ) };
+  if ( $@ ) {
+    $dbh->rollback;
+  
+    my $message = sprintf 'Failed to merge wa sales tax %s into %s: %s',
+        $source->taxnum, $target->taxnum, $@;
+
+    say $message;
+    $log->error( $message );
+
+  } else {
+    my $message = sprintf 'Merged wa sales tax %s into %s - success',
+        $source->taxnum, $target->taxnum;
+
+    say $message;
+    $log->warn( $message );
+  }
+}
+
+sub validate_opts {
+
+  $freeside_user = shift @ARGV
+    or error_and_help('freeside_user parameter required');
+
+  if ( @opt_merge ) {
+    error_and_help(( '--merge requires a comma separated list of two taxnums'))
+      unless scalar(@opt_merge) == 2
+          && $opt_merge[0] =~ /^\d+$/
+          && $opt_merge[1] =~ /^\d+$/;
+  }
+
+  for my $taxnum ( @opt_set_source_null ) {
+    if ( $taxnum =~ /\D/ ) {
+      error_and_help( "Invalid taxnum ($taxnum)" );
+    }
+  }
+}
+
+sub check {
+  my @dupes = FS::cust_main_county->find_wa_tax_dupes;
+
+  unless ( @dupes ) {
+    say 'No duplicate tax rows detected for WA sales tax districts';
+    return;
+  }
+
+  say sprintf '=== Detected %s duplicate tax rows ===', scalar @dupes;
+
+  print_taxnum($_) for @dupes;
+
+  $log->error(
+    sprintf 'Detected %s duplicate wa sales tax rows: %s',
+      scalar( @dupes ),
+      join( ',', map{ $_->taxnum } @dupes )
+  );
+
+}
+
+sub print_taxnum {
+  my $taxnum = shift;
+  die unless ref $taxnum;
+
+  say 'taxnum: '.$taxnum->taxnum;
+  say join "\n" => (
+    map { sprintf('  %s:%s', $_, $taxnum->$_ ) }
+    qw/district city county state tax taxname taxclass source/
+  );
+  print "\n";
+}
+
+sub confirm_to_continue {
+  say shift;
+  print "Confirm: [y/N]: ";
+  my $yn = <STDIN>;
+  chomp $yn;
+  if ( lc $yn ne 'y' ) {
+    say "\nAborted\n";
+    exit;
+  }
+}
+
+sub error_and_help {
+  pod2usage({
+    -message => sprintf( "\n\nError:\n\t%s\n\n", shift ),
+    -exitval => 2,
+    verbose => 1,
+  });
+  exit;
+}
+
+__END__
+
+=head1 name
+
+freeside-wa-tax-table-resolve
+
+=head1 SYNOPSIS
+
+freeside-issue-credit-for-taxnums --help
+freeside-issue-credit-for-taxnums --check [freeside_user]
+freeside-issue-credit-for-taxnums --merge 123,234 [freeside_user]
+freeside-issue-credit-for-taxnums --set-source-null 1337,6553 [freeside_user]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--help>
+
+Display help and exit
+
+=item B<--check>
+
+Display info on any taxnums considered blocking duplicates
+
+=item B<--merge> [source-taxnum],[target-taxnum]
+
+Update all records referring to [source-taxnum], so they now
+refer to [target-taxnum].  [source-taxnum] is deleted.
+
+Used to merge duplicate taxnums
+
+=item B<--set-source-null> [taxnum],[taxnum],...
+
+Update all records for the given taxnums, by setting the
+I<source> column to NULL.
+
+Used for manually entered tax entries, incorrectly labelled
+as created and managed for Washington State Sales Taxes
+
+=back
+
+=head1 DESCRIPTION
+
+Tool to resolve tax table issues for customer using Washington state
+sales tax districts.
+
+If Freeside detects duplicate rows within the wa sales tax tables,
+tax table updates are blocked, and a log message directs the
+sysadmin to this tool.
+
+Duplicate rows may be manually entered taxes, not related
+to WA sales tax.  Or duplicate rows may have been manually entered
+into freeside for other tax purposes.
+
+Use --check to display which tax entries were detected as dupes.
+
+For each tax entry, decide if it is a duplicate wa sales tax entry,
+or some other manually entered tax.
+
+if the row is a duplicate, merge the duplicates with the --merge
+option of this script
+
+If the row is a manually entered tax, not for WA state sales taxes,
+keep the tax but remove the flag incorrectly labeling it as WA state
+sales taxes with the --set-source-null option of this script
+
+Once --check no longer returns problematic tax entries, the
+wa state tax tables will be able to complete their automatic
+tax rate updates
+
+=cut
