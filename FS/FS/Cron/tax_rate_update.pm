@@ -294,10 +294,13 @@ sub wa_sales_update_tax_table {
     )
   );
 
-  # The checks themselves will fully log details about the problem,
-  # so simple error message is sufficient here
-  log_error_and_die('abort tax table update, sanity checks failed')
-    unless wa_sales_update_tax_table_sanity_check();
+  unless ( wa_sales_update_tax_table_sanity_check() ) {
+    log_error_and_die(
+      'Duplicate district rows exist in the Washington state sales tax table. '.
+      'These must be resolved before updating the tax tables. '.
+      'See "freeside-wa-tax-table-resolve --check" to repair the tax tables. '
+    );
+  }
 
   $args->{temp_dir} ||= tempdir();
 
@@ -356,7 +359,7 @@ sub wa_sales_update_cust_main_county {
         cust_main_county => {
           source    => 'wa_sales',
           district  => { op => '!=', value => undef },
-          tax_class => $taxclass,
+          taxclass => $taxclass,
         }
       )
     ) {
@@ -381,19 +384,30 @@ sub wa_sales_update_cust_main_county {
       $cust_main_county{$district} = $row;
     }
 
-    # Merge any dupes, place resulting non-dupe row in %cust_main_county
-    #  Merge, even if one of the dupes has a $0 tax, or some other
-    #  variation on tax row data.  Data for this row will get corrected
-    #  during the following tax import
-    for my $dupe_district_aref ( values %cust_main_county_dupe ) {
-      my $row_to_keep = shift @$dupe_district_aref;
-      while ( my $row_to_merge = shift @$dupe_district_aref ) {
-        $row_to_merge->_merge_into(
-          $row_to_keep,
-          { identical_record_check => 0 },
-        );
-      }
-      $cust_main_county{$row_to_keep->district} = $row_to_keep;
+    # # Merge any dupes, place resulting non-dupe row in %cust_main_county
+    # #  Merge, even if one of the dupes has a $0 tax, or some other
+    # #  variation on tax row data.  Data for this row will get corrected
+    # #  during the following tax import
+    # for my $dupe_district_aref ( values %cust_main_county_dupe ) {
+    #   my $row_to_keep = shift @$dupe_district_aref;
+    #   while ( my $row_to_merge = shift @$dupe_district_aref ) {
+    #     $row_to_merge->_merge_into(
+    #       $row_to_keep,
+    #       { identical_record_check => 0 },
+    #     );
+    #   }
+    #   $cust_main_county{$row_to_keep->district} = $row_to_keep;
+    # }
+
+    # If there are duplicate rows, it may be unsafe to auto-resolve them
+    if ( %cust_main_county_dupe ) {
+      warn "Unable to continue!";
+      log_error_and_die( sprintf(
+        'Tax district duplicate rows detected(%s) - '.
+        'WA Sales tax tables cannot be updated without resolving duplicates - '.
+        'Please use tool freeside-wa-tax-table-resolve for tax table repair',
+            join( ',', keys %cust_main_county_dupe )
+      ));
     }
 
     for my $district ( @{ $args->{tax_districts} } ) {
