@@ -238,10 +238,10 @@ freeside-wa-tax-table-resolve
 
 =head1 SYNOPSIS
 
-freeside-issue-credit-for-taxnums --help
-freeside-issue-credit-for-taxnums --check [freeside_user]
-freeside-issue-credit-for-taxnums --merge 123,234 [freeside_user]
-freeside-issue-credit-for-taxnums --set-source-null 1337,6553 [freeside_user]
+freeside-wa-tax-table-resolve --help
+freeside-wa-tax-table-resolve --check [freeside_user]
+freeside-wa-tax-table-resolve --merge 123,234 [freeside_user]
+freeside-wa-tax-table-resolve --set-source-null 1337,6553 [freeside_user]
 
 =head1 OPTIONS
 
