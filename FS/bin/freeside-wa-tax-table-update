@@ -106,8 +106,8 @@ $log->info('Begin wa_tax_rate_update');
   };
 
   if ( $@ ) {
-    $log->error( "Error: $@" );
     warn "Error: $@\n";
+    $log->error( "Error: $@" );
   } else {
     $log->info( 'Finished wa_tax_rate_update' );
     warn "Finished wa_tax_rate_update\n";
