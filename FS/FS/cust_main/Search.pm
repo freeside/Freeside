@@ -793,7 +793,7 @@ sub search {
   # phones
   ##
 
-  foreach my $phonet (qw(daytime night mobile)) {
+  foreach my $phonet (qw(daytime night mobile fax)) {
     if ($params->{$phonet}) {
       $params->{$phonet} =~ s/\D//g;
       $params->{$phonet} =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/

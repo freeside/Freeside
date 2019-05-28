@@ -3,7 +3,7 @@
   <TD COLSPAN=6>
     <TABLE CELLSPACING=0 CELLPADDING=0>
       <TR>
-% foreach my $phone (qw(daytime night mobile)) {
+% foreach my $phone (qw(daytime night mobile fax)) {
         <TD>
           <INPUT TYPE="text"
                  NAME="<% $phone %>"
@@ -23,5 +23,6 @@ my %phone_label = (
   daytime => 'Day Phone',
   night   => 'Night Phone',
   mobile  => 'Mobile Phone',
+  fax     => 'Fax Number',
 );
 </%init>
