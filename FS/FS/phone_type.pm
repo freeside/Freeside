@@ -98,8 +98,8 @@ returns a list of phone_types.
 =cut
 
 sub get_phone_types {
-  ## only using mobile(3) and work(1) right now.
-  my @phone_types = qsearch({table=>'phone_type', order_by=>'ORDER BY weight DESC', extra_sql => " WHERE phonetypenum IN ('1','3')"});
+  ## not using Home and Fax right now. false laziness with  /elements/contact.html
+  my @phone_types = qsearch({table=>'phone_type', order_by=>'ORDER BY weight DESC', extra_sql => " WHERE typename NOT IN ('Home','Fax')"});
   return @phone_types;
 }
 

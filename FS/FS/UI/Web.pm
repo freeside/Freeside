@@ -472,7 +472,7 @@ sub cust_sql_fields {
     }
   }
 
-  foreach my $field (qw(daytime night mobile fax )) {
+  foreach my $field (qw(daytime night mobile fax)) {
     push @fields, $field if (grep { $_ eq $field } @cust_fields);
   }
   push @fields, 'agent_custid';
