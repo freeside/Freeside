@@ -42,14 +42,11 @@
 </TR>
 
 <TR>
-  <TH ALIGN="right"><%=$r%>City</TH>
-  <TD>
-    <INPUT TYPE="text" ID="<%=$pre%>city" NAME="<%=$pre%>city" VALUE="<%= encode_entities(${$pre.'city'}) %>" onChange="<%= $onchange %>" <%=$disabled%>>
-  </TD>
   <%= 
-    ($county_html, $state_html, $country_html) = 
+    ($county_html, $state_html, $country_html, $city_html) =
       FS::SelfService::regionselector( {
         prefix           => $pre,
+        selected_city    => ${$pre.'city'},
         selected_county  => ${$pre.'county'},
         selected_state   => ${$pre.'state'},
         selected_country => ${$pre.'country'},
@@ -58,6 +55,8 @@
         locales          => \@cust_main_county,
       } );
 
+  $OUT .= qq!<TH ALIGN="right">${r}City</TH>!;
+  $OUT .= qq!<TD>$city_html</TD>!;
   $OUT .= qq!<TH ALIGN="right">${r}State/County</TH>!;
   $OUT .= qq!<TD>$county_html $state_html</TD>!;
   $OUT .= qq!<TH>${r}Zip</TH>!;
@@ -73,7 +72,7 @@
   <%=
     if ( $disabled ) {
       $OUT .= qq!var what = document.getElementById("${pre}city");!;
-      for (qw( county state country ) ) {
+      for (qw( city county state country ) ) {
         $OUT .= "what.form.$pre$_.disabled = true;";
         $OUT .= "what.form.$pre$_.style.backgroundColor = '#dddddd';";
       }
