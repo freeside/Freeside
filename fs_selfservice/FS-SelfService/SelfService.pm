@@ -2189,7 +2189,10 @@ sub regionselector {
 
   my $prefix = exists($param->{'prefix'}) ? $param->{'prefix'} : '';
 
-  my $countyflag = 0;
+  my $disabled = $param->{'disabled'};
+
+  my $countyflag = $param->{selected_county} ? 1 : 0;
+  my $cityflag = $param->{selected_city} ? 1 : 0;
 
   my %cust_main_county;
 
@@ -2199,17 +2202,17 @@ sub regionselector {
     foreach my $c ( @{ $param->{'locales'} } ) {
       #$countyflag=1 if $c->county;
       $countyflag=1 if $c->{county};
+      $cityflag=1 if ($c->{city} && $cityflag);
       #push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
       #$cust_main_county{$c->country}{$c->state}{$c->county} = 1;
-      $cust_main_county{$c->{country}}{$c->{state}}{$c->{county}} = 1;
+      $cust_main_county{$c->{country}}{$c->{state}}{$c->{county}}{$c->{city}} = 1;
     }
 #  }
-  $countyflag=1 if $param->{selected_county};
 
   my $script_html = <<END;
     <SCRIPT>
-    function opt(what,value,text) {
-      var optionName = new Option(text, value, false, false);
+    function opt(what,value,text,selected) {
+      var optionName = new Option(text, value, false, selected);
       var length = what.length;
       what.options[length] = optionName;
     }
@@ -2249,8 +2252,37 @@ END
           #foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
           foreach my $county ( sort keys %{$cust_main_county{$country}{$state}} ) {
             my $text = $county || '(n/a)';
-            $script_html .=
-              qq!opt(what.form.${prefix}county, "$county", "$text");\n!;
+            if (!$county) {
+              if ( $cityflag) {
+                $script_html .= qq!what.form.${prefix}city.style.display='';\n
+                                what.form.${prefix}city_select.style.display='none';\n!
+              }
+              $script_html .= qq!opt(what.form.${prefix}county, "$county", "$text");\n!
+              #$script_html .= qq!what.form.${prefix}county.style.display='none';\n!
+            }
+            else {
+              $script_html .= qq!var countySelected = false; if ("$param->{selected_county}" == "$text") { countySelected = true; }\n
+                              opt(what.form.${prefix}county, "$county", "$text", countySelected);\n
+                              what.form.${prefix}county.style.display='';\n
+                              county = what.form.${prefix}county.options[what.form.${prefix}county.selectedIndex].text;\n!;
+              if ( $cityflag) {
+                $script_html .= qq!\nif ( county == \"$county\" ) {\n!;
+                foreach my $city ( sort keys %{$cust_main_county{$country}{$state}{$county}} ) {
+                  my $text = $city || '(n/a)';
+                  if (!$city) {
+                    $script_html .= qq!what.form.${prefix}city.style.display='';\n
+                                    what.form.${prefix}city_select.style.display='none';\n!
+                  }
+                  else {
+                    $script_html .= qq!var citySelected = false; if ("$param->{selected_city}" == "$text") { citySelected = true; }\n
+                                    opt(what.form.${prefix}city_select, "$city", "$text", citySelected);\n
+                                    what.form.${prefix}city.style.display='none';\n
+                                    what.form.${prefix}city_select.style.display='';\n!
+                  }
+                }
+                $script_html .= "}\n";
+              }
+            }
           }
         $script_html .= "}\n";
       }
@@ -2260,12 +2292,89 @@ END
 
   $script_html .= <<END;
     }
+    function ${prefix}county_changed(what) {
+END
+
+  if ( $cityflag) {
+    $script_html .= <<END;
+      saved_city = "$param->{selected_city}";
+      county = what.options[what.selectedIndex].text;
+      state = what.form.${prefix}state.options[what.form.${prefix}state.selectedIndex].text;
+      country = what.form.${prefix}country.options[what.form.${prefix}country.selectedIndex].text;
+      for ( var i = what.form.${prefix}city_select.length; i >= 0; i-- )
+          what.form.${prefix}city_select.options[i] = null;
+END
+
+    foreach my $country ( sort keys %cust_main_county ) {
+      $script_html .= "\nif ( country == \"$country\" ) {\n";
+      foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+        $script_html .= "\nif ( state == \"$state\" ) {\n";
+        #foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
+        foreach my $county ( sort keys %{$cust_main_county{$country}{$state}} ) {
+          $script_html .= "\nif ( county == \"$county\" ) {\n";
+            foreach my $city ( sort keys %{$cust_main_county{$country}{$state}{$county}} ) {
+              my $text = $city || '(n/a)';
+              if (!$city) {
+                $script_html .= qq!what.form.${prefix}city.style.display='';\n
+                                what.form.${prefix}city_select.style.display='none';\n!
+              }
+              else {
+                $script_html .= qq!var citySelected = false; if (saved_city == "$text") { citySelected = true; }\n
+                                opt(what.form.${prefix}city_select, "$city", "$text", citySelected);\n
+                                what.form.${prefix}city.style.display='none';\n
+                                what.form.${prefix}city_select.style.display='';\n!
+              }
+            }
+          $script_html .= "}\n";
+        }
+        $script_html .= "}\n";
+      }
+      $script_html .= "}\n";
+    }
+  }
+
+  $script_html .= <<END;
+    }
+    function ${prefix}city_select_changed(what) {
+END
+
+  if ( $cityflag ) {
+    $script_html .= <<END;
+      what.form.${prefix}city.value = what.options[what.selectedIndex].value;
+END
+  }
+
+  $script_html .= <<END;
+    }
     </SCRIPT>
 END
 
+  my $city_html = '';
+  if ( $cityflag ) {
+    if ( scalar (keys %{ $cust_main_county{$param->{'selected_country'}}{$param->{'selected_state'}}{$param->{'selected_county'}} }) > 1 ) {
+      $city_html .= qq!<SELECT NAME="${prefix}city_select" onChange="${prefix}city_select_changed(this); $param->{'onchange'}">!;
+      foreach my $city (
+        sort keys %{ $cust_main_county{$param->{'selected_country'}}{$param->{'selected_state'}}{$param->{'selected_county'}} }
+      ) {
+        my $text = $city || '(n/a)';
+        $city_html .= qq!<OPTION VALUE="$city"!.
+                      ($city eq $param->{'selected_city'} ?
+                        ' SELECTED>' :
+                        '>'
+                      ).
+                      $text;
+      }
+      $city_html .= qq!</OPTION><INPUT TYPE="text" ID="${prefix}city" NAME="${prefix}city" VALUE="$param->{'selected_city'}" style="display:none">!;
+    } else {
+      $city_html .= qq!<SELECT NAME="${prefix}city_select" onChange="${prefix}city_select_changed(this); $param->{'onchange'}" style="display:none"></SELECT>
+                    <INPUT TYPE="text" ID="${prefix}city" NAME="${prefix}city" VALUE="$param->{'selected_city'}" style="display:''">!;
+    }
+  }
+
   my $county_html = $script_html;
   if ( $countyflag ) {
-    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$param->{'onchange'}">!;
+    $county_html .= qq!<SELECT NAME="${prefix}county" !.
+                    qq!onChange="${prefix}county_changed(this); $param->{'onchange'}">!;
     foreach my $county ( 
       sort keys %{ $cust_main_county{$param->{'selected_country'}}{$param->{'selected_state'}} }
     ) {
@@ -2319,7 +2428,7 @@ END
 
   }
 
-  ($county_html, $state_html, $country_html);
+  ($county_html, $state_html, $country_html, $city_html);
 
 }
 
