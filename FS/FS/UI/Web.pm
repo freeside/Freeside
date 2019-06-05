@@ -360,7 +360,7 @@ foreach my $phone_type ( FS::phone_type->get_phone_types() ) {
     my $num = $phone_type->phonetypenum;
 
     my @phones;
-    foreach ($self->contact_list_name_phones) {
+    foreach (FS::cust_main::contact_list_name_phones($self)) {
       my $data = [
         {
           'data'  => $_->first.' '.$_->last.' '.FS::contact_phone::phonenum_pretty($_),
