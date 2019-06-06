@@ -47,12 +47,12 @@ my @services = qsearch({
 });
 
 ### get list of all unprovisioned services
-my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
-my @unprovisioned_services = qsearchs({
-    'table'     => 'cust_pkg',
-    'addl_from' => 'JOIN pkg_svc using (pkgpart)',
-    'extra_sql' => $ups_extra_sql,
-});
+#my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
+#my @unprovisioned_services = qsearch({
+#    'table'     => 'cust_pkg',
+#    'addl_from' => 'JOIN pkg_svc using (pkgpart)',
+#    'extra_sql' => $ups_extra_sql,
+#});
 
 my $speed;
 $speed = 'package' if $opt_p;
