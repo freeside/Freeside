@@ -189,7 +189,8 @@ sub check {
 
   if ( my %option_fields = $self->option_fields ) {
     if ( my $option_field = $option_fields{ $self->optionname } ) {
-      if ( my $validation_method = $option_field->{validation} ) {
+      if ( ref $option_field && $option_field->{validation} ) {
+        my $validation_method = $option_field->{validation};
         $error = $self->$validation_method('optionvalue');
       }
     }
