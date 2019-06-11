@@ -349,6 +349,7 @@ sub export_tower_sector {
   #modify tower or create it.
   my $tower_name = $tower->{Hash}->{towername};
   $tower_name =~ s/\s/_/g;
+
   my $tower_opt = {
     'tower_name'           => $tower_name,
     'tower_num'            => $tower->{Hash}->{towernum},
@@ -1049,7 +1050,7 @@ sub export_provisioned_services {
 
 sub export_all_towers_sectors {
   my $job = shift;
-  my $param = shift;
+  my $param = thaw(decode_base64(shift));
 
   my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
   or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
