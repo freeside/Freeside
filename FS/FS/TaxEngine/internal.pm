@@ -39,10 +39,28 @@ sub add_sale {
   my @taxes = (); # entries are cust_main_county objects
   my %taxhash_elim = %taxhash;
   my @elim = qw( district city county state );
+
+  # WA state district city names are not stable in the WA tax tables
+  # Allow districts to match with just a district id
+  if ( $taxhash{district} ) {
+    @taxes = qsearch( cust_main_county => {
+      district => $taxhash{district},
+      taxclass => $taxhash{taxclass},
+    });
+    if ( !scalar(@taxes) && $taxhash{taxclass} ) {
+      qsearch( cust_main_county => {
+        district => $taxhash{district},
+        taxclass => '',
+      });
+    }
+  }
+
   do {
 
     #first try a match with taxclass
-    @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
+    if ( !scalar(@taxes) ) {
+      @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
+    }
 
     if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
       #then try a match without taxclass
