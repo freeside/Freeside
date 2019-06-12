@@ -20,13 +20,17 @@ my(
   $dbh,
   $freeside_user,
   $opt_check,
+  $opt_fix_usf,
   @opt_merge,
+  $opt_merge_all,
   @opt_set_source_null,
 );
 
 GetOptions(
   'check'             => \$opt_check,
+  'fix-usf'           => \$opt_fix_usf,
   'merge=s'           => \@opt_merge,
+  'merge-all'         => \$opt_merge_all,
   'set-source-null=s' => \@opt_set_source_null,
 );
 @opt_merge = split(',',join(',',@opt_merge));
@@ -52,6 +56,10 @@ if ( $opt_check ) {
   merge();
 } elsif ( @opt_set_source_null ) {
   set_source_null();
+} elsif ( $opt_merge_all ) {
+  merge_all();
+} elsif ( $opt_fix_usf ) {
+  fix_usf();
 } else {
   error_and_help('No options selected');
 }
@@ -139,6 +147,12 @@ sub merge {
 
   ");
 
+  merge_into( $source, $target );
+}
+
+sub merge_into {
+  my ( $source, $target ) = @_;
+
   local $@;
   eval { $source->_merge_into( $target, { identical_record_check => 0 } ) };
   if ( $@ ) {
@@ -151,12 +165,115 @@ sub merge {
     $log->error( $message );
 
   } else {
-    my $message = sprintf 'Merged wa sales tax %s into %s - success',
-        $source->taxnum, $target->taxnum;
+    my $message = sprintf 'Merged wa sales tax %s into %s for district %s',
+        $source->taxnum, $target->taxnum, $source->district;
 
     say $message;
     $log->warn( $message );
   }
+}
+
+sub merge_all {
+  my @dupes = FS::cust_main_county->find_wa_tax_dupes;
+
+  unless ( @dupes ) {
+    say 'No duplicate tax rows detected for WA sales tax districts';
+    return;
+  }
+
+  confirm_to_continue(sprintf "
+
+    %s blocking duplicate rows detected
+
+    Duplicate rows will be merged using FS::cust_main_county::_merge_into()
+
+    Rows are considered duplicates when they:
+    - Share the same tax class
+    - Share the same district
+    - Contain 'wa_sales' in the source column
+
+  ", scalar @dupes);
+
+  # Sort dupes into buckets to be merged, by taxclass and district
+  # $to_merge{taxclass}->{district} = [ @rows_to_merge ]
+  my %to_merge;
+  for my $row ( @dupes ) {
+    my $taxclass = $row->taxclass || 'none';
+    $to_merge{$taxclass} ||= {};
+    $to_merge{$taxclass}->{$row->district} ||= [];
+    push @{ $to_merge{$taxclass}->{$row->district} }, $row;
+  }
+
+  # Merge the duplicates
+  for my $taxclass ( keys %to_merge ) {
+    for my $district ( keys %{ $to_merge{$taxclass} }) {
+
+      # Keep the first row in the list as the target.
+      # Merge the remaining rows into the target
+      my $rows = $to_merge{$taxclass}->{$district};
+      my $target = shift @$rows;
+
+      while ( @$rows ) {
+        merge_into( shift(@$rows), $target );
+      }
+    }
+  }
+
+  say "
+
+    Merge operations completed
+
+    Please run freeside-wa-tax-table-update.  This will update
+    the merged district rows with correct county and city names
+
+  ";
+
+}
+
+sub fix_usf {
+  confirm_to_continue("
+
+    Search for duplicate districts within the tax tables with
+    - duplicate district column values
+    - source = NULL
+    - district = NOT NULL
+    - taxclass = USF
+    - tax > 17
+
+    Merge these rows into a single USF row for each tax district
+
+  ");
+
+  my @rows = qsearch( cust_main_county => {
+    taxclass => 'USF',
+    source   => undef,
+    state    => 'WA',
+    country  => 'US',
+    tax      => { op => '>',  value => 17 },
+    district => { op => '!=', value => undef },
+  });
+
+  my %to_merge;
+  for my $row (@rows) {
+    $to_merge{$row->district} ||= [];
+    push @{ $to_merge{$row->district} }, $row;
+  }
+
+  for my $dist_rows ( values %to_merge ) {
+    my $target = shift @$dist_rows;
+    while ( @$dist_rows ) {
+      merge_into( shift(@$dist_rows), $target );
+    }
+  }
+
+  say "
+
+    USF clean up completed
+
+    Please run freeside-wa-tax-table-update.  This will update
+    the merged district rows with correct county and city names
+
+  ";
 }
 
 sub validate_opts {
@@ -188,7 +305,7 @@ sub check {
 
   say sprintf '=== Detected %s duplicate tax rows ===', scalar @dupes;
 
-  print_taxnum($_) for @dupes;
+  print_taxnum($_) for sort { $a->district <=> $b->district } @dupes;
 
   $log->error(
     sprintf 'Detected %s duplicate wa sales tax rows: %s',
@@ -196,6 +313,14 @@ sub check {
       join( ',', map{ $_->taxnum } @dupes )
   );
 
+  say "
+
+    Rows are considered duplicates when they:
+    - Share the same tax class
+    - Share the same district
+    - Contain 'wa_sales' in the source column
+
+  ";
 }
 
 sub print_taxnum {
@@ -238,10 +363,12 @@ freeside-wa-tax-table-resolve
 
 =head1 SYNOPSIS
 
-freeside-wa-tax-table-resolve --help
-freeside-wa-tax-table-resolve --check [freeside_user]
-freeside-wa-tax-table-resolve --merge 123,234 [freeside_user]
-freeside-wa-tax-table-resolve --set-source-null 1337,6553 [freeside_user]
+  freeside-wa-tax-table-resolve --help
+  freeside-wa-tax-table-resolve --check [freeside_user]
+  freeside-wa-tax-table-resolve --merge 123,234 [freeside_user]
+  freeside-wa-tax-table-resolve --set-source-null 1337,6553 [freeside_user]
+  freeside-wa-tax-table-resolve --merge-all [freeside_user]
+  freeside-wa-tax-table-resolve --fix-usf [freeside_user]
 
 =head1 OPTIONS
 
@@ -269,6 +396,27 @@ I<source> column to NULL.
 
 Used for manually entered tax entries, incorrectly labelled
 as created and managed for Washington State Sales Taxes
+
+=item B<--merge-all>
+
+Automatically merge all blocking duplicate taxnums.
+
+If after reviewing all blocking duplicate taxnum rows with --check,
+if all duplicate rows are safe to merge, this option will merge them all.
+
+=item B<--fix-usf>
+
+Fix routine for a particular USF issue
+
+Search for duplicate districts within the tax tables with
+
+  - duplicate district column values
+  - source = NULL
+  - district = NOT NULL
+  - taxclass = USF
+  - tax > 17
+
+Merge these rows into a single USF row for each tax district
 
 =back
 
