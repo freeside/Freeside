@@ -60,6 +60,12 @@ https://dor.wa.gov/sites/default/files/legacy/Docs/forms/ExcsTx/LocSalUseTx/Exce
 
 https://dor.wa.gov/sites/default/files/legacy/downloads/Add_DataRates2018Q4.zip
 
+=item Other district tax rows
+
+When this tool updates the tax tables, any additional tax table rows with
+a district set, where the 'source' column is not 'wa_sales', will have the
+country, state, county, and city values kept updated to match the data
+provided in the state tax tables
 
 =item Address lookup API tool
 

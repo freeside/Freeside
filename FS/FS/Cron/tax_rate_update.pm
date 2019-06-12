@@ -334,6 +334,8 @@ sub wa_sales_update_cust_main_county {
   my $update_count = 0;
   my $same_count   = 0;
 
+  $args->{taxname} ||= 'State Sales Tax';
+
   # Work within a SQL transaction
   local $FS::UID::AutoCommit = 0;
 
@@ -410,8 +412,11 @@ sub wa_sales_update_cust_main_county {
       ));
     }
 
-    for my $district ( @{ $args->{tax_districts} } ) {
+    DIST: for my $district ( @{ $args->{tax_districts} } ) {
       if ( my $row = $cust_main_county{ $district->{district} } ) {
+
+        # Strip whitespace from input
+        $district->{$_} =~ s/(^\s+|\s+$)//g for keys %$district;
 
         # District already exists in this taxclass, update if necessary
         #
@@ -424,20 +429,20 @@ sub wa_sales_update_cust_main_county {
           no warnings 'uninitialized';
 
           if (
-            $row->tax == ( $district->{tax_combined} * 100 )
+            sprintf('%.4f',$row->tax) == sprintf('%.4f',($district->{tax_combined} * 100))
             &&    $row->taxname eq    $args->{taxname}
             && uc $row->county  eq uc $district->{county}
             && uc $row->city    eq uc $district->{city}
           ) {
             $same_count++;
-            next;
+            next DIST;
           }
         }
 
         $row->city( uc $district->{city} );
         $row->county( uc $district->{county} );
         $row->taxclass( $taxclass );
-        $row->taxname( $args->{taxname} || undef );
+        $row->taxname( $args->{taxname} );
         $row->tax( $district->{tax_combined} * 100 );
 
         if ( my $error = $row->replace ) {
@@ -485,6 +490,8 @@ sub wa_sales_update_cust_main_county {
         $insert_count++;
       }
 
+      update_non_sales_tax_rows( $taxclass, $district );
+
     } # /foreach $district
   } # /foreach $taxclass
 
@@ -499,6 +506,47 @@ sub wa_sales_update_cust_main_county {
       $update_count,
       $same_count
   );
+
+}
+
+=head2 update_non_sales_tax_rows tax_class, $district_href
+
+The customer may have created additional taxes, such as Universal Service Fund.
+
+Ensure the columns for city and county are consistant between
+the user-created tax rows and the wa-sales-managed tax rows.
+
+=cut
+
+sub update_non_sales_tax_rows {
+  my ( $taxclass, $district ) = @_;
+
+  return unless ref $district && $district->{district};
+
+  my @rows = qsearch( cust_main_county => {
+    taxclass => $taxclass,
+    district => $district->{district},
+    state    => 'WA',
+    country  => 'US',
+    source   => { op => '!=', value => 'wa_sales' },
+  });
+
+  for my $row ( @rows ) {
+    $row->city( uc $district->{city} );
+    $row->county( uc $district->{county} );
+
+    if ( my $error = $row->replace ) {
+      dbh->rollback;
+      local $FS::UID::AutoCommit = 1;
+      log_error_and_die(
+        sprintf
+          "Error updating cust_main_county row %s for district %s: %s",
+          $row->taxnum,
+          $district->{district},
+          $error
+      );
+    }
+  }
 
 }
 
