@@ -1176,7 +1176,7 @@ sub force_export_all_virtual_ap {
 
 sub force_export_all_users {
   my $job = shift;
-  my $param = shift;
+  my $param = thaw(decode_base64(shift));
 
   my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
   or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
