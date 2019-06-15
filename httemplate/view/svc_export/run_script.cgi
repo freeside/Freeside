@@ -14,17 +14,13 @@ my %param = ();
     }
   }
 
-my $exportnum;
-my $method;
-for (grep /^*_script$/, keys %param) { 
-	$exportnum = $param{$param{$_}.'_exportnum'};
-	$method = $param{$param{$_}.'_script'};
-}
+my $run_script = $param{'key'};
+my $exportnum = $param{$run_script.'_exportnum'};
 
 my $part_export = qsearchs('part_export', { 'exportnum'=> $exportnum, } )
 	or die "unknown exportnum $exportnum";
 
-my $class = 'FS::part_export::'.$part_export->{Hash}->{exporttype}.'::'.$method;
+my $class = 'FS::part_export::'.$part_export->{Hash}->{exporttype}.'::'.$run_script;
 
 my $server = new FS::UI::Web::JSRPC $class, $cgi;
 
