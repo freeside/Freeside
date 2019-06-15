@@ -165,12 +165,12 @@ sub _export_insert {
   die ("Please double check your credentials as ".$existing_rateplan->{message}."\n") if $existing_rateplan->{message};
 
   # if no existing rate plan create one and modify it.
-  $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan;
-  $self->api_modify_rateplan($svc_broadband, $rateplan_name) unless ($self->{'__saisei_error'} || $existing_rateplan);
+  $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan->{collection};
+  $self->api_modify_rateplan($svc_broadband, $rateplan_name) unless ($self->{'__saisei_error'} || $existing_rateplan->{collection});
   return $self->api_error if $self->{'__saisei_error'};
 
   # set rateplan to existing one or newly created one.
-  my $rateplan = $existing_rateplan ? $existing_rateplan : $self->api_get_rateplan($rateplan_name);
+  my $rateplan = $existing_rateplan->{collection} ? $existing_rateplan : $self->api_get_rateplan($rateplan_name);
 
   my $username = $svc_broadband->{Hash}->{svcnum};
   my $description = $svc_broadband->{Hash}->{description};
@@ -1012,7 +1012,7 @@ sub get_svc_location {
       'addl_from' => 'LEFT JOIN cust_location USING (locationnum)',
       'hashref' => { 'pkgnum' => $svc->{Hash}->{pkgnum} },
     });
-    $svc_location = $pkg_location->{Hash}->{latitude}.','.$pkg_location->{Hash}->{longitude} if ($pkg_location);
+    $svc_location = $pkg_location->{Hash}->{latitude}.','.$pkg_location->{Hash}->{longitude} if ($pkg_location->{Hash}->{latitude} && $pkg_location->{Hash}->{longitude});
   }
 
   return $svc_location;
