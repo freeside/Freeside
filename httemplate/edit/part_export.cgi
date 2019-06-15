@@ -296,7 +296,7 @@ my $widget = new HTML::Widgets::SelectLayers(
       $html .= '<TR><TD ALIGN="left" COLSPAN=2>' .
         include('/elements/progress-init.html',
               $part_export->exporttype,
-              [ $script.'_exportnum', $script.'_script' ],
+              [ $script.'_exportnum' ],
               rooturl().'view/svc_export/run_script.cgi',
               {
                 'error_url' => rooturl().$exports->{$layer}{scripts}{$script}->{error_url}."exportnum=".$part_export->{Hash}->{exportnum},
@@ -307,7 +307,6 @@ my $widget = new HTML::Widgets::SelectLayers(
               $script,
         ) .
         '<INPUT TYPE="hidden" NAME="'.$script.'_exportnum" VALUE="'.$part_export->{Hash}->{exportnum}.'">
-         <INPUT TYPE="hidden" NAME="'.$script.'_script" VALUE="'.$script.'">
         <A HREF="#" onClick="'.$script.'process();">'.$exports->{$layer}{scripts}{$script}->{html_label}.'</A></TD></TR>';
     }
 

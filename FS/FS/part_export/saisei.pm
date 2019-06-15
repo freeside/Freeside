@@ -73,6 +73,20 @@ tie my %scripts, 'Tie::IxHash',
                                       error_url  => '/edit/part_export.cgi?',
                                       success_message => 'Saisei export of towers and sectors as access points successful',
                                     },
+  'force_export_all_users'       => { component => '/elements/popup_link.html',
+                                      label     => 'Force update of all Saisei users from freeside provisioned services',
+                                      description => 'Will force an update of Saisei users description and map location from freeside provisioned services.',
+                                      html_label => '<b>Force update of all Saisei users from freeside provisioned services</b>',
+                                      error_url  => '/edit/part_export.cgi?',
+                                      success_message => 'Export of freeside provisioned services as Saisei users was successful',
+                                    },
+  'force_export_all_virtual_ap'  => { component => '/elements/popup_link.html',
+                                      label     => 'Force update of all virtual Access Points',
+                                      description => 'Will force an update of all virtual access points.',
+                                      html_label => '<b>Force update of all virtual Access Points</b>',
+                                      error_url  => '/edit/part_export.cgi?',
+                                      success_message => 'Export of all virtual access points to Saisei was successful',
+                                    },
 ;
 
 tie my %options, 'Tie::IxHash',
@@ -140,13 +154,15 @@ END
 );
 
 sub _export_insert {
-  my ($self, $svc_broadband) = @_;
+  my ($self, $svc_broadband, $force_update) = @_;
 
   my $rateplan_name = $self->get_rateplan_name($svc_broadband);
 
   # check for existing rate plan
   my $existing_rateplan;
   $existing_rateplan = $self->api_get_rateplan($rateplan_name) unless $self->{'__saisei_error'};
+
+  die ("Please double check your credentials as ".$existing_rateplan->{message}."\n") if $existing_rateplan->{message};
 
   # if no existing rate plan create one and modify it.
   $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan;
@@ -158,8 +174,7 @@ sub _export_insert {
 
   my $username = $svc_broadband->{Hash}->{svcnum};
   my $description = $svc_broadband->{Hash}->{description};
-  my $svc_location;
-  $svc_location = $svc_broadband->{Hash}->{latitude}.','.$svc_broadband->{Hash}->{longitude} if ($svc_broadband->{Hash}->{latitude} && $svc_broadband->{Hash}->{longitude});
+  my $svc_location = get_svc_location($self, $svc_broadband);
 
   if (!$username) {
     $self->{'__saisei_error'} = 'no username - can not export';
@@ -233,13 +248,17 @@ sub _export_insert {
       'table'     => 'cust_pkg',
       'hashref'   => { 'pkgnum' => $svc_broadband->{Hash}->{pkgnum}, },
     });
+
     my $virtual_ap_name = $cust_pkg->{Hash}->{custnum}.'_'.$cust_pkg->{Hash}->{pkgpart}.'_'.$svc_broadband->{Hash}->{speed_down}.'_'.$svc_broadband->{Hash}->{speed_up};
+    my $modify_existing_virtual_ap = '1' if $force_update->{'update_virtual_ap'};
 
     my $virtual_ap_opt = {
       'virtual_name'           => $virtual_ap_name,
       'sector_name'            => $sector_name,
       'virtual_uprate_limit'   => $svc_broadband->{Hash}->{speed_up},
       'virtual_downrate_limit' => $svc_broadband->{Hash}->{speed_down},
+      'location'               => $svc_location,
+      'modify_existing'        => $modify_existing_virtual_ap,
     };
     my $virtual_ap = process_virtual_ap($self, $virtual_ap_opt);
     return $self->api_error if $self->{'__saisei_error'};
@@ -400,6 +419,16 @@ sub export_tower_sector {
   }
 
   return { error => $self->api_error, };
+}
+
+sub export_user {
+  my ($self, $username, $description, $location) = @_;
+
+  $self->api_create_user($username, $description, $location);
+
+  return $self->api_error if $self->{'__saisei_error'};
+
+  return '';
 }
 
 ## creates the rateplan name
@@ -689,7 +718,7 @@ sub api_create_user {
   $user_hash->{'map_location'} = $location if $location;
 
   my $new_user = $self->api_call(
-      "PUT", 
+      "PUT",
       "/users/$user",
       $user_hash,
   );
@@ -698,6 +727,33 @@ sub api_create_user {
     unless ($new_user || $self->{'__saisei_error'}); # should never happen
 
   return $new_user;
+
+}
+
+=head2 api_modify_user
+
+Modify a user.
+
+=cut
+
+sub api_modify_user {
+  my ($self,$user, $description, $location) = @_;
+
+  my $user_hash = {
+    'description' => $description,
+  };
+  $user_hash->{'map_location'} = $location if $location;
+
+  my $modify_user = $self->api_call(
+      "PUT",
+      "/users/$user",
+      $user_hash,
+  );
+
+  $self->{'__saisei_error'} = "Saisei could not modify the user $user"
+    unless ($modify_user || $self->{'__saisei_error'}); # should never happen
+
+  return $modify_user;
 
 }
 
@@ -938,6 +994,30 @@ sub process_sector {
   return $accesspoint;
 }
 
+=head2 get_svc_location
+
+sets location to lat and long from service, if no service location gets it from package, if still no location returns null.
+
+=cut
+
+sub get_svc_location {
+  my ($self, $svc) = @_;
+
+  my $svc_location = '';
+  $svc_location = $svc->{Hash}->{latitude}.','.$svc->{Hash}->{longitude} if ($svc->{Hash}->{latitude} && $svc->{Hash}->{longitude});
+
+  if (!$svc_location) {
+    my $pkg_location = FS::Record::qsearchs({
+      'table'   => 'cust_pkg',
+      'addl_from' => 'LEFT JOIN cust_location USING (locationnum)',
+      'hashref' => { 'pkgnum' => $svc->{Hash}->{pkgnum} },
+    });
+    $svc_location = $pkg_location->{Hash}->{latitude}.','.$pkg_location->{Hash}->{longitude} if ($pkg_location);
+  }
+
+  return $svc_location;
+}
+
 =head2 require_tower_and_sector
 
 sets whether the service export requires a sector with it's tower.
@@ -989,6 +1069,7 @@ sub process_virtual_ap {
     $opt->{sector_name},
     $opt->{virtual_uprate_limit},
     $opt->{virtual_downrate_limit},
+    $opt->{location},
   ) if $existing_virtual_ap && $opt->{modify_existing};
 
   #if virtual ap does not exist as an access point create it.
@@ -996,6 +1077,7 @@ sub process_virtual_ap {
     $virtual_name,
     $opt->{virtual_uprate_limit},
     $opt->{virtual_downrate_limit},
+    $opt->{location},
   ) unless $existing_virtual_ap;
 
   my $update_sector;
@@ -1004,7 +1086,7 @@ sub process_virtual_ap {
   }
 
   # Attach newly created virtual ap to tower sector ap or if sector has changed.
-  $self->api_modify_accesspoint($virtual_name, $opt->{sector_name}) unless ($self->{'__saisei_error'} || ($existing_virtual_ap && !$update_sector));
+  $self->api_modify_accesspoint($virtual_name, $opt->{sector_name}, $opt->{location}) unless ($self->{'__saisei_error'} || ($existing_virtual_ap && !$update_sector));
 
   # set access point to existing one or newly created one.
   my $accesspoint = $existing_virtual_ap ? $existing_virtual_ap : $self->api_get_accesspoint($virtual_name);
@@ -1015,6 +1097,7 @@ sub process_virtual_ap {
 sub export_provisioned_services {
   my $job = shift;
   my $param = shift;
+  my $force_update = shift;
 
   my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
   or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
@@ -1047,7 +1130,9 @@ sub export_provisioned_services {
     my $host = api_get_host($part_export, $svc->{Hash}->{ip_addr});
     die ("Please double check your credentials as ".$host->{message}."\n") if $host->{message};
     warn "Exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
-    my $export_error = _export_insert($part_export,$svc) unless $host->{collection};
+    my $export_error;
+    if ($force_update) { $export_error = _export_insert($part_export,$svc,$force_update); }
+    else { $export_error = _export_insert($part_export,$svc) unless $host->{collection}; }
     if ($export_error) {
       warn "Error exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
       die ("$export_error\n");
@@ -1081,6 +1166,63 @@ sub export_all_towers_sectors {
     my $export_error = export_tower_sector($part_export,$tower);
     if ($export_error->{'error'}) {
       warn "Error exporting tower/sector (".$tower->{Hash}->{towername}.")\n" if ($part_export->option('debug'));
+      die ($export_error->{'error'}."\n");
+    }
+    $process_count++;
+  }
+
+  return;
+
+}
+
+sub force_export_all_virtual_ap {
+  my $job = shift;
+  my $param = shift;
+  my $force_update = { 'update_virtual_ap' => '1', };
+
+  export_provisioned_services($job,$param,$force_update);
+
+  return;
+}
+
+sub force_export_all_users {
+  my $job = shift;
+  my $param = shift;
+
+  my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
+  or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
+  bless $part_export;
+
+  my @svcparts = FS::Record::qsearch({
+    'table' => 'export_svc',
+    'addl_from' => 'LEFT JOIN part_svc USING ( svcpart  ) ',
+    'hashref'   => { 'exportnum' => $param->{export_provisioned_services_exportnum}, },
+  });
+  my $part_count = scalar @svcparts;
+
+  my $parts = join "', '", map { $_->{Hash}->{svcpart} } @svcparts;
+
+  my @svcs = FS::Record::qsearch({
+    'table' => 'cust_svc',
+    'addl_from' => 'LEFT JOIN svc_broadband USING ( svcnum  ) ',
+    'extra_sql' => " WHERE svcpart in ('".$parts."')",
+  }) unless !$parts;
+
+  my $svc_count = scalar @svcs;
+
+  my %status = {};
+  for (my $c=1; $c <=100; $c=$c+1) { $status{int($svc_count * ($c/100))} = $c; }
+
+  my $process_count=0;
+  foreach my $svc (@svcs) {
+    my $description = $svc->{Hash}->{description};
+    my $user = $svc->{Hash}->{svcnum};
+    my $svc_location = get_svc_location($job, $svc);
+    if ($status{$process_count}) { my $s = $status{$process_count}; $job->update_statustext($s); }
+    warn "Exporting user ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
+    my $export_error = export_user($part_export,$user,$description, $svc_location);
+    if ($export_error) {
+      warn "Error exporting user ".$svc->{Hash}->{svcnum}."\n" if ($part_export->option('debug'));
       die ($export_error->{'error'}."\n");
     }
     $process_count++;
