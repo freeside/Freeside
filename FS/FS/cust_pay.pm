@@ -395,6 +395,8 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
+  $self->{'processing_fee'} = $options{'processing-fee'};
+
   #payment receipt
   my $trigger = $conf->config('payment_receipt-trigger', 
                               $self->cust_main->agentnum) || 'cust_pay';
@@ -735,6 +737,8 @@ sub send_message_receipt {
 
       my %substitutions = ();
       $substitutions{invnum} = $cust_bill->invnum if $cust_bill;
+      $substitutions{'processing_fee'} = $self->{'processing_fee'};
+
 
       my $msg_template = qsearchs('msg_template',{ msgnum => $msgnum});
       unless ($msg_template) {
