@@ -44,7 +44,7 @@
         <TD>
           <TABLE><TR>
             <TD BGCOLOR="#ffffff">
-             <INPUT TYPE="checkbox" NAME="processing_fee" ID="processing_fee" VALUE="<% $processing_fee %>" onclick="<% $opt{prefix} %>process_fee_changed()">
+             <INPUT TYPE="checkbox" NAME="processing_fee" ID="processing_fee" VALUE="<% $processing_fee %>" onclick="<% $opt{prefix} %>process_fee_changed()" checked>
             </TD>
             <TD ID="ajax_processingfee_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
              <FONT SIZE="+1">A processing fee of <% $processing_fee %> is being applied to this transaction.</FONT>

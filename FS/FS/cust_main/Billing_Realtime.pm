@@ -985,17 +985,20 @@ sub _realtime_bop_result {
     savepoint_create( $savepoint_label );
 
     #start a transaction, insert the cust_pay and set cust_pay_pending.status to done in a single transction
-
-    my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
+    my $error = $cust_pay->insert(
+      $options{'manual'} ? ( 'manual' => 1 ) : (),
+      $options{'processing-fee'} > 0 ? ( 'processing-fee' => $options{'processing-fee'} ) : (),
+    );
 
     if ( $error ) {
       savepoint_rollback( $savepoint_label );
 
       $cust_pay->invnum(''); #try again with no specific invnum
       $cust_pay->paynum('');
-      my $error2 = $cust_pay->insert( $options{'manual'} ?
-                                      ( 'manual' => 1 ) : ()
-                                    );
+      my $error2 = $cust_pay->insert(
+        $options{'manual'} ? ( 'manual' => 1 ) : (),
+        $options{'processing-fee'} > 0 ? ( 'processing-fee' => $options{'processing-fee'} ) : (),
+      );
       if ( $error2 ) {
         # gah.  but at least we have a record of the state we had to abort in
         # from cust_pay_pending now.
@@ -1137,11 +1140,23 @@ sub _realtime_bop_result {
     if ($options{'processing-fee'} > 0) {
       my $pf_cust_pkg;
       my $processing_fee_text = 'Payment Processing Fee';
+
+      my $conf = new FS::Conf;
+
+      my $pf_seperate_bill;
+      my $pf_bill_now;
+      if ($conf->exists('processing-fee_on_separate_invoice')) {
+        $pf_seperate_bill = 'Y';
+        $pf_bill_now = '1';
+      }
+
       my $pf_change_error = $self->charge({
             'amount'  => $options{'processing-fee'},
             'pkg'   => $processing_fee_text,
             'setuptax'  => 'Y',
             'cust_pkg_ref' => \$pf_cust_pkg,
+            'separate_bill' => $pf_seperate_bill,
+            'bill_now' => $pf_bill_now,
       });
 
       if($pf_change_error) {
@@ -1156,17 +1171,41 @@ sub _realtime_bop_result {
         # but keep going...
       }
 
-      my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
-      unless ( $cust_bill ) {
-        warn "race condition + invoice deletion just happened";
-        return '';
-      }
+      if ($conf->exists('processing-fee_on_separate_invoice')) {
+        my $cust_bill_pkg = qsearchs( 'cust_bill_pkg', { 'pkgnum' => $pf_cust_pkg->pkgnum } );
 
-      my $grand_pf_error =
-        $cust_bill->add_cc_surcharge($pf_cust_pkg->pkgnum,$options{'processing-fee'});
+        my $pf_cust_bill = qsearchs('cust_bill', { 'invnum' => $cust_bill_pkg->invnum });
+        unless ( $pf_cust_bill ) {
+          warn "no processing fee inv found!";
+          return '';
+        }
 
-      warn "cannot add Processing fee to invoice #$invnum: $grand_pf_error"
-        if $grand_pf_error;
+        my $pf_apply_error = $pf_cust_bill->apply_payments_and_credits;
+
+        my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+        unless ( $cust_bill ) {
+          warn "race condition + invoice deletion just happened";
+         return '';
+        }
+
+        my $grand_pf_error = $cust_bill->apply_payments_and_credits;
+
+        warn "cannot apply Processing fee to invoice #$invnum: $grand_pf_error - $pf_apply_error"
+          if $grand_pf_error || $pf_apply_error;
+      } ## processing-fee_on_separate_invoice
+      else {
+        my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+        unless ( $cust_bill ) {
+          warn "race condition + invoice deletion just happened";
+          return '';
+        }
+
+        my $grand_pf_error =
+          $cust_bill->add_cc_surcharge($pf_cust_pkg->pkgnum,$options{'processing-fee'});
+
+        warn "cannot add Processing fee to invoice #$invnum: $grand_pf_error"
+          if $grand_pf_error;
+      } ## no processing-fee_on_separate_invoice
     } #end if $options{'processing-fee'}
 
       } #end if ( $options{'cc_surcharge'} > 0 || $options{'processing-fee'} > 0)

@@ -155,7 +155,9 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     }
   } elsif ( $type eq 'checkbox' ) {
     if ( defined $cgi->param($i->key.$n) ) {
-      push @touch, $i->key;
+      my $error = &{$i->validate}('', $n) if $i->validate;
+      push @error, $error if $error;
+      push @touch, $i->key if !$error;
     } else {
       push @delete, $i->key;
     }
@@ -167,7 +169,7 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     if ( scalar(@{[ $cgi->param($i->key.$n) ]}) && $cgi->param($i->key.$n) ne '' ) {
       my $error = &{$i->validate}([ $cgi->param($i->key.$n) ], $n) if $i->validate;
       push @error, $error if $error;
-      $conf->set($i->key, join("\n", @{[ $cgi->param($i->key.$n) ]} ), $agentnum);
+      $conf->set($i->key, join("\n", @{[ $cgi->param($i->key.$n) ]} ), $agentnum) if !$error;
     } else {
       $conf->delete($i->key, $agentnum);
     }

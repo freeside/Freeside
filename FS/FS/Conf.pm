@@ -2683,6 +2683,17 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'processing-fee_on_separate_invoice',
+    'section'     => 'payments',
+    'description' => 'Places the processing fee on a separate invoice by itself.  Only works with real time processing.',
+    'type'        => 'checkbox',
+    'validate'    => sub {
+                        my $conf = new FS::Conf;
+                        !$conf->config('batch-enable_payby') ? '' : 'You can not set this option while batch processing is enabled.';
+                     },
+  },
+
+  {
     'key'         => 'banned_pay-pad',
     'section'     => 'credit_cards',
     'description' => 'Padding for encrypted storage of banned credit card hashes.  If you already have new-style SHA512 entries in the banned_pay table, do not change as this will invalidate the old entries.',
@@ -3840,6 +3851,11 @@ and customer address. Include units.',
     'description' => 'Enable batch processing for the specified payment types.',
     'type'        => 'selectmultiple',
     'select_enum' => [qw( CARD CHEK )],
+    'validate'    => sub {
+                        ## can not create a new invoice and pay it silently with batch processing, only realtime processing.
+                        my $conf = new FS::Conf;
+                        !$conf->exists('processing-fee_on_separate_invoice') ? '' : 'You can not enable batch processing while processing-fee_on_separate_invoice option is enabled.';
+                     },
   },
 
   {
