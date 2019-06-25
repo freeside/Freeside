@@ -291,6 +291,7 @@ my %substitutions = (
   'cust_pay'  => [
     '$paynum'         => 'Payment#',
     '$paid'           => 'Amount',
+    '$processing_fee' => 'Processing fee',
     '$payby'          => 'Payment method',
     '$date'           => 'Payment date',
     '$payinfo'        => 'Card/account# (masked)',
@@ -365,6 +366,7 @@ Substitutions: '
 <BR>Enclose substitutions and other Perl expressions in braces:
 <BR>{ $name } = ExampleCo (Smith, John)
 <BR>{ time2str("%D", time) } = '.time2str("%D", time).'
+<BR>{ "processing fee of $processing_fee" if $processing_fee; } = Will display text if there is a processing fee
 </FONT></TD>
 ';
 

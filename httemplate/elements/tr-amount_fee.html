@@ -123,7 +123,9 @@ if ( $opt{'process-pkgpart'}
 
 }
 
-my $amount = $opt{'amount'};
+$processing_fee = $opt{'processing_fee'} if $opt{'processing_fee'} > 0;
+
+my $amount = $opt{'amount'} ? $opt{'amount'} : "0.00";
 if ( $amount > 0 ) {
   $amount += $fee
     if $fee && $fee_display eq 'subtract';
@@ -134,8 +136,6 @@ if ( $amount > 0 ) {
 
   $amount += $opt{'surcharge_flatfee'}
     if $opt{'surcharge_flatfee'} > 0;
-
-  $processing_fee = $opt{'processing_fee'} if $opt{'processing_fee'} > 0;
 
   $amount += $processing_fee; ## needed if processing fee is checked on default.
 
