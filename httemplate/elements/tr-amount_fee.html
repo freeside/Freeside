@@ -140,6 +140,8 @@ if ( $amount ) {
 
   $amount += $surcharge;
 
+  $amount += $processing_fee; ## needed if processing fee is checked on default.
+
   $amount = sprintf("%.2f", $amount);
 }
 
