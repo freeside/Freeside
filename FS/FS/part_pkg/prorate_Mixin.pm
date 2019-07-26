@@ -190,8 +190,7 @@ set, in which case it postpones the next bill to the cutoff day.
 =cut
 
 sub prorate_setup {
-  my $self = shift;
-  my ($cust_pkg, $sdate) = @_;
+  my ($self, $cust_pkg, $time) = @_;
   my @cutoff_days = $self->cutoff_day($cust_pkg);
   if ( @cutoff_days and $self->option('prorate_defer_bill', 1) ) {
     if ( $cust_pkg->setup ) {
@@ -205,11 +204,11 @@ sub prorate_setup {
         # For some reason (probably user override), the bill date has been set even
         # though the package isn't billing yet. Start billing as though that was the
         # start date.
-        $$sdate = $cust_pkg->bill;
+        $time = $cust_pkg->bill;
         $cust_pkg->setup($cust_pkg->bill);
       }
       # Now figure the start and end of the period that contains the start date.
-      my ($mnow, $mend, $mstart) = $self->_endpoints($sdate, @cutoff_days);
+      my ($mnow, $mend, $mstart) = $self->_endpoints($time, @cutoff_days);
       # If today is the cutoff day, set the next bill and setup both to 
       # midnight today, so that the customer will be billed normally for a 
       # month starting today.
