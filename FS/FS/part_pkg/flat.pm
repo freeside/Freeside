@@ -121,9 +121,9 @@ sub price_info {
 }
 
 sub calc_setup {
-  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
+  my($self, $cust_pkg, $time, $details, $param ) = @_;
 
-  return 0 if $self->prorate_setup($cust_pkg, $sdate);
+  return 0 if $self->prorate_setup($cust_pkg, $time);
 
   my $i = 0;
   my $count = $self->option( 'additional_count', 'quiet' ) || 0;
@@ -131,12 +131,12 @@ sub calc_setup {
     push @$details, $self->option( 'additional_info' . $i++ );
   }
 
-  my $charge = $self->unit_setup($cust_pkg, $sdate, $details);
+  my $charge = $self->unit_setup($cust_pkg, $time, $details);
 
   my $discount = 0;
   if ( $charge > 0 ) {
       $param->{'setup_charge'} = $charge;
-      $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+      $discount = $self->calc_discount($cust_pkg, \$time, $details, $param);
       delete $param->{'setup_charge'};
   }
 
@@ -144,7 +144,7 @@ sub calc_setup {
 }
 
 sub unit_setup {
-  my($self, $cust_pkg, $sdate, $details ) = @_;
+  my($self, $cust_pkg, $time, $details ) = @_;
   $self->option('setup_fee', 1) || 0;
 }
 
