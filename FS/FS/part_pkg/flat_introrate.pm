@@ -73,15 +73,15 @@ sub intro_end {
 }
 
 sub base_recur {
-  my($self, $cust_pkg, $time ) = @_;
+  my($self, $cust_pkg, $sdate ) = @_;
 
   my $now;
-  if (!$time) { # the "$sdate" from _make_lines
+  if (!$sdate) { # the "$sdate" from _make_lines
     my $log = FS::Log->new('FS::part_pkg');
     $log->warning("flat_introrate base_recur requires date!");
     $now = time;
   } else {
-    $now = $$time;
+    $now = $$sdate;
   }
 
   if ($now < $self->intro_end($cust_pkg)) {
