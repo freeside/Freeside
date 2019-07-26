@@ -21,16 +21,16 @@ sub base_recur {
 
 sub calc_setup {
   # moved from all descendant packages which just had $self->option('setup_fee')
-  my($self, $cust_pkg, $sdate, $details, $param) = @_;
+  my($self, $cust_pkg, $time, $details, $param) = @_;
 
-  return 0 if $self->prorate_setup($cust_pkg, $sdate);
+  return 0 if $self->prorate_setup($cust_pkg, $time);
 
   my $charge = $self->option('setup_fee');
 
   my $discount = 0;
   if ( $charge > 0 ) {
       $param->{'setup_charge'} = $charge;
-      $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+      $discount = $self->calc_discount($cust_pkg, \$time, $details, $param);
       delete $param->{'setup_charge'};
   }
 
