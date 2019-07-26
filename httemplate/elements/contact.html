@@ -180,7 +180,7 @@ unless ($opt{'for_prospect'}) {
 }
 
 my $first = 0;
-foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+foreach my $phone_type ( FS::phone_type->get_phone_types() ) {
   next if $phone_type->typename =~ /^(Home|Fax)$/;
   my $f = 'phonetypenum'.$phone_type->phonetypenum;
   $label{$f} = $phone_type->typename. ' phone';

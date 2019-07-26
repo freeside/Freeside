@@ -91,6 +91,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item get_phone_types
+
+returns a list of phone_types.
+
+=cut
+
+sub get_phone_types {
+  ## not using Home and Fax right now. false laziness with  /elements/contact.html
+  my @phone_types = qsearch({table=>'phone_type', order_by=>'ORDER BY weight DESC', extra_sql => " WHERE typename NOT IN ('Home','Fax')"});
+  return @phone_types;
+}
+
 # Used by FS::Setup to initialize a new database.
 sub _populate_initial_data {
   my ($class, %opts) = @_;

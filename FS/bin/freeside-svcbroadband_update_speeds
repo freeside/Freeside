@@ -19,7 +19,7 @@ adminsuidsetup $user;
 
 sub usage { "
   Usage:
-      svc_broadband_update_speeds: [ -h help] [ -v verbose] [ -n only update services with a null up/down speed] [ -e export service ] [ -a update tower_sector_num ] [ -s service_part_num (required) ] [ -c sibling service_part_num ] [ -r (speed rate in KB 'up,down') ] [ -p (get speed from package fcc rate) ] [ -t tower_sector_num ] [ -d directory for exception file (required) ] user (required)\n
+      freeside-svcbroadband_update_speeds: [ -h help] [ -v verbose] [ -n only update services with a null up/down speed] [ -e export service ] [ -a update tower_sector_num ] [ -s service_part_num (required) ] [ -c sibling service_part_num ] [ -r (speed rate in KB 'up,down') ] [ -p (get speed from package fcc rate) ] [ -t tower_sector_num ] [ -d directory for exception file (required) ] user (required)\n
       A directory for the exception file, freeside user name and a service to update is required.\n
       Must set one or more of options p, c, or r. \n
       Also must run this report as user freeside.\n
@@ -47,12 +47,12 @@ my @services = qsearch({
 });
 
 ### get list of all unprovisioned services
-my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
-my @unprovisioned_services = qsearchs({
-    'table'     => 'cust_pkg',
-    'addl_from' => 'JOIN pkg_svc using (pkgpart)',
-    'extra_sql' => $ups_extra_sql,
-});
+#my $ups_extra_sql = "where cust_pkg.cancel is null and pkg_svc.quantity > 0 and  pkg_svc.quantity > (select count(1) from cust_svc where  cust_svc.pkgnum = cust_pkg.pkgnum and  cust_svc.svcpart = pkg_svc.svcpart)  and pkg_svc.svcpart = $opt_s";
+#my @unprovisioned_services = qsearch({
+#    'table'     => 'cust_pkg',
+#    'addl_from' => 'JOIN pkg_svc using (pkgpart)',
+#    'extra_sql' => $ups_extra_sql,
+#});
 
 my $speed;
 $speed = 'package' if $opt_p;
@@ -144,7 +144,7 @@ sub _update_service {
 
 exit;
 
-=head2 svc_broadband_update_speeds
+=head2 freeside-svcbroadband_update_speeds
 
 This script allows for the mas update of up and down speeds for a svc_broadband service.
 
@@ -159,7 +159,7 @@ Script must be run as user freeside.
 Options -s, -d and freeside user are required.
 
 example:
-sudo -u freeside ./svc_broadband_update_speeds -v -s 4 -c 2 -r 148000,248000 -p -d /home/freeside/ freesideuser
+sudo -u freeside ./freeside-svcbroadband_update_speeds -v -s 4 -c 2 -r 148000,248000 -p -d /home/freeside/ freesideuser
 
 available options:
 [ -h help]

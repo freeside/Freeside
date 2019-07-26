@@ -38,7 +38,6 @@ my $classnum_null = grep{ $_ eq 0           } $cgi->param('classnum');
 # Catch destination values from dest multi-checkbox, default to message
 # irrelevant to prospect contacts
 my @dest = grep{ /^(message|invoice)$/ } $cgi->param('dest');
-@dest = ('message') unless @dest;
 
 # Cache the contact_class table
 my %classname =
@@ -125,7 +124,7 @@ if (@classnum || $classnum_null) {
 if (@dest && $link eq 'cust_main') {
   my @stm;
   push @stm, "cust_contact.${_}_dest IS NOT NULL" for @dest;
-  $extra_sql .= "\nAND (".join(' OR ',@stm).') ';
+  $extra_sql .= "\nAND (".join(' AND ',@stm).') ';
 }
 
 if ($DEBUG) {
@@ -141,19 +140,22 @@ if ($DEBUG) {
 
 # Prepare to display phone numbers
 # adds 3 additional queries per table record :-(
-my %phonetype = (qw/1 Work 2 Home 3 Mobile 4 Fax/);
-my %phoneid   = (qw/Work 1 Home 2 Mobile 3 Fax 4/);
 my $get_phone_sub = sub {
   my $type = shift;
   return sub {
     my $rec = shift;
     my @p = qsearch('contact_phone', {
       contactnum => $rec->contact_contactnum,
-      phonetypenum => $phoneid{$type}
+      phonetypenum => $type,
     });
-    @p ? (join ', ',map{$_->phonenum} @p) : undef;
+    @p ? (join ', ',map{$_->phonenum_pretty} @p) : undef;
   };
 };
+
+my @phones;
+foreach my $phone_type ( FS::phone_type->get_phone_types() ) {
+  push @phones, { label => $phone_type->typename.' Phone', field => $get_phone_sub->($phone_type->phonetypenum), };
+}
 
 # Cache contact types
 my %classname =
@@ -166,9 +168,7 @@ my @report = (
   { label => 'Last',   field => 'contact_last'  },
   { label => 'Title',  field => 'contact_title' },
   { label => 'E-Mail', field => 'contact_email_emailaddress' },
-  { label => 'Work Phone',   field => $get_phone_sub->('Work') },
-  { label => 'Mobile Phone', field => $get_phone_sub->('Mobile') },
-  { label => 'Home Phone',   field => $get_phone_sub->('Home') },
+  @phones,
   { label => 'Type',
     field => sub {
       my $rec = shift;

@@ -42,6 +42,7 @@ Create a tower and add a sector to that tower.  The sector name will be the name
 Make sure you have set the up and down rate limit for the tower and the sector.  This is required to be able to export the access point.
 The tower and sector will be set up as access points at Saisei upon the creation of the tower or sector.  They will be modified at Saisei when modified in freeside.
 Each sector will be attached to its tower access point using the Saisei uplink field.
+Each access point will be attached to the interface set in the export config.  If left blank access point will be attached to the default interface.  Most setups can leave this blank.
 
 Create a package for the above created service, and order this package for a customer.
 
@@ -65,6 +66,27 @@ tie my %scripts, 'Tie::IxHash',
                                       error_url  => '/edit/part_export.cgi?',
                                       success_message => 'Saisei export of provisioned services successful',
                                     },
+  'export_all_towers_sectors'    => { component => '/elements/popup_link.html',
+                                      label     => 'Export of all towers and sectors',
+                                      description => 'Will force an export of all towers and sectors to Saisei as access points.',
+                                      html_label => '<b>Export all towers and sectors.</b>',
+                                      error_url  => '/edit/part_export.cgi?',
+                                      success_message => 'Saisei export of towers and sectors as access points successful',
+                                    },
+  'force_export_all_users'       => { component => '/elements/popup_link.html',
+                                      label     => 'Force update of all Saisei users from freeside provisioned services',
+                                      description => 'Will force an update of Saisei users description and map location from freeside provisioned services.',
+                                      html_label => '<b>Force update of all Saisei users from freeside provisioned services</b>',
+                                      error_url  => '/edit/part_export.cgi?',
+                                      success_message => 'Export of freeside provisioned services as Saisei users was successful',
+                                    },
+  'force_export_all_virtual_ap'  => { component => '/elements/popup_link.html',
+                                      label     => 'Force update of all virtual Access Points',
+                                      description => 'Will force an update of all virtual access points.',
+                                      html_label => '<b>Force update of all virtual Access Points</b>',
+                                      error_url  => '/edit/part_export.cgi?',
+                                      success_message => 'Export of all virtual access points to Saisei was successful',
+                                    },
 ;
 
 tie my %options, 'Tie::IxHash',
@@ -73,6 +95,8 @@ tie my %options, 'Tie::IxHash',
   'username'         => { label => 'Saisei API User Name',
                           default => '' },
   'password'         => { label => 'Saisei API Password',
+                          default => '' },
+  'interface'        => { label => 'Saisei Access Point Interface',
                           default => '' },
   'debug'            => { type => 'checkbox',
                           label => 'Enable debug warnings' },
@@ -105,6 +129,7 @@ Create a tower and add a sector to that tower.  The sector name will be the name
 Make sure you have set the up and down rate limit for the tower and the sector.  This is required to be able to export the access point.
 The tower and sector will be set up as access points at Saisei upon the creation of the tower or sector.  They will be modified at Saisei when modified in freeside.
 Each sector will be attached to its tower access point using the Saisei uplink field.
+Each access point will be attached to the interface set in the export config.  If left blank access point will be attached to the default interface.  Most setups can leave this blank.
 </LI>
 <P>
 <LI>
@@ -129,7 +154,7 @@ END
 );
 
 sub _export_insert {
-  my ($self, $svc_broadband) = @_;
+  my ($self, $svc_broadband, $force_update) = @_;
 
   my $rateplan_name = $self->get_rateplan_name($svc_broadband);
 
@@ -137,16 +162,19 @@ sub _export_insert {
   my $existing_rateplan;
   $existing_rateplan = $self->api_get_rateplan($rateplan_name) unless $self->{'__saisei_error'};
 
+  die ("Please double check your credentials as ".$existing_rateplan->{message}."\n") if $existing_rateplan->{message};
+
   # if no existing rate plan create one and modify it.
-  $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan;
-  $self->api_modify_rateplan($svc_broadband, $rateplan_name) unless ($self->{'__saisei_error'} || $existing_rateplan);
+  $self->api_create_rateplan($svc_broadband, $rateplan_name) unless $existing_rateplan->{collection};
+  $self->api_modify_rateplan($svc_broadband, $rateplan_name) unless ($self->{'__saisei_error'} || $existing_rateplan->{collection});
   return $self->api_error if $self->{'__saisei_error'};
 
   # set rateplan to existing one or newly created one.
-  my $rateplan = $existing_rateplan ? $existing_rateplan : $self->api_get_rateplan($rateplan_name);
+  my $rateplan = $existing_rateplan->{collection} ? $existing_rateplan : $self->api_get_rateplan($rateplan_name);
 
   my $username = $svc_broadband->{Hash}->{svcnum};
   my $description = $svc_broadband->{Hash}->{description};
+  my $svc_location = get_svc_location($self, $svc_broadband);
 
   if (!$username) {
     $self->{'__saisei_error'} = 'no username - can not export';
@@ -158,7 +186,7 @@ sub _export_insert {
     $existing_user = $self->api_get_user($username) unless $self->{'__saisei_error'};
  
     # if no existing user create one.
-    $self->api_create_user($username, $description) unless $existing_user;
+    $self->api_create_user($username, $description, $svc_location) unless $existing_user;
     return $self->api_error if $self->{'__saisei_error'};
 
     # set user to existing one or newly created one.
@@ -173,12 +201,17 @@ sub _export_insert {
                       tower_sector.sectorname,
                       tower_sector.towernum,
                       tower_sector.up_rate_limit as sector_upratelimit,
-                      tower_sector.down_rate_limit as sector_downratelimit ',
+                      tower_sector.down_rate_limit as sector_downratelimit,
+                      tower.latitude,
+                      tower.longitude',
       'addl_from' => 'LEFT JOIN tower USING ( towernum )',
       'hashref'   => {
                         'sectornum' => $svc_broadband->{Hash}->{sectornum},
                      },
     });
+
+    my $tower_location;
+    $tower_location = $tower_sector->{Hash}->{latitude}.','.$tower_sector->{Hash}->{longitude} if ($tower_sector->{Hash}->{latitude} && $tower_sector->{Hash}->{longitude});
 
     my $tower_name = $tower_sector->{Hash}->{towername};
     $tower_name =~ s/\s/_/g;
@@ -189,6 +222,7 @@ sub _export_insert {
       'tower_uprate_limit'   => $tower_sector->{Hash}->{tower_upratelimit},
       'tower_downrate_limit' => $tower_sector->{Hash}->{tower_downratelimit},
     };
+    $tower_opt->{'location'} = $tower_location if $tower_location;
 
     my $tower_ap = process_tower($self, $tower_opt);
     return $self->api_error if $self->{'__saisei_error'};
@@ -204,6 +238,8 @@ sub _export_insert {
       'sector_downrate_limit' => $tower_sector->{Hash}->{sector_downratelimit},
       'rateplan'              => $rateplan_name,
     };
+    $sector_opt->{'location'} = $tower_location if $tower_location;
+
     my $accesspoint = process_sector($self, $sector_opt);
     return $self->api_error if $self->{'__saisei_error'};
 
@@ -212,24 +248,31 @@ sub _export_insert {
       'table'     => 'cust_pkg',
       'hashref'   => { 'pkgnum' => $svc_broadband->{Hash}->{pkgnum}, },
     });
+
     my $virtual_ap_name = $cust_pkg->{Hash}->{custnum}.'_'.$cust_pkg->{Hash}->{pkgpart}.'_'.$svc_broadband->{Hash}->{speed_down}.'_'.$svc_broadband->{Hash}->{speed_up};
+    my $modify_existing_virtual_ap = '1' if $force_update->{'update_virtual_ap'};
 
     my $virtual_ap_opt = {
       'virtual_name'           => $virtual_ap_name,
       'sector_name'            => $sector_name,
       'virtual_uprate_limit'   => $svc_broadband->{Hash}->{speed_up},
       'virtual_downrate_limit' => $svc_broadband->{Hash}->{speed_down},
+      'location'               => $svc_location,
+      'modify_existing'        => $modify_existing_virtual_ap,
     };
     my $virtual_ap = process_virtual_ap($self, $virtual_ap_opt);
     return $self->api_error if $self->{'__saisei_error'};
 
     ## tie host to user add sector name as access point.
-    $self->api_add_host_to_user(
-      $user->{collection}->[0]->{name},
-      $rateplan->{collection}->[0]->{name},
-      $svc_broadband->{Hash}->{ip_addr},
-      $virtual_ap->{collection}->[0]->{name},
-    ) unless $self->{'__saisei_error'};
+    my $host_opt = {
+      'user'        => $user->{collection}->[0]->{name},
+      'rateplan'    => $rateplan->{collection}->[0]->{name},
+      'ip'          => $svc_broadband->{Hash}->{ip_addr},
+      'accesspoint' => $virtual_ap->{collection}->[0]->{name},
+      'location'    => $svc_location,
+    };
+    $self->api_add_host_to_user($host_opt)
+      unless $self->{'__saisei_error'};
   }
 
   return $self->api_error;
@@ -331,6 +374,9 @@ sub export_tower_sector {
     return;
   }
 
+  my $tower_location;
+  $tower_location = $tower->{Hash}->{latitude}.','.$tower->{Hash}->{longitude} if ($tower->{Hash}->{latitude} && $tower->{Hash}->{longitude});
+
   #modify tower or create it.
   my $tower_name = $tower->{Hash}->{towername};
   $tower_name =~ s/\s/_/g;
@@ -341,6 +387,7 @@ sub export_tower_sector {
     'tower_downrate_limit' => $tower->{Hash}->{down_rate_limit},
     'modify_existing'      => '1', # modify an existing access point with this info
   };
+  $tower_opt->{'location'} = $tower_location if $tower_location;
 
   my $tower_access_point = process_tower($self, $tower_opt);
     return $tower_access_point if $tower_access_point->{error};
@@ -354,6 +401,7 @@ sub export_tower_sector {
 
   #for each one modify or create it.
   foreach my $tower_sector ( FS::Record::qsearch($hash_opt) ) {
+    next if $tower_sector->{Hash}->{sectorname} eq "_default";
     my $sector_name = $tower_sector->{Hash}->{sectorname};
     $sector_name =~ s/\s/_/g;
     my $sector_opt = {
@@ -364,11 +412,23 @@ sub export_tower_sector {
       'sector_downrate_limit' => $tower_sector->{Hash}->{down_rate_limit},
       'modify_existing'       => '1', # modify an existing access point with this info
     };
+    $sector_opt->{'location'} = $tower_location if $tower_location;
+
     my $sector_access_point = process_sector($self, $sector_opt) unless ($sector_name eq "_default");
       return $sector_access_point if $sector_access_point->{error};
   }
 
   return { error => $self->api_error, };
+}
+
+sub export_user {
+  my ($self, $username, $description, $location) = @_;
+
+  $self->api_create_user($username, $description, $location);
+
+  return $self->api_error if $self->{'__saisei_error'};
+
+  return '';
 }
 
 ## creates the rateplan name
@@ -449,7 +509,7 @@ sub api_call {
     return;
   }
   else {
-    $self->{'__saisei_error'} = "Received Bad response from server during $method , we received responce code: " . $client->responseCode();
+    $self->{'__saisei_error'} = "Received Bad response from server during $method $path $data, we received responce code: " . $client->responseCode() . " " . $client->responseContent;
     warn "Saisei Response Content is\n".$client->responseContent."\n" if $self->option('debug');
     return; 
   }
@@ -650,20 +710,50 @@ Creates a user.
 =cut
 
 sub api_create_user {
-  my ($self,$user, $description) = @_;
+  my ($self,$user, $description, $location) = @_;
+
+  my $user_hash = {
+    'description' => $description,
+  };
+  $user_hash->{'map_location'} = $location if $location;
 
   my $new_user = $self->api_call(
-      "PUT", 
+      "PUT",
       "/users/$user",
-      {
-        'description' => $description,
-      },
+      $user_hash,
   );
 
   $self->{'__saisei_error'} = "Saisei could not create the user $user"
     unless ($new_user || $self->{'__saisei_error'}); # should never happen
 
   return $new_user;
+
+}
+
+=head2 api_modify_user
+
+Modify a user.
+
+=cut
+
+sub api_modify_user {
+  my ($self,$user, $description, $location) = @_;
+
+  my $user_hash = {
+    'description' => $description,
+  };
+  $user_hash->{'map_location'} = $location if $location;
+
+  my $modify_user = $self->api_call(
+      "PUT",
+      "/users/$user",
+      $user_hash,
+  );
+
+  $self->{'__saisei_error'} = "Saisei could not modify the user $user"
+    unless ($modify_user || $self->{'__saisei_error'}); # should never happen
+
+  return $modify_user;
 
 }
 
@@ -674,15 +764,19 @@ Creates a access point.
 =cut
 
 sub api_create_accesspoint {
-  my ($self,$accesspoint, $upratelimit, $downratelimit) = @_;
+  my ($self,$accesspoint, $upratelimit, $downratelimit, $location) = @_;
+
+  my $ap_hash = {
+    'downstream_rate_limit' => $downratelimit,
+    'upstream_rate_limit'   => $upratelimit,
+    'interface'             => $self->option('interface'),
+  };
+  $ap_hash->{'map_location'} = $location if $location;
 
   my $new_accesspoint = $self->api_call(
       "PUT",
       "/access_points/$accesspoint",
-      {
-         'downstream_rate_limit' => $downratelimit,
-         'upstream_rate_limit' => $upratelimit,
-      },
+      $ap_hash,
   );
 
   $self->{'__saisei_error'} = "Saisei could not create the access point $accesspoint"
@@ -698,14 +792,18 @@ Modify a new access point.
 =cut
 
 sub api_modify_accesspoint {
-  my ($self, $accesspoint, $uplink) = @_;
+  my ($self, $accesspoint, $uplink, $location) = @_;
+
+  my $ap_hash = {
+    'uplink'    => $uplink,
+    'interface' => $self->option('interface'),
+  };
+  $ap_hash->{'map_location'} = $location if $location;
 
   my $modified_accesspoint = $self->api_call(
     "PUT",
     "/access_points/$accesspoint",
-    {
-      'uplink' => $uplink, # name of attached access point
-    },
+    $ap_hash,
   );
 
   $self->{'__saisei_error'} = "Saisei could not modify the access point $accesspoint after it was created."
@@ -722,20 +820,24 @@ Modify a existing accesspoint.
 =cut
 
 sub api_modify_existing_accesspoint {
-  my ($self, $accesspoint, $uplink, $upratelimit, $downratelimit) = @_;
+  my ($self, $accesspoint, $uplink, $upratelimit, $downratelimit, $location) = @_;
+
+  my $ap_hash = {
+    'downstream_rate_limit' => $downratelimit,
+    'upstream_rate_limit'   => $upratelimit,
+    'interface'             => $self->option('interface'),
+#   'uplink'                => $uplink, # name of attached access point
+  };
+  $ap_hash->{'map_location'} = $location if $location;
 
   my $modified_accesspoint = $self->api_call(
     "PUT",
     "/access_points/$accesspoint",
-    {
-      'downstream_rate_limit' => $downratelimit,
-      'upstream_rate_limit' => $upratelimit,
-#      'uplink' => $uplink, # name of attached access point
-    },
+    $ap_hash,
   );
 
-    $self->{'__saisei_error'} = "Saisei could not modify the access point $accesspoint."
-      unless ($modified_accesspoint || $self->{'__saisei_error'}); # should never happen
+  $self->{'__saisei_error'} = "Saisei could not modify the access point $accesspoint."
+    unless ($modified_accesspoint || $self->{'__saisei_error'}); # should never happen
 
   return;
 
@@ -748,16 +850,22 @@ ties host to user, rateplan and default access point.
 =cut
 
 sub api_add_host_to_user {
-  my ($self,$user, $rateplan, $ip, $accesspoint) = @_;
+#  my ($self,$user, $rateplan, $ip, $accesspoint, $location) = @_;
+  my ($self,$opt) = @_;
+  my $ip = $opt->{'ip'};
+  my $location = $opt->{'location'};
+
+  my $newhost_hash = {
+    'user'         => $opt->{'user'},
+    'rate_plan'    => $opt->{'rateplan'},
+    'access_point' => $opt->{'accesspoint'},
+  };
+  $newhost_hash->{'map_location'} = $location if $location;
 
   my $new_host = $self->api_call(
       "PUT", 
       "/hosts/$ip",
-      {
-        'user'      => $user,
-        'rate_plan' => $rateplan,
-        'access_point' => $accesspoint,
-      },
+      $newhost_hash,
   );
 
   $self->{'__saisei_error'} = "Saisei could not create the host $ip"
@@ -811,6 +919,7 @@ sub process_tower {
 
   my $existing_tower_ap;
   my $tower_name = $opt->{tower_name};
+  my $location = $opt->{location};
 
   #check if tower has been set up as an access point.
   $existing_tower_ap = $self->api_get_accesspoint($tower_name) unless $self->{'__saisei_error'};
@@ -821,6 +930,7 @@ sub process_tower {
     '', # tower does not have a uplink on sectors.
     $opt->{tower_uprate_limit},
     $opt->{tower_downrate_limit},
+    $location,
   ) if $existing_tower_ap->{collection} && $opt->{modify_existing};
 
   #if tower does not exist as an access point create it.
@@ -828,6 +938,7 @@ sub process_tower {
       $tower_name,
       $opt->{tower_uprate_limit},
       $opt->{tower_downrate_limit},
+      $location,
   ) unless $existing_tower_ap->{collection};
 
   my $accesspoint = $self->api_get_accesspoint($tower_name);
@@ -851,6 +962,7 @@ sub process_sector {
 
   my $existing_sector_ap;
   my $sector_name = $opt->{sector_name};
+  my $location = $opt->{location};
 
   #check if sector has been set up as an access point.
   $existing_sector_ap = $self->api_get_accesspoint($sector_name);
@@ -861,6 +973,7 @@ sub process_sector {
     $opt->{tower_name},
     $opt->{sector_uprate_limit},
     $opt->{sector_downrate_limit},
+    $location,
   ) if $existing_sector_ap && $opt->{modify_existing};
 
   #if sector does not exist as an access point create it.
@@ -868,16 +981,41 @@ sub process_sector {
     $sector_name,
     $opt->{sector_uprate_limit},
     $opt->{sector_downrate_limit},
+    $location,
   ) unless $existing_sector_ap;
 
   # Attach newly created sector to it's tower.
-  $self->api_modify_accesspoint($sector_name, $opt->{tower_name}) unless ($self->{'__saisei_error'} || $existing_sector_ap);
+  $self->api_modify_accesspoint($sector_name, $opt->{tower_name}, $location) unless ($self->{'__saisei_error'} || $existing_sector_ap);
 
   # set access point to existing one or newly created one.
   my $accesspoint = $existing_sector_ap ? $existing_sector_ap : $self->api_get_accesspoint($sector_name);
 
   return { error => $self->api_error, } if $self->api_error;
   return $accesspoint;
+}
+
+=head2 get_svc_location
+
+sets location to lat and long from service, if no service location gets it from package, if still no location returns null.
+
+=cut
+
+sub get_svc_location {
+  my ($self, $svc) = @_;
+
+  my $svc_location = '';
+  $svc_location = $svc->{Hash}->{latitude}.','.$svc->{Hash}->{longitude} if ($svc->{Hash}->{latitude} && $svc->{Hash}->{longitude});
+
+  if (!$svc_location) {
+    my $pkg_location = FS::Record::qsearchs({
+      'table'   => 'cust_pkg',
+      'addl_from' => 'LEFT JOIN cust_location USING (locationnum)',
+      'hashref' => { 'pkgnum' => $svc->{Hash}->{pkgnum} },
+    });
+    $svc_location = $pkg_location->{Hash}->{latitude}.','.$pkg_location->{Hash}->{longitude} if ($pkg_location->{Hash}->{latitude} && $pkg_location->{Hash}->{longitude});
+  }
+
+  return $svc_location;
 }
 
 =head2 require_tower_and_sector
@@ -931,6 +1069,7 @@ sub process_virtual_ap {
     $opt->{sector_name},
     $opt->{virtual_uprate_limit},
     $opt->{virtual_downrate_limit},
+    $opt->{location},
   ) if $existing_virtual_ap && $opt->{modify_existing};
 
   #if virtual ap does not exist as an access point create it.
@@ -938,6 +1077,7 @@ sub process_virtual_ap {
     $virtual_name,
     $opt->{virtual_uprate_limit},
     $opt->{virtual_downrate_limit},
+    $opt->{location},
   ) unless $existing_virtual_ap;
 
   my $update_sector;
@@ -946,7 +1086,7 @@ sub process_virtual_ap {
   }
 
   # Attach newly created virtual ap to tower sector ap or if sector has changed.
-  $self->api_modify_accesspoint($virtual_name, $opt->{sector_name}) unless ($self->{'__saisei_error'} || ($existing_virtual_ap && !$update_sector));
+  $self->api_modify_accesspoint($virtual_name, $opt->{sector_name}, $opt->{location}) unless ($self->{'__saisei_error'} || ($existing_virtual_ap && !$update_sector));
 
   # set access point to existing one or newly created one.
   my $accesspoint = $existing_virtual_ap ? $existing_virtual_ap : $self->api_get_accesspoint($virtual_name);
@@ -957,6 +1097,7 @@ sub process_virtual_ap {
 sub export_provisioned_services {
   my $job = shift;
   my $param = shift;
+  my $force_update = shift;
 
   my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
   or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
@@ -989,10 +1130,100 @@ sub export_provisioned_services {
     my $host = api_get_host($part_export, $svc->{Hash}->{ip_addr});
     die ("Please double check your credentials as ".$host->{message}."\n") if $host->{message};
     warn "Exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
-    my $export_error = _export_insert($part_export,$svc) unless $host->{collection};
+    my $export_error;
+    if ($force_update) { $export_error = _export_insert($part_export,$svc,$force_update); }
+    else { $export_error = _export_insert($part_export,$svc) unless $host->{collection}; }
     if ($export_error) {
       warn "Error exporting service ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
       die ("$export_error\n");
+    }
+    $process_count++;
+  }
+
+  return;
+
+}
+
+sub export_all_towers_sectors {
+  my $job = shift;
+  my $param = shift;
+
+  my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
+  or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
+  bless $part_export;
+
+  my @towers = FS::Record::qsearch({
+    'table' => 'tower',
+  });
+  my $tower_count = scalar @towers;
+
+  my %status = {};
+  for (my $c=1; $c <=100; $c=$c+1) { $status{int($tower_count * ($c/100))} = $c; }
+
+  my $process_count=0;
+  foreach my $tower (@towers) {
+    if ($status{$process_count}) { my $s = $status{$process_count}; $job->update_statustext($s); }
+    my $export_error = export_tower_sector($part_export,$tower);
+    if ($export_error->{'error'}) {
+      warn "Error exporting tower/sector (".$tower->{Hash}->{towername}.")\n" if ($part_export->option('debug'));
+      die ($export_error->{'error'}."\n");
+    }
+    $process_count++;
+  }
+
+  return;
+
+}
+
+sub force_export_all_virtual_ap {
+  my $job = shift;
+  my $param = shift;
+  my $force_update = { 'update_virtual_ap' => '1', };
+
+  export_provisioned_services($job,$param,$force_update);
+
+  return;
+}
+
+sub force_export_all_users {
+  my $job = shift;
+  my $param = shift;
+
+  my $part_export = FS::Record::qsearchs('part_export', { 'exportnum' => $param->{export_provisioned_services_exportnum}, } )
+  or die "You are trying to use an unknown exportnum $param->{export_provisioned_services_exportnum}.  This export does not exist.\n";
+  bless $part_export;
+
+  my @svcparts = FS::Record::qsearch({
+    'table' => 'export_svc',
+    'addl_from' => 'LEFT JOIN part_svc USING ( svcpart  ) ',
+    'hashref'   => { 'exportnum' => $param->{export_provisioned_services_exportnum}, },
+  });
+  my $part_count = scalar @svcparts;
+
+  my $parts = join "', '", map { $_->{Hash}->{svcpart} } @svcparts;
+
+  my @svcs = FS::Record::qsearch({
+    'table' => 'cust_svc',
+    'addl_from' => 'LEFT JOIN svc_broadband USING ( svcnum  ) ',
+    'extra_sql' => " WHERE svcpart in ('".$parts."')",
+  }) unless !$parts;
+
+  my $svc_count = scalar @svcs;
+
+  my %status = {};
+  for (my $c=1; $c <=100; $c=$c+1) { $status{int($svc_count * ($c/100))} = $c; }
+
+  my $process_count=0;
+  foreach my $svc (@svcs) {
+    my $description = $svc->{Hash}->{description};
+    my $user = $svc->{Hash}->{svcnum};
+    my $svc_location = get_svc_location($job, $svc);
+    if ($status{$process_count}) { my $s = $status{$process_count}; $job->update_statustext($s); }
+    warn "Exporting user ".$svc->{Hash}->{ip_addr}."\n" if ($part_export->option('debug'));
+    my $export_error = export_user($part_export,$user,$description, $svc_location);
+    if ($export_error) {
+      warn "Error exporting user ".$svc->{Hash}->{svcnum}."\n" if ($part_export->option('debug'));
+      die ($export_error->{'error'}."\n");
     }
     $process_count++;
   }

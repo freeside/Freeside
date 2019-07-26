@@ -13,7 +13,7 @@
   <%$th%>Send messages</TH>
   <%$th%>Self-service</TH>
 % foreach my $phone_type (@phone_type) {
-    <%$th%><% $phone_type->typename |h %></TH>
+    <%$th%><% $phone_type->typename |h %> phone</TH>
 % }
   <%$th%>Comment</TH>
 </TR>
@@ -80,7 +80,7 @@
 %}
 <%once>
 
-my @phone_type = qsearch({table=>'phone_type', order_by=>'weight'});
+my @phone_type = FS::phone_type->get_phone_types();
 
 </%once>
 <%init>

@@ -131,6 +131,10 @@ function <% $pre %>county_changed(what, callback) {}
             <% $select_style %>
     >
 
+%   if ( $opt{city} ) {
+      <OPTION VALUE="<% $opt{city} %>" SELECTED><% $opt{city} %></OPTION>
+%   }
+
 %   unless ( $opt{'disable_empty'} ) {
       <OPTION VALUE="" <% $opt{city} eq '' ? 'SELECTED' : '' %>><% $opt{empty_label} %></OPTION>
 %   }

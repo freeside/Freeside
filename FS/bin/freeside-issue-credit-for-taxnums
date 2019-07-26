@@ -293,18 +293,18 @@ sub validate_opts {
 
   error_and_help( '--csv_dir is required' )
     unless $csv_dir;
-  error_and_help( '--start_date is required' )
+  error_and_help( '--start-date is required' )
     unless $start_date;
   error_and_help( '--end-date is required' )
     unless $end_date;
   error_and_help( '--taxnums is required' )
     unless @taxnums;
-  error_and_help( '--credit-reasonnum is required with --apply-credits' )
+  error_and_help( '--credit-reasonnum is required with --insert-credits' )
     if $insert_credits && !$credit_reasonnum;
-  error_and_help( '--credit-addlinfo is required with --apply-credits' )
+  error_and_help( '--credit-addlinfo is required with --insert-credits' )
     if $insert_credits && !$credit_addlinfo;
 
-  error_and_help( "csv dir ($csv_dir) is not a writable directoryu" )
+  error_and_help( "csv dir ($csv_dir) is not a writable directory" )
     unless -d $csv_dir && -r $csv_dir;
 
   error_and_help( "start_date($start_date) is not a valid date string")

@@ -294,6 +294,14 @@ sub wa_sales_update_tax_table {
     )
   );
 
+  unless ( wa_sales_update_tax_table_sanity_check() ) {
+    log_error_and_die(
+      'Duplicate district rows exist in the Washington state sales tax table. '.
+      'These must be resolved before updating the tax tables. '.
+      'See "freeside-wa-tax-table-resolve --check" to repair the tax tables. '
+    );
+  }
+
   $args->{temp_dir} ||= tempdir();
 
   $args->{filename} ||= wa_sales_fetch_xlsx_file( $args );
@@ -326,6 +334,8 @@ sub wa_sales_update_cust_main_county {
   my $update_count = 0;
   my $same_count   = 0;
 
+  $args->{taxname} ||= 'State Sales Tax';
+
   # Work within a SQL transaction
   local $FS::UID::AutoCommit = 0;
 
@@ -351,7 +361,7 @@ sub wa_sales_update_cust_main_county {
         cust_main_county => {
           source    => 'wa_sales',
           district  => { op => '!=', value => undef },
-          tax_class => $taxclass,
+          taxclass => $taxclass,
         }
       )
     ) {
@@ -376,23 +386,37 @@ sub wa_sales_update_cust_main_county {
       $cust_main_county{$district} = $row;
     }
 
-    # Merge any dupes, place resulting non-dupe row in %cust_main_county
-    #  Merge, even if one of the dupes has a $0 tax, or some other
-    #  variation on tax row data.  Data for this row will get corrected
-    #  during the following tax import
-    for my $dupe_district_aref ( values %cust_main_county_dupe ) {
-      my $row_to_keep = shift @$dupe_district_aref;
-      while ( my $row_to_merge = shift @$dupe_district_aref ) {
-        $row_to_merge->_merge_into(
-          $row_to_keep,
-          { identical_record_check => 0 },
-        );
-      }
-      $cust_main_county{$row_to_keep->district} = $row_to_keep;
+    # # Merge any dupes, place resulting non-dupe row in %cust_main_county
+    # #  Merge, even if one of the dupes has a $0 tax, or some other
+    # #  variation on tax row data.  Data for this row will get corrected
+    # #  during the following tax import
+    # for my $dupe_district_aref ( values %cust_main_county_dupe ) {
+    #   my $row_to_keep = shift @$dupe_district_aref;
+    #   while ( my $row_to_merge = shift @$dupe_district_aref ) {
+    #     $row_to_merge->_merge_into(
+    #       $row_to_keep,
+    #       { identical_record_check => 0 },
+    #     );
+    #   }
+    #   $cust_main_county{$row_to_keep->district} = $row_to_keep;
+    # }
+
+    # If there are duplicate rows, it may be unsafe to auto-resolve them
+    if ( %cust_main_county_dupe ) {
+      warn "Unable to continue!";
+      log_error_and_die( sprintf(
+        'Tax district duplicate rows detected(%s) - '.
+        'WA Sales tax tables cannot be updated without resolving duplicates - '.
+        'Please use tool freeside-wa-tax-table-resolve for tax table repair',
+            join( ',', keys %cust_main_county_dupe )
+      ));
     }
 
-    for my $district ( @{ $args->{tax_districts} } ) {
+    DIST: for my $district ( @{ $args->{tax_districts} } ) {
       if ( my $row = $cust_main_county{ $district->{district} } ) {
+
+        # Strip whitespace from input
+        $district->{$_} =~ s/(^\s+|\s+$)//g for keys %$district;
 
         # District already exists in this taxclass, update if necessary
         #
@@ -405,20 +429,20 @@ sub wa_sales_update_cust_main_county {
           no warnings 'uninitialized';
 
           if (
-            $row->tax == ( $district->{tax_combined} * 100 )
+            sprintf('%.4f',$row->tax) == sprintf('%.4f',($district->{tax_combined} * 100))
             &&    $row->taxname eq    $args->{taxname}
             && uc $row->county  eq uc $district->{county}
             && uc $row->city    eq uc $district->{city}
           ) {
             $same_count++;
-            next;
+            next DIST;
           }
         }
 
         $row->city( uc $district->{city} );
         $row->county( uc $district->{county} );
         $row->taxclass( $taxclass );
-        $row->taxname( $args->{taxname} || undef );
+        $row->taxname( $args->{taxname} );
         $row->tax( $district->{tax_combined} * 100 );
 
         if ( my $error = $row->replace ) {
@@ -466,6 +490,8 @@ sub wa_sales_update_cust_main_county {
         $insert_count++;
       }
 
+      update_non_sales_tax_rows( $taxclass, $district );
+
     } # /foreach $district
   } # /foreach $taxclass
 
@@ -480,6 +506,47 @@ sub wa_sales_update_cust_main_county {
       $update_count,
       $same_count
   );
+
+}
+
+=head2 update_non_sales_tax_rows tax_class, $district_href
+
+The customer may have created additional taxes, such as Universal Service Fund.
+
+Ensure the columns for city and county are consistant between
+the user-created tax rows and the wa-sales-managed tax rows.
+
+=cut
+
+sub update_non_sales_tax_rows {
+  my ( $taxclass, $district ) = @_;
+
+  return unless ref $district && $district->{district};
+
+  my @rows = qsearch( cust_main_county => {
+    taxclass => $taxclass,
+    district => $district->{district},
+    state    => 'WA',
+    country  => 'US',
+    source   => { op => '!=', value => 'wa_sales' },
+  });
+
+  for my $row ( @rows ) {
+    $row->city( uc $district->{city} );
+    $row->county( uc $district->{county} );
+
+    if ( my $error = $row->replace ) {
+      dbh->rollback;
+      local $FS::UID::AutoCommit = 1;
+      log_error_and_die(
+        sprintf
+          "Error updating cust_main_county row %s for district %s: %s",
+          $row->taxnum,
+          $district->{district},
+          $error
+      );
+    }
+  }
 
 }
 
@@ -635,6 +702,26 @@ sub wa_sales_fetch_xlsx_file {
 
 }
 
+=head2 wa_sales_update_tax_table_sanity_check
+
+There should be no duplicate tax table entries in the tax table,
+with the same district value, within a tax class, where source=wa_sales.
+
+If there are, custome taxes may have been user-entered in the
+freeside UI, and incorrectly labelled as source=wa_sales.  Or, the
+dupe record may have been created by issues with older wa_sales code.
+
+If these dupes exist, the sysadmin must solve the problem by hand
+with the freeeside-wa-tax-table-resolve script
+
+Returns 1 unless problem sales tax entries are detected
+
+=cut
+
+sub wa_sales_update_tax_table_sanity_check {
+  FS::cust_main_county->find_wa_tax_dupes ? 0 : 1;
+}
+
 sub log {
   state $log = FS::Log->new('tax_rate_update');
   $log;
@@ -655,6 +742,7 @@ sub log_warn_and_warn {
 sub log_error_and_die {
   my $log_message = shift;
   &log()->error( $log_message );
+  warn( "$log_message\n" );
   die( "$log_message\n" );
 }
 
