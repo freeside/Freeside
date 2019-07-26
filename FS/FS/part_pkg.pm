@@ -1880,7 +1880,7 @@ sub _rebless {
 
 =item calc_setup CUST_PKG START_DATE DETAILS_ARRAYREF OPTIONS_HASHREF
 
-=item calc_recur CUST_PKG START_DATE DETAILS_ARRAYREF OPTIONS_HASHREF
+=item calc_recur CUST_PKG START_DATE_SCALARREF DETAILS_ARRAYREF OPTIONS_HASHREF
 
 Calculates and returns the setup or recurring fees, respectively, for this
 package.  Implementation is in the FS::part_pkg:* module specific to this price

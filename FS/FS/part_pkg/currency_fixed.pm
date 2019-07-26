@@ -39,22 +39,22 @@ sub price_info {
 }
 
 sub base_setup {
-  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
+  my($self, $cust_pkg, $time, $details, $param ) = @_;
 
-  $self->calc_currency_option('setup_fee', $cust_pkg, $sdate, $details, $param);
+  $self->calc_currency_option('setup_fee', $cust_pkg, $time, $details, $param);
 }
 
 sub calc_setup {
-  my($self, $cust_pkg, $sdate, $details, $param) = @_;
+  my($self, $cust_pkg, $time, $details, $param) = @_;
 
-  return 0 if $self->prorate_setup($cust_pkg, $sdate);
+  return 0 if $self->prorate_setup($cust_pkg, $time);
 
-  $self->base_setup($cust_pkg, $sdate, $details, $param);
+  $self->base_setup($cust_pkg, $time, $details, $param);
 }
 
 use FS::Conf;
 sub calc_currency_option {
-  my($self, $optionname, $cust_or_quotation_pkg, $sdate, $details, $param) = @_;
+  my($self, $optionname, $cust_or_quotation_pkg, $time, $details, $param) = @_;
 
   my($currency, $amount) =
     $cust_or_quotation_pkg->part_pkg_currency_option($optionname);
