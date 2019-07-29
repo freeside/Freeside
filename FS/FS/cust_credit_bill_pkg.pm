@@ -140,7 +140,7 @@ sub insert {
         # (above the remaining taxable charge amount).  We'll "de-exempt"
         # that much, or the amount of the new credit, whichever is smaller.
         if ($amount > $credit_per_month) {
-               "cust_bill_pkg ". $self->billpkgnum. "  Reducing.\n";
+          #warn "cust_bill_pkg ". $self->billpkgnum. "  Reducing.\n";
           $amount = $credit_per_month;
         }
       } elsif ( $exemption->exempt_setup or $exemption->exempt_recur ) {
