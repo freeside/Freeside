@@ -1,0 +1,123 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV_XS;
+use FS::Misc::Getopt;
+use FS::Record qw( dbh );
+use FS::rate;
+use FS::rate_region;
+use FS::rate_detail;
+
+our %opt;
+getopts('d');
+
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+###
+# import rate ("profiles")
+###
+
+my $file = shift or usage();
+open my $in, '<', $file or die "$file: $!\n";
+my $csv = Text::CSV->new({ binary => 1, auto_diag => 2 });
+
+my $rp = 0;
+my %granularity = ();
+#my %currency = ();
+
+my %rate = ();
+while (my $row = $csv->getline($in)) {
+
+  my $profilekey  = $row->[1];
+  my $name        = $row->[2];
+  my $granularity = $row->[5];
+  my $currency    = $row->[18];
+  my $rate = new FS::rate {
+    'ratename'     => "$currency: $name",
+    'agent_rateid' => $profilekey,
+  };
+  my $error = $rate->insert;
+  die $error if $error;
+
+  $granularity{$rate->ratenum} = $granularity;
+
+  $rate{$profilekey} = $rate;
+
+  $rp++;
+}
+
+###
+# import rate_region and rate_detail ("destination rates")
+###
+
+my $rfile = shift or usage();
+open my $rin, '<', $rfile or die "$rfile: $!\n";
+
+my $header = <$rin>;
+
+my $rr = 0;
+my $rd = 0;
+my %rate_region;
+while( my $row = $csv->getline($rin) ) {
+
+  my( $profilekey, $currency, $destid, $profilerate, $destkey ) = @$row;
+
+
+  my $rate = $rate{$profilekey};
+  my $ratecurrency = (split(':', $rate->ratename) )[0];
+  die "currency mismatch" unless $currency eq $ratecurrency;
+
+  unless ( $rate_region{ $destkey } ) {
+
+    if ( $destid =~ /^(.*)\n\1$/ ) {
+      $destid = $1;
+      #warn $destid;
+    }
+
+    my $rate_region = new FS::rate_region {
+      'regionname' => "$destkey: $destid",
+    };
+    my $error = $rate_region->insert;
+    die $error if $error;
+    warn "$destkey: $destid\n";
+
+    $rate_region{$destkey} = $rate_region;
+    $rr++;
+  }
+
+  my $rate_detail = new FS::rate_detail {
+    'ratenum'         => $rate->ratenum,
+    'dest_regionnum'  => $rate_region{$destkey}->regionnum,
+    'min_charge'      => $profilerate,
+    'sec_granularity' => $granularity{ $rate->ratenum },
+    'min_included'    => 0,
+  };
+  my $error = $rate_detail->insert;
+  die $error if $error;
+
+  $rd++;
+
+}
+
+###
+# ??? import rate_prefix ("destinations?")
+###
+
+#???
+
+if ( $opt{d} ) {
+  dbh->rollback;
+  print STDERR "(dry run) ";
+} else {
+  dbh->commit;
+}
+
+print "Inserted $rd rates for $rr regions in $rp rate plans\n";
+
+1;
+
+sub usage {
+  die "Usage: rate-ptelecom.import [ -d ] <user> profiles.csv rates.csv\n"
+}
+
