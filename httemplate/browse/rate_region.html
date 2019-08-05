@@ -68,11 +68,25 @@ my $sub_prefixes = sub {
   ($region->exact_match ? ' <I>(exact match only)</I>' : '');
 };
 
-my @header     = ( '#',         'Region',  'Country code', 'Prefixes' );
-my @fields     = ( 'regionnum', 'regionname',   'ccode',   $sub_prefixes );
-my @links      = ( ($link) x 4 );
-my @align      = ( 'right', 'left', 'right', 'left' );
-my @xls_format = ( ({ locked=>1, bg_color=>22 }) x 4 );
+my @header = ();
+my @fields = ();
+my @links = ();
+my @align = ();
+my @xls_format = ();
+
+if ( FS::Record->scalar_sql('SELECT 1 FROM rate_region WHERE agent_regionid IS NOT NULL LIMIT 1') ) {
+  push @header, 'Legacy #';
+  push @fields, 'agent_regionid';
+  push @links, $link;
+  push @align, 'right';
+  push @xls_format, { locked=>1, bg_color=>22};
+}
+
+push @header, 'Region',  'Country code', 'Prefixes';
+push @fields, 'regionname',   'ccode',   $sub_prefixes;
+push @links, ($link) x 3;
+push @align, 'left', 'right', 'left';
+push @xls_format, ({ locked=>1, bg_color=>22 }) x 3;
 
 my $countrycode_filter_change =
   "window.location = '".

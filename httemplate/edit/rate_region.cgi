@@ -11,7 +11,14 @@
 
 %# region info
 
-<% ntable('#cccccc') %>
+<TABLE CLASS="fsinnerbox">
+
+% if ( $rate_region->agent_regionid ) {
+    <TR>
+      <TH ALIGN="right">Legacy #</TH>
+      <TD><% $rate_region->agent_regionid |h %></TD>
+    </TR>
+% }
 
   <TR>
     <TH ALIGN="right">Region name</TH>
@@ -24,10 +31,10 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right">
+    <TH ALIGN="right">
       <B>Prefixes</B>
       <BR><FONT SIZE="-1">(comma-separated)</FONT>
-    </TD>
+    </TH>
     <TD>
       <TEXTAREA NAME="npa" WRAP=SOFT><% join(', ', map { $_->npa. (length($_->nxx) ? '-'.$_->nxx : '') } @rate_prefix ) %></TEXTAREA>
     </TD>
