@@ -5203,10 +5203,11 @@ sub tables_hashref {
         'regionnum',   'serial',      '', '', '', '', 
         'regionname',  'varchar',     '', $char_d, '', '', 
         'exact_match', 'char',    'NULL',  1, '', '',
+        'agent_regionid',    'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'regionnum',
       'unique'      => [],
-      'index'       => [],
+      'index'       => [ ['agent_regionid'] ],
     },
 
     'rate_prefix' => {
