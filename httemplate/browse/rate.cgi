@@ -8,9 +8,9 @@
                                  'order_by' => 'ORDER BY ratenum',
                                },
               'count_query' => $count_query,
-              'header'      => [ '#',       'Rate plan', 'Rates'    ],
-              'fields'      => [ 'ratenum', 'ratename',  $rates_sub ],
-              'links'       => [ $link,     $link,       ''         ],
+              'header'      => \@header,
+              'fields'      => \@fields,
+              'links'       => \@links,
               'agent_virt'  => 1,
               'agent_pos'   => 1,
               'agent_null_right' => 'Configuration', #'Edit global CDR rates',
@@ -75,5 +75,19 @@ if ( $curuser->access_right('Configuration') ) { #, 'Edit global CDR rates') ) {
     'CDR Types'            => $p.'edit/cdr_type.cgi',
   ;
 }
+
+my @header = ();
+my @fields = ();
+my @links = ();
+
+if ( FS::Record->scalar_sql('SELECT 1 FROM rate WHERE agent_rateid IS NOT NULL LIMIT 1') ) {
+  push @header, 'Legacy #';
+  push @fields, 'agent_rateid';
+  push @links, $link;
+}
+
+push @header, 'Rate plan', 'Rates';
+push @fields, 'ratename',  $rates_sub;
+push @links, $link, '';
 
 </%init>

@@ -24,8 +24,15 @@
      empty_label   => '(global)',
 &>
 
+% if ( $rate->agent_rateid ) {
+    <TR>
+      <TH ALIGN="right">Legacy #</TH>
+      <TD><% $rate->agent_rateid |h %></TD>
+    </TR>
+% }
+
 <TR>
-  <TD>Rate plan</TD>
+  <TH>Rate plan</TH>
   <TD><INPUT TYPE="text" NAME="ratename" SIZE=32 VALUE="<% $rate->ratename %>"></TD>
 </TR>
 </TABLE>
