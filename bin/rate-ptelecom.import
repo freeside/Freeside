@@ -7,6 +7,7 @@ use FS::Record qw( dbh );
 use FS::rate;
 use FS::rate_region;
 use FS::rate_detail;
+use FS::rate_prefix;
 
 our %opt;
 getopts('d');
@@ -76,7 +77,8 @@ while( my $row = $csv->getline($rin) ) {
     }
 
     my $rate_region = new FS::rate_region {
-      'regionname' => "$destkey: $destid",
+      'regionname'     => $destid,
+      'agent_regionid' => $destkey,
     };
     my $error = $rate_region->insert;
     die $error if $error;
@@ -101,10 +103,56 @@ while( my $row = $csv->getline($rin) ) {
 }
 
 ###
-# ??? import rate_prefix ("destinations?")
+# import rate_prefix ("country")
 ###
 
-#???
+my $pfile = shift or usage();
+open my $pin, '<', $pfile or die "$pfile: $!\n";
+
+my $rx = 0;
+while( my $row = $csv->getline($pin) ) {
+  my $destkey     = $row->[1];
+  my $prefix      = $row->[4];
+  my $countrycode = $row->[20];
+  #my $npa         = $row->[21];
+  #my $npa2        = $row->[22];
+  my $pattern     = $row->[24];
+
+  #$npa  = '' if $npa  eq 'NULL';
+  #$npa2 = '' if $npa2 eq 'NULL';
+
+  die "destkey $destkey: $prefix ne $pattern\n"
+    if $prefix ne $pattern;
+
+  if ( $countrycode eq 'NULL' ) {
+    warn "destkey $destkey: countrycode is null for prefix $prefix; skipping\n";
+    next;
+  }
+
+  my $rate_region = $rate_region{$destkey}
+    or do {
+             warn "destkey $destkey: not found for prefix $prefix; skipping\n";
+             next;
+          };
+
+  $prefix =~ s/^\Q$countrycode\E//;
+  $prefix =~ s/ //g;
+  $prefix =~ s/\.$//;
+
+  my $rate_prefix = new FS::rate_prefix {
+    'regionnum'   => $rate_region->regionnum,
+    'countrycode' => $countrycode,
+    'npa'         => $prefix,
+  };
+  my $error = $rate_prefix->insert;
+  die "error inserting rate_prefix: $error for cc $countrycode prefix $prefix"
+    if $error;
+
+  $rx++;
+
+  #print '.' if $rx % 1000 == 0;
+}
+print "\n";
 
 if ( $opt{d} ) {
   dbh->rollback;
@@ -113,11 +161,11 @@ if ( $opt{d} ) {
   dbh->commit;
 }
 
-print "Inserted $rd rates for $rr regions in $rp rate plans\n";
+print "Inserted $rd rates for $rr regions with $rx prefixes in $rp rate plans\n";
 
 1;
 
 sub usage {
-  die "Usage: rate-ptelecom.import [ -d ] <user> profiles.csv rates.csv\n"
+  die "Usage: rate-ptelecom.import [ -d ] <user> profiledestinationrates.csv callratingprofiles.csv country.csv\n"
 }
 
