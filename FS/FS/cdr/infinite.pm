@@ -18,7 +18,8 @@ my $date_parser = _cdr_date_parser_maker('startdate');
     'uniqueid',       # A. billid
     skip(3),          # B-D. confid, invoicenum, acctgrpid
     skip(1),          # E. accountid ("Room Confirmation Number")
-    skip(2),          # F-G. billingcode ("Room Billingcode"), confname
+    'dst',            # was: skip(1), # F. billingcode ("Room Billingcode")
+    skip(1),          # G. confname
     skip(1),          # H. participant_type
     skip(1),          # I. starttime_t - timezone is unreliable
     sub {             # J. startdate
@@ -37,7 +38,7 @@ my $date_parser = _cdr_date_parser_maker('startdate');
     },                # L. minutes
     skip(1),          # M. dnis
     'src',            # N. ani
-    'dst',            # O. calltype
+    skip(1),          # was: 'dst', # O. calltype
     skip(7),          # P-V. calltype_text, confstart_t, confstartdate, 
                       # confstarttime, confminutes, conflegs, ppm
     'upstream_price', # W. callcost
