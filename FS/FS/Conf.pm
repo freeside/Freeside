@@ -775,7 +775,7 @@ my $validate_email = sub { $_[0] =~
   {
     'key'         => 'credit-card-surcharge-percentage',
     'section'     => 'credit_cards',
-    'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
+    'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total.  WARNING: Although permitted to US merchants in general since 2013, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahoma, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
     'type'        => 'text',
     'per_agent'   => 1,
   },
@@ -783,7 +783,7 @@ my $validate_email = sub { $_[0] =~
   {
     'key'         => 'credit-card-surcharge-flatfee',
     'section'     => 'credit_cards',
-    'description' => 'Add a credit card surcharge to invoices, as a flat fee.  WARNING: Although recently permitted to US merchants in general, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahome, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
+    'description' => 'Add a credit card surcharge to invoices, as a flat fee.  WARNING: Although permitted to US merchants in general since 2013, specific consumer protection laws may prohibit or restrict this practice in California, Colorado, Connecticut, Florda, Kansas, Maine, Massachusetts, New York, Oklahoma, and Texas.  Surcharging is also generally prohibited in most countries outside the US, AU and UK.  When allowed, typically not permitted to be above 4%.',
     'type'        => 'text',
     'per_agent'   => 1,
   },
