@@ -133,9 +133,9 @@ while ( my $row = $sth->fetchrow_hashref ) {
   $cdr->amaflags('') unless $cdr->amaflags =~ /^(\d+)$/;
 
   if ( my $error = $cdr->insert ) {
-    log_msg( error =>
-      sprintf 'Non-fatal failure to import acctid(%s) from table(%s): %s',
-        $row->acctid,
+    log_and_die( error =>
+      sprintf 'Fatal failure to import uniqueid(%s) from table(%s): %s',
+        $row->{'uniqueid'},
         $table,
         $error
     );
@@ -161,9 +161,9 @@ while ( my $row = $sth->fetchrow_hashref ) {
     if ( $dbi->do($usql, @args) ) {
       $updates++;
     } else {
-      log_msg( error =>
-        sprintf 'Non-fatal failure set status(done) acctid(%s) table(%s): %s',
-          $row->acctid,
+      log_and_die( error =>
+        sprintf 'Fatal failure set status(done) uniqueid(%s) table(%s): %s',
+          $row->{'uniqueid'},
           $table,
           $dbi->errstr
       );
