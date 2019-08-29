@@ -56,7 +56,12 @@ if ( $engine =~ /^mysql/ ) {
 
 my @cols = ();
 if ( $opt{V} >= 12 ) {
-  push @cols, qw( id start answer end );
+  push @cols, qw( id start answer );
+  if ( $engine =~ /^Pg/ ) {
+    push @cols, "'end'";
+  } else {
+    push @cols, "end";
+  }
 } else {
   push @cols, qw( calldate );
 }
@@ -182,7 +187,7 @@ sub log_and_warn {
 
 
 sub usage {
-  "Usage: \n  freeside-cdr-asterisk_sql\n\t-e mysql|Pg|... [ -H host ]n\t-D database\n\t[ -T table ]\n\t[ -V asterisk_version]\n\t-U user\n\t-P password\n\tfreesideuser\n";
+  "Usage: \n  freeside-cdr-asterisk_sql\n\t-e mysql|Pg|... [ -H host ]\n\t-D database\n\t[ -T table ]\n\t[ -V asterisk_version]\n\t-U user\n\t-P password\n\tfreesideuser\n";
 }
 
 =head1 NAME
