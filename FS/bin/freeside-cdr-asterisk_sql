@@ -13,7 +13,7 @@ use Getopt::Std;
 $DEBUG = 0;
 
 my %opt;
-getopts('e:H:U:P:D:T:V:', \%opt);
+getopts('e:H:U:P:D:T:V:Q', \%opt);
 my $user = shift or die &usage;
 
 my $engine = $opt{e} || 'mysql';
@@ -56,12 +56,18 @@ if ( $engine =~ /^mysql/ ) {
 
 my @cols = ();
 if ( $opt{V} >= 12 ) {
-  push @cols, qw( id start answer );
+
+  push @cols, qw( id )
+    unless $opt{Q};
+
+  push @cols, qw( start answer );
+
   if ( $engine =~ /^Pg/ ) {
     push @cols, "'end'";
   } else {
     push @cols, "end";
   }
+
 } else {
   push @cols, qw( calldate );
 }
@@ -138,8 +144,13 @@ while ( my $row = $sth->fetchrow_hashref ) {
     my $usql = "UPDATE $table SET freesidestatus = 'done' WHERE ";
     my @args = ();
     if ( $opt{V} >= 12 ) {
-      $usql .= ' id = '. $row->{'id'};
-      @args = ( undef );
+      if ( $row->{'id'} ) {
+        $usql .= ' id = '. $row->{'id'};
+        @args = ( undef );
+      } else {
+        $usql .= ' uniqueid = ?';
+        @args = ( $row->{'uniqueid'} );
+      }
     } else {
       $usql .= ' calldate = ? AND src = ? AND dst = ?';
       @args = ( undef, $row->{'calldate'}, $row->{'src'}, $row->{'dst'}, );
@@ -215,6 +226,8 @@ Imports CDR records from an Asterisk SQL database.
 -P: password
 
 -V: Asterisk version.  Values of 12 or higher have a new database schema which no longer includes calldate.  Currently defaults to 11, but may default to 12+ or be required in a future, so best to always specify the version.
+
+-Q: Use uniqueid field instead of id (Asterisk v12 only).  Less efficient, but useful if the field is missing.
 
 =cut
 
