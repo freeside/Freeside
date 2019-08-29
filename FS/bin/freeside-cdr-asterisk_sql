@@ -151,7 +151,7 @@ while ( my $row = $sth->fetchrow_hashref ) {
         @args = ( undef );
       } else {
         $usql .= ' uniqueid = ?';
-        @args = ( $row->{'uniqueid'} );
+        @args = ( undef, $row->{'uniqueid'} );
       }
     } else {
       $usql .= ' calldate = ? AND src = ? AND dst = ?';
