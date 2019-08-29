@@ -130,6 +130,8 @@ while ( my $row = $sth->fetchrow_hashref ) {
 
   $cdr->cdrbatchnum($cdrbatchnum);
 
+  $cdr->amaflags('') unless $cdr->amaflags =~ /^(\d+)$/;
+
   if ( my $error = $cdr->insert ) {
     log_msg( error =>
       sprintf 'Non-fatal failure to import acctid(%s) from table(%s): %s',
