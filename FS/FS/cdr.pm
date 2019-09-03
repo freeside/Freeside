@@ -4,6 +4,8 @@ use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $me
              $conf $cdr_prerate %cdr_prerate_cdrtypenums
              $use_lrn $support_key $max_duration
+             $cp_accountcode $cp_accountcode_trim0s $cp_field
+             $tollfree_country
            );
 use Exporter;
 use List::Util qw(first min);
@@ -51,6 +53,13 @@ FS::UID->install_callback( sub {
   $use_lrn = $conf->exists('cdr-lrn_lookup');
 
   $max_duration = $conf->config('cdr-max_duration') || 0;
+
+  $cp_accountcode = $conf->exists('cdr-charged_party-accountcode');
+  $cp_accountcode_trim0s = $conf->exists('cdr-charged_party-accountcode-trim_leading_0s');
+
+  $cp_field = $conf->config('cdr-charged_party-field');
+
+  $tollfree_country = $conf->config('tollfree-country') || '';
 
 });
 
@@ -388,10 +397,9 @@ to inspect other field.
 sub is_tollfree {
   my $self = shift;
   my $field = scalar(@_) ? shift : 'dst';
-  my $country = $conf->config('tollfree-country') || '';
-  if ( $country eq 'AU' ) { 
+  if ( $tollfree_country eq 'AU' ) { 
     ( $self->$field() =~ /^(\+?61)?(1800|1300)/ ) ? 1 : 0;
-  } elsif ( $country eq 'NZ' ) { 
+  } elsif ( $tollfree_country eq 'NZ' ) { 
     ( $self->$field() =~ /^(\+?64)?(800|508)/ ) ? 1 : 0;
   } else { #NANPA (US/Canaada)
     ( $self->$field() =~ /^(\+?1)?8(8|([02-7])\3)/ ) ? 1 : 0;
@@ -417,17 +425,16 @@ sub set_charged_party {
 
   unless ( $self->charged_party ) {
 
-    if ( $conf->exists('cdr-charged_party-accountcode') && $self->accountcode ){
+    if ( $cp_accountcode && $self->accountcode ) {
 
       my $charged_party = $self->accountcode;
       $charged_party =~ s/^0+//
-        if $conf->exists('cdr-charged_party-accountcode-trim_leading_0s');
+        if $cp_accountcode_trim0s;
       $self->charged_party( $charged_party );
 
-    } elsif ( $conf->exists('cdr-charged_party-field') ) {
+    } elsif ( $cp_field ) {
 
-      my $field = $conf->config('cdr-charged_party-field');
-      $self->charged_party( $self->$field() );
+      $self->charged_party( $self->$cp_field() );
 
     } else {
 

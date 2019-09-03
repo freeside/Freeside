@@ -5138,7 +5138,7 @@ and customer address. Include units.',
   {
     'key'         => 'cdr-charged_party-field',
     'section'     => 'telephony',
-    'description' => 'Set the charged_party field of CDRs to this field.',
+    'description' => 'Set the charged_party field of CDRs to this field.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'select-sub',
     'options_sub' => sub { my $fields = FS::cdr->table_info->{'fields'};
                            map { $_ => $fields->{$_}||$_ }
@@ -5154,14 +5154,14 @@ and customer address. Include units.',
   {
     'key'         => 'cdr-charged_party-accountcode',
     'section'     => 'telephony',
-    'description' => 'Set the charged_party field of CDRs to the accountcode.',
+    'description' => 'Set the charged_party field of CDRs to the accountcode.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cdr-charged_party-accountcode-trim_leading_0s',
     'section'     => 'telephony',
-    'description' => 'When setting the charged_party field of CDRs to the accountcode, trim any leading zeros.',
+    'description' => 'When setting the charged_party field of CDRs to the accountcode, trim any leading zeros.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'checkbox',
   },
 
@@ -5259,7 +5259,7 @@ and customer address. Include units.',
   {
     'key'         => 'cdr-max_duration',
     'section'     => 'telephony',
-    'description' => 'If set, defines a global maximum billsec/duration for (prefix-based) call rating, in seconds.  Used with questionable/dirty CDR data that may contain bad records with long billsecs/durations.',
+    'description' => 'If set, defines a global maximum billsec/duration for (prefix-based) call rating, in seconds.  Used with questionable/dirty CDR data that may contain bad records with long billsecs/durations.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'text',
   },
 
@@ -5787,14 +5787,14 @@ and customer address. Include units.',
   {
     'key'         => 'cdr-prerate',
     'section'     => 'telephony',
-    'description' => 'Experimental feature to rate CDRs immediately, rather than waiting until invoice generation time.  Can reduce invoice generation time when processing lots of CDRs.  Currently works with "VoIP/telco CDR rating (standard)" price plans using "Phone numbers (svc_phone.phonenum)" CDR service matching, without any included minutes.',
+    'description' => 'Experimental feature to rate CDRs immediately, rather than waiting until invoice generation time.  Can reduce invoice generation time when processing lots of CDRs.  Currently works with "VoIP/telco CDR rating (standard)" price plans using "Phone numbers (svc_phone.phonenum)" CDR service matching, without any included minutes.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cdr-prerate-cdrtypenums',
     'section'     => 'telephony',
-    'description' => 'When using cdr-prerate to rate CDRs immediately, limit processing to these CDR types.',
+    'description' => 'When using cdr-prerate to rate CDRs immediately, limit processing to these CDR types.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'select-sub',
     'multiple'    => 1,
     'options_sub' => sub { require FS::Record;
@@ -5828,7 +5828,7 @@ and customer address. Include units.',
   {
     'key'         => 'cdr-lrn_lookup',
     'section'     => 'telephony',
-    'description' => 'Look up LRNs of destination numbers for exact matching to the terminating carrier.  This feature requires a Freeside support contract for paid access to the central NPAC database; see <a href ="#support-key">support-key</a>.',
+    'description' => 'Look up LRNs of destination numbers for exact matching to the terminating carrier.  This feature requires a Freeside support contract for paid access to the central NPAC database; see <a href ="#support-key">support-key</a>.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'checkbox',
   },
   
@@ -6028,7 +6028,7 @@ and customer address. Include units.',
   {
     'key'         => 'tollfree-country',
     'section'     => 'telephony',
-    'description' => 'Country / region for toll-free recognition',
+    'description' => 'Country / region for toll-free recognition.  Restart Apache and Freeside daemons after changing.',
     'type'        => 'select',
     'select_hash' => [ ''   => 'NANPA (US/Canada)',
                        'AU' => 'Australia',
