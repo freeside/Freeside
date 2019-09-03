@@ -540,7 +540,7 @@ if ( $acl_edit_global ) {
                                 {
                                  'data'  => '<B><FONT COLOR="#'. $col{$label}. '">'.
                                             $part_pkg->get("num_$_").
-                                            '</FONT></B>',
+                                            '</FONT></B>&nbsp;',
                                  'align' => 'right',
                                 },
                                 {
@@ -727,7 +727,7 @@ push @fields,
 
                              [
                                {
-                                 'data'  => '<B>'. $pkg_svc->quantity. '</B>',
+                                 'data'  => '<B>'. $pkg_svc->quantity. '</B>&nbsp;',
                                  'align' => 'right'
                                },
                                {
