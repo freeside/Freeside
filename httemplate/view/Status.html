@@ -121,7 +121,7 @@ if ( $db eq 'PostgreSQL' ) {
                 && FS::Record->scalar_sql('SHOW archive_mode') eq 'on';
 
   my $slave = 
-    FS::Record->scalar_sql('SHOW archive_command') =~ / postgres\@([\w\.\-]+): /
+    FS::Record->scalar_sql('SHOW archive_command') =~ / postgres\@([\w\.\-]+):/
       ? $1 : '';
 
   $status{'Replication'} = [
@@ -141,11 +141,11 @@ if ( $db eq 'PostgreSQL' ) {
       # http://www.keithf4.com/monitoring_streaming_slave_lag/
       # except pg_stat_replication still doesn't fill in the columns we need as
       # non-Pg user :/
-      push @{ $status{'Replication'} }, 
-        { 'title' => 'Slave',
-          'value' => $slave || '(Missing, or unparseable archive_command)',
-        },
-      ;
+      #push @{ $status{'Replication'} }, 
+      #  { 'title' => 'Slave',
+      #    'value' => $slave || '(Missing, or unparseable archive_command)',
+      #  },
+      #;
     }
   }
 
