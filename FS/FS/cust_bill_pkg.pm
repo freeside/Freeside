@@ -6,7 +6,7 @@ use vars qw( @ISA $DEBUG $me );
 use Carp;
 use List::Util qw( sum min );
 use Text::CSV_XS;
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::cust_pkg;
 use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
@@ -429,8 +429,10 @@ sub void_cust_bill_pkg_detail {
     $self->billpkgnum
   );
 
-  $self->scalar_sql("INSERT INTO cust_bill_pkg_detail_void
-                       SELECT * $from_cust_bill_pkg_detail",
+  my $fields = join(', ', fields('cust_bill_pkg_detail_void') );
+
+  $self->scalar_sql("INSERT INTO cust_bill_pkg_detail_void ($fields)
+                       SELECT $fields $from_cust_bill_pkg_detail",
                     $self->billpkgnum
                    );
 
