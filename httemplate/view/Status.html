@@ -30,6 +30,14 @@ if ( ! $@ && $os =~ /^\s*Description:\s*(.+)$/ ) {
   $os = "Debian $deb_version";
 }
 
+my $pkg_version = '';
+-e '/usr/bin/dpkg-query'
+  and run( ['/usr/bin/dpkg-query',
+              '--showformat=${Version}', '--show', 'freeside'
+           ],
+           '>', \$pkg_version
+         );
+
 ( my $perl_ver = $^V ) =~ s/^v//;
 
 my $db = driver_name;
@@ -58,6 +66,13 @@ tie my %status, 'Tie::IxHash',
     { 'title' => 'Freeside version',
       'value' => $FS::VERSION,
     },
+    ( length($pkg_version)
+        ? ( { 'title' => 'Package version',
+              'value' => $pkg_version,
+            },
+          )
+        : ()
+    ),
     { 'title' => 'Operating System',
       'value' => $os,
     },
