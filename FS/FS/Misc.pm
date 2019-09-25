@@ -280,9 +280,15 @@ sub send_email {
   my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
   $smtp_opt{'port'} = $port;
 
+  my $error = '';
   my $transport;
   if ( defined($enc) && $enc eq 'starttls' ) {
-    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
+    foreach (qw(username password)) {
+      $smtp_opt{$_} = $conf->config("smtp-$_");
+      $error = "SMTP settings misconfiguration: ".
+               "STARTTLS enabled in smtp-encryption but smtp-$_ missing"
+        if ! length($smtp_opt{$_});
+    }
     $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
   } else {
     if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
@@ -300,19 +306,21 @@ sub send_email {
     push @env_to, map { $_->address } Email::Address->parse($dest);
   }
 
-  local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
-  local $@; # just in case
-  eval { sendmail($message, { transport => $transport,
-                              from      => $from,
-                              to        => \@env_to }) };
+  unless ( length($error) ) {
 
-  my $error = '';
-  if(ref($@) and $@->isa('Email::Sender::Failure')) {
-    $error = $@->code.' ' if $@->code;
-    $error .= $@->message;
-  }
-  else {
-    $error = $@;
+    local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
+    local $@; # just in case
+    eval { sendmail($message, { transport => $transport,
+                                from      => $from,
+                                to        => \@env_to }) };
+
+    if (ref($@) and $@->isa('Email::Sender::Failure')) {
+      $error = $@->code.' ' if $@->code;
+      $error .= $@->message;
+    } else {
+      $error = $@;
+    }
+
   }
 
   # Logging
@@ -332,6 +340,7 @@ sub send_email {
     my $log_error = $cust_msg->insert;
     warn "Error logging message: $log_error\n" if $log_error; # at least warn
   }
+
   $error;
    
 }
