@@ -2215,7 +2215,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'unsuspend_reason_type',
-    'section'     => 'suspension',
+    'section'     => 'billing',
     'description' => 'If set, limits automatic unsuspension to packages which were suspended for this reason type.',
     reason_type_options('S'),
   },
@@ -2224,6 +2224,13 @@ and customer address. Include units.',
     'key'         => 'unsuspend-always_adjust_next_bill_date',
     'section'     => 'billing',
     'description' => 'Global override that causes unsuspensions to always adjust the next bill date under any circumstances.  This is now controlled on a per-package bases - probably best not to use this option unless you are a legacy installation that requires this behaviour.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'unsuspend-unhold',
+    'section'     => 'billing',
+    'description' => 'Unhold held packages when automatically unsuspending customers.  The is the default behavior when manually unsuspending and will be the default behavior in v4.',
     'type'        => 'checkbox',
   },
 
@@ -6410,7 +6417,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-db_profile',
-    'section'     => 'development',
+    'section'     => '',
     'description' => 'Enable collection and logging of database profiling information for self-service servers.  This has significant overhead, do not leave enabled in production beyond that necessary to collect profiling data.',
     'type'        => 'checkbox',
   },
