@@ -286,6 +286,15 @@ my $html_init = sub {
                'height'      => 210,
              ). '<BR>' if $search_hash{status} eq 'suspended';
 
+    $text .= include( '/elements/popup_link.html',
+               'label'       => emt('Cancel these packages'),
+               'action'      => "${p}misc/bulk_cancel_pkg.cgi?$query",
+               'actionlabel' => emt('Cancel Packages'),
+               'width'       => 569,
+               'height'      => 210,
+               'color'       => '#ff0000',
+             ). '<BR>' unless $search_hash{status} eq 'cancelled';
+
     if ( $curuser->access_right('Edit customer package dates') ) {
       $text .= include( '/elements/popup_link.html',
                  'label'       => emt('Increment next bill date'),
