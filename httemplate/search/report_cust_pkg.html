@@ -184,19 +184,19 @@
 
 %   }
     <TR>
-      <TD COLSPAN=2>
-        <TABLE>
-          <TR>
+
+
+
             <TD></TD>
-            <TD>From date <i>(m/d/y)</i></TD>
-            <TD>To date <i>(m/d/y)</i></TD>
-            <TD>Empty date</TD>
+            <TH ALIGN="left"><% '&nbsp;'x 10 %>From date <i>(m/d/y)</i></TH>
+            <TH ALIGN="center">To date <i>(m/d/y)</i></TH>
+            <TH>Empty date</TH>
           </TR>
 %   my $noinit = 0;
 %   foreach my $field (@date_fields) {
 
           <TR>
-            <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
+            <TH ALIGN="right" VALIGN="center"><% $label{$field} %></TH>
 %     foreach (qw(beginning ending)) {
             <TD>
               <& /elements/input-date-field.html, {
@@ -217,9 +217,9 @@
             </TD>
           </TR>
 %   } #foreach $field
-        </TABLE>
-      </TD>
-    </TR>
+
+
+
     
     <SCRIPT TYPE="text/javascript">
   
@@ -248,7 +248,7 @@
                 'onchange' => 'custom_changed(this);',
     &> 
 
-    <& /elements/tr-selectmultiple-part_pkg.html &> 
+    <& /elements/tr-selectmultiple-part_pkg.html, colspan=>3 &> 
 
 </TABLE>
 <BR>
