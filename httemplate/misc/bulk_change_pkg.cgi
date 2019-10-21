@@ -7,40 +7,7 @@
 
 <FORM ACTION="<% $p %>misc/process/bulk_change_pkg.cgi" METHOD=POST>
 
-%# some false laziness w/search/cust_pkg.cgi
-
-<INPUT TYPE="hidden" NAME="query" VALUE="<% $cgi->keywords |h %>">
-% for my $param (
-%   qw(
-%     agentnum cust_status cust_main_salesnum salesnum custnum magic status
-%     custom pkgbatch zip
-%     477part 477rownum date
-%     report_option
-%   ),
-%   grep { /^location_\w+$/ || /^report_option_any/ } $cgi->param
-% ) {
-  <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $cgi->param($param) |h %>">
-% }
-%
-% for my $param (qw( censustract censustract2 ) ) {
-%   next unless grep { $_ eq $param } $cgi->param;
-  <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $cgi->param($param) |h %>">
-% }
-%
-% for my $param (qw( pkgpart classnum refnum towernum )) {
-%   foreach my $value ($cgi->param($param)) {
-      <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $value |h %>">
-%   }
-% }
-%
-% foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
-% 
-  <INPUT TYPE="hidden" NAME="<% $field %>_null" VALUE="<% $cgi->param("${field}_null") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>begin" VALUE="<% $cgi->param("${field}.begin") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>beginning" VALUE="<% $cgi->param("${field}beginning") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>end" VALUE="<% $cgi->param("${field}.end") |h %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>ending" VALUE="<% $cgi->param("${field}.ending") |h %>">
-% }
+<& /elements/cust_pkg-search-form_input.html, $cgi &>
 
 <% ntable('#cccccc') %>
 
