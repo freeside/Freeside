@@ -837,7 +837,7 @@ sub unsuspend_balance {
 	           'reason_type' => $conf->config('unsuspend_reason_type')
 	         );
 
-    push @errors, $cust_main->release_hold if $conf->exists('unsuspend-unhold');
+    push @errors, $cust_main->release_hold;
     # side-fx with nested transactions?  upstack rolls back?
     warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
          join(' / ', @errors)
