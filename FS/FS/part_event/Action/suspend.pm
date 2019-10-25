@@ -7,14 +7,21 @@ sub description { 'Suspend all of this customer\'s packages'; }
 
 sub option_fields {
   ( 
-    'reasonnum'    => { 'label'        => 'Reason',
-                        'type'         => 'select-reason',
-                        'reason_class' => 'S',
-                      },
-    'suspend_bill' => { 'label' => 'Continue recurring billing while suspended',
-                        'type'  => 'checkbox',
-                        'value' => 'Y',
-                      },
+    'reasonnum'    => {
+      'label'        => 'Reason',
+      'type'         => 'select-reason',
+      'reason_class' => 'S',
+    },
+    'suspend_bill' => {
+      'label'        => 'Continue recurring billing while suspended',
+      'type'         => 'checkbox',
+      'value'        => 'Y',
+    },
+    'skip_future_startdate' => {
+      'label'        => "Don't suspend packages with a future start date",
+      'type'         => 'checkbox',
+      'value'        => 'Y',
+    },
   );
 }
 
@@ -26,8 +33,10 @@ sub do_action {
   my $cust_main = $self->cust_main($cust_object);
 
   my @err = $cust_main->suspend(
-    'reason'  => $self->option('reasonnum'),
-    'options' => { 'suspend_bill' => $self->option('suspend_bill') },
+    'skip_future_startdate' => $self->option('skip_future_startdate'),
+    'reason'                => $self->option('reasonnum'),
+    'options'               => { 'suspend_bill' => $self->option('suspend_bill')
+                               },
   );
 
   die join(' / ', @err) if scalar(@err);

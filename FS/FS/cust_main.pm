@@ -2329,8 +2329,14 @@ Returns a list: an empty list on success or a list of errors.
 =cut
 
 sub suspend {
-  my $self = shift;
-  grep { $_->suspend(@_) } $self->unsuspended_pkgs;
+  my($self, %opt) = @_;
+
+  my @pkgs = $self->unsuspended_pkgs;
+
+  @pkgs = grep { ! $_->get('start_date') } @pkgs
+    if $opt{skip_future_startdate};
+
+  grep { $_->suspend(%opt) } @pkgs;
 }
 
 =item suspend_if_pkgpart HASHREF | PKGPART [ , PKGPART ... ]
