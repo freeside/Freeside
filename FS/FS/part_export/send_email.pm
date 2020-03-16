@@ -80,7 +80,9 @@ tie my %options, 'Tie::IxHash', (
 );
 
 %info = (
-  'svc'      => [qw( svc_acct svc_hardware svc_broadband svc_phone svc_domain )],
+  'svc'      => [qw( svc_acct svc_hardware svc_broadband svc_phone svc_domain
+                     svc_dsl svc_circuit svc_fiber
+                )],
   'desc'     =>
   'Send an email message',
   'options'  => \%options,
