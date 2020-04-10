@@ -3,6 +3,11 @@
 chown -R freeside /usr/local/etc/freeside
 rm -fr  /usr/local/etc/freeside/masondata/*
 
+/usr/sbin/a2dismod mpm_event || /bin/true
+/usr/sbin/a2dismod mpm_worker || /bin/true
+/usr/bin/a2enmod mpm_prefork
+#/usr/sbin/service restart apache2
+
 #XXX systemd equivalent (start apache after postgres)
 /sbin/insserv -d
 
