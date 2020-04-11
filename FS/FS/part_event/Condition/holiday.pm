@@ -34,10 +34,8 @@ tie my %holidays, 'Tie::IxHash',
     => { 'rule' => 'RRULE:FREQ=YEARLY;BYMONTH=12;BYMONTHDAY=25' }, # December 25
 ;
 
-my $oneday = DateTime::Duration->new(days => 1);
-
 sub description {
-  "Do not run on holidays",
+  "Do not run on US holidays",
 }
 
 sub option_fields {
@@ -51,6 +49,8 @@ sub option_fields {
     },
   );
 }
+
+my $oneday = DateTime::Duration->new(days => 1);
 
 sub condition {
   my( $self, $object, %opt ) = @_;
