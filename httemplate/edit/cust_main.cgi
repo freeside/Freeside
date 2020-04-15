@@ -303,7 +303,7 @@ if ( $cgi->param('error') ) {
   $cust_main->agentnum( $conf->config('default_agentnum') )
     if $conf->exists('default_agentnum');
 
-  $cust_main->referral_custnum( $cgi->param('referral_custnum') );
+  $cust_main->referral_custnum( scalar($cgi->param('referral_custnum')) );
   $cust_main->set('postal_invoice', 'Y')
     unless $conf->exists('disablepostalinvoicedefault');
   $ss = '';
