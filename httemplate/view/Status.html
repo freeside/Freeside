@@ -45,7 +45,7 @@ $db = 'PostgreSQL'    if $db =~ /^Pg/;
 $db = 'MySQL/MariaDB' if $db =~ /^mysql/;
 
 my $db_ver = FS::Record->scalar_sql('SELECT VERSION()');
-if ( $db eq 'PostgreSQL' && $db_ver =~ /^\s*PostgreSQL\s+([\w\.]+)\s+on\s+/ ) {
+if ( $db eq 'PostgreSQL' && $db_ver =~ /^\s*PostgreSQL\s+([\w\.]+(\s+\([\w\s\.\+\-\:\~]+\))?)\s+on\s+/ ) {
   $db_ver = $1;
 }
 
