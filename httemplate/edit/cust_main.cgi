@@ -326,7 +326,7 @@ if ( $cgi->param('error') ) {
     if $conf->exists('default_agentnum');
 
   $cust_main->otaker( &getotaker );
-  $cust_main->referral_custnum( $cgi->param('referral_custnum') );
+  $cust_main->referral_custnum( scalar($cgi->param('referral_custnum')) );
   @invoicing_list = ();
   push @invoicing_list, 'POST'
     unless $conf->exists('disablepostalinvoicedefault');
