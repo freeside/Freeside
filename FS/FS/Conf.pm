@@ -2005,6 +2005,7 @@ and customer address. Include units.',
                        '25-starttls'  => 'STARTTLS (port 25)',
                        '587-starttls' => 'STARTTLS / submission (port 587)',
                        '465-tls'      => 'SMTPS (SSL) (port 465)',
+                       '2525'         => 'None (Non-standard port 2525)',
                      ],
   },
 
