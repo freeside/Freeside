@@ -4,11 +4,8 @@
 <INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
-
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
 % unless ( $custnum ) {
     <& /elements/tr-select-agent.html,
@@ -48,13 +45,13 @@
         <TD>
           <TABLE>
             <TR>
-              <TD ALIGN="right" VALIGN="center" ID="<% $field."_label" %>">
+              <TH ALIGN="right" VALIGN="center" ID="<% $field."_label" %>">
                 <% $label{$field} %>
-              </TD>
-              <TD>
+              </TH>
+              <TH>
                 <INPUT NAME="<% $invert %>" ID="<% $invert %>" TYPE="hidden">
                 <A HREF="javascript:void(0)" onClick="toggle('<% $field %>'); return false;"><% mt('Invert') |h %></A>
-              </TD>
+              </TH>
             </TR>
           </TABLE>
         </TD>
@@ -82,17 +79,15 @@
 %   }
 
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
-    </TR>
- 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
-    </TR>
+  </TABLE>
+  <BR>
 
+  <FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
+ 
 %   #move to /elements/tr-select-cust_pkg-fields if anything else needs it...
     <TR>
-      <TD ALIGN="right"><% mt('Package fields') |h %></TD>
+      <TH ALIGN="right"><% mt('Package fields') |h %></TH>
       <TD>
         <SELECT NAME="cust_pkg_fields">
           <OPTION VALUE=""><% mt('(none)') |h %> 
