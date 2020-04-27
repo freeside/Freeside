@@ -69,6 +69,8 @@
     
     <& /elements/tr-selectmultiple-part_pkg.html &> 
 
+    <& /elements/tr-select-part_svc.html, svcdb=>'svc_acct' &> 
+
 %   my $conf = new FS::Conf;
 %   if ( $conf->exists('svc_acct-tower_sector') 
 %        and FS::tower_sector->count > 0 ) {

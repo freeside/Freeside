@@ -254,6 +254,8 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   $search_hash{'pkgpart'} = [ $cgi->param('pkgpart') ];
 
+  $search_hash{'svcpart'} = [ $cgi->param('svcpart') ];
+
   foreach my $field (qw( last_login last_logout )) {
 
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
