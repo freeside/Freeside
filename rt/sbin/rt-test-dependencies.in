@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2018 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2019 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -210,7 +210,7 @@ Digest::base
 Digest::MD5 2.27
 Digest::SHA
 Email::Address 1.908
-Email::Address::List 0.02
+Email::Address::List 0.05
 Encode
 Errno
 File::Glob

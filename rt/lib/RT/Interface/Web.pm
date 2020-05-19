@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2018 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2019 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -106,7 +106,7 @@ sub SquishedJS {
 
 sub JSFiles {
     return qw{
-      jquery-1.9.1.min.js
+      jquery-1.12.4p1.min.js
       jquery_noconflict.js
       jquery-ui-1.10.0.custom.min.js
       jquery-ui-timepicker-addon.js
