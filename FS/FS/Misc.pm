@@ -135,7 +135,6 @@ use Date::Format;
 use MIME::Entity;
 use Email::Sender::Simple qw(sendmail);
 use Email::Sender::Transport::SMTP;
-use Email::Sender::Transport::SMTP::TLS 0.11;
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -281,22 +280,19 @@ sub send_email {
   $smtp_opt{'port'} = $port;
 
   my $error = '';
-  my $transport;
-  if ( defined($enc) && $enc eq 'starttls' ) {
-    foreach (qw(username password)) {
-      $smtp_opt{$_} = $conf->config("smtp-$_");
-      $error = "SMTP settings misconfiguration: ".
-               "STARTTLS enabled in smtp-encryption but smtp-$_ missing"
-        if ! length($smtp_opt{$_});
-    }
-    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
-  } else {
-    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
-      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
-    }
-    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
-    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
+  if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+    $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
+  } elsif ( defined($enc) && $enc eq 'starttls') {
+    $error = "SMTP settings misconfiguration: STARTTLS enabled in ".
+            "smtp-encryption but smtp-username or smtp-password missing";
   }
+
+  if ( defined($enc) ) {
+    $smtp_opt{'ssl'} = 'starttls' if $enc eq 'starttls';
+    $smtp_opt{'ssl'} = 1          if $enc eq 'tls';
+  }
+
+  my $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
   
   push @to, $options{bcc} if defined($options{bcc});
   # fully unpack all addresses found in @to (including Bcc) to make the
