@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2018 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -2196,6 +2196,7 @@ sub _AddCustomFieldValue {
         unless ( $new_value_id ) {
             return ( 0, $self->loc( "Could not add new custom field value: [_1]", $msg ) );
         }
+
         if ( $args{'RecordTransaction'} ) {
             my ( $tid, $msg ) = $self->_NewTransaction(
                 Type          => 'CustomField',

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2017 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2018 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -1225,6 +1225,23 @@ sub QueueObj {
         my ($result) = $self->{_queue_obj}->Load( $self->__Value('Queue') );
     }
     return ($self->{_queue_obj});
+}
+
+sub Subject {
+    my $self = shift;
+
+    my $subject = $self->_Value( 'Subject' );
+    return $subject if defined $subject;
+
+    if ( RT->Config->Get( 'DatabaseType' ) eq 'Oracle' && $self->CurrentUserHasRight( 'ShowTicket' ) ) {
+
+        # Oracle treats empty strings as NULL, so it returns undef for empty subjects.
+        # Since '' is the default Subject value, returning '' is more correct.
+        return '';
+    }
+    else {
+        return undef;
+    }
 }
 
 sub SetSubject {
