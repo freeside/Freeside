@@ -387,7 +387,6 @@ if ( -e $addl_handler_use_file ) {
   use FS::export_batch_item;
   use FS::part_pkg_fcc_option;
   use FS::state;
-  use FS::state;
   use FS::queue_stat;
   use FS::deploy_zone;
   use FS::deploy_zone_block;
@@ -424,6 +423,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::saved_search;
   use FS::sector_coverage;
   use FS::svc_group;
+  use FS::Misc::DepositSlip qw( deposit_slip_pdf );
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

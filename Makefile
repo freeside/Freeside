@@ -264,6 +264,7 @@ install-texmf:
 	install -D -o freeside -m 444 etc/*.sty \
 	  /usr/local/share/texmf/tex/latex/
 	texhash /usr/local/share/texmf
+	install -D -o root -m 444 etc/GnuMICR.otf /usr/local/etc/freeside
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}

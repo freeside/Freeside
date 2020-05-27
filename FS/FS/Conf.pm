@@ -6065,6 +6065,34 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'deposit_slip-bank_name',
+    'section'     => 'payments', #XXX payment_deposit_slips
+    'description' => 'Bank name to print on check deposit slips',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'deposit_slip-bank_address',
+    'section'     => 'payments', #XXX payment_deposit_slips
+    'description' => 'Bank address to print on check deposit slips',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'deposit_slip-bank_routingnumber',
+    'section'     => 'payments', #XXX payment_deposit_slips
+    'description' => '9 digit bank routing number to print on check deposit slips',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'deposit_slip-bank_accountnumber',
+    'section'     => 'payments', #XXX payment_deposit_slips
+    'description' => 'Bank account number to print on check deposit slips',
+    'type'        => 'text',
+  },
+
 
   # for internal use only; test databases should declare this option and
   # everyone else should pretend it doesn't exist

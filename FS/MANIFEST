@@ -879,3 +879,4 @@ FS/access_user_session_log.pm
 t/access_user_session_log.t
 FS/svc_group.pm
 FS/h_svc_group.pm
+FS/Misc/DepositSlip.pm

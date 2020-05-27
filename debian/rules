@@ -171,6 +171,7 @@ install-stamp: build-stamp
 	# Install tex
 	install -d ${TEXMF_PATH}
 	install -o freeside -m 444 etc/*.sty ${TEXMF_PATH}
+	install -o root -m 444 etc/GnuMICR.otf /usr/local/etc/freeside
 
 	# Create Apache configurations
 	install -d $(APACHE_CONF)
