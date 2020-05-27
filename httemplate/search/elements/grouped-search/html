@@ -5,6 +5,8 @@ my $conf = FS::Conf->new;
 my %opt = @_;
 $opt{'name'} ||= PL($opt{'name_singular'});
 
+my $amount_field = $opt{amount_field};
+
 my $group_info = $m->comp('core', %opt);
 
 my $redirect;
@@ -109,7 +111,7 @@ my $money = $conf->config('money_char') || '$';
 
 <DIV CLASS="fstabcontainer">
 % if ( $group->num_rows > 0 ) {
-<P><% emt('[quant,_1,_2]', $group->num_rows, $opt{name_singular}) %> for <% emt($money.$group->paid) %>
+<P><% emt('[quant,_1,_2]', $group->num_rows, $opt{name_singular}) %> for <% emt($money.$group->$amount_field()) %>
 </P>
 %# download links
 <P><% emt('Download results:') %>

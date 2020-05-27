@@ -58,6 +58,7 @@ Examples:
 
                 'group_column'   => 'payby',
                 'group_label'    => 'payby_name',
+                'amount_field'   => $amount_field,
                 'subtotal'       => { $opt{amount_field} => "sum($amount_field)" },
                 'subtotal_row'   => [ 'Subtotal',
                                       sub { sprintf($money, $_[0]->$amount_field) },
