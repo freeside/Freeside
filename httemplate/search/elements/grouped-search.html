@@ -42,7 +42,7 @@
 </%doc>
 <%init>
 my $type = 'html';
-if ($cgi->param('type') =~ /^(html|html-print|xls)$/) {
+if ($cgi->param('type') =~ /^(html|html-print|xls|deposit_slip)$/) {
   $type = $1;
 }
 </%init>

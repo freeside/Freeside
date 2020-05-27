@@ -114,9 +114,13 @@ my $money = $conf->config('money_char') || '$';
 %# download links
 <P><% emt('Download results:') %>
 % $cgi->param('type', 'xls');
-<A HREF="<% $cgi->self_url %>"><% emt('Spreadsheet') %></A>&nbsp;|&nbsp;
+<A HREF="<% $cgi->self_url %>"><% emt('Spreadsheet') %></A> | 
 % $cgi->param('type', 'html-print');
 <A HREF="<% $cgi->self_url %>"><% emt('webpage') %></A>
+% if ( ref($query) && $query->{table} eq 'cust_pay' ) {
+%   $cgi->param('type', 'deposit_slip');
+    | <A HREF="<% $cgi->self_url %>"><% emt('deposit slip') %></A>
+% }
 % $cgi->delete('type');
 </P>
 % }

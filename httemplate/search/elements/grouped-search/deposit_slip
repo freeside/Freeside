@@ -1,0 +1,8 @@
+<& /search/elements/search-deposit_slip.html, rows=>\@rows, &>\
+<%init>
+my %opt = @_;
+my $group_info = $m->comp('core', %opt);
+#just the first group
+my $query = $group_info->{queries}[0];
+my @rows = $query->qsearch;
+</%init>
