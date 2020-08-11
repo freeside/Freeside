@@ -138,18 +138,18 @@ sub label {
   my @label = ();
   if (my $type = $self->hardware_type) {
     my $typenum_label = $part_svc->part_svc_column('typenum');
-    push @label, ( $typenum_label && $typenum_label->columnlabel || 'Type:' ).
-                 $type->description;
+    push @label, ( $typenum_label && $typenum_label->columnlabel || 'Type' ).
+                 ':'. $type->description;
   }
   if (my $ser = $self->serial) {
     my $serial_label = $part_svc->part_svc_column('serial');
-    push @label, ( $serial_label && $serial_label->columnlabel || 'Serial#' ).
-                 $ser;
+    push @label, ( $serial_label && $serial_label->columnlabel || 'Serial' ).
+                 '#'. $ser;
   }
   if (my $mac = $self->display_hw_addr) {
     my $hw_addr_label = $part_svc->part_svc_column('hw_addr');
-    push @label, ( $hw_addr_label && $hw_addr_label->columnlabel || 'MAC:').
-    $mac;
+    push @label, ( $hw_addr_label && $hw_addr_label->columnlabel || 'MAC').
+                 ':'. $mac;
   }
   return join(', ', @label);
 }
@@ -191,6 +191,10 @@ sub check {
     $hw_addr = uc($hw_addr);
     $hw_addr =~ /^[0-9A-F]{12}$/ 
       or return "Illegal (MAC address) '".$self->getfield('hw_addr')."'";
+  } else {
+    return "Illegal (hardware address) '".$self->getfield('hw_addr')."': ".
+           "12 alphanumeric characters maximum"
+      if length($hw_addr) > 12;
   }
   $self->setfield('hw_addr', $hw_addr);
 
