@@ -573,6 +573,104 @@ Example:
 
   print Dumper($result);
 
+Returns the following fields:
+
+=over 4
+
+=item error
+
+Empty, or error message (in which case, none of the other fields will be populated)
+
+=item display_custnum
+
+Optional customer number display override - if present, use this for all UI instead of the real database custnum
+
+=item name
+
+Simple string for customer identification (from first, last, company)
+
+=item balance
+
+=item status
+
+=item statuscolor
+
+=item first
+
+=item last
+
+=item company
+
+=item daytime
+
+=item night
+
+=item mobile
+
+=item fax
+
+=item agentnum
+
+Agent (Company)
+
+=item salesnum
+
+Sales person
+
+=item refnum
+
+Advertising channel
+
+=item classnum
+
+Customer class
+
+=item usernum
+
+Employee (initial customer insert)
+
+=item referral_custnum
+
+Referring customer
+
+=item address1
+
+=item address2
+
+=item city
+
+=item county
+
+=item state
+
+=item zip
+
+=item country
+
+=item ship_address1
+
+=item ship_address2
+
+=item ship_city
+
+=item ship_county
+
+=item ship_state
+
+=item ship_zip
+
+=item ship_country
+
+=item invoicing_list
+
+Comma-separated list of email addresses
+
+=item postal_invoicing
+
+0 or 1
+
+=back
+
 =cut
 
 sub customer_info {
