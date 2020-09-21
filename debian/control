@@ -135,7 +135,7 @@ Architecture: all
 Depends: libtext-template-perl,libbusiness-creditcard-perl,
  libhttp-browserdetect-perl,libhtml-parser-perl,libtie-ixhash-perl,
  libhtml-widgets-selectlayers-perl,libtimedate-perl,libnumber-format-perl,
- libsoap-lite-perl,libtext-csv-xs-perl,libcgi-perl
+ libsoap-lite-perl,libtext-csv-xs-perl,libcgi-pm-perl
 Recommends:
 Description: Self-service portal for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
