@@ -392,7 +392,7 @@ sub void {
 
   }
 
-  $error = $self->delete;
+  $error = $self->delete( skip_update_cust_bill_charged=>1 );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -448,6 +448,7 @@ Not recommended.
 
 sub delete {
   my $self = shift;
+  my %opt = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -493,16 +494,27 @@ sub delete {
     }
   }
 
-  #fix the invoice amount
+  unless ( $opt{skip_update_cust_bill_charged} ) {
 
-  my $cust_bill = $self->cust_bill;
-  $cust_bill->charged( $cust_bill->charged - $self->setup - $self->recur );
+    #fix the invoice amount
 
-  #not adding a cc surcharge, but this override lets us modify charged
-  $cust_bill->{'Hash'}{'cc_surcharge_replace_hack'} = 1;
+    my $cust_bill = $self->cust_bill;
+    my $charged = $cust_bill->charged - $self->setup - $self->recur;
+    $charged = sprintf('%.2f', $charged + 0.00000001 );
+    $cust_bill->charged( $charged );
 
-  my $error =  $cust_bill->replace
-            || $self->SUPER::delete(@_);
+    #not adding a cc surcharge, but this override lets us modify charged
+    $cust_bill->{'Hash'}{'cc_surcharge_replace_hack'} = 1;
+
+    my $error = $cust_bill->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  my $error = $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
