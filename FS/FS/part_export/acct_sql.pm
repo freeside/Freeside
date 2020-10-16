@@ -8,7 +8,7 @@ use FS::Record; #qw(qsearchs);
 
 tie my %options, 'Tie::IxHash', %{__PACKAGE__->sql_options};
 $options{'crypt'} = { label => 'Password encryption',
-                      type=>'select', options=>[qw(crypt md5 sha1_base64)],
+                      type=>'select', options=>[qw(crypt md5 sha1_base64 sha512)],
                       default=>'crypt',
                     };
 
@@ -59,6 +59,47 @@ my $postfix_native_mailbox_map =
   join('\n', map "$_ $postfix_native_mailbox_map{$_}",
                  keys %postfix_native_mailbox_map      );
 
+tie my %libnss_pgsql_passwd_map, 'Tie::IxHash',
+  'username' => 'username',
+  #'passwd'   => literal string 'x'
+  'uid'      => 'uid',
+  'gid'      => 'gid',
+  'gecos'    => 'finger',
+  'homedir'  => 'dir',
+  'shell'    => 'shell',
+;
+my $libnss_pgsql_passwd_map =
+  join('\n', map "$_ $libnss_pgsql_passwd_map{$_}",
+                 keys %libnss_pgsql_passwd_map      );
+
+tie my %libnss_pgsql_passwd_static, 'Tie::IxHash',
+  'passwd' => 'x',
+;
+my $libnss_pgsql_passwd_static =
+  join('\n', map "$_ $libnss_pgsql_passwd_static{$_}",
+                 keys %libnss_pgsql_passwd_static      );
+
+tie my %libnss_pgsql_shadow_map, 'Tie::IxHash',
+  'username' => 'username',
+  'passwd'   => 'crypt_password',
+;
+my $libnss_pgsql_shadow_map =
+  join('\n', map "$_ $libnss_pgsql_shadow_map{$_}",
+                 keys %libnss_pgsql_shadow_map      );
+
+tie my %libnss_pgsql_shadow_static, 'Tie::IxHash',
+  'lastchange' => '18550', #not actually implemented..
+  'min'        => '0',
+  'max'        => '99999',
+  'warn'       => '7',
+  'inact'      => '0',
+  'expire'     => '-1',
+  'flag'       => '0',
+;
+my $libnss_pgsql_shadow_static =
+  join('\n', map "$_ $libnss_pgsql_shadow_static{$_}",
+                 keys %libnss_pgsql_shadow_static      );
+
 %info = (
   'svc'        => 'svc_acct',
   'desc'       => 'Real-time export of accounts to SQL databases '.
@@ -69,14 +110,14 @@ my $postfix_native_mailbox_map =
   'default_svc_class' => 'Email',
   'notes'    => <<END
 Export accounts (svc_acct records) to SQL databases.  Currently has default
-configurations for vpopmail and Postfix+Courier IMAP but intended to be
-configurable for other schemas as well.
+configurations for vpopmail, Postfix+Courier IMAP, Postfix native and ,
+but can be configured for other schemas.
 
 <BR><BR>In contrast to sqlmail, this is intended to export just svc_acct
 records only, rather than a single export for svc_acct, svc_forward and
 svc_domain records, to export in "default" database schemas rather than
-configure the MTA or POP/IMAP server for a Freeside-specific schema, and
-to be configured for different mail server setups.
+configure servers for a Freeside-specific schema, and to be configured for
+different mail (and authentication) server setups.
 
 <BR><BR>Use these buttons for some useful presets:
 <UL>
@@ -99,6 +140,18 @@ to be configured for different mail server setups.
     this.form.table.value = "users";
     this.form.schema.value = "$postfix_native_mailbox_map";
     this.form.primary_key.value = "userid";
+  '>
+  <LI><INPUT TYPE="button" VALUE="libnss-pgsql passwd" onClick='
+    this.form.table.value = "passwd_table";
+    this.form.schema.value = "$libnss_pgsql_passwd_map";
+    this.form.static.value = "$libnss_pgsql_passwd_static";
+    this.form.primary_key.value = "uid";
+  '>
+  <LI><INPUT TYPE="button" VALUE="libnss-pgsql shadow" onClick='
+    this.form.table.value = "shadow_table";
+    this.form.schema.value = "$libnss_pgsql_shadow_map";
+    this.form.static.value = "$libnss_pgsql_shadow_static";
+    this.form.primary_key.value = "username";
   '>
 </UL>
 END
