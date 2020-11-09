@@ -24,6 +24,15 @@
                 'field' => 'amount',
   &>
 
+  <& /elements/tr-select-reason.html,
+       'label'        => emt('Reason').':',
+       'field'        => 'reasonnum',
+       'reason_class' => 'R',
+       'cgi'          => $cgi,
+       'hide_addnew'  => 1,
+       'pre_options'  => [ 0 => emt('(any reason)') ],
+  &>
+
   <& /elements/tr-checkbox.html,
        'label' => emt('Show Voided Credits').':',
        'field' => 'show_voided_credits',
