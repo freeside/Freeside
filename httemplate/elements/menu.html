@@ -689,7 +689,7 @@ $config_export_svc{'Circuits'} = [ \%config_circuit, '' ]
 $config_export_svc{'Fiber'} = [ \%config_fiber, '' ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
-  if $curuser->access_right('Configuration');
+  if $curuser->access_right('Edit hardware classes and types');
 
 tie my %config_pkg_reason, 'Tie::IxHash',
   'Cancel reasons' => [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reasons explain why a service was cancelled.' ],
