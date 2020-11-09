@@ -16,7 +16,7 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Configuration');
+  unless $curuser->access_right('Edit hardware classes and types');
 
 my $menubar = [ 'Hardware classes' => $p.'browse/hardware_class.html',
                 'Add a status' => $p.'edit/hardware_status.html' ];

@@ -414,6 +414,8 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Alarm configuration' },
     { rightname=>'Alarm global configuration', global=>1 },
 
+    { rightname=>'Edit hardware classes and types' },
+
     { rightname=> 'Configure network monitoring', global=>1 },
 
     #{ rightname=>'Edit employees', global=>1, },
