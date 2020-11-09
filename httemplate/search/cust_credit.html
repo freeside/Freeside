@@ -195,6 +195,10 @@ if ( $cgi->param('credbatch') =~ /^([\w\-\/\.\:]+)$/ ) {
   push @search, "cust_credit.credbatch = '$1'";
 }
 
+if ( $cgi->param('reasonnum') =~ /^(\d+)$/ && $1 ) {
+  push @search, "cust_credit.reasonnum = $1";
+}
+
 # commission_salesnum
 if ( $cgi->param('commission_salesnum') =~ /^(\d+)$/ ) {
   push @search, "commission_salesnum = $1";
