@@ -1,0 +1,15 @@
+% if ( $notes ) {
+  <TABLE CLASS="fsinnerbox">
+    <TR><TD>
+      <% $notes %>
+    </TD></TR>
+  </TABLE>
+  <BR>
+% }
+<%init>
+
+my $conf = new FS::Conf;
+
+my $notes = join('<BR>', map encode_entities($_), $conf->config('dashboard-topnotes') );
+
+</%init>
