@@ -19,6 +19,7 @@ use Encode;
 use FS::Misc qw( generate_email );
 use FS::Conf;
 use Email::Sender::Simple qw( sendmail );
+use Email::Sender::Transport::SMTP;
 
 use FS::Record qw( qsearch qsearchs );
 
@@ -549,17 +550,19 @@ sub send_prepared {
   my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
   $smtp_opt{'port'} = $port;
   
-  my $transport;
-  if ( defined($enc) && $enc eq 'starttls' ) {
-    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
-    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
-  } else {
-    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
-      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);     
-    } 
-    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
-    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
+  if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+    $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
+  } elsif ( defined($enc) && $enc eq 'starttls') {
+    $error = "SMTP settings misconfiguration: STARTTLS enabled in ".
+            "smtp-encryption but smtp-username or smtp-password missing";
   }
+
+  if ( defined($enc) ) {
+    $smtp_opt{'ssl'} = 'starttls' if $enc eq 'starttls';
+    $smtp_opt{'ssl'} = 1          if $enc eq 'tls';
+  }
+
+  my $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
 
   warn "$me sending message\n" if $DEBUG;
   my $message = join("\n\n", $cust_msg->header, $cust_msg->body);
