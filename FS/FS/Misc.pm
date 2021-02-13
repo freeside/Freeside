@@ -16,6 +16,7 @@ use Encode;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( send_email generate_email send_fax
+                 email_sender_transport_or_error
                  states_hash counties cities state_label
                  card_types
                  pkg_freqs
@@ -272,28 +273,6 @@ sub send_email {
 
   #send the email
 
-  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
-                   'helo' => $domain,
-                 );
-
-  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
-  $smtp_opt{'port'} = $port;
-
-  my $error = '';
-  if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
-    $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
-  } elsif ( defined($enc) && $enc eq 'starttls') {
-    $error = "SMTP settings misconfiguration: STARTTLS enabled in ".
-            "smtp-encryption but smtp-username or smtp-password missing";
-  }
-
-  if ( defined($enc) ) {
-    $smtp_opt{'ssl'} = 'starttls' if $enc eq 'starttls';
-    $smtp_opt{'ssl'} = 1          if $enc eq 'tls';
-  }
-
-  my $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
-  
   push @to, $options{bcc} if defined($options{bcc});
   # fully unpack all addresses found in @to (including Bcc) to make the
   # envelope list
@@ -302,7 +281,10 @@ sub send_email {
     push @env_to, map { $_->address } Email::Address->parse($dest);
   }
 
-  unless ( length($error) ) {
+  my $transport = email_sender_transport_or_error($domain);
+
+  my $error = '';
+  if ( ref($transport) ) {
 
     local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
     local $@; # just in case
@@ -317,6 +299,8 @@ sub send_email {
       $error = $@;
     }
 
+  } else {
+    $error = $transport;
   }
 
   # Logging
@@ -339,6 +323,32 @@ sub send_email {
 
   $error;
    
+}
+
+sub email_sender_transport_or_error {
+  my $domain = shift;
+
+  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
+                   'helo' => $domain,
+                 );
+
+  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
+  $smtp_opt{'port'} = $port;
+
+  if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+    $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
+  } elsif ( defined($enc) && $enc eq 'starttls') {
+    return "SMTP settings misconfiguration: STARTTLS enabled in ".
+           "smtp-encryption but smtp-username or smtp-password missing";
+  }
+
+  if ( defined($enc) ) {
+    $smtp_opt{'ssl'} = 'starttls' if $enc eq 'starttls';
+    $smtp_opt{'ssl'} = 1          if $enc eq 'tls';
+  }
+
+  Email::Sender::Transport::SMTP->new( %smtp_opt );
+
 }
 
 =item generate_email OPTION => VALUE ...

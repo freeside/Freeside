@@ -16,10 +16,9 @@ use HTML::TreeBuilder;
 use Encode;
 
 # needed to send email
-use FS::Misc qw( generate_email );
+use FS::Misc qw( generate_email email_sender_transport_or_error );
 use FS::Conf;
 use Email::Sender::Simple qw( sendmail );
-use Email::Sender::Transport::SMTP;
 
 use FS::Record qw( qsearch qsearchs );
 
@@ -544,41 +543,28 @@ sub send_prepared {
   # through Email::Address to make sure
   my @env_to = map { $_->address } Email::Address->parse($cust_msg->env_to);
 
-  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
-                   'helo' => $domain );
+  my $transport = email_sender_transport_or_error($domain);
 
-  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
-  $smtp_opt{'port'} = $port;
-  
-  if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
-    $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
-  } elsif ( defined($enc) && $enc eq 'starttls') {
-    $error = "SMTP settings misconfiguration: STARTTLS enabled in ".
-            "smtp-encryption but smtp-username or smtp-password missing";
-  }
-
-  if ( defined($enc) ) {
-    $smtp_opt{'ssl'} = 'starttls' if $enc eq 'starttls';
-    $smtp_opt{'ssl'} = 1          if $enc eq 'tls';
-  }
-
-  my $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
-
-  warn "$me sending message\n" if $DEBUG;
-  my $message = join("\n", $cust_msg->header, $cust_msg->body);
-  local $@;
-  eval {
-    sendmail( $message, { transport => $transport,
-                          from      => $cust_msg->env_from,
-                          to        => \@env_to })
-  };
   my $error = '';
-  if(ref($@) and $@->isa('Email::Sender::Failure')) {
-    $error = $@->code.' ' if $@->code;
-    $error .= $@->message;
-  }
-  else {
-    $error = $@;
+  if ( ref($transport) ) {
+
+    warn "$me sending message\n" if $DEBUG;
+    my $message = join("\n", $cust_msg->header, $cust_msg->body);
+
+    local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
+    local $@;
+    eval { sendmail( $message, { transport => $transport,
+                                 from      => $cust_msg->env_from,
+                                 to        => \@env_to })
+         };
+    if (ref($@) and $@->isa('Email::Sender::Failure')) {
+      $error = $@->code.' ' if $@->code;
+      $error .= $@->message;
+    } else {
+      $error = $@;
+    }
+  } else {
+    $error = $transport;
   }
 
   $cust_msg->set('error', $error);
