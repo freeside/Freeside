@@ -107,7 +107,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,
  libspreadsheet-parsexlsx-perl, libunicode-truncate-perl (>= 0.303-1),
  libspreadsheet-xlsx-perl, libpod-simple-perl, libwebservice-northern911-perl,
  liblocale-codes-perl, liblocale-po-perl
-Conflicts: libparams-classify-perl (= 0.013-6)
+Conflicts: libparams-classify-perl (>= 0.013-6)
 Replaces: freeside (<<4)
 Breaks: freeside (<<4)
 Description: Libraries for Freeside billing and trouble ticketing
