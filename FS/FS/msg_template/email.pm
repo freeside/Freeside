@@ -18,7 +18,6 @@ use Encode;
 # needed to send email
 use FS::Misc qw( generate_email _sendmail );
 use FS::Conf;
-use Email::Sender::Simple qw( sendmail );
 
 use FS::Record qw( qsearch qsearchs );
 
