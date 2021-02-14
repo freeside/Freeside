@@ -16,7 +16,7 @@ use HTML::TreeBuilder;
 use Encode;
 
 # needed to send email
-use FS::Misc qw( generate_email email_sender_transport_or_error );
+use FS::Misc qw( generate_email _sendmail );
 use FS::Conf;
 use Email::Sender::Simple qw( sendmail );
 
@@ -543,29 +543,13 @@ sub send_prepared {
   # through Email::Address to make sure
   my @env_to = map { $_->address } Email::Address->parse($cust_msg->env_to);
 
-  my $transport = email_sender_transport_or_error($domain);
+  my $message = join("\n", $cust_msg->header, $cust_msg->body);
 
-  my $error = '';
-  if ( ref($transport) ) {
-
-    warn "$me sending message\n" if $DEBUG;
-    my $message = join("\n", $cust_msg->header, $cust_msg->body);
-
-    local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
-    local $@;
-    eval { sendmail( $message, { transport => $transport,
-                                 from      => $cust_msg->env_from,
-                                 to        => \@env_to })
-         };
-    if (ref($@) and $@->isa('Email::Sender::Failure')) {
-      $error = $@->code.' ' if $@->code;
-      $error .= $@->message;
-    } else {
-      $error = $@;
-    }
-  } else {
-    $error = $transport;
-  }
+  my $error = _sendmail( $message, { 'from'    => $cust_msg->env_from,
+                                     'to'      => \@env_to,
+                                     'domain'  => $domain,
+                                   }
+                       );
 
   $cust_msg->set('error', $error);
   $cust_msg->set('status', $error ? 'failed' : 'sent');
