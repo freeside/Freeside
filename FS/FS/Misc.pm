@@ -15,8 +15,7 @@ use Encode;
 #instead
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( send_email generate_email send_fax
-                 email_sender_transport_or_error
+@EXPORT_OK = qw( send_email generate_email send_fax _sendmail
                  states_hash counties cities state_label
                  card_types
                  pkg_freqs
@@ -281,27 +280,11 @@ sub send_email {
     push @env_to, map { $_->address } Email::Address->parse($dest);
   }
 
-  my $transport = email_sender_transport_or_error($domain);
-
-  my $error = '';
-  if ( ref($transport) ) {
-
-    local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
-    local $@; # just in case
-    eval { sendmail($message, { transport => $transport,
-                                from      => $from,
-                                to        => \@env_to }) };
-
-    if (ref($@) and $@->isa('Email::Sender::Failure')) {
-      $error = $@->code.' ' if $@->code;
-      $error .= $@->message;
-    } else {
-      $error = $@;
-    }
-
-  } else {
-    $error = $transport;
-  }
+  my $error = _sendmail( $message, { 'from'    => $from,
+                                     'to'      => \@env_to,
+                                     'domain'  => $domain,
+                                   }
+                       );
 
   # Logging
   if ( $conf->exists('log_sent_mail') ) {
@@ -325,8 +308,9 @@ sub send_email {
    
 }
 
-sub email_sender_transport_or_error {
-  my $domain = shift;
+sub _sendmail {
+  my($message, $options) = @_;
+  my $domain = delete $options->{'domain'};
 
   my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
                    'helo' => $domain,
@@ -347,7 +331,22 @@ sub email_sender_transport_or_error {
     $smtp_opt{'ssl'} = 1          if $enc eq 'tls';
   }
 
-  Email::Sender::Transport::SMTP->new( %smtp_opt );
+  $options->{'transport'} = Email::Sender::Transport::SMTP->new( %smtp_opt );
+
+  my $error = '';
+
+  local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
+  local $@; # just in case
+  eval { sendmail($message, $options) };
+
+  if (ref($@) and $@->isa('Email::Sender::Failure')) {
+    $error = $@->code.' ' if $@->code;
+    $error .= $@->message;
+  } else {
+    $error = $@;
+  }
+
+  $error;
 
 }
 
