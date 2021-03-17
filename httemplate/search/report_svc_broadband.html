@@ -1,14 +1,13 @@
 <% include('/elements/header.html', $title ) %>
 
+%# extensive false laziness with svc_acct
+
 <FORM ACTION="svc_broadband.cgi" METHOD="POST">
 <INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
-%# extensive false laziness with svc_acct
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
-    </TR>
+  <FONT CLASS="fsinnerbox-title"><% emt('Search options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
 
 % unless ( $custnum ) {
     <% include( '/elements/tr-select-agent.html',
@@ -44,17 +43,16 @@
 %     }
 
 %   }
-    <TR>
-      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
-    </TR>
- 
-    <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
-    </TR>
 
+  </TABLE>
+  <BR>
+
+  <FONT CLASS="fsinnerbox-title"><% emt('Display options') %></FONT>
+  <TABLE CLASS="fsinnerbox">
+ 
 %   #move to /elements/tr-select-cust_pkg-fields if anything else needs it...
     <TR>
-      <TD ALIGN="right">Package fields</TD>
+      <TH ALIGN="right">Package fields</TD>
       <TD>
         <SELECT NAME="cust_pkg_fields">
           <OPTION VALUE="">(none)
