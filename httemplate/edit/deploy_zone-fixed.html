@@ -4,6 +4,7 @@
     'post_url'      => popurl(1).'process/deploy_zone-fixed.html',
     'viewall_dir'   => 'browse',
     'labels'        => {
+        'zonenum'         => 'Deployment zone',
         'description'     => 'Description',
         'agentnum'        => 'Agent',
         'dbaname'         => 'Business name (if different from agent)',
@@ -14,6 +15,7 @@
         'cir_speed_down'  => 'Downstream',
         'is_consumer'     => 'Consumer/mass market',
         'is_business'     => 'Business/government',
+        'disabled'        => 'Disabled',
         'blocknum'        => '',
         'active_date'     => 'Active since',
         'file'            => 'Import blocks from text file',
@@ -37,6 +39,9 @@
             $cgi->param('active_date') || $object->active_date || time;
           },
         },
+        { field         => 'expire_date',
+          type          => 'hidden',
+        },
         { field         => 'agentnum',
           type          => 'select-agent',
           disable_empty => 1,
@@ -50,6 +55,7 @@
         },
         { field         => 'is_consumer', type => 'checkbox', value=>'Y' },
         { field         => 'is_business', type => 'checkbox', value=>'Y' },
+        { field         => 'disabled', type=>'checkbox', value=>'Y', },
         { type => 'tablebreak-tr-title',
           value => 'Advertised maximum speed (Mbps)' },
         'adv_speed_down',

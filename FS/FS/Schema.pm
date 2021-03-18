@@ -5092,6 +5092,7 @@ sub tables_hashref {
         'is_business',    'char',    'NULL', 1,       '', '',
         'active_date',    @date_type,                 '', '',
         'expire_date',    @date_type,                 '', '',
+        'disabled',       'char',    'NULL',       1, '', '',
       ],
       'primary_key' => 'zonenum',
       'unique' => [],

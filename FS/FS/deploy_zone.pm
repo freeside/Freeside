@@ -187,8 +187,15 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $self = shift;
+  my $old = shift || $self->replace_old;
 
+  $self->expire_date(time)
+    if $self->disabled eq 'Y' && ! $old->disabled && ! $self->expire_date;
+
+  $self->SUPER::replace($old, @_);
+}
 =item check
 
 Checks all fields to make sure this is a valid zone record.  If there is
