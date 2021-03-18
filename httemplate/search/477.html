@@ -67,6 +67,9 @@ a.download {
     <a class="download" href="<% $cgi->self_url %>">Download</a>
   </caption>
 %   my $header = ".header_$partname";
+%   $header .= '_old' if $partname eq 'fbd' && $date < 1569826800; #9/30/2019
+%              # ( halfway between the two filing "as of" dates when it changed
+
 %   my $data = $this_part->{data};
 %   my $error = $this_part->{error};
   <thead>
@@ -168,7 +171,7 @@ if ( $cgi->param('type') eq 'csv' ) {
 my $part_titles = FS::Report::FCC_477->parts;
 
 </%init>
-<%def .header_fbd>
+<%def .header_fbd_old>
   <TR CLASS="head">
     <TD ROWSPAN=2>Census Block</TD>
     <TD ROWSPAN=2>DBA Name</TD>
@@ -181,6 +184,20 @@ my $part_titles = FS::Report::FCC_477->parts;
   <TR CLASS="subhead">
     <TD>Down</TD>
     <TD>Up</TD>
+    <TD>Down</TD>
+    <TD>Up</TD>
+  </TR>
+</%def>
+<%def .header_fbd>
+  <TR CLASS="head">
+    <TD ROWSPAN=2>Census Block</TD>
+    <TD ROWSPAN=2>DBA Name</TD>
+    <TD ROWSPAN=2>Technology</TD>
+    <TD ROWSPAN=2>Consumer?</TD>
+    <TD COLSPAN=2>Advertised Speed (Mbps)</TD>
+    <TD ROWSPAN=2>Business?</TD>
+  </TR>
+  <TR CLASS="subhead">
     <TD>Down</TD>
     <TD>Up</TD>
   </TR>
