@@ -365,10 +365,12 @@ sub fbd_sql {
     'adv_speed_down',
     'adv_speed_up',
     'CASE WHEN is_business IS NOT NULL THEN 1 ELSE 0 END',
-    'cir_speed_down',
-    'cir_speed_up',
   );
-  push @select, 'blocknum' if $opt{detail};
+  push @select, 'cir_speed_down', 'cir_speed_up'
+    if $opt{date} < 1569826800; #9/30/2019, halfway between the two filing
+                                # "as of" dates when it changed
+  push @select, 'blocknum'
+    if $opt{detail};
 
   my $from = 'deploy_zone_block
     JOIN deploy_zone USING (zonenum)
