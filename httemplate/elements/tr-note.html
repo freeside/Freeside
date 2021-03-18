@@ -1,0 +1,12 @@
+<TR>
+  <TD COLSPAN=<% $opt{colspan} || 2 %> ALIGN="left" <%$id%>>
+    <I><% $opt{value} %></I>
+  </TD>
+</TR>
+
+<%init>
+
+my %opt = @_;
+my $id = 'ID="'.$opt{id}.'"' if $opt{id};
+
+</%init>
