@@ -210,6 +210,7 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Backdate payment', desc=>'Enable payments to be posted for days other than today.' },
     'Post check payment',
     'Post cash payment',
+    'Post Paypal payment',
     'Post payment batch',
     'Apply payment', #NEWNEW
     { rightname=>'Unapply payment', desc=>'Enable "unapplication" of unclosed payments from specific invoices.' }, #aka. unapplypayments
