@@ -2672,7 +2672,7 @@ and customer address. Include units.',
     'section'     => 'payments',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD DCRD CHEK DCHK) ], #BILL CASH WEST MCRD MCHK PPAL) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK PPAL) ], #BILL CASH WEST MCRD MCHK PPAL) ],
   },
 
   {
@@ -4200,6 +4200,13 @@ and customer address. Include units.',
     'description' => 'New install welcome screen.',
     'type'        => 'select',
     'select_enum' => [ '', 'ITSP_fsinc_hosted', ],
+  },
+
+  {
+    'key'         => 'dashboard-topnotes',
+    'section'     => 'UI',
+    'description' => 'Note to display on the top of the front page',
+    'type'        => 'textarea',
   },
 
   {
