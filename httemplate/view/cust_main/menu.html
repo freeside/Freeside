@@ -380,6 +380,15 @@ my @menu = (
         #  acl         => [ 'Post payment', ],
         ##  condition   => sub { $payby{MCHK} },
         #},
+        {
+          label       => 'Record manual (non-Freeside) Paypal payment',
+          popup       => "edit/cust_pay.cgi?popup=1;payby=PPAL;custnum=$custnum",
+          actionlabel => 'Enter Paypal payment',
+          width       => 763,
+          height      => 392,
+          acl         => [ 'Post Payment', 'Post Paypal payment', ],
+          condition   => sub { $payby{PPAL} },
+        },
       ],
     },
 
