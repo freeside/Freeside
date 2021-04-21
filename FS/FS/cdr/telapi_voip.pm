@@ -2,24 +2,28 @@ package FS::cdr::telapi_voip;
 use base qw( FS::cdr );
 
 use strict;
-use vars qw( @ISA %info $CDR_TYPES );
-use FS::Record qw( qsearch );
-use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
+use vars qw( %info );
+use FS::cdr qw( _cdr_date_parser_maker );
 
 %info = (
-  'name'          => 'telapi_voip (csv file)',
+  'name'          => 'TeleAPI VoIP (CSV file)',
   'weight'        => 601,
   'header'        => 1,
   'type'          => 'csv',
   'import_fields' => [
-    skip(1),                              # Inbound/Outbound
-    _cdr_date_parser_maker('startdate'),  # date
-    skip(1),                              # cost per minute
-    'upstream_price',                     # call cost
-    'billsec',                            # duration
-    'src',                                # source
-    'dst',                                # destination
-    skip(1),                              # hangup code
+    _cdr_date_parser_maker('startdate', 'gmt'=>1 ),  # date gmt
+    'src',                                           # source
+    'dst',                                           # destination
+    'clid',                                          # callerid
+    'disposition',                                   # hangup code
+    'userfield',                                     # sip account
+    'src_ip_addr',                                   # orig ip
+    'billsec',                                       # duration
+    skip(1),                                  # per minute (add "upstream_rate"?
+    'upstream_price',                                # call cost
+    'dcontext',                                      # type
+    'uniqueid',                                      # uuid
+    'lastapp',                                       # direction
   ],
 );
 
