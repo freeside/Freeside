@@ -1,14 +1,17 @@
 </TABLE>
+<BR>
 
-<TABLE <% $id %> BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<FONT CLASS="fsinnerbox-title" <%$title_id%>><% $opt{value} %></FONT>
 
-<% include('tr-title.html', @_ ) %>
-
+<TABLE <% $id %> CLASS="fsinnerbox">
 <%init>
 
 my %opt = @_;
 
 my $id = '';
 $id = 'ID="'. $opt{'table_id'}. '"' if $opt{'table_id'};
+
+my $title_id;
+my $title_id = 'ID="'.$opt{id}.'"' if $opt{id};
 
 </%init>
