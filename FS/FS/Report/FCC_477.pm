@@ -384,7 +384,7 @@ sub fbd_sql {
 
   my $order_by = 'censusblock, agentnum, technology, is_consumer, is_business';
 
-  "SELECT ".join(', ', @select) . "
+  "SELECT DISTINCT ".join(', ', @select) . "
   FROM $from
   WHERE ".join(' AND ', @where)."
   ORDER BY $order_by
