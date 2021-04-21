@@ -263,12 +263,12 @@ Example:
 
 %   unless ( $opt{'no_pkey_display'} ) {
 
-      <FONT SIZE="+1"><B>
+      <FONT CLASS="fsinnerbox-title">
       <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
             ? $opt{labels}->{$pkey}
             : $pkey
       %>
-      </B></FONT>
+      </FONT>
       #<% ( !$clone && $object->$pkey() ) || "(NEW)" %>
 
 %   }
@@ -277,9 +277,7 @@ Example:
 
 % my $tablenum = $opt{'tablenum'} || 0;
 <TABLE ID="TableNumber<% $tablenum++ %>"
-       <% $opt{html_table_class} ? 'CLASS="'. $opt{html_table_class}. '"'
-                                 : 'BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0'
-       %>
+       CLASS="<% $opt{html_table_class} || 'fsinnerbox' %>"
 >
 
 % my $g_row = 0;
