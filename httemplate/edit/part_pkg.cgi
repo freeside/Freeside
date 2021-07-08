@@ -206,9 +206,8 @@
                      #recurring frequency
                      #recurring fee (auto-disable)
 
-                   { type => 'columnnext' },
+                   { type => 'columnnext', value=>'Taxation', },
 
-                     {type=>'justtitle', value=>'Taxation' },
                      {field=>'setuptax', type=>'checkbox', value=>'Y'},
                      {field=>'recurtax', type=>'checkbox', value=>'Y'},
                      {field=>'taxclass', type=>'select-taxclass' },
@@ -243,9 +242,7 @@
                          )
                      ),
 
-                   { type => 'columnnext' },
-
-                     {type=>'justtitle', value=>'Agent (reseller) types' },
+                   { type => 'columnnext', value=>'Agent (reseller) types' },
 
                      { field       => 'agent_type',
                        type        => 'select-agent_type',
@@ -857,8 +854,9 @@ my $javascript = <<'END';
         supp_pkg_rows[0].style.display = 'none';
         var button = document.getElementById('show_supp_pkgs');
         button.onclick = show_supp_pkgs_click;
-        button.style.backgroundColor = '#cccccc';
-        button.style.border = '1px solid #7e0079';
+        //button.style.backgroundColor = '#cccccc';
+        //button.style.border = '1px solid #7e0079';
+        button.style.border = 'thin solid #999999';
         button.style.padding = '1px';
       }
     }
@@ -914,7 +912,7 @@ my $html_bottom = sub {
   my $layer_callback = sub {
   
     my $layer = shift;
-    my $html = ntable("#cccccc",2);
+    my $html = '<TABLE CLASS="fsinnerbox">';
   
     #$html .= '
     #  <TR>
