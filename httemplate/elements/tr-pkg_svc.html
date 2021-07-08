@@ -131,8 +131,8 @@ provision_hold_init();
 
 % if ( scalar(@possible_exports) > 0 || scalar(@mapped_exports) > 0 ) {
    <TABLE><TR>
-	<TH BGCOLOR="#dcdcdc">Export</TH>
-	<TH BGCOLOR="#dcdcdc">Vendor Package Id <FONT SIZE="-2">(blank to delete)</FONT></TH>
+	<TH>Export</TH>
+	<TH>Vendor Package Id <FONT SIZE="-2">(blank to delete)</FONT></TH>
 	</TR>
 %   foreach my $export ( @mapped_exports ) {
 	<TR>
@@ -166,14 +166,14 @@ my $cgi = $opt{'cgi'};
 my $thead_count = 0;
 sub pkg_svc_thead {
   $thead_count += 1;
-  return "\n\n". ntable('#cccccc', 2).
+  return "\n\n". '<TABLE CLASS="fsinnerbox">'.
          '<TR>'.
-         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
-         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'.
-         '<TH BGCOLOR="#dcdcdc">Service</TH>'.
-         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide<BR>from<BR>Invoices</FONT></TH>'.
-         '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Bulk<BR>Charge</FONT></TH>'.
-         '<TH BGCOLOR="#dcdcdc" ID="th_provision_hold' . $thead_count . '"><FONT SIZE=-1>Remove Hold After Provisioning</FONT></TH>'.
+         '<TH><FONT SIZE=-1>Quan.</FONT></TH>'.
+         '<TH><FONT SIZE=-1>Primary</FONT></TH>'.
+         '<TH>Service</TH>'.
+         '<TH><FONT SIZE=-1>Hide<BR>from<BR>Invoices</FONT></TH>'.
+         '<TH><FONT SIZE=-1>Bulk<BR>Charge</FONT></TH>'.
+         '<TH ID="th_provision_hold' . $thead_count . '"><FONT SIZE=-1>Remove Hold After Provisioning</FONT></TH>'.
          '</TR>'.
          qq!<SCRIPT>provision_hold_td.push(document.getElementById('th_provision_hold$thead_count'))</SCRIPT>!;
 ;
