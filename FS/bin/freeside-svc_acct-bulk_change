@@ -1,0 +1,56 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( $opt_p $opt_g );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearch ); #qsearchs );
+use FS::cust_svc;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+getopts('p:g:');
+
+my @svc_x = ();
+if ( $opt_p ) {
+  push @svc_x, map { $_->svc_acct } qsearch('cust_svc', { svcpart=>$opt_p } );
+  die "no services with svcpart $opt_p found\n" unless @svc_x;
+} else {
+  die &usage;
+}
+
+foreach my $svc_x ( @svc_x ) {
+  next if $opt_g && $svc_x->gid == $opt_g;
+  $svc_x->gid($opt_g) if $opt_g;
+  my $error = $svc_x->replace;
+  die $error if $error;
+}
+
+sub usage {
+  return "Usage:\n\n  freeside-svc_acct-bulk_change user -p svcpart -g gid\n";
+}
+
+=head1 NAME
+
+freeside-svc_acct-bulk_change - Command line tool to make bulk changes to svc_acct (account) records
+
+=head1 SYNOPSIS
+
+  freeside-svc_acct-bulk_change user -p svcpart -g gid
+
+=head1 DESCRIPTION
+
+  For the servcies of the given svcpart, changes the GID as specified.
+
+  Note: Unless you are changing the GID to match an new, fixed value in the
+  service definition, you will need to enable the B<svc_acct-edit_gid>
+  configuration setting prior to running this script.
+
+=head1 SEE ALSO
+
+L<FS::svc_acct>
+
+=cut
+
+1;
