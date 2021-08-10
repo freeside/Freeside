@@ -25,7 +25,11 @@ sub backup {
 
   my $ext;
   if ( driver_name eq 'Pg' ) {
-    system("pg_dump -Fc -T h_cdr -T h_queue -T h_queue_arg -T sessions $database >/var/tmp/$database.Pg");
+    system('pg_dump -Fc '. join(' ', map { "--exclude-table-data $_" }
+                                       qw( h_cdr h_queue h_queue_arg sessions )
+                               ).
+                           " $database >/var/tmp/$database.Pg"
+          );
     $ext = 'Pg';
   } elsif ( driver_name eq 'mysql' ) {
     system("mysqldump $database >/var/tmp/$database.sql");
