@@ -216,7 +216,9 @@ $cgi->param('max_level', 5) unless defined($cgi->param('max_level'));
 
 my %search = ();
 $search{'date'} = [ FS::UI::Web::parse_beginning_ending($cgi) ];
-$search{'level'} = [ $cgi->param('min_level'), $cgi->param('max_level') ];
+$search{'level'} = [ scalar($cgi->param('min_level')),
+                     scalar($cgi->param('max_level'))
+                   ];
 foreach my $param (qw(agentnum context context_height tablename tablenum custnum message)) {
   if ( $cgi->param($param) ) {
     $search{$param} = $cgi->param($param);

@@ -44,7 +44,7 @@ my $error = '';
 
 $cgi->param('tax','') unless defined $cgi->param('tax');
 
-$cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
+$cgi->param('refnum', (split(/:/, ($cgi->multi_param('refnum'))[0] ))[0] );
 
 #my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
 #push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
