@@ -70,7 +70,7 @@ for my $param ( @scalars ) {
 
 #lists
 for my $param (qw( classnum refnum pkg_classnum )) {
-  $search_hash{$param} = [ $cgi->param($param) ];
+  $search_hash{$param} = [ $cgi->multi_param($param) ];
 }
 
 my $params = $cgi->Vars;

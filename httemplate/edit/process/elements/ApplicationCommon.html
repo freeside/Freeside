@@ -55,8 +55,12 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $src->custnum } )
 my $custnum = $cust_main->custnum;
 
 my @subnames = grep { /.+/ } map { /^subnum(\d+)$/ ? $1 : '' } $cgi->param;
-my @subitems = map { [ $cgi->param("subnum$_"), $cgi->param("subamount$_"), $cgi->param("taxXlocationnum$_") ] }
-               @subnames;
+my @subitems = map { [ scalar($cgi->param("subnum$_")),
+                       scalar($cgi->param("subamount$_")),
+                       scalar($cgi->param("taxXlocationnum$_"))
+                     ]
+                   }
+                 @subnames;
 { local $^W = 0; @subitems = grep { $_->[1] + 0 } @subitems; }
 
 my %options = ();

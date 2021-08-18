@@ -1,7 +1,7 @@
 <% encode_json($return) %>\
 <%init>
 
-my %arg = $cgi->param('arg');
+my %arg = $cgi->multi_param('arg');
 my $custnum = delete($arg{'custnum'});
 
 my $error;
