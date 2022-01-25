@@ -4589,9 +4589,31 @@ and customer address. Include units.',
   {
     'key'         => 'census_year',
     'section'     => 'addresses',
-    'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 or 2013 for Year 2010 Census tract codes.  A selection of 2011 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
+    'description' => 'The year to use in census tract lookups.<br>NOTE: which year you choose varies depending on which censustract source you are using.  When using the default (ffiec) you need to select 2012 for Year 2010 Census tract codes and a selection of 2011 for Year 2000 Census tract codes.  When using FCC or U.S. Census Bureau you must choose 2020 or 2010.  Use the freeside-censustract-update tool if exisiting customers need to be changed.',
     'type'        => 'select',
-    'select_enum' => [ qw( 2017 2016 2015 ) ],
+    'select_enum' => [ qw( 2020 2012 2010 ) ],
+  },
+
+  {
+    'key'         => 'censustract_source_method',
+    'section'     => 'UI',
+    'description' => 'Select which institution you want as the source for censustract data.  Default: ffiec',
+    'type'        => 'select',
+    'select_hash' => [ '' => '',
+                       'ffiec'    => 'Federal Financial Institutions Examination Council (FFIEC)',
+                       'uscensus' => 'U.S. Census Bureau',
+                     ],
+  },
+
+  {
+    'key'         => 'censustract_block_format',
+    'section'     => 'UI',
+    'description' => 'Choose the format to use when storing the censustract data.  To collect and store the 15 digit format, censustract_source_method must be set to U.S. Census Bureau.  The U.S. Census Bureau is the only source that provides the 4 digit block data.  Default: 11 digits',
+    'type'        => 'select',
+    'select_hash' => [ '' => '',
+                       '11' => '11 digits, Ex: 410170007.02',
+                       '15' => '15 digits, Ex: 410170007021064',
+                     ],
   },
 
   {

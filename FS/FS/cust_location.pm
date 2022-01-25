@@ -419,10 +419,19 @@ sub check {
   ;
   return $error if $error;
   if ( $self->censustract ne '' ) {
-    $self->censustract =~ /^\s*(\d{9})\.?(\d{2})\s*$/
+
+    my $censustract_block_format = $conf->config('censustract_block_format');
+    $censustract_block_format ||= '11';
+
+    $self->censustract =~ /^\s*(\d{9})\.?(\d{2})(\d{4})?\s*$/
       or return "Illegal census tract: ". $self->censustract;
 
-    $self->censustract("$1.$2");
+    if ( $censustract_block_format == '15' ) {
+      $self->censustract("$1$2$3");
+    } else {
+      $self->censustract("$1.$2");
+    }
+
   }
 
   #yikes... this is ancient, pre-dates cust_location and will be harder to

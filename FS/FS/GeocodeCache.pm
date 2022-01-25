@@ -123,7 +123,9 @@ sub set_censustract {
   my $censusyear = $conf->config('census_year');
   return if !$censusyear;
 
-  my $method = 'ffiec';
+  my $method = $conf->config('censustract_source_method');
+  $method ||= 'ffiec';
+
   # configurable censustract-only lookup goes here if it's ever needed.
   $method = "get_censustract_$method";
   my $censustract = eval { FS::Misc::Geo->$method($self, $censusyear) };
