@@ -4596,7 +4596,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'censustract_source_method',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Select which institution you want as the source for censustract data.  Default: ffiec',
     'type'        => 'select',
     'select_hash' => [ '' => '',
@@ -4607,7 +4607,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'censustract_block_format',
-    'section'     => 'UI',
+    'section'     => 'addresses',
     'description' => 'Choose the format to use when storing the censustract data.  To collect and store the 15 digit format, censustract_source_method must be set to U.S. Census Bureau.  The U.S. Census Bureau is the only source that provides the 4 digit block data.  Default: 11 digits',
     'type'        => 'select',
     'select_hash' => [ '' => '',
