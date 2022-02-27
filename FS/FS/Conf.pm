@@ -4875,10 +4875,22 @@ and customer address. Include units.',
 
   {
     'key'         => 'census_year',
-    'section'     => 'UI',
-    'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 or 2013 for Year 2010 Census tract codes.  A selection of 2011 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated.  Used to control the year used for census lookups.  2020 census data is now the default.  Use the freeside-censustract-update tool if exisitng customers need to be changed.  See the <a href ="#census_legacy">census_legacy</a> configuration option if you need old census data to re-file pre-2022 FCC 477 reports.',
     'type'        => 'select',
     'select_enum' => [ qw( 2017 2016 2015 ) ],
+  },
+
+  {
+    'key'         => 'census_legacy',
+    'section'     => 'UI',
+    'description' => 'Use old census data (and source).  Should only be needed if re-filing pre-2022 FCC 477 reports.',
+    'type'        => 'select',
+    'select_hash' => [ '' => 'Disabled (2020)',
+                       '2015' => '2015',
+                       '2016' => '2016',
+                       '2017' => '2017',
+                     ],
   },
 
   {
