@@ -117,16 +117,15 @@ the only one is 'ffiec'.
 sub set_censustract {
   my $self = shift;
 
-  if ( $self->get('censustract') =~ /^\d{9}\.\d{2}$/ ) {
+  if ( $self->get('censustract') =~ /^\d{9}(\.\d{2}|\d{6})$/ ) {
     return $self->get('censustract');
   }
-  my $censusyear = $conf->config('census_year');
-  return if !$censusyear;
 
-  my $method = 'ffiec';
-  # configurable censustract-only lookup goes here if it's ever needed.
+  my $year = $conf->config('census_legacy') || 2020;
+  my $method = ($year==2020) ? 'uscensus' : 'ffiec';
+
   $method = "get_censustract_$method";
-  my $censustract = eval { FS::Misc::Geo->$method($self, $censusyear) };
+  my $censustract = eval { FS::Misc::Geo->$method($self, $year) };
   $self->set("censustract_error", $@);
   $self->set("censustract", $censustract);
 }

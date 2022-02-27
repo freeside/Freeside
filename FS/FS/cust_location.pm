@@ -252,7 +252,7 @@ sub insert {
   }
 
   if ( $self->censustract ) {
-    $self->set('censusyear' => $conf->config('census_year') || 2012);
+    $self->set('censusyear' => $conf->config('census_legacy') || 2020);
   }
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -419,10 +419,13 @@ sub check {
   ;
   return $error if $error;
   if ( $self->censustract ne '' ) {
-    $self->censustract =~ /^\s*(\d{9})\.?(\d{2})\s*$/
-      or return "Illegal census tract: ". $self->censustract;
-
-    $self->censustract("$1.$2");
+    if ( $self->censustract =~ /^\s*(\d{9})\.?(\d{2})\s*$/ ) { #old
+      $self->censustract("$1.$2");
+    } elsif ($self->censustract =~ /^\s*(\d{15})\s*$/ ) { #new
+      $self->censustract($1);
+    } else {
+      return "Illegal census tract: ". $self->censustract;
+    }
   }
 
   #yikes... this is ancient, pre-dates cust_location and will be harder to
@@ -879,7 +882,7 @@ sub process_censustract_update {
     qsearchs( 'cust_location', { locationnum => $locationnum })
       or die "locationnum '$locationnum' not found!\n";
 
-  my $new_year = $conf->config('census_year') or return;
+  my $new_year = $conf->config('census_legacy') || 2020;
   my $loc = FS::GeocodeCache->new( $cust_location->location_hash );
   $loc->set_censustract;
   my $error = $loc->get('censustract_error');

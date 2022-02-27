@@ -38,6 +38,10 @@ Given a location hash (see L<FS::location_Mixin>) and a census map year,
 returns a census tract code (consisting of state, county, and tract 
 codes) or an error message.
 
+Data source: Federal Financial Institutions Examination Council
+
+Note: This is the old method for pre-2022 (census year 2020) reporting.
+
 =cut
 
 sub get_censustract_ffiec {
@@ -104,6 +108,79 @@ sub get_censustract_ffiec {
 
   }
 }
+
+=item get_censustract_uscensus LOCATION YEAR
+
+Given a location hash (see L<FS::location_Mixin>) and a census map year,
+returns a census tract code (consisting of state, county, tract, and block
+codes) or an error message.
+
+Data source: US Census Bureau
+
+This is the new method for 2022+ (census year 2020) reporting.
+
+=cut
+
+sub get_censustract_uscensus {
+  my $class    = shift;
+  my $location = shift;
+  my $year     = shift || 2020;
+
+  if ( length($location->{country}) and uc($location->{country}) ne 'US' ) {
+    return '';
+  }
+
+  warn Dumper($location, $year) if $DEBUG;
+
+  my $url = 'https://geocoding.geo.census.gov/geocoder/geographies/address?';
+
+  my $query_hash = {
+                     street     => $location->{address1},
+                     city       => $location->{city},
+                     state      => $location->{state},
+                     benchmark  => 'Public_AR_Current',
+                     vintage    => 'Census'.$year.'_Current',
+                     format     => 'json',
+                   };
+
+  my $full_url = URI->new($url);
+  $full_url->query_form($query_hash);
+
+  warn "Full Request URL: \n".$full_url if $DEBUG;
+
+  my $ua = new LWP::UserAgent;
+  my $res = $ua->get( $full_url );
+
+  warn $res->as_string if $DEBUG > 2;
+
+  if (!$res->is_success) {
+    die 'Census tract lookup error: '.$res->message;
+  }
+
+  local $@;
+  my $content = eval { decode_json($res->content) };
+  die "Census tract JSON error: $@\n" if $@;
+
+  warn Dumper($content) if $DEBUG;
+
+  if ( $content->{result}->{addressMatches} ) {
+
+    my $tract = $content->{result}->{addressMatches}[0]->{geographies}->{'Census Blocks'}[0]->{GEOID};
+    return $tract;
+
+  } else {
+
+    my $error = 'Lookup failed, but with no status message.';
+
+    if ( $content->{errors} ) {
+      $error = join("\n", $content->{errors});
+    }
+
+    die "$error\n";
+
+  }
+}
+
 
 #sub get_district_methods {
 #  ''         => '',
@@ -660,6 +737,7 @@ sub subloc_address2 {
   ($subloc, $addr2);
 }
 
+#is anyone still using this?
 sub standardize_melissa {
   my $class = shift;
   my $location = shift;
