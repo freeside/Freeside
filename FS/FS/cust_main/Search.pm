@@ -792,6 +792,20 @@ sub search {
   }
 
   ##
+  # no_censustract
+  ##
+  if ( $params->{'no_censustract'} ) {
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE locationnum = cust_main.ship_locationnum
+        AND cust_location.country = 'US'
+        AND (    cust_location.censusyear IS NULL
+              OR cust_location.censusyear != '2020'
+            )
+    )";
+  }
+
+  ##
   # phones
   ##
 
