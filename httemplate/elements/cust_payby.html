@@ -306,8 +306,11 @@ if ( $curr_value ) {
   $cust_payby = new FS::cust_payby {};
 }
 my $sel_payby = $cgi->param($name.'_payby') || $cust_payby->payby;
+# add a weight for CARD/CHEK imports, so we don't turn off auto-charge on edit
 # convert DCRD to CARD + no weight, and the same for DCHK/CHEK
-if ($sel_payby eq 'DCRD') {
+if ( $cust_payby->custpaybynum && $sel_payby =~ /^(CARD|CHEK)$/ && ! $cust_payby->weight ) {
+  $cust_payby->weight(1);
+} elsif ($sel_payby eq 'DCRD') {
   $sel_payby = 'CARD';
   $cust_payby->weight('');
 } elsif ($sel_payby eq 'DCHK') {
