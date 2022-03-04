@@ -90,6 +90,14 @@ Example:
           <BR></FONT>
         </td>
       </tr>
+%     foreach my $top_warning ( @top_warnings ) {
+        <TR>
+          <TD COLSPAN=4>
+            <IMG SRC="<% $fsurl %>images/error.png">
+            <FONT COLOR="#FF0000" SIZE="+1"><% $top_warning %></FONT>
+          </TD>
+        </TR>
+%     }
     </table>
 
     <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
@@ -244,6 +252,25 @@ if ( scalar(@agentnums) == 1 ) {
 } else {
   $company_name = $conf->config('company_name');
   $company_url  = $conf->config('company_url');
+}
+
+my @top_warnings = ();
+my $deb_version = int(slurp('/etc/debian_version'));
+#per wiki.debian.org/LTS
+push @top_warnings, deb_warning($deb_version)
+  if ( $deb_version <= 8 )
+  or ( $deb_version == 9  && time > 1656658800 ) #7/1/2022
+  or ( $deb_version == 10 && time > 1719817200 ) #7/1/2024
+  or ( $deb_version == 11 && time > 1782889200 ) #7/1/2026
+;
+
+sub deb_warning {
+  my $ver = shift;
+  <<"END";
+WARNING: Your operating system (Debian v$ver) is EOL and no longer supported.
+This is insecure and a violation of PCI data security standard.
+Contact <a href="mailto:sales\@freeside.biz?subject=Debian OS upgrade">sales\@freeside.biz</a> to schedule an upgrade ASAP.
+END
 }
 
 </%init>
