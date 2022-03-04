@@ -382,7 +382,8 @@ sub fbd_sql {
   );
   push @where, "agentnum = $agentnum" if $agentnum;
 
-  my $order_by = 'censusblock, agentnum, technology, is_consumer, is_business';
+  #my $order_by = 'censusblock, agentnum, technology, is_consumer, is_business';
+  my $order_by = 'censusblock, technology';
 
   "SELECT DISTINCT ".join(', ', @select) . "
   FROM $from
