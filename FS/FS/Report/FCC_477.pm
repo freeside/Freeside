@@ -320,7 +320,7 @@ sub report {
   my $num_errors = 0;
   foreach my $row (@$data) {
     if ( $class->can($check_method) ) { # they don't all have these
-      my $eh = $class->$check_method( $row, 'date'=>$opt{'date'} );
+      my $eh = $class->$check_method( $row );
       $num_errors++ if keys(%$eh);
       push @$error, $eh
     }
@@ -442,19 +442,12 @@ sub fbs_sql {
 sub fbs_check {
   my $class = shift;
   my $row = shift;
-
-  my %opt = @_;
-  my $date = $opt{date} || time;
-  my $census_digits = ($date < 1601449200) ? 11 : 15; # 9/30/2020, halfway
-                                                      # between the two filing
-                                                      # dates when it changed
-
   my %e;
   #censustract
   if ( length($row->[0]) == 0 ) {
     $e{'censustract_null'} = 'The package location has no census tract.';
-  } elsif ($row->[0] !~ /^\d{$census_digits}$/) {
-    $e{'censustract_bad'} = "The census tract must be exactly $census_digits digits.";
+  } elsif ($row->[0] !~ /^\d{11}$/) {
+    $e{'censustract_bad'} = 'The census tract must be exactly 11 digits.';
   }
 
   #technology
@@ -522,18 +515,12 @@ sub fvs_sql {
 sub fvs_check {
   my $class = shift;
   my $row = shift;
-  my %opt = @_;
-  my $date = $opt{date} || time;
-  my $census_digits = ($date < 1601449200) ? 11 : 15; # 9/30/2020, halfway
-                                                      # between the two filing
-                                                      # dates when it changed
-
   my %e;
   #censustract
   if ( length($row->[0]) == 0 ) {
     $e{'censustract_null'} = 'The package location has no census tract.';
-  } elsif ($row->[0] !~ /^\d{$census_digits}$/) {
-    $e{'censustract_bad'} = "The census tract must be exactly $census_digits digits.";
+  } elsif ($row->[0] !~ /^\d{11}$/) {
+    $e{'censustract_bad'} = 'The census tract must be exactly 11 digits.';
   }
   return \%e;
 }
