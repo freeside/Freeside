@@ -160,9 +160,8 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =  $self->check_payinfo_cardtype if $self->payby =~/^(CARD|DCRD)$/;
-  $self->SUPER::insert unless $error;
-
+  my $error =  $self->check_payinfo_cardtype
+            || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -348,14 +347,16 @@ sub check {
   if ( !$ignore_invalid_card && 
     $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $payinfo =~ /^(\d{13,19}|\d{8,9})$/
-      or return gettext('invalid_card'); #. ": ". $self->payinfo;
-    $payinfo = $1;
-    $self->payinfo($payinfo);
-    validate($payinfo)
-      or return gettext('invalid_card'); # . ": ". $self->payinfo;
+    unless ( $self->tokenized ) {
+      my $payinfo = $self->payinfo;
+      $payinfo =~ s/\D//g;
+      $payinfo =~ /^(\d{13,19}|\d{8,9})$/
+        or return gettext('invalid_card'); #. ": ". $self->payinfo;
+      $payinfo = $1;
+      $self->payinfo($payinfo);
+      validate($payinfo)
+        or return gettext('invalid_card'); # . ": ". $self->payinfo;
+    }
 
     # see parallel checks in check_payinfo_cardtype & payinfo_Mixin::payinfo_check
     my $cardtype = $self->paycardtype;
@@ -557,7 +558,7 @@ sub check_payinfo_cardtype {
 
   return '' if $ignore_cardtype;
 
-  return '' unless $self->payby =~ /^(CARD|CHEK)$/;
+  return '' unless $self->payby =~ /^(CARD|DCRD)$/;
 
   my $payinfo = $self->payinfo;
   $payinfo =~ s/\D//g;
