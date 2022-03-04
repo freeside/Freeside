@@ -398,7 +398,7 @@ sub fbs_sql {
   my $agentnum = $opt{agentnum};
   my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
 
-  my $censustract = "replace(cust_location.censustract, '.', '')";
+  my $censustract = "substr( replace(cust_location.censustract, '.', ''), 1, 11)";
 
   my @select = (
     "$censustract AS censustract",
@@ -473,7 +473,7 @@ sub fvs_sql {
   my $date = $opt{date} || time;
   my $agentnum = $opt{agentnum};
   my $q = $opt{ignore_quantity} ? '1' : 'COALESCE(cust_pkg.quantity, 1)';
-  my $censustract = "replace(cust_location.censustract, '.', '')";
+  my $censustract = "substr( replace(cust_location.censustract, '.', ''), 1, 11)";
 
   my @select = (
     "$censustract AS censustract",
