@@ -185,6 +185,8 @@ following fields are currently supported:
 
 =item detailnum - Link to invoice detail (L<FS::cust_bill_pkg_detail>)
 
+=item sipcallid - SIP Call-ID
+
 =back
 
 =head1 METHODS

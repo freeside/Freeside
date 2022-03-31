@@ -5623,6 +5623,9 @@ sub tables_hashref {
         # FK to cust_bill_pkg_detail; having a value here absolutely means
         # that the CDR appears on an invoice
         'detailnum',     'bigint',    'NULL',      '', '', '',
+
+        #for mediation/deduplication
+        'sipcallid',    'varchar',    'NULL',     255, '', '',
       ],
       'primary_key' => 'acctid',
       'unique' => [],
@@ -5636,7 +5639,7 @@ sub tables_hashref {
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ], [ 'cdrbatchnum' ],
                    [ 'src_ip_addr' ], [ 'dst_ip_addr' ], [ 'dst_term' ],
-                   [ 'detailnum' ],
+                   [ 'detailnum' ], [ 'sipcallid' ],
                  ],
       #no FKs on cdr table... choosing not to throw errors no matter what's
       # thrown in here.  better to have the data.

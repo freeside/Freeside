@@ -54,7 +54,8 @@ while (1) {
 
   #order matters for removing dupes--only the first is preserved
   $extra_sql .= ' ORDER BY acctid '
-    if $conf->exists('cdr-skip_duplicate_rewrite');
+    if $conf->exists('cdr-skip_duplicate_rewrite')
+    || $conf->exists('cdr-skip_duplicate_rewrite-sipcallid');
 
   my $found = 0;
   my %skip = (); #used only by taqua
@@ -91,6 +92,22 @@ while (1) {
         push(@status,'duplicate');
       }
     }
+
+    if ($conf->exists('cdr-skip_duplicate_rewrite-sipcallid')) {
+      my $sth = dbh->prepare(
+        'SELECT 1 FROM cdr WHERE sipcallid=? AND acctid < ? LIMIT 1'
+      ) or die dbh->errstr;
+      $sth->execute($cdr->sipcallid, $cdr->acctid) or die $sth->errstr;
+      my $isdup = $sth->fetchrow_hashref;
+      $sth->finish;
+      if ($isdup) {
+        #we only act on this cdr, not touching previous dupes
+        #if a dupe somehow creeped in previously, too late to fix it
+        $cdr->freesidestatus('skipped'); #prevent it from being billed
+        push(@status,'duplicate');
+      }
+    }
+
 
     if ( $conf->exists('cdr-asterisk_forward_rewrite')
          && $cdr->dstchannel =~ /^Local\/(\d+)/i && $1 ne $cdr->dst
@@ -268,6 +285,7 @@ sub _shouldrun {
   || $conf->exists('cdr-intl_to_domestic_rewrite')
   || $conf->exists('cdr-userfield_dnis_rewrite')
   || $conf->exists('cdr-skip_duplicate_rewrite')
+  || $conf->exists('cdr-skip_duplicate_rewrite-sipcallid')
   || 0
   ;
 }
@@ -295,6 +313,11 @@ of the following config options are enabled:
 
 Marks as 'skipped' (prevents billing for) any CDRs with 
 a src, dst and calldate identical to an existing CDR
+
+=item cdr-skip_duplicate_rewrite-sipcallid
+
+Marks as 'skipped' (prevents billing for) any CDRs with 
+a sipcallid identical to an existing CDR
 
 =item cdr-asterisk_australia_rewrite
 
