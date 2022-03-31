@@ -5500,6 +5500,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-skip_duplicate_rewrite-sipcallid',
+    'section'     => 'telephony',
+    'description' => 'Use the freeside-cdrrewrited daemon to prevent billing CDRs with a sipcallid identical to an existing CDR',
+    'type'        => 'checkbox',
+  },
+
+
+  {
     'key'         => 'cdr-charged_party_rewrite',
     'section'     => 'telephony',
     'description' => 'Do charged party rewriting in the freeside-cdrrewrited daemon; useful if CDRs are being dropped off directly in the database and require special charged_party processing such as cdr-charged_party-accountcode or cdr-charged_party-truncate*.',

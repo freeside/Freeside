@@ -81,7 +81,11 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     # 22: networkTranslatedGroup
     # 23: releasingParty
     # 24: route
+    skip(10),
+
     # 25: networkCallID
+    'sipcallid',
+
     # 26: codedc
     # 27: accessDeviceAddress
     # 28: accessCallID
@@ -90,7 +94,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     # 31: spare
     # 32: group
     # 33: department
-    skip(19),
+    skip(8),
 
     # 34: accountCode
     sub {
@@ -116,6 +120,10 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     # 47: callingPartyCategory
     #
     # Also... cols 48 - 448 see Broadsoft documentation
+    skip(111), #35-145 inclusive
+
+    # 146: chargedNumber
+    'charged_party',
 
   ],
 
