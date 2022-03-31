@@ -159,7 +159,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
 
     #60
     
-    '',       #OrigIPCallID
+    'sipcallid',       #OrigIPCallID
     '',       #ESAIPTrunkGroup
     '',       #ESAReason
     '',       #BearerlessCall
