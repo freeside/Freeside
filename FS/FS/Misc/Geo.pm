@@ -133,8 +133,11 @@ sub get_censustract_uscensus {
 
   my $url = 'https://geocoding.geo.census.gov/geocoder/geographies/address?';
 
+  my $address1 = $location->{address1};
+  $address1 =~ s/(apt|ste|suite|unit)[\s\d]\w*\s*$//i;
+
   my $query_hash = {
-                     street     => $location->{address1},
+                     street     => $address1,
                      city       => $location->{city},
                      state      => $location->{state},
                      benchmark  => 'Public_AR_Current',
