@@ -402,9 +402,12 @@ sub search {
     my $op = $params->{location_cust} ? '=' : '!=';
     push @where, "cust_location.locationnum $op cust_main.ship_locationnum";
   }
-  if ( $params->{location_census} xor $params->{location_nocensus} ) {
-    my $op = $params->{location_census} ? "IS NOT NULL" : "IS NULL";
-    push @where, "cust_location.censustract $op";
+  if ( $params->{location_census} ) {
+    push @where, "cust_location.censustract IS NOT NULL",
+                 "cust_location.censusyear  =  '2020'  ";
+  } elsif ( $params->{location_nocensus} ) {
+    push @where, "(    cust_location.censustract IS NULL    ".
+                 "  OR cust_location.censusyear  != '2020' )";
   }
   if ( $params->{location_geocode} xor $params->{location_nogeocode} ) {
     my $op = $params->{location_geocode} ? "IS NOT NULL" : "IS NULL";
