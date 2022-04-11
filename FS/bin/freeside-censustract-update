@@ -34,9 +34,14 @@ my %h_cust_location = map { $_->locationnum => $_ }
 
 # Find all locations that don't have censusyear = the current
 # year as of now.
-my @cust_location = qsearch( 'cust_location',
-  { censusyear => { op => '!=', value => $current_year } },
-);
+my @cust_location = qsearch({
+     'table'     => 'cust_location',
+     'hashref'   => { 'country' => 'US', },
+     'extra_sql' => " AND (    censusyear  != '$current_year'
+                            OR censustract IS NULL
+                          )
+                    ",
+});
 
 warn scalar(@cust_location)." records found.\n";
 my $queued = 0; my $updated = 0;
@@ -83,8 +88,8 @@ freeside-censustract-update - Update census tract codes to the current year.
 =head1 DESCRIPTION
 
 Finds all customers whose census tract codes don't appear to be current 
-and updates them to the current year.  The "current year" is defined by 
-the I<census_tract> configuration variable, not the calendar year.
+and updates them to the current year.  The "current year" is 2020, unless the
+I<census_legacy> configuration variable is set.
 
 The -d option tells the script to assume that tract codes last modified
 after some date are already current.  Those customers will just have 
