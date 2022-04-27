@@ -76,7 +76,7 @@ $cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
 my $duplicate_of = $1;
 
 # if this is enabled, enforce it
-if ( $conf->exists('agent-ship_address', $cgi->param('agentnum')) ) {
+if ( $conf->exists('agent-ship_address', scalar($cgi->param('agentnum'))) ) {
   my $agent = FS::agent->by_key($cgi->param('agentnum'));
   my $agent_cust_main = $agent->agent_cust_main;
   if ( $agent_cust_main ) {
