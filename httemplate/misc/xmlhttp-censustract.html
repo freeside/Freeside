@@ -5,12 +5,19 @@ my $DEBUG = 0;
 
 my $conf = new FS::Conf;
 
-my $return = {};
-
 ## new api link, see doc https://geo.fcc.gov/api/census/
 my $url = "https://geo.fcc.gov/api/census/block/find?format=json&censusYear=" . $cgi->param('census_year') . "&latitude=" . $cgi->param('lat') . "&longitude=" . $cgi->param('lon');
 
-use LWP::Simple;
-my $return = get $url;
+my $ua = new LWP::UserAgent;
+$ua->agent('Freeside/'. $FS::VERSION); #libwww* elicits "403 Forbidden"
+my $res = $ua->get($url);
+
+my $return = '';
+if ( $res->is_success ) {
+  $return = $res->decoded_content;
+} else {
+  #better error handling?  well, hopefully the site is reliable enough
+  warn 'Error from geo.fcc.gov: '. $res->status_line. "\n";
+}
 
 </%init>
