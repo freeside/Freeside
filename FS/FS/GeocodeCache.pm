@@ -110,7 +110,8 @@ Look up the censustract, if it's not already filled in, and return it.
 On error, sets 'error' and returns nothing.
 
 This uses the "get_censustract_*" methods in L<FS::Misc::Geo>; currently
-the only one is 'ffiec'.
+available are 'uscensus' (default) or 'ffiec' (legacy, used if the
+census_legacy configuration option is set).
 
 =cut
 
