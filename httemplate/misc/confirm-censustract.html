@@ -18,10 +18,14 @@ Confirm census tract
 <BR>
 % my $querystring = "census_year=$year&address=$location{address1}, $location{address2}, $location{city}, $location{state}";
 <A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
-   TARGET="_blank">Map service module location</A><BR>
+   REL="opener"
+   TARGET="_blank"
+>Map service module location</A><BR>
 % $querystring = "census_year=$year&pre=$pre&zip_code=" . $cache->get('zip');
 <A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
-   TARGET="_blank">Map zip code center</A><BR>
+   REL="opener"
+   TARGET="_blank"
+>Map zip code center</A><BR>
 <BR>
 <input type="hidden" id="new_tract" name="new_tract" value="<%$new_tract%>">
 <TABLE>

@@ -44,8 +44,7 @@
       function getCensusTract(lat, lon) {
        var url = 'xmlhttp-censustract.html?lat=' + lat + '&lon=' + lon + '&census_year=<%$census_year%>';
        $.getJSON(url,function(data){
-         var tract = (data.Block.FIPS.substr(0, 11) / 100).toFixed(2);
-         document.getElementById("mycensustract").innerHTML = tract;
+         document.getElementById("mycensustract").innerHTML = data.Block.FIPS;
        });
       }
 

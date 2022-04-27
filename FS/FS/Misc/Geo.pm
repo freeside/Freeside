@@ -166,9 +166,11 @@ sub get_censustract_uscensus {
 
   warn Dumper($content) if $DEBUG;
 
-  if ( $content->{result}->{addressMatches} ) {
+  my $addressMatches_ref = $content->{result}->{addressMatches};
 
-    my $tract = $content->{result}->{addressMatches}[0]->{geographies}->{'Census Blocks'}[0]->{GEOID};
+  if ( $addressMatches_ref && scalar @{$addressMatches_ref} ) {
+
+    my $tract = $addressMatches_ref->[0]->{geographies}->{'Census Blocks'}[0]->{GEOID};
     return $tract;
 
   } else {
