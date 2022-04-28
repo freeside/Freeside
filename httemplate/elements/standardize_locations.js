@@ -325,6 +325,12 @@ function set_censustract(tract, year) {
   var form = document.<% $formname %>;
   form.elements['censustract'].value = tract;
   form.elements['censusyear'].value = year;
+
+  var enter = form.elements['enter_censustract'];
+  if ( enter ) {
+    enter.value = tract;
+  }
+
   <% $post_censustract %>;
 }
 
