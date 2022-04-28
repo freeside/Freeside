@@ -16,11 +16,13 @@ Confirm census tract
 <% $location{address1} |h %> <% $location{address2} |h %><BR>
 <% $location{city} |h %>, <% $location{state} |h %> <% $location{zip} |h %><BR>
 <BR>
-% my $querystring = "census_year=$year&address=$location{address1}, $location{address2}, $location{city}, $location{state}";
+% my $address1 = $location{address1};
+% $address1 =~ s/(apt|ste|suite|unit)[\s\d]\w*\s*$//i;
+% my $querystring = "census_year=$year&address=$address1, $location{address2}, $location{city}, $location{state}";
 <A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
    REL="opener"
    TARGET="_blank"
->Map service module location</A><BR>
+>Map service location</A><BR>
 % $querystring = "census_year=$year&pre=$pre&zip_code=" . $cache->get('zip');
 <A HREF="<%$p%>misc/openmap.html?<% $querystring %>"
    REL="opener"

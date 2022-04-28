@@ -78,6 +78,6 @@ my $census_year = $cgi->param('census_year');
 my $pre         = $cgi->param('pre');
 my $zip_code    = $cgi->param('zip_code');
 my $address     = $cgi->param('address');
-my $loc = $zip_code ? $zip_code : $address;
+my $loc = $zip_code ? $zip_code.', United States' : $address;
 
 </%init>
