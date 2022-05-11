@@ -62,7 +62,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     # 12: answerIndicator
     sub {
       my( $cdr, $data ) = @_;
-      $cdr->disposition( lc($data) eq 'yes' ? 'ANSWERED' : 'NO ANSWER');
+      $cdr->disposition( $data =~ /^yes/i ? 'ANSWERED' : 'NO ANSWER');
     },
 
     # 13: answerTime
@@ -120,7 +120,12 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     # 47: callingPartyCategory
     #
     # Also... cols 48 - 448 see Broadsoft documentation
-    skip(111), #35-145 inclusive
+    skip(87), #35-121 inclusive
+
+    #122: otherPartyName
+    'clid',
+
+    skip(23), #123-145 inclusive
 
     # 146: chargedNumber
     'charged_party',
