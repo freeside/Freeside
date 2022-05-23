@@ -1,49 +1,135 @@
 package FS::cdr::broadsoft;
 
+=head1 NAME
+
+FS::cdr::broadsoft - CDR parse module for Broadsoft
+
+=head1 DESCRIPTION
+
+Ref: BW-AccountingCDRInterfaceSpec-R22.pdf
+
+=cut
+
 use strict;
 use base qw( FS::cdr );
 use vars qw( %info );
 use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 %info = (
-  'name'          => 'Broadsoft',
-  'weight'        => 500,
-  'header'        => 1,     #0 default, set to 1 to ignore the first line, or
-                            # to higher numbers to ignore that number of lines
-  'type'          => 'csv',
-  'sep_char'      => ',',   #for csv, defaults to ,
-  'disabled'      => 0,     #0 default, set to 1 to disable
+  name     => 'Broadsoft',
+  weight   => 500,
+  header   => 1,
+  type     => 'csv',
+  sep_char => ',',
+  disabled => 0,
 
-  #listref of what to do with each field from the CDR, in order
-  'import_fields' => [
-    
-    skip(2),
-    sub { my($cdr, $data, $conf, $param) = @_;
-          $param->{skiprow} = 1 if lc($data) ne 'normal';
-          '' },                                   #  3: type
-            
-    skip(2),
-    'dcontext',					  #  6: direction
-    trim('src'),                                  #  7: callingNumber
-    skip(1),
-    trim('dst'),                                  #  9: calledNumber
+  import_fields => [
 
-    _cdr_date_parser_maker('startdate'),          # 10: startTime
+    # 1: recordId
+    # 2: serviceProvider
+    skip(2),
+
+    # 3: type
+    sub {
+      my ( $cdr, $data, $conf, $param ) = @_;
+      $param->{skiprow} = 1
+        if lc($data) ne 'normal';
+      '';
+    },
+
+    # 4: userNumber
+    # 5: groupNumber
+    skip(2),
+
+    # 6: direction
+    'dcontext',
+
+    # 7: callingNumber
+    trim('src'),
+
+    # 8: callingPresentationINdicator
     skip(1),
-    sub { my($cdr, $data) = @_;
-          $cdr->disposition(
-            lc($data) eq 'yes' ? 
-            'ANSWERED' : 'NO ANSWER') },          # 12: answerIndicator
-    _cdr_date_parser_maker('answerdate'),         # 13: answerTime
-    _cdr_date_parser_maker('enddate'),            # 14: releaseTime
-    skip(17),
-    sub { my($cdr, $accountcode) = @_;
-    if ($cdr->is_tollfree){
-	my $dst = substr($cdr->dst,0,32);
-        $cdr->set('accountcode', $dst);
-    } else {
-        $cdr->set('accountcode', $accountcode);
-    }},
+
+    # 9: calledNumber
+    trim('dst'),
+
+    # 10: startTime
+    _cdr_date_parser_maker('startdate'),
+
+    # 11: userTimeZone
+    skip(1),
+
+    # 12: answerIndicator
+    sub {
+      my( $cdr, $data ) = @_;
+      $cdr->disposition( $data =~ /^yes/i ? 'ANSWERED' : 'NO ANSWER');
+    },
+
+    # 13: answerTime
+    _cdr_date_parser_maker('answerdate'),
+
+    # 14: releaseTime
+    _cdr_date_parser_maker('enddate'),
+
+    # 15: terminationCause
+    # 16: networkType
+    # 17: carrierIdentificationCode
+    # 18: dialedDigits
+    # 19: callCategory
+    # 20: networkCallType
+    # 21: networkTranslatedNumber
+    # 22: networkTranslatedGroup
+    # 23: releasingParty
+    # 24: route
+    skip(10),
+
+    # 25: networkCallID
+    'sipcallid',
+
+    # 26: codedc
+    # 27: accessDeviceAddress
+    # 28: accessCallID
+    # 29: spare
+    # 30: failoverCorrelationId
+    # 31: spare
+    # 32: group
+    # 33: department
+    skip(8),
+
+    # 34: accountCode
+    sub {
+      my( $cdr, $data ) = @_;
+      $cdr->set(
+        'accountcode',
+        $cdr->is_tollfree ? substr( $cdr->dst, 0, 32 ) : $data
+      );
+    },
+
+    # 35: authorizationCode
+    # 36: originalCalledNumber
+    # 37: originalCalledPresentationIndicator
+    # 38: originalCalledReason
+    # 39: redirectingNumber
+    # 40: redirectingPresentationIndicator
+    # 41: redirectingReason
+    # 42: chargeIndicator
+    # 43: typeOfNetwork
+    # 44: voicePortalCalling.invocationTime
+    # 45: localCallId
+    # 46: remoteCallId
+    # 47: callingPartyCategory
+    #
+    # Also... cols 48 - 448 see Broadsoft documentation
+    skip(87), #35-121 inclusive
+
+    #122: otherPartyName
+    'clid',
+
+    skip(23), #123-145 inclusive
+
+    # 146: chargedNumber
+    'charged_party',
+
   ],
 
 );
