@@ -97,13 +97,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     skip(8),
 
     # 34: accountCode
-    sub {
-      my( $cdr, $data ) = @_;
-      $cdr->set(
-        'accountcode',
-        $cdr->is_tollfree ? substr( $cdr->dst, 0, 32 ) : $data
-      );
-    },
+    'accountcode',
 
     # 35: authorizationCode
     # 36: originalCalledNumber
