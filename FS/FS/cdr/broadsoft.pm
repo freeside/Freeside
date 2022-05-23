@@ -23,6 +23,15 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
   sep_char => ',',
   disabled => 0,
 
+  row_callback => sub {
+    my $line = shift;
+    #try to deal with broadsoft's awful non-standard CSV escaping :/
+    $line =~ s/\\,/ /g;  # \, becomes just a space... not entirely accurate,
+                          #  but better than skewing data into the wrong fields
+    $line =~ s/\\\\/\\/g; # undo double backslashes?  none in my test data
+    $line;
+  },
+
   import_fields => [
 
     # 1: recordId
@@ -119,7 +128,13 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     #122: otherPartyName
     'clid',
 
-    skip(23), #123-145 inclusive
+    #123: otherPartyNamePresentationIndicator
+    sub {
+      my( $cdr, $data ) = @_;
+      $cdr->clid( $data ) unless $data =~ /^Public$/i;
+    },
+
+    skip(22), #124-145 inclusive
 
     # 146: chargedNumber
     'charged_party',
