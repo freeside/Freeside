@@ -238,6 +238,10 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'skip_dst_length_less' => { 'name' => 'Do not charge for CDRs where the destination is less than this many digits:',
                               },
 
+    'noskip_dst_length_n11' => { 'name' => 'Do charge for CDRs where dst is less than the specified digits, when dst is N11 (i.e. 411, 611)',
+                                                  'type' => 'checkbox',
+                                                },
+
     'noskip_dst_length_accountcode_tollfree' => { 'name' => 'Do charge for CDRs where dst is less than the specified digits, when accountcode is toll free',
                                                   'type' => 'checkbox',
                                                 },
@@ -363,7 +367,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
                        accountcode_tollfree_ratenum accountcode_tollfree_field
-                       skip_dst_length_less
+                       skip_dst_length_less npskip_dst_length_n11
                        noskip_dst_length_accountcode_tollfree
                        skip_lastapp
                        skip_max_callers
@@ -457,8 +461,6 @@ sub calc_usage {
     locale => $cust_pkg->cust_main->locale,
     rounding  => ($self->option_cacheable('rounding') || 2),
   );
-
-  my $use_duration = $self->option('use_duration');
 
   my($svc_table, $svc_field, $by_ip_addr) = split('\.', $cdr_svc_method);
 
@@ -658,8 +660,11 @@ sub check_chargable {
   my $dst_length = $self->option_cacheable('skip_dst_length_less');
   return "destination less than $dst_length digits"
     if $dst_length && length($cdr->dst) < $dst_length
-    && ! ( $self->option_cacheable('noskip_dst_length_accountcode_tollfree')
-            && $cdr->is_tollfree('accountcode')
+    && ! (    $self->option_cacheable('noskip_dst_length_n11')
+           && $cdr->dst =~ /^\d11$/
+         )
+    && ! (    $self->option_cacheable('noskip_dst_length_accountcode_tollfree')
+           && $cdr->is_tollfree('accountcode')
          );
 
   return "lastapp is ". $self->option_cacheable('skip_lastapp')
