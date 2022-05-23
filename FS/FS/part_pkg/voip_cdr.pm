@@ -196,6 +196,10 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
     'skip_dcontext' => { 'name' => 'Do not charge for CDRs where dcontext is set to any of these (comma-separated) values: ',
                        },
 
+    'noskip_dcontext_tollfree' => { 'name' => 'Do charge for CDRs where dcontext is set to any of the specified values, if the CDR is tollfree',
+                                                  'type' => 'checkbox',
+                                                },
+
     'skip_dcontext_prefix' => { 'name' => 'Do not charge for CDRs where dcontext starts with: ',
                        },
 
@@ -351,7 +355,8 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        use_cdrtypenum ignore_cdrtypenum
                        use_calltypenum ignore_calltypenum
                        ignore_disposition disposition_in disposition_prefix
-                       skip_dcontext skip_dcontext_prefix skip_dcontext_suffix
+                       skip_dcontext noskip_dcontext_tollfree
+                       skip_dcontext_prefix skip_dcontext_suffix
                        skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
@@ -627,7 +632,10 @@ sub check_chargable {
 
   return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
     if $self->option_cacheable('skip_dcontext') =~ /\S/
-    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
+    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'))
+    && ! (    $self->option_cacheable('noskip_dcontext_tollfree')
+           && $cdr->is_tollfree
+         );
 
   my $len_dcontext_prefix =
     length($self->option_cacheable('skip_dcontext_prefix'));
