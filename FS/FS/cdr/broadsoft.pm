@@ -23,12 +23,17 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
   sep_char => ',',
   disabled => 0,
 
+  #deal with broadsoft's awful non-standard CSV escaping :/
   row_callback => sub {
     my $line = shift;
-    #try to deal with broadsoft's awful non-standard CSV escaping :/
-    $line =~ s/\\,/ /g;  # \, becomes just a space... not entirely accurate,
-                          #  but better than skewing data into the wrong fields
-    $line =~ s/\\\\/\\/g; # undo double backslashes?  none in my test data
+    $line = qq("$line");       # put " at the beginning and end
+    $line =~ s/(?<!\\),/","/g; # all commas not after a \ become ","
+    $line =~ s/\\,/,/g;        # and now we can turn \, into ,
+    #XXX embedded \r and \n ?  none in my test data, and might be better to 
+    # leave escaped and deal with it from there?
+    $line =~ s/\\\\/\\/g;     # undo double backslashes?  none in my test data
+
+    #and now we have a properly formed CSV line
     $line;
   },
 
