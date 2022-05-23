@@ -1872,10 +1872,11 @@ sub batch_import {
   my $iopt = _import_options;
   $opt->{$_} = $iopt->{$_} foreach keys %$iopt;
 
-  if ( defined $opt->{'cdrtypenum'} ) {
-        $opt->{'preinsert_callback'} = sub {
-                my($record,$param) = (shift,shift);
-                $record->cdrtypenum($opt->{'cdrtypenum'});
+  if ( grep defined $opt->{$_}, qw(cdrtypenum carrierid) ) {
+        $opt->{preinsert_callback} = sub {
+                my($record, $param) = @_;
+                $record->$_($opt->{$_})
+                  foreach grep defined $opt->{$_}, qw(cdrtypenum carrierid);
                 '';
         };
   }
