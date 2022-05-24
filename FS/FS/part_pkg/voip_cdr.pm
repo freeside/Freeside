@@ -372,7 +372,7 @@ tie my %accountcode_tollfree_field, 'Tie::IxHash',
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
                        accountcode_tollfree_ratenum accountcode_tollfree_field
-                       skip_dst_length_less npskip_dst_length_n11
+                       skip_dst_length_less noskip_dst_length_n11
                        noskip_dst_length_accountcode_tollfree
                        skip_lastapp
                        skip_max_callers
