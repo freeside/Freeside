@@ -95,7 +95,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,
  libbusiness-onlinepayment-perl,
  libnet-vitelity-perl (>= 0.05), libnet-sslglue-perl, libexpect-perl,
  libunicode-truncate-perl (>= 0.303-1), libpod-simple-perl, liblocale-po-perl,
- libgeo-uscensus-geocoding-perl, libnet-sftp-foreign-perl
+ libgeo-uscensus-geocoding-perl, libnet-sftp-foreign-perl, libpdf-webkit-perl
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
