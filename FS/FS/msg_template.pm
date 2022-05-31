@@ -11,6 +11,7 @@ use FS::cust_msg;
 use FS::template_content;
 
 use Date::Format qw(time2str);
+use PDF::WebKit;
 
 FS::UID->install_callback( sub { $conf = new FS::Conf; } );
 
@@ -411,8 +412,6 @@ Options are as for 'prepare', but 'from' and 'to' are meaningless.
 
 sub render {
   my $self = shift;
-  eval "use PDF::WebKit";
-  die $@ if $@;
   my %opt = @_;
   my %hash = $self->prepare(%opt);
   my $html = $hash{'html_body'};
