@@ -19,6 +19,21 @@
                         'Contractual Mbps',
                         'Vertices',
                         'Census blocks',
+                        'Shapefile',
+                        'KMZ',
+                        'GeoJSON',
+                     ],
+  footer          => [ '',
+                       'All fixed zones',
+                       '',
+                       '',
+                       '',
+                       '',
+                       '',
+                       '',
+                       '<A HREF="'. $fixed_shp.  '">download</A>',
+                       '<A HREF="'. $fixed_kmz.  '">download</A>',
+                       '<A HREF="'. $fixed_json. '">download</A>',
                      ],
   fields          => [  'zonenum',
                         'description',
@@ -48,6 +63,18 @@
                         sub { my $self = shift;
                               FS::deploy_zone_block->count('zonenum = '.$self->zonenum)
                             },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                              ? 'download' : ''
+                            },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                              ? 'download' : ''
+                            },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                              ? 'download' : ''
+                            },
                      ],
   sort_fields     => [ 'zonenum',
                        'description',
@@ -56,7 +83,7 @@
                        '(adv_speed_down, adv_speed_up)',
                        '(cir_speed_down, cir_speed_up)',
                      ],
-  links           => [  $link_fixed, $link_fixed, ],
+  links           => [  $link_fixed, $link_fixed, '', '', '', '', '', '', $link_shp, $link_kmz, $link_json, ],
   align           => 'cllllrrr',
   nohtmlheader    => 1,
   disable_maxselect => 1,
@@ -79,6 +106,9 @@
                         'Service Type',
                         'Advertised Mbps',
                         'Vertices', # number of vertices? not so useful
+                        'Shapefile',
+                        'KMZ',
+                        'GeoJSON',
                      ],
   fields          => [  'zonenum',
                         'description',
@@ -101,6 +131,18 @@
                         sub { my $self = shift;
                               FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
                             },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                              ? 'download' : ''
+                            },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                              ? 'download' : ''
+                            },
+                        sub { my $self = shift;
+                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                              ? 'download' : ''
+                            },
                      ],
   sort_fields     => [ 'zonenum',
                        'description',
@@ -109,7 +151,7 @@
                        '(is_voice is not null, is_broadband is not null)',
                        '(adv_speed_down, adv_speed_up)',
                      ],
-  links           => [  '', $link_mobile, ],
+  links           => [  $link_mobile, $link_mobile, '', '', '', '', '', '', $link_shp, $link_kmz, $link_json, ],
   align           => 'clllllr',
   nohtmlheader    => 1,
   disable_maxselect => 1,
@@ -120,15 +162,24 @@
 
 <& /elements/footer.html &>
 <%init>
+
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $acl_edit = $curuser->access_right('Edit FCC report configuration');
 my $acl_edit_global = $curuser->access_right('Edit FCC report configuration for all agents');
 die "access denied"
   unless $acl_edit or $acl_edit_global;
 
-my $link_fixed = [ $p.'edit/deploy_zone-fixed.html?', 'zonenum' ];
-my $link_mobile= [ $p.'edit/deploy_zone-mobile.html?', 'zonenum' ];
+my $link_fixed  = [ $p.'edit/deploy_zone-fixed.html?', 'zonenum' ];
+my $link_mobile = [ $p.'edit/deploy_zone-mobile.html?', 'zonenum' ];
+my $link_shp    = [ $p.'view/deploy_zone-shp.cgi?', 'zonenum' ];
+my $link_kmz    = [ $p.'view/deploy_zone-kmz.cgi?', 'zonenum' ];
+my $link_json   = [ $p.'view/deploy_zone-geojson.cgi?', 'zonenum' ];
 
-my $tech_label = FS::part_pkg_fcc_option->technology_labels;
-my $spec_label = FS::part_pkg_fcc_option->spectrum_labels;
+my $fixed_shp    = $p.'view/deploy_zone-shp.cgi?zonetype=B';
+my $fixed_kmz    = $p.'view/deploy_zone-kmz.cgi?zonetype=B';
+my $fixed_json   = $p.'view/deploy_zone-geojson.cgi?zonetype=B';
+
+my $tech_label  = FS::part_pkg_fcc_option->technology_labels;
+my $spec_label  = FS::part_pkg_fcc_option->spectrum_labels;
+
 </%init>
