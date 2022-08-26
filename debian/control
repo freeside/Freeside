@@ -73,7 +73,8 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,
  libipc-run-safehandles-perl,libpoe-perl,libsoap-lite-perl,libxmlrpc-lite-perl,
  libhtml-tableextract-perl,libhtml-element-extended-perl,libcam-pdf-perl,
  libnet-openssh-perl,libgd-barcode-perl,sam2p,libsys-sigaction-perl,
- libgeo-googleearth-pluggable-perl,libgeo-coder-googlev3-perl,libnet-snmp-perl,
+ libgeo-googleearth-pluggable-perl (>=0.16),libgeo-coder-googlev3-perl,
+ libnet-snmp-perl,
  libcrypt-openssl-rsa-perl,libregexp-common-perl,libnet-cidr-perl,
  libregexp-ipv6-perl,libhtml-quoted-perl,libtext-password-pronounceable-perl,
  libconvert-color-perl,liburi-perl,libhtml-rewriteattributes-perl,
@@ -94,8 +95,11 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,
  libmap-splat-perl, libdatetime-format-ical-perl, librest-client-perl,
  libbusiness-onlinepayment-perl,
  libnet-vitelity-perl (>= 0.05), libnet-sslglue-perl, libexpect-perl,
- libunicode-truncate-perl (>= 0.303-1), libpod-simple-perl, liblocale-po-perl,
- libgeo-uscensus-geocoding-perl, libnet-sftp-foreign-perl, libpdf-webkit-perl
+ libunicode-truncate-perl (>= 0.303-1),
+ libpod-simple-perl,
+ liblocale-po-perl, libgeo-uscensus-geocoding-perl,
+ libnet-sftp-foreign-perl, libpdf-webkit-perl, libgeo-shapelib-perl,
+ libgeo-json-perl
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
