@@ -85,6 +85,7 @@ if ( -e $addl_handler_use_file ) {
     die $@ if $@;
   }
   use Text::CSV_XS;
+  use Archive::Zip;
   use Spreadsheet::WriteExcel;
   use Spreadsheet::WriteExcel::Utility;
   use OLE::Storage_Lite;
@@ -120,7 +121,10 @@ if ( -e $addl_handler_use_file ) {
   use Locale::Currency::Format;
   use Number::Phone::Country qw( noexport );
   use Business::US::USPS::WebTools::AddressStandardization;
-  use Geo::GoogleEarth::Pluggable;
+  use Geo::GoogleEarth::Pluggable 0.16;
+  use Geo::Shapelib;
+  use Geo::JSON;
+  use Geo::JSON::FeatureCollection;
   use LWP::UserAgent;
   use Storable qw( nfreeze thaw );
   use FS;

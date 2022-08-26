@@ -10,8 +10,13 @@ use Cpanel::JSON::XS;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 
+use Geo::JSON::Polygon;
+use Geo::JSON::Feature;
+
 # update this in 2020, along with the URL for the TIGERweb service
 our $CENSUS_YEAR = 2010;
+
+our $tech_label  = FS::part_pkg_fcc_option->technology_labels;
 
 =head1 NAME
 
@@ -275,6 +280,27 @@ sub deploy_zone_vertex {
   });
 }
 
+=item shapefile_add SHAPEFILE
+
+Adds this deployment zone to the supplied Geo::Shapelib shapefile.
+
+=cut
+
+sub shapefile_add {
+  my( $self, $shapefile ) = @_;
+
+  my @coordinates = map { [ $_->longitude, $_->latitude, 0, 0 ] }
+                      $self->deploy_zone_vertex;
+  push @coordinates, $coordinates[0];
+
+  push @{$shapefile->{Shapes}}, { 'Vertices' => \@coordinates };
+  push @{$shapefile->{ShapeRecords}}, [ $tech_label->{$self->technology},
+                                        $self->adv_speed_down,
+                                        $self->adv_speed_up,
+                                      ];
+  '';
+}
+
 =item vertices_json
 
 Returns the vertex list for this zone, as a JSON string of
@@ -287,6 +313,51 @@ sub vertices_json {
   my $self = shift;
   my @vertices = map { [ $_->latitude, $_->longitude ] } $self->deploy_zone_vertex;
   encode_json(\@vertices);
+}
+
+=item geo_json_feature
+
+Returns this zone as a Geo::JSON::Feature object
+
+=cut
+
+sub geo_json_feature {
+  my $self = shift;
+
+  my @coordinates = map { [ $_->longitude, $_->latitude ] }
+                      $self->deploy_zone_vertex;
+  push @coordinates, $coordinates[0];
+
+  Geo::JSON::Feature->new({
+    geometry   => Geo::JSON::Polygon->new({ coordinates => [ \@coordinates ] }),
+    properties => { 'Technology' => $tech_label->{$self->technology},
+                    'Down'       => $self->adv_speed_down,
+                    'Up'         => $self->adv_speed_up,
+                  },
+  })
+}
+
+=item kml_add
+
+Adds this deployment zone to the supplied Geo::GoogleEarth::Pluggable object.
+
+=cut
+
+sub kml_polygon {
+  my( $self, $kml ) = @_;
+
+  my $name = $self->description. ' ('. $self->adv_speed_down. '/'.
+                                       $self->adv_speed_up. ')';
+
+  $kml->Polygon( 'name'        => $name,
+                 'coordinates' => [ [ #outerBoundary
+                                      map { [ $_->longitude, $_->latitude, 0 ] }
+                                        $self->deploy_zone_vertex
+                                    ],
+                                    #[ #innerBoundary
+                                    #]
+                                  ]
+               );
 }
 
 =head2 SUBROUTINES
