@@ -173,6 +173,7 @@ sub _upgrade_schema {
     push @where, "
       ( $fk IS NOT NULL AND NOT EXISTS(SELECT 1 FROM $table WHERE $table.$key = $fk) )";
   }
+  return '' unless @where;
   my @recs = qsearch({
       'table'     => 'password_history',
       'extra_sql' => ' WHERE ' . join(' AND ', @where),
