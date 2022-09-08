@@ -5818,6 +5818,7 @@ sub tables_hashref {
         'username',           'varchar',     '', $char_d, '', '',
         '_password',          'varchar', 'NULL', $char_d, '', '',
         '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
+        'totp_secret32',         'char', 'NULL',      32, '', '',
         'last',               'varchar', 'NULL', $char_d, '', '', 
         'first',              'varchar', 'NULL', $char_d, '', '', 
         'user_custnum',           'int', 'NULL',      '', '', '',

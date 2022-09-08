@@ -29,6 +29,18 @@
     </TABLE>
     <BR>
 
+    <FONT CLASS="fsinnerbox-title"><% emt('Google Authenticator') %></FONT>
+    <TABLE CLASS="fsinnerbox">
+      <TR>
+%       if ( $curuser->totp_secret32 ) {
+          <TD><IMG SRC="<% $curuser->totp_qr_code_url %>"</IMG></TD>
+%       } else {
+          <TD><A HREF="<%$p%>pref/set_totp_secret32.html">Enable</A></TD>
+%       }
+      </TR>
+    </TABLE>
+    <BR>
+
 % }
 
 <FONT CLASS="fsinnerbox-title"><% emt("Interface") %></FONT>

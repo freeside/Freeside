@@ -27,6 +27,10 @@
         <TD ALIGN="right">Password: </TD>
         <TD><INPUT TYPE="password" NAME="credential_1" SIZE="13"></TD>
       </TR>
+      <TR>
+        <TD ALIGN="right">One-time code: </TD>
+        <TD><INPUT TYPE="text" NAME="credential_2" SIZE="13"></TD>
+      </TR>
     </TABLE>
     <BR>
  
@@ -42,7 +46,7 @@
 my %error = (
   'no_cookie'       => '', #First login, don't display an error
   'bad_cookie'      => 'Bad Cookie', #timed out?
-  'bad_credentials' => 'Incorrect username / password',
+  'bad_credentials' => 'Incorrect username / password / one-time code',
   #'logout'          => 'You have been logged out.',
 );
 

@@ -13,13 +13,13 @@ sub useragent_ip {
 }
 
 sub authen_cred {
-  my( $self, $r, $username, $password ) = @_;
+  my( $self, $r, $username, $password, $totp_code ) = @_;
 
   preuser_setup();
 
   my $info = {};
 
-  unless ( FS::Auth->authenticate($username, $password, $info) ) {
+  unless ( FS::Auth->authenticate($username, $password, $totp_code, $info) ) {
     warn "failed auth $username from ". $self->useragent_ip($r). "\n";
     return undef;
   }

@@ -13,6 +13,7 @@ use FS::agent;
 use FS::cust_main;
 use FS::sales;
 use Carp qw( croak );
+use Auth::GoogleAuth;
 
 $DEBUG = 0;
 $me = '[FS::access_user]';
@@ -239,6 +240,7 @@ sub check {
     $self->ut_numbern('usernum')
     || $self->ut_alpha_lower('username')
     || $self->ut_textn('_password')
+    || $self->ut_alphan('totp_secret32')
     || $self->ut_textn('last')
     || $self->ut_textn('first')
     || $self->ut_foreign_keyn('user_custnum', 'cust_main', 'custnum')
@@ -731,6 +733,44 @@ sub change_password_fields {
   #my( $self, $password ) = @_;
   #FS::Auth->auth_class->change_password_fields( $self, $password );
   FS::Auth->auth_class->change_password_fields( @_ );
+}
+
+=item google_auth
+
+=cut
+
+sub google_auth {
+  my( $self ) = @_;
+  my $issuer = FS::Conf->new->config('company_name'). ' Freeside';
+  my $label = $issuer. ':'. $self->username;
+
+  Auth::GoogleAuth->new({
+    secret => $self->totp_secret32,
+    issuer => $issuer,
+    key_id => $label,
+  });
+
+}
+
+=item set_totp_secret32
+
+=cut
+
+sub set_totp_secret32 {
+  my( $self ) = @_;
+
+  $self->totp_secret32( $self->google_auth->generate_secret32 );
+  $self->replace;
+}
+
+=item totp_qr_code_url
+
+=cut
+
+sub totp_qr_code_url {
+  my( $self ) = @_;
+
+  $self->google_auth->qr_code;
 }
 
 =item locale
