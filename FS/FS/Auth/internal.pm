@@ -7,7 +7,7 @@ use FS::Record qw( qsearchs );
 use FS::access_user;
 
 sub authenticate {
-  my($self, $username, $check_password ) = @_;
+  my($self, $username, $check_password, $totp_code ) = @_;
 
   my $access_user =
     ref($username) ? $username
@@ -17,6 +17,7 @@ sub authenticate {
                              )
     or return 0;
 
+  my $pw_check;
   if ( $access_user->_password_encoding eq 'bcrypt' ) {
 
     my( $cost, $salt, $hash ) = split(',', $access_user->_password);
@@ -29,17 +30,21 @@ sub authenticate {
                                            )
                               );
 
-    $hash eq $check_hash;
+    $pw_check = $hash eq $check_hash;
 
-  } else { 
+  } else {
 
     return 0 if $access_user->_password eq 'notyet'
              || $access_user->_password eq '';
 
-    $access_user->_password eq $check_password;
+    $pw_check = $access_user->_password eq $check_password;
 
   }
 
+  return $pw_check if ! $pw_check || ! length($access_user->totp_secret32);
+
+  #2fa
+  $access_user->google_auth->verify( $totp_code, 1 );
 }
 
 sub autocreate { 0; }
