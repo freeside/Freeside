@@ -13,8 +13,7 @@ use HTTP::Request::Common;
 use Geo::JSON::Polygon;
 use Geo::JSON::Feature;
 
-# update this in 2020, along with the URL for the TIGERweb service
-our $CENSUS_YEAR = 2010;
+our $CENSUS_YEAR = 2020;
 
 our $tech_label  = FS::part_pkg_fcc_option->technology_labels;
 
@@ -457,7 +456,7 @@ sub process_block_lookup {
     inSR            => 4326,
     outSR           => 4326,
     spatialRel      => 'esriSpatialRelIntersects', # the test to perform
-    outFields       => 'OID,GEOID',
+    outFields       => 'GEOID',
     returnGeometry  => 'false',
     orderByFields   => 'OID',
   );
@@ -481,16 +480,12 @@ sub process_block_lookup {
 
   #warn "Census block lookup: $count\n";
 
-  # we have to do our own pagination on this, because the census bureau
-  # doesn't support resultOffset (maybe they don't have ArcGIS 10.3 yet).
-  # that's why we're ordering by OID, it's globally unique
-  my $last_oid = 0;
   my $done = 0;
   while (!$done) {
     $response = $ua->request(
       POST $url, Content => [
         %query,
-        where => "OID>$last_oid",
+        resultOffset => $inserted,
       ]
     );
     die $response->status_line unless $response->is_success;
@@ -515,7 +510,6 @@ sub process_block_lookup {
     }
 
     #warn "Inserted $inserted records\n";
-    $last_oid = $data->{features}[-1]{attributes}{OID};
     $done = 1 unless $data->{exceededTransferLimit};
   }
 
