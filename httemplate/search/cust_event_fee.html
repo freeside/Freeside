@@ -99,7 +99,7 @@ $search{'ending'}    = $ending;
 
 my $where = ' WHERE '. FS::cust_event_fee->search_sql_where( \%search );
 
-my $join = FS::cust_event_fee->join_sql();
+my $join = FS::cust_event_fee->join_sql() . FS::UI::Web::join_cust_main('cust_main');
 
 my $sql_query = {
   'table'     => 'cust_event_fee',
