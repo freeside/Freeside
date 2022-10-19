@@ -27,6 +27,7 @@ sub do_action {
   my $error = $cust_main->credit( $cust_main->balance, \$reasonnum );
   die $error if $error;
 
+  $cust_main->apply_credits;
   '';
 }
 
