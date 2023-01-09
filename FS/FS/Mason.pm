@@ -127,7 +127,7 @@ if ( -e $addl_handler_use_file ) {
   use Number::Phone::Country qw( noexport );
   use Business::US::USPS::WebTools::AddressStandardization;
   use Geo::GoogleEarth::Pluggable 0.16;
-  use Geo::Shapelib;
+  #use Geo::Shapelib;
   use Geo::JSON;
   use Geo::JSON::FeatureCollection;
   use LWP::UserAgent;

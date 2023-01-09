@@ -98,7 +98,7 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,
  libunicode-truncate-perl (>= 0.303-1),
  libpod-simple-perl,
  liblocale-po-perl, libgeo-uscensus-geocoding-perl,
- libnet-sftp-foreign-perl, libpdf-webkit-perl, libgeo-shapelib-perl,
+ libnet-sftp-foreign-perl, libpdf-webkit-perl,
  libgeo-json-perl
 Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
