@@ -63,10 +63,10 @@
                         sub { my $self = shift;
                               FS::deploy_zone_block->count('zonenum = '.$self->zonenum)
                             },
-                        sub { my $self = shift;
-                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
-                              ? 'download' : ''
-                            },
+                        #sub { my $self = shift;
+                        #      FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                        #      ? 'download' : ''
+                        #    },
                         sub { my $self = shift;
                               FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
                               ? 'download' : ''
@@ -131,10 +131,10 @@
                         sub { my $self = shift;
                               FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
                             },
-                        sub { my $self = shift;
-                              FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
-                              ? 'download' : ''
-                            },
+                        #sub { my $self = shift;
+                        #      FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
+                        #      ? 'download' : ''
+                        #    },
                         sub { my $self = shift;
                               FS::deploy_zone_vertex->count('zonenum = '.$self->zonenum)
                               ? 'download' : ''
