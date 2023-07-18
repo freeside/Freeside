@@ -35,11 +35,42 @@ EOF
       $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="hidden" NAME="auto" VALUE="1"></TD></TR>';
     }
   } else {
-    $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="checkbox"' . ($save_unchecked ? '' : 'CHECKED ') . 'NAME="save" VALUE="1">';
-    $OUT .= 'Remember this information</TD></TR>';
-    $OUT .= '<TR><TD COLSPAN=2><INPUT TYPE="checkbox"' . ($payby eq 'CHEK' ? ' CHECKED' : '') . 'NAME="auto" VALUE="1"  onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">';
-    $OUT .= 'Charge future payments to this account automatically</TD></TR>';
+
+    my $save_ck = $save_unchecked  ? ''         : 'CHECKED';
+    my $auto_ck = $payby eq 'CHEK' ? ' CHECKED' : '';
+
+    if ( $payby eq 'CHEK' && ! $save_unchecked ) {
+
+      $OUT .=<<EOF;
+        <TR>
+          <TD COLSPAN=8>
+            <INPUT TYPE="checkbox" $save_ck NAME="save" VALUE="1" STYLE="display:none">
+            <INPUT TYPE="checkbox" $auto_ck NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; } else { document.OneTrueForm.save.checked=false; }">
+            Remember this information, and charge future payments to this account automatically
+          </TD>
+        </TR>
+EOF
+
+    } else {
+
+      $OUT .=<<EOF;
+        <TR>
+          <TD COLSPAN=8>
+            <INPUT TYPE="checkbox" $save_ck NAME="save" VALUE="1">
+            Remember this information
+          </TD>
+        </TR><TR>
+          <TD COLSPAN=8>
+            <INPUT TYPE="checkbox" $auto_ck NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
+            Charge future payments to this account automatically
+          </TD>
+        </TR>
+EOF
+
+    }
+
   }
+
 %>
 
 </TABLE>

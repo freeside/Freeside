@@ -35,17 +35,43 @@ EOF
   </TD>
 </TR>
 <%= include('card') %>
-<TR>
-  <TD COLSPAN=8>
-    <INPUT TYPE="checkbox" <%= $save_unchecked ? '' : 'CHECKED' %> NAME="save" VALUE="1">
-    Remember this card and billing address
-  </TD>
-</TR><TR>
-  <TD COLSPAN=8>
-    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
-    Charge future payments to this card automatically
-  </TD>
-</TR>
+
+<%=
+
+my $save_ck = $save_unchecked  ? ''         : 'CHECKED';
+my $auto_ck = $payby eq 'CARD' ? ' CHECKED' : '';
+
+if ( $payby eq 'CARD' && ! $save_unchecked ) {
+
+  $OUT .=<<EOF;
+    <TR>
+      <TD COLSPAN=8>
+        <INPUT TYPE="checkbox" $save_ck NAME="save" VALUE="1" STYLE="display:none">
+        <INPUT TYPE="checkbox" $auto_ck NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; } else { document.OneTrueForm.save.checked=false; }">
+        Remember this card and billing address, and charge future payments to this card automatically
+      </TD>
+    </TR>
+EOF
+
+} else {
+
+  $OUT .=<<EOF;
+    <TR>
+      <TD COLSPAN=8>
+        <INPUT TYPE="checkbox" $save_ck NAME="save" VALUE="1">
+        Remember this card and billing address
+      </TD>
+    </TR><TR>
+      <TD COLSPAN=8>
+        <INPUT TYPE="checkbox" $auto_ck NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
+        Charge future payments to this card automatically
+      </TD>
+    </TR>
+EOF
+
+}
+%>
+
 </TABLE>
 <BR>
 <INPUT TYPE="hidden" NAME="payunique" VALUE="<%=$payunique%>">
