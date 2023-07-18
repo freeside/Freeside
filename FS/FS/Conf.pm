@@ -2476,8 +2476,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'selfservice-timeout',
-    'section'     => 'self-service',
-    'description' => 'Timeout for the self-service login cookie, in seconds.  Defaults to 1 hour.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated.  Was the timeout for the self-service login cookie, in seconds.  Defaulted to 1 hour.',
     'type'        => 'text',
   },
 
