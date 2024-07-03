@@ -110,7 +110,6 @@ Depends: aspell-en,gnupg,ghostscript,gsfonts,gzip,
  liblocale-codes-perl, liblocale-po-perl, libgeo-uscensus-geocoding-perl,
  libnet-sftp-foreign-perl, libpdf-webkit-perl, libgeo-shapelib-perl,
  libgeo-json-perl, libauth-googleauth-perl
-Conflicts: libparams-classify-perl (>= 0.013-6)
 Replaces: freeside (<<4)
 Breaks: freeside (<<4)
 Description: Libraries for Freeside billing and trouble ticketing
