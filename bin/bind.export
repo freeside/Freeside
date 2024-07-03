@@ -20,10 +20,10 @@ mkdir $spooldir, 0700 unless -d $spooldir;
 my @exports = qsearch('part_export', { 'exporttype' => 'bind' } );
 my @sexports = qsearch('part_export', { 'exporttype' => 'bind_slave' } );
 
-my $rsync = File::Rsync->new({
+my $rsync = File::Rsync->new(
   rsh     => 'ssh',
 #  dry_run => 1,
-});
+);
 
 foreach my $export ( @exports ) {
 
@@ -50,7 +50,8 @@ foreach my $export ( @exports ) {
     close CONF_HEADER;
   }
 
-  my $zonepath = $export->option('zonepath');
+  my $zonepath =    $export->option('local_zonepath')
+                 || $export->option('zonepath');
   $zonepath =~ s/\/$//;
 
   my @svc_domain = $export->svc_x;
@@ -112,18 +113,18 @@ END
 
   }
 
-  $rsync->exec( {
+  $rsync->exec(
     src       => "$prefix/",
     recursive => 1,
     dest      => "root\@$machine:$zonepath/",
     exclude   => [qw( *.import named.conf.HEADER named.conf )],
-  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+  ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
  # warn $rsync->out;
 
-  $rsync->exec( {
+  $rsync->exec(
     src     => "$prefix/named.conf",
     dest    => "root\@$machine:". $export->option('named_conf'),
-  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+  ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
 
   ssh("root\@$machine", "$ndc_cmd reload");
@@ -177,10 +178,10 @@ END
 
   }
 
-  $rsync->exec( {
+  $rsync->exec(
     src     => "$prefix/named.conf",
     dest    => "root\@$machine:". $sexport->option('named_conf'),
-  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+  ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
 
   ssh("root\@$machine", "$ndc_cmd reload");
