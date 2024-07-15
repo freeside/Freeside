@@ -70,7 +70,6 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
 #debian unstable/8.0+, apache2.4
 APACHE_CONF = /etc/apache2/conf-available
-INSSERV_OVERRIDE = /etc/insserv/overrides
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
@@ -291,7 +290,8 @@ install-apache:
 	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2enconf ] && ( /usr/sbin/a2enconf freeside-base2.4 ) || true
 	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2disconf ] && ( /usr/sbin/a2disconf freeside-base2 ) || true
 	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2enconf ] && [ ${RT_ENABLED} -eq 1 ] && ( /usr/sbin/a2enconf freeside-rt ) || true
-	[ -d ${INSSERV_OVERRIDE} ] && [ -x /sbin/insserv ] && ( install -o root -m 755 init.d/insserv-override-apache2 ${INSSERV_OVERRIDE}/apache2 && insserv -d ) || true
+	[ -x /usr/sbin/systemctl ] && mkdir /etc/systemd/system/apache.d/ || true
+	[ -x /usr/sbin/systemctl ] && ( install -o root -m 755 init.d/systemd-apache-override.conf /etc/systemd/system/apache2.d/override.conf && /usr/sbin/systemctl daemon-reload ) || true
 
 install-selfservice:
 	[ -e ~freeside ] || cp -pr /etc/skel ~freeside && chown -R freeside ~freeside
