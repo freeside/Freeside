@@ -113,6 +113,9 @@ END
 
   }
 
+  my $zonepath = $export->option('zonepath');
+  $zonepath =~ s/\/$//;
+
   $rsync->exec(
     src       => "$prefix/",
     recursive => 1,
@@ -192,6 +195,6 @@ close NAMED_CONF;
 # -----
 
 sub usage {
-  die "Usage:\n  bind.export user\n"; 
+  die "Usage:\n  freeside-bind-export user\n"; 
 }
 
