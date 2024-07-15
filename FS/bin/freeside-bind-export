@@ -113,7 +113,7 @@ END
 
   }
 
-  my $zonepath = $export->option('zonepath');
+  $zonepath = $export->option('zonepath');
   $zonepath =~ s/\/$//;
 
   $rsync->exec(
