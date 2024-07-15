@@ -133,7 +133,7 @@ install-stamp: build-stamp
 
 	install -d $(FREESIDE_DOCUMENT_ROOT)
 	install -d $(TMP)-webui/usr/local/etc/freeside/
-	install -d $(TMP)-webui/etc/insserv/overrides/
+	install -d $(TMP)-webui/etc/systemd/system/apache2.d/
 	install -d $(TMP)/usr/local/etc/freeside/
 #	install -d $(TMP)-lib/usr/bin
 
@@ -176,7 +176,7 @@ install-stamp: build-stamp
 # Create Apache configurations
 	install -d $(APACHE_CONF)
 	$(MAKE) -e DESTDIR=$(APACHE_CONF) install-apache
-	install -o root -m 755 init.d/insserv-override-apache2 $(TMP)-webui/etc/insserv/overrides/apache2
+	install -o root -m 755 init.d/systemd-apache-override.conf $(TMP)-webui/etc/systemd/system/apache2.d/override.conf
 
         #Hack the build dir out of apache config
 
