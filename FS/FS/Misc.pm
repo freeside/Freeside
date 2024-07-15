@@ -856,7 +856,7 @@ sub _pslatex {
     "$file.tex"
   );
 
-  my $timeout = 30; #? should be more than enough
+  my $timeout = 60; #an entire minute is enough?  LaTeX is slower in bullseye?
 
   for ( 1, 2 ) {
 
