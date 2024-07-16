@@ -121,7 +121,7 @@ while ($countdate < $enddate) {
     if ($report->{'total'}->{$pkgclass}) {
       my %totals = map { $$_[0] => $$_[2] } @{$report->{'total'}->{$pkgclass}};
       $values[0] = $totals{'tax'};
-      $values[1] = $totals{'credit'};
+      $values[1] = $totals{'tax_credited'};
     }
 
     # treat each tax class like it's an additional pkg class
