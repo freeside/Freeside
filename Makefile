@@ -298,8 +298,8 @@ install-apache:
 	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2enconf ] && ( /usr/sbin/a2enconf freeside-base2.4 ) || true
 	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2disconf ] && ( /usr/sbin/a2disconf freeside-base2 ) || true
 	[ -d ${APACHE_CONF} ] && [ -x /usr/sbin/a2enconf ] && [ ${RT_ENABLED} -eq 1 ] && ( /usr/sbin/a2enconf freeside-rt ) || true
-	[ -x /usr/sbin/systemctl ] && mkdir /etc/systemd/system/apache.d/ || true
-	[ -x /usr/sbin/systemctl ] && ( install -o root -m 755 init.d/systemd-apache-override.conf /etc/systemd/system/apache2.d/override.conf && /usr/sbin/systemctl daemon-reload ) || true
+	[ -x /usr/bin/systemctl ] && mkdir /etc/systemd/system/apache.service.d/ || true
+	[ -x /usr/bin/systemctl ] && ( install -o root -m 755 init.d/systemd-apache-override.conf /etc/systemd/system/apache2.service.d/override.conf && /usr/bin/systemctl daemon-reload ) || true
 
 install-selfservice:
 	[ -e ~freeside ] || cp -pr /etc/skel ~freeside && chown -R freeside ~freeside
