@@ -1240,6 +1240,9 @@ sub print_generic {
       if ( $section_with_taxes && ref $line_item->{pkg_tax} ) {
         for my $line_tax ( @{$ line_item->{pkg_tax} } ) {
 
+          # Verify $line_tax is a HASH
+          next unless ref $line_tax eq 'HASH';
+
           # It is rarely possible for the same tax record to be presented here
           # multiple times.  See cust_bill_pkg::_pkg_tax_list for more info
           next if $seen_tax_lines{ $line_tax->{billpkgtaxlocationnum} };
