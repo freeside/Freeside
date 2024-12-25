@@ -90,7 +90,7 @@ my $tower_sub = sub {
     ],
     # turn these into rows
     map { [ $_ ] } 
-      &{$num_svc_links}( 'towernum='.$tower->towernum, $sectors )
+      &{$num_svc_links}( 'towernum='.$tower->towernum)
   ] #rows
 };
 
@@ -107,7 +107,7 @@ my $sector_sub = sub {
           'link' => ( $sector->ip_addr ? 'http://'. $sector->ip_addr : '' ),
         },
         
-        &{$num_svc_links}( 'sectornum='.$sectornum, $sectornum )
+        &{$num_svc_links}( 'sectornum='.$sectornum)
       ]
     } $tower->tower_sector
   ] #rows
