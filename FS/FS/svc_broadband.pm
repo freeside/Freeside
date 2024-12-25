@@ -132,7 +132,7 @@ sub table_info {
                          'disable_inventory' => 1,
                        },
      'plan_id' => 'Service Plan Id',
-     'performance_profile' => 'Peformance Profile',
+     'performance_profile' => 'Performance Profile',
      'authkey'      => 'Authentication key',
      'mac_addr'     => 'MAC address',
      'latitude'     => 'Latitude',
