@@ -13,6 +13,7 @@
                 'agent_virt'      => 1,
                 'agent_null_right'=> "Broadband global configuration",
                 'agent_pos'       => 1,
+                'order_by'        => ' routername ',
           )
 %>
 <%init>
