@@ -476,21 +476,25 @@ sub realtime_bop {
     && $options{method} eq 'CC';
 
   # always add cc surcharge if called from event 
-  if($options{'cc_surcharge_from_event'} && ($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0)) {
-    if ($options{'amount'} > 0) {
-      $cc_surcharge = ($options{'amount'} * ($cc_surcharge_pct / 100)) + $cc_surcharge_flat;
+  if ( $options{'cc_surcharge_from_event'} && ($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0) ) {
+    if ( $options{'amount'} > 0 ) {
+      $cc_surcharge = ( $options{'amount'} * ( $cc_surcharge_pct / 100 ) ) + $cc_surcharge_flat;
+      $cc_surcharge = sprintf("%.2f", $cc_surcharge);  # round surcharge
       $options{'amount'} += $cc_surcharge;
-      $options{'amount'} = sprintf("%.2f", $options{'amount'}); # round (again)?
+      $options{'amount'} = sprintf("%.2f", $options{'amount'}); # round total
     }
   }
-  elsif($cc_surcharge_pct > 0 || $cc_surcharge_flat > 0) {
+  elsif ( $cc_surcharge_pct > 0 || $cc_surcharge_flat > 0 ) {
     # we're called not from event (i.e. from a
     # payment screen), so consider the given
 		# amount as post-surcharge-processing_fee
-    $cc_surcharge = $options{'amount'} - $options{'processing-fee'} - (($options{'amount'} - ($cc_surcharge_flat + $options{'processing-fee'})) / ( 1 + $cc_surcharge_pct/100 )) if $options{'amount'} > 0;
+    if ( $options{'amount'} > 0 ) {
+      $cc_surcharge = $options{'amount'} - $options{'processing-fee'} - (( $options{'amount'} - ( $cc_surcharge_flat + $options{'processing-fee'} )) / ( 1 + ( $cc_surcharge_pct / 100 ) ));
+      $cc_surcharge = sprintf("%.2f", $cc_surcharge);  # round surcharge
+      $options{'amount'} = sprintf("%.2f", $options{'amount'}); # round total
+    }
   }
-  
-  $cc_surcharge = sprintf("%.2f",$cc_surcharge) if $cc_surcharge > 0;
+
   $options{'cc_surcharge'} = $cc_surcharge;
 
 
