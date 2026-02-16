@@ -66,6 +66,7 @@ Expects to be the last element in a two-column table with specified id
   detail_table_info.field['<% $id %>'] = '<% $field %>';
   detail_table_info.rownum['<% $id %>'] = 0;
 % foreach my $detail ( @details ) { 
+% $detail =~ s/'/\\'/g;
   addDetailRow('<% $id %>','<% $detail %>');
 % } 
 </SCRIPT>
